@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\NetLoom.Domain\NetLoom.Domain.csproj" />
     <ProjectReference Include="..\NetLoom.Contracts\NetLoom.Contracts.csproj" />
+    <ProjectReference Include="..\NetLoom.Application\NetLoom.Application.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 

@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\NetLoom.Domain\NetLoom.Domain.csproj" />
-    <ProjectReference Include="..\NetLoom.Contracts\NetLoom.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
