@@ -79,3 +79,21 @@ STP state хранится как Observation с InstanceId.
 ## ADR-020
 
 Причинно-следственная связь аварии не объявляется автоматически; Event Correlation формирует только вероятную корреляцию.
+
+## ADR-021 — SQLite runtime и архитектура сборки x64
+
+**Решение:** использовать System.Data.SQLite совместно с native runtime SourceGear.sqlite3. Основная конфигурация сборки NetLoom по умолчанию — x64.
+
+**Причины:**
+
+- System.Data.SQLite 2.x использует отдельную native-библиотеку e_sqlite3;
+- SourceGear.sqlite3 не поддерживает AnyCPU для .NET Framework;
+- x64 обеспечивает однозначный выбор native SQLite и воспроизводимую сборку;
+- при необходимости x86 будет выпускаться как отдельная конфигурация, а не через AnyCPU.
+
+**Следствия:**
+
+- Platform и PlatformTarget задаются централизованно через Directory.Build.props;
+- solution по умолчанию собирается как Debug|x64 / Release|x64;
+- все проекты, включая тесты, должны проходить обычные dotnet build/test без ручного указания Platform;
+- native e_sqlite3.dll должна попадать в выходной каталог потребителя SQLite.

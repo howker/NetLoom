@@ -1,20 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
     <PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetLoom.Application\NetLoom.Application.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
   </ItemGroup>
-
 </Project>

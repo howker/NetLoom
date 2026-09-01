@@ -1,16 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\NetLoom.Application\NetLoom.Application.csproj" />
     <ProjectReference Include="..\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\NetLoom.Protocols.Snmp\NetLoom.Protocols.Snmp.csproj" />
     <ProjectReference Include="..\NetLoom.Topology\NetLoom.Topology.csproj" />
   </ItemGroup>
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-
 </Project>
