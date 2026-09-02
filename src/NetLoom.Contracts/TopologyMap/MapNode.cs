@@ -9,7 +9,8 @@ namespace NetLoom.Contracts.TopologyMap
             string label,
             string secondaryText,
             double x,
-            double y)
+            double y,
+            Guid? locationId = null)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -30,6 +31,7 @@ namespace NetLoom.Contracts.TopologyMap
             SecondaryText = secondaryText;
             X = x;
             Y = y;
+            LocationId = locationId;
         }
 
         // Presentation key only.
@@ -43,5 +45,7 @@ namespace NetLoom.Contracts.TopologyMap
         public double X { get; }
 
         public double Y { get; }
+
+        public Guid? LocationId { get; }
     }
 }

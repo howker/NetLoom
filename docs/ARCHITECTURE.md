@@ -133,3 +133,26 @@ Pipeline:
 - добавлять прямую зависимость WPF на NetLoom.Topology для принятия topology решений.
 
 Map contracts являются частью transport-neutral boundary для будущего NetLoom.Engine/Service IPC.
+## Location boundary
+
+`Location` является отдельной доменной сущностью для организационной и визуальной группировки topology.
+
+Структура:
+- LocationId — GUID;
+- ParentLocationId — nullable GUID;
+- Name;
+- Description.
+
+Location hierarchy не участвует в identity resolution или PhysicalLink resolution.
+
+аблюдаемые значения `sysLocation` и CDP `PhysicalLocation` являются evidence/metadata и не должны автоматически превращаться в постоянный Location без явной политики или действия оператора.
+
+Map projection может получить transient Location assignment:
+
+`Location → MapLocation → MapNode.LocationId → WPF`
+
+апрещено:
+- использовать Location как DeviceId;
+- использовать IP или MapNode.Key как постоянный foreign key назначения Device→Location;
+- изменять PhysicalLink из-за rename/move/delete Location;
+- выполнять Location assignment business logic внутри WPF.

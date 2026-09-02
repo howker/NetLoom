@@ -23,7 +23,8 @@ namespace NetLoom.Persistence.Sqlite.Database
                     new Migration004LldpObservations(),
                     new Migration005CdpObservations(),
                     new Migration006FdbObservations(),
-                    new Migration007ArpObservations()
+                    new Migration007ArpObservations(),
+                    new Migration008Locations()
                 });
         }
 

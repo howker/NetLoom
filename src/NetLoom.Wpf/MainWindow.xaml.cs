@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -12,7 +12,7 @@ namespace NetLoom.Wpf;
 public partial class MainWindow : Window
 {
     private const double NodeWidth = 190.0;
-    private const double NodeHeight = 76.0;
+    private const double NodeHeight = 92.0;
 
     public MainWindow()
     {
@@ -47,6 +47,10 @@ public partial class MainWindow : Window
                 node => node.Key,
                 StringComparer.Ordinal);
 
+        var locations =
+            snapshot.Locations.ToDictionary(
+                location => location.Id);
+
         foreach (var link in snapshot.Links)
         {
             DrawLink(link, nodes);
@@ -54,14 +58,17 @@ public partial class MainWindow : Window
 
         foreach (var node in snapshot.Nodes)
         {
-            DrawNode(node);
+            DrawNode(
+                node,
+                locations);
         }
 
         MapStatusText.Text =
             string.Format(
-                "злов: {0}   Связей: {1}",
+                "злов: {0}   Связей: {1}   асположений: {2}",
                 snapshot.Nodes.Count,
-                snapshot.Links.Count);
+                snapshot.Links.Count,
+                snapshot.Locations.Count);
     }
 
     private void DrawLink(
@@ -123,7 +130,9 @@ public partial class MainWindow : Window
         MapCanvas.Children.Add(label);
     }
 
-    private void DrawNode(MapNode node)
+    private void DrawNode(
+        MapNode node,
+        IReadOnlyDictionary<Guid, MapLocation> locations)
     {
         var title =
             new TextBlock
@@ -145,11 +154,23 @@ public partial class MainWindow : Window
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
 
+        var locationText =
+            new TextBlock
+            {
+                Text =
+                    BuildLocationText(
+                        node,
+                        locations),
+                Margin = new Thickness(0, 4, 0, 0),
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+
         var content =
             new StackPanel();
 
         content.Children.Add(title);
         content.Children.Add(secondary);
+        content.Children.Add(locationText);
 
         var border =
             new Border
@@ -169,6 +190,27 @@ public partial class MainWindow : Window
         Canvas.SetTop(border, node.Y);
 
         MapCanvas.Children.Add(border);
+    }
+
+    private static string BuildLocationText(
+        MapNode node,
+        IReadOnlyDictionary<Guid, MapLocation> locations)
+    {
+        if (!node.LocationId.HasValue)
+        {
+            return "асположение: не назначено";
+        }
+
+        MapLocation location;
+
+        if (!locations.TryGetValue(
+                node.LocationId.Value,
+                out location))
+        {
+            return "асположение: неизвестно";
+        }
+
+        return "асположение: " + location.Name;
     }
 
     private static string ConfidenceText(

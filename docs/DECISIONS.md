@@ -312,3 +312,21 @@ STP state хранится как Observation с InstanceId.
 - WPF не получает прямую зависимость от NetLoom.Topology.
 
 **Следствие:** будущая замена WPF renderer, переход на service IPC или Linux-hosted Engine не требуют переноса topology business logic в UI.
+## ADR-036 — Location является отдельной сущностью и не частью Device identity
+
+**ешение:** физическое расположение моделируется отдельной сущностью `Location` с собственным GUID.
+
+ерархия строится через `ParentLocationId`.
+
+**равила:**
+- LocationId не является DeviceId;
+- Location name не является DeviceId;
+- sysLocation и CDP PhysicalLocation остаются observations и автоматически не создают постоянную Location assignment;
+- rename/move Location не меняют identity устройства или link;
+- Location не влияет на Topology Resolver;
+- удаление Location не является удалением Device или PhysicalLink;
+- циклическая иерархия запрещена;
+- Location с дочерними Location нельзя удалить;
+- MapNode может содержать опциональный LocationId только как presentation metadata.
+
+о появления materialized Device с внутренним GUID постоянная таблица Device→Location не создаётся. апрещено сохранять такое назначение по IP или MapNode.Key.

@@ -272,3 +272,23 @@ Persistence lifecycle намеренно отложен до появления 
 - regression tests, полный test suite и linux-x64 publish проходят.
 
 Следующий Sprint: Sprint 14 — locations.
+## Sprint 14 — Locations завершен
+
+еализовано:
+- отдельная сущность Location с GUID LocationId;
+- ParentLocationId для иерархии площадка / здание / этаж / помещение / шкаф;
+- имя и необязательное описание;
+- Migration008 и таблица locations;
+- SQLite Location repository;
+- проверка существования parent;
+- запрет parent=self;
+- защита от циклов;
+- удаление Location с дочерними элементами запрещено;
+- rename/move сохраняют LocationId;
+- MapLocation и опциональный LocationId у MapNode;
+- Location overlay не изменяет node/link identity;
+- WPF отображает Location только как presentation metadata;
+- постоянная Device→Location привязка по IP или MapNode.Key не создаётся;
+- полный regression suite и linux-x64 publish проходят.
+
+Следующий Sprint: Sprint 15 — manual media converters / unmanaged devices.

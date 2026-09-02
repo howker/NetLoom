@@ -9,7 +9,8 @@ namespace NetLoom.Contracts.TopologyMap
         public MapSnapshot(
             DateTime generatedUtc,
             IEnumerable<MapNode> nodes,
-            IEnumerable<MapLink> links)
+            IEnumerable<MapLink> links,
+            IEnumerable<MapLocation> locations = null)
         {
             if (generatedUtc.Kind != DateTimeKind.Utc)
             {
@@ -31,6 +32,10 @@ namespace NetLoom.Contracts.TopologyMap
             GeneratedUtc = generatedUtc;
             Nodes = nodes.ToArray();
             Links = links.ToArray();
+            Locations =
+                locations == null
+                    ? new MapLocation[0]
+                    : locations.ToArray();
         }
 
         public DateTime GeneratedUtc { get; }
@@ -38,5 +43,7 @@ namespace NetLoom.Contracts.TopologyMap
         public IReadOnlyList<MapNode> Nodes { get; }
 
         public IReadOnlyList<MapLink> Links { get; }
+
+        public IReadOnlyList<MapLocation> Locations { get; }
     }
 }

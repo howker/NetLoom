@@ -111,3 +111,24 @@ FDB-запись не является PhysicalLink.
 `if_index` является IF-MIB ifIndex устройства, на котором получено neighbor observation.
 
 MAC/IP запись является observation evidence и не является DeviceId или PhysicalLink.
+## locations
+
+ерархический справочник физических расположений.
+
+оля:
+- `location_id` — GUID;
+- `parent_location_id` — nullable GUID;
+- `name`;
+- `description`;
+- `created_utc`;
+- `updated_utc`.
+
+`parent_location_id` ссылается на `locations.location_id`.
+
+граничения:
+- Location не может быть своим parent;
+- repository запрещает циклы;
+- repository запрещает удаление Location с дочерними Location;
+- rename/move сохраняют `location_id`.
+
+а Sprint 14 таблица назначения Device→Location намеренно отсутствует, поскольку стабильная materialized Device entity ещё не введена. IP и MapNode.Key не используются как постоянные идентификаторы такого назначения.
