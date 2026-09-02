@@ -63,3 +63,21 @@ Sprint 0, Sprint 1 и Sprint 2 завершены.
 ## Следующий шаг
 
 Sprint 3: SNMP transport.
+
+## Sprint 3 — SNMP transport завершен
+
+еализовано:
+- транспортный контракт ISnmpTransport;
+- SNMP GET для v1 и v2c;
+- SNMPv3 USM;
+- аутентификация MD5/SHA1;
+- privacy DES/AES;
+- discovery SNMPv3 engine parameters;
+- обработка notInTimeWindow;
+- timeout и retry;
+- отдельные типы транспортных ошибок;
+- секреты передаются в транспорт через отдельные credentials и не логируются;
+- Lextm.SharpSnmpLib 12.5.7;
+- transport-level тесты timeout/retry и credentials.
+
+Следующий Sprint: Sprint 4 — Inventory Collector.

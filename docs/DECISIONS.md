@@ -112,3 +112,20 @@ STP state хранится как Observation с InstanceId.
 - SNMP community, authentication password и privacy password не должны попадать в логи;
 - при будущем переносе NetLoom в Windows Service потребуется явно определить сервисную учётную запись и сценарий миграции секретов;
 - замена секрета выполняется только через слой `ISecretProtector`.
+
+## ADR-023 — SNMP transport на SharpSnmpLib
+
+**ешение:** использовать Lextm.SharpSnmpLib 12.5.7 как низкоуровневую SNMP-библиотеку, изолированную внутри NetLoom.Protocols.Snmp.
+
+**ричины:**
+- совместимость с .NET Framework 4.8;
+- поддержка SNMP v1, v2c и v3;
+- поддержка USM authentication/privacy;
+- Application и Domain не зависят от типов SharpSnmpLib.
+
+**Следствия:**
+- остальной NetLoom работает через ISnmpTransport;
+- SNMP timeout считается транспортной ошибкой, а не признаком отсутствия устройства;
+- retry выполняется транспортным слоем;
+- SNMPv3 использует discovery engine parameters и повторную синхронизацию при notInTimeWindow;
+- community/password не должны попадать в сообщения ошибок и журналы.
