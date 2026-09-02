@@ -102,3 +102,34 @@ Freshness:
 - изменять manual topology discovery-процессом.
 
 о появления стабильных materialized DeviceId/PhysicalLinkId lifecycle policy остаётся чистой доменной логикой без отдельного persistence по строковому subjectKey.
+## Map projection boundary
+
+изуализация физической топологии отделена от topology resolution.
+
+Pipeline:
+
+`observations → resolver → lifecycle → map projection → MapSnapshot → UI`
+
+`NetLoom.Contracts` содержит transport-neutral map DTO:
+- MapSnapshot;
+- MapNode;
+- MapLink;
+- MapEvidenceItem;
+- confidence/freshness/evidence enums.
+
+`NetLoom.Topology` выполняет:
+- projection PhysicalLinkCandidate в карту;
+- объединение duplicate undirected links;
+- deterministic layout v1;
+- передачу evidence/freshness/confidence.
+
+`NetLoom.Wpf` выполняет только отображение MapSnapshot.
+
+апрещено:
+- выполнять topology resolver в WPF;
+- использовать IP как DeviceId;
+- считать MapNode.Key внутренним DeviceId;
+- записывать topology facts из UI;
+- добавлять прямую зависимость WPF на NetLoom.Topology для принятия topology решений.
+
+Map contracts являются частью transport-neutral boundary для будущего NetLoom.Engine/Service IPC.

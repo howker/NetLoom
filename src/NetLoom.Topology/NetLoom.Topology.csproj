@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NetLoom.Domain\NetLoom.Domain.csproj" />
     <ProjectReference Include="..\NetLoom.Application\NetLoom.Application.csproj" />
+    <ProjectReference Include="..\NetLoom.Contracts\NetLoom.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -293,3 +293,22 @@ STP state хранится как Observation с InstanceId.
 **Persistence:** отдельная lifecycle-таблица на этом этапе не создаётся. Сохранение FirstSeenUtc/LastSeenUtc/Freshness будет добавлено вместе с materialized topology, когда появятся стабильные DeviceId/PhysicalLinkId. роизвольный subjectKey не должен становиться постоянным идентификатором .
 
 **Следствие:** факт отсутствия ответа является состоянием наблюдения, а не доказательством отсутствия физического объекта.
+## ADR-035 — карта является transport-neutral projection
+
+**ешение:** WPF не строит физическую топологию самостоятельно. Backend/topology layer формирует transport-neutral `MapSnapshot`, который UI только отображает.
+
+азделение:
+
+`Topology Resolver / Lifecycle → TopologyMapProjector → Contracts.MapSnapshot → WPF`
+
+**равила:**
+- `MapNode.Key` является presentation key и не является внутренним DeviceId;
+- IP-адрес не становится DeviceId;
+- topology resolution не выполняется в WPF;
+- confidence, freshness и evidence передаются в map contracts;
+- layout v1 является deterministic;
+- одинаковая недиректированная связь не должна отображаться дважды из-за обратного protocol observation;
+- map contracts остаются пригодными для будущего service/engine IPC;
+- WPF не получает прямую зависимость от NetLoom.Topology.
+
+**Следствие:** будущая замена WPF renderer, переход на service IPC или Linux-hosted Engine не требуют переноса topology business logic в UI.

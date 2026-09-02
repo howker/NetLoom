@@ -253,3 +253,22 @@ Sprint 3: SNMP transport.
 Persistence lifecycle намеренно отложен до появления стабильных materialized DeviceId/PhysicalLinkId. ременный subjectKey не является постоянным идентификатором .
 
 Следующий Sprint: Sprint 13 — map v1.
+## Sprint 13 — Map v1 завершен
+
+еализовано:
+- transport-neutral MapSnapshot / MapNode / MapLink contracts;
+- MapEvidenceItem с confidence, freshness и evidence;
+- TopologyMapProjector вынесен из WPF;
+- NetLoom.Topology формирует готовый MapSnapshot;
+- WPF не содержит topology resolution logic;
+- WPF зависит от Contracts/Application и не получает ссылку на Topology;
+- presentation key карты не является DeviceId;
+- IP-адрес не используется как DeviceId;
+- deterministic layout v1 без GraphX/MSAGL;
+- обратные направления одного физического candidate объединяются в один undirected map link;
+- duplicate evidence объединяется;
+- self-link не отображается;
+- пользовательский интерфейс Map v1 русскоязычный;
+- regression tests, полный test suite и linux-x64 publish проходят.
+
+Следующий Sprint: Sprint 14 — locations.
