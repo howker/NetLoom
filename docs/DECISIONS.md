@@ -129,3 +129,18 @@ STP state хранится как Observation с InstanceId.
 - retry выполняется транспортным слоем;
 - SNMPv3 использует discovery engine parameters и повторную синхронизацию при notInTimeWindow;
 - community/password не должны попадать в сообщения ошибок и журналы.
+## ADR-024 — Inventory Collector отделен от Persistence
+
+**Решение:** сбор SNMP-инвентаризации выполняется через `IInventoryCollector` и возвращает нейтральный `InventorySnapshot`. Коллектор не записывает данные напрямую в SQLite.
+
+**Причины:**
+- наблюдение устройства и сохраненное текущее состояние имеют разный жизненный цикл;
+- ошибка или частичный ответ SNMP не должны автоматически удалять ранее известные данные;
+- Application не должен зависеть от SharpSnmpLib или SQLite;
+- один и тот же collector должен использоваться discovery, polling и simulator.
+
+**Следствия:**
+- `NetLoom.Protocols.Snmp` преобразует SNMP varbinds в нейтральную модель Application;
+- management IP является адресом опроса, а не идентификатором Device;
+- недоступный `ifXTable` считается частичным inventory, а не отсутствием устройства;
+- сохранение и reconciliation inventory будут выполняться отдельным слоем.

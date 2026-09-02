@@ -81,3 +81,20 @@ Sprint 3: SNMP transport.
 - transport-level тесты timeout/retry и credentials.
 
 Следующий Sprint: Sprint 4 — Inventory Collector.
+## Sprint 4 — Inventory Collector завершен
+
+Реализовано:
+- контракт IInventoryCollector;
+- SNMP WALK для v1;
+- SNMP BulkWalk для v2c/v3;
+- сбор sysDescr, sysObjectID, sysUpTime, sysContact, sysName и sysLocation;
+- сбор ifTable и ifXTable;
+- нормализованный InventorySnapshot и InventoryInterface;
+- management IP хранится только как адрес источника наблюдения и не используется как DeviceId;
+- отсутствие ifXTable не делает устройство недоступным: используется доступная часть ifTable;
+- SNMPv3 дополнен SHA-256/SHA-384/SHA-512 и AES-192/AES-256;
+- MD5/SHA1/DES сохранены только как legacy-совместимость;
+- unit-тесты inventory и fallback для старых устройств;
+- сборка проходит без предупреждений компилятора.
+
+Следующий Sprint: Sprint 5 — Discovery.

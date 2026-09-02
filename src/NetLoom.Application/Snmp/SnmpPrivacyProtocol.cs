@@ -4,6 +4,8 @@ namespace NetLoom.Application.Snmp
     {
         None,
         Des,
-        Aes
+        Aes,
+        Aes192,
+        Aes256
     }
 }

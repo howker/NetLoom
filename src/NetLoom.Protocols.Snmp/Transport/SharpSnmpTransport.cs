@@ -23,13 +23,35 @@ namespace NetLoom.Protocols.Snmp.Transport
                 throw new ArgumentNullException(nameof(request));
             }
 
-            var attempts = request.RetryCount + 1;
+            return ExecuteWithRetry(
+                request.RetryCount,
+                () => GetOnce(request));
+        }
+
+        public IReadOnlyList<SnmpVariable> Walk(
+            SnmpWalkRequest request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            return ExecuteWithRetry(
+                request.RetryCount,
+                () => WalkOnce(request));
+        }
+
+        private static IReadOnlyList<SnmpVariable> ExecuteWithRetry(
+            int retryCount,
+            Func<IReadOnlyList<SnmpVariable>> action)
+        {
+            var attempts = retryCount + 1;
 
             for (var attempt = 1; attempt <= attempts; attempt++)
             {
                 try
                 {
-                    return GetOnce(request);
+                    return action();
                 }
                 catch (SharpSnmpTimeoutException exception)
                 {
@@ -107,6 +129,68 @@ namespace NetLoom.Protocols.Snmp.Transport
             return result.Select(ToVariable).ToArray();
         }
 
+        private static IReadOnlyList<SnmpVariable> WalkOnce(
+            SnmpWalkRequest request)
+        {
+            var endpoint = new IPEndPoint(
+                request.Address,
+                request.Port);
+
+            var root = new ObjectIdentifier(request.RootOid);
+            var result = new List<Variable>();
+
+            if (request.Version == SnmpVersion.V3)
+            {
+                WalkV3(request, endpoint, root, result);
+
+                return result
+                    .Select(ToVariable)
+                    .ToArray();
+            }
+
+            var credentials =
+                request.Credentials as SnmpCommunityCredentials;
+
+            if (credentials == null)
+            {
+                throw UnsupportedCredentials();
+            }
+
+            var community = new OctetString(
+                credentials.GetCommunityBytes());
+
+            if (request.Version == SnmpVersion.V1)
+            {
+                Messenger.Walk(
+                    VersionCode.V1,
+                    endpoint,
+                    community,
+                    root,
+                    result,
+                    request.TimeoutMilliseconds,
+                    WalkMode.WithinSubtree);
+            }
+            else
+            {
+                Messenger.BulkWalk(
+                    VersionCode.V2,
+                    endpoint,
+                    community,
+                    new OctetString(string.Empty),
+                    root,
+                    result,
+                    request.TimeoutMilliseconds,
+                    request.MaxRepetitions,
+                    WalkMode.WithinSubtree,
+                    null,
+                    null);
+            }
+
+            return result
+                .Select(ToVariable)
+                .ToArray();
+        }
+
         private static IReadOnlyList<SnmpVariable> GetV3(
             SnmpGetRequest request,
             IPEndPoint endpoint,
@@ -146,22 +230,20 @@ namespace NetLoom.Protocols.Snmp.Transport
                 request.TimeoutMilliseconds,
                 endpoint);
 
-            if (reply is ReportMessage)
+            if (reply is ReportMessage &&
+                reply.Pdu().Variables.Count > 0 &&
+                reply.Pdu().Variables[0].Id ==
+                Messenger.NotInTimeWindow)
             {
-                if (reply.Pdu().Variables.Count > 0 &&
-                    reply.Pdu().Variables[0].Id ==
-                    Messenger.NotInTimeWindow)
-                {
-                    message = CreateV3Request(
-                        credentials,
-                        variables,
-                        privacy,
-                        (ReportMessage)reply);
+                message = CreateV3Request(
+                    credentials,
+                    variables,
+                    privacy,
+                    (ReportMessage)reply);
 
-                    reply = message.GetResponse(
-                        request.TimeoutMilliseconds,
-                        endpoint);
-                }
+                reply = message.GetResponse(
+                    request.TimeoutMilliseconds,
+                    endpoint);
             }
 
             if (reply is ReportMessage)
@@ -185,6 +267,50 @@ namespace NetLoom.Protocols.Snmp.Transport
             return pdu.Variables
                 .Select(ToVariable)
                 .ToArray();
+        }
+
+        private static void WalkV3(
+            SnmpWalkRequest request,
+            IPEndPoint endpoint,
+            ObjectIdentifier root,
+            IList<Variable> result)
+        {
+            var credentials =
+                request.Credentials as SnmpV3Credentials;
+
+            if (credentials == null)
+            {
+                throw UnsupportedCredentials();
+            }
+
+            var authentication =
+                CreateAuthenticationProvider(credentials);
+
+            var privacy =
+                CreatePrivacyProvider(
+                    credentials,
+                    authentication);
+
+            var discovery =
+                Messenger.GetNextDiscovery(
+                    SnmpType.GetBulkRequestPdu);
+
+            var report = discovery.GetResponse(
+                request.TimeoutMilliseconds,
+                endpoint);
+
+            Messenger.BulkWalk(
+                VersionCode.V3,
+                endpoint,
+                new OctetString(credentials.Username),
+                new OctetString(credentials.ContextName),
+                root,
+                result,
+                request.TimeoutMilliseconds,
+                request.MaxRepetitions,
+                WalkMode.WithinSubtree,
+                privacy,
+                report);
         }
 
         private static GetRequestMessage CreateV3Request(
@@ -215,12 +341,31 @@ namespace NetLoom.Protocols.Snmp.Transport
                     return DefaultAuthenticationProvider.Instance;
 
                 case SnmpAuthenticationProtocol.Md5:
+#pragma warning disable 0618
                     return new MD5AuthenticationProvider(
                         new OctetString(
                             credentials.GetAuthenticationPassword()));
+#pragma warning restore 0618
 
                 case SnmpAuthenticationProtocol.Sha1:
+#pragma warning disable 0618
                     return new SHA1AuthenticationProvider(
+                        new OctetString(
+                            credentials.GetAuthenticationPassword()));
+#pragma warning restore 0618
+
+                case SnmpAuthenticationProtocol.Sha256:
+                    return new SHA256AuthenticationProvider(
+                        new OctetString(
+                            credentials.GetAuthenticationPassword()));
+
+                case SnmpAuthenticationProtocol.Sha384:
+                    return new SHA384AuthenticationProvider(
+                        new OctetString(
+                            credentials.GetAuthenticationPassword()));
+
+                case SnmpAuthenticationProtocol.Sha512:
+                    return new SHA512AuthenticationProvider(
                         new OctetString(
                             credentials.GetAuthenticationPassword()));
 
@@ -240,13 +385,27 @@ namespace NetLoom.Protocols.Snmp.Transport
                         authentication);
 
                 case SnmpPrivacyProtocol.Des:
+#pragma warning disable 0618
                     return new DESPrivacyProvider(
                         new OctetString(
                             credentials.GetPrivacyPassword()),
                         authentication);
+#pragma warning restore 0618
 
                 case SnmpPrivacyProtocol.Aes:
                     return new AESPrivacyProvider(
+                        new OctetString(
+                            credentials.GetPrivacyPassword()),
+                        authentication);
+
+                case SnmpPrivacyProtocol.Aes192:
+                    return new AES192PrivacyProvider(
+                        new OctetString(
+                            credentials.GetPrivacyPassword()),
+                        authentication);
+
+                case SnmpPrivacyProtocol.Aes256:
+                    return new AES256PrivacyProvider(
                         new OctetString(
                             credentials.GetPrivacyPassword()),
                         authentication);
