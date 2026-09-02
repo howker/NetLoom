@@ -183,3 +183,19 @@ Sprint 3: SNMP transport.
 - CDP-наблюдение само по себе не создаёт PhysicalLink.
 
 Следующий Sprint: Sprint 9 — BridgePortResolver + FDB.
+## Sprint 9 — BridgePortResolver + FDB завершен
+
+Реализовано:
+- parser BRIDGE-MIB для dot1dBasePortIfIndex и dot1dTpFdbTable;
+- явное отображение bridgePortIndex → ifIndex;
+- BridgePortResolver не использует fallback bridgePortIndex == ifIndex;
+- неоднозначное или отсутствующее отображение не разрешается;
+- FDB хранит evidence «MAC виден за bridge-port» и не создаёт PhysicalLink;
+- collector выполняет два WALK: bridge-port mapping и FDB;
+- raw Observation сохраняется до нормализованных данных;
+- Migration006FdbObservations;
+- таблицы bridge_port_mappings и fdb_observations;
+- unit и integration tests;
+- проверены legacy net48 и linux-x64 Engine.
+
+Следующий Sprint: Sprint 10 — ARP/MAC correlation.

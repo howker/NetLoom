@@ -63,3 +63,29 @@ Sprint 2 добавляет:
 `observation_id` ссылается на `observations` с `ON DELETE CASCADE`.
 
 `cache_if_index` сохраняется как исходное наблюдаемое значение. н не является `InterfaceId` и не должен использоваться как внутренний идентификатор интерфейса без отдельного сопоставления.
+## bridge_port_mappings
+
+Нормализованное отображение BRIDGE-MIB:
+
+`observation_id + bridge_port_index + if_index`
+
+Таблица хранит явное соответствие bridge-port и ifIndex из `dot1dBasePortIfIndex`.
+
+Несколько ifIndex для одного bridgePortIndex сохраняются как неоднозначные evidence и не разрешаются автоматически.
+
+## fdb_observations
+
+Нормализованные записи forwarding database.
+
+Ключ:
+
+`observation_id + mac_address`
+
+Поля:
+- `mac_address`;
+- `bridge_port_index`;
+- `status`.
+
+`bridge_port_index` не является ifIndex. Для перехода к интерфейсу требуется запись из `bridge_port_mappings`.
+
+FDB-запись не является PhysicalLink.

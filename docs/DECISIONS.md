@@ -228,3 +228,13 @@ STP state хранится как Observation с InstanceId.
 - malformed CDP rows не создают ложные сущности;
 - CDP и LLDP остаются независимыми источниками evidence;
 - topology resolver сможет сопоставлять CDP с inventory и другими наблюдениями позднее.
+## ADR-031 — FDB и bridge-port mapping сохраняются как отдельные evidence
+
+**Решение:** FDB-запись не является физическим линком. `dot1dTpFdbPort` сохраняется как bridgePortIndex и разрешается в ifIndex только через явное значение `dot1dBasePortIfIndex`.
+
+**Следствия:**
+- запрещено считать bridgePortIndex равным ifIndex;
+- при отсутствии однозначного mapping возвращается unresolved;
+- значение FDB port 0 не разрешается в интерфейс;
+- MAC из FDB означает только «MAC наблюдался за данным bridge-port»;
+- PhysicalLink может появиться только на более позднем этапе topology resolution при достаточном наборе evidence.
