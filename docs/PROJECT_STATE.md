@@ -135,3 +135,19 @@ Sprint 3: SNMP transport.
 - integration-тесты хранения и migration 003.
 
 Следующий Sprint: Sprint 7 — LLDP.
+## Sprint 7 — LLDP завершен
+
+Реализовано:
+- доменная модель LLDP-наблюдений: локальные порты и удалённые соседи;
+- парсер стандартного LLDP-MIB из raw SNMP varbinds;
+- корректная обработка составного индекса lldpRemTimeMark + lldpRemLocalPortNum + lldpRemIndex;
+- lldpRemLocalPortNum и lldpLocPortNum не трактуются как ifIndex;
+- malformed LLDP rows игнорируются без создания вымышленных соседей;
+- LLDP collector выполняет WALK локальной и удалённой таблиц;
+- raw varbinds сохраняются до нормализованной обработки;
+- один observation_id сохраняется между raw и normalized LLDP;
+- Migration004LldpObservations и таблица lldp_observations;
+- normalized LLDP-наблюдения сохраняются отдельно от физических связей;
+- unit и integration тесты LLDP pipeline.
+
+Следующий Sprint: Sprint 8 — CDP.

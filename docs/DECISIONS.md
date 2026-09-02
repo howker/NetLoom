@@ -180,3 +180,20 @@ STP state хранится как Observation с InstanceId.
 - reconciliation и topology resolver работают отдельными слоями;
 - retention применяется к Observation и связанным raw данным, но не означает автоматическое удаление Device или PhysicalLink;
 - неудачный будущий poll не удаляет предыдущие наблюдения или факты топологии.
+## ADR-027 — LLDP является наблюдением, а не физической связью
+
+**Решение:** данные LLDP сохраняются как raw SNMP Observation и как нормализованные LLDP-наблюдения. На этапе LLDP не создаётся PhysicalLink.
+
+**Причины:**
+- LLDP сообщает сведения о соседе, но окончательная физическая связь должна формироваться отдельным topology resolver;
+- локальная нумерация LLDP-портов не обязана совпадать с ifIndex;
+- удалённая таблица LLDP имеет составной индекс из timeMark, localPortNum и remoteIndex;
+- raw данные должны оставаться доступными для повторного разбора и Simulator;
+- неполные или ошибочные строки LLDP не должны превращаться в вымышленные факты топологии.
+
+**Следствия:**
+- lldpRemLocalPortNum хранится как LLDP local port number и не преобразуется в ifIndex без отдельного подтверждённого mapping;
+- один локальный LLDP-порт может содержать несколько remote entries;
+- observation_id связывает raw varbinds и нормализованный LLDP snapshot;
+- PhysicalLink будет создаваться позднее topology resolver на основании LLDP/CDP и других evidence;
+- удаление observation каскадно удаляет его нормализованные LLDP rows, но не означает автоматическое удаление существующего PhysicalLink.
