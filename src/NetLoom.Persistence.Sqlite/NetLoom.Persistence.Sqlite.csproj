@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\NetLoom.Domain\NetLoom.Domain.csproj" />
     <ProjectReference Include="..\NetLoom.Application\NetLoom.Application.csproj" />
@@ -8,10 +8,14 @@
     <PackageReference Include="System.Data.SQLite" Version="2.0.4" />
   </ItemGroup>
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System.Security" />
+    <Reference Include="System.Security" Condition="'$(TargetFramework)' == 'net48'" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <Compile Remove="Security\DpapiSecretProtector.cs" />
   </ItemGroup>
 </Project>

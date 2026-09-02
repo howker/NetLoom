@@ -13,7 +13,7 @@ Sprint 0, Sprint 1 и Sprint 2 завершены.
 ## Основа проекта
 
 - решение из 13 проектов;
-- целевая платформа .NET Framework 4.8;
+- платформенная база: shared core netstandard2.0; legacy Service/WPF net48; modern Engine net8.0 сейчас с целевым .NET 10 LTS;
 - архитектура сборки x64;
 - WPF-каркас;
 - базовая тестовая инфраструктура MSTest;
@@ -149,5 +149,20 @@ Sprint 3: SNMP transport.
 - Migration004LldpObservations и таблица lldp_observations;
 - normalized LLDP-наблюдения сохраняются отдельно от физических связей;
 - unit и integration тесты LLDP pipeline.
+
+Следующий Sprint: Sprint 8 — CDP.
+
+## Sprint 7.5 — Cross-platform readiness завершен
+
+- Shared core переведён на `netstandard2.0`.
+- SNMP/SQLite adapters переведены на `net48;net8.0`.
+- Добавлен `NetLoom.Engine` (`net8.0`) и подтверждён `linux-x64` publish.
+- Legacy `net48` build/tests сохранены без предупреждений.
+- `NetLoom.Service`/`NetLoom.Wpf` остаются legacy Windows host/client.
+- IPC объявлен transport-neutral; Named Pipes больше не является обязательной границей.
+- Go не используется для основного Engine; возможен только отдельный будущий Probe.
+- ТЗ и Приложение к ТЗ синхронизированы с новым решением.
+
+Целевой production modern runtime: .NET 10 LTS после контролируемого обновления SDK/toolchain.
 
 Следующий Sprint: Sprint 8 — CDP.

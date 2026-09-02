@@ -39,3 +39,16 @@ WPF Map
 - Ручные устройства участвуют в физическом графе.
 - Мониторинг может быть полностью остановлен.
 - UI не должен владеть domain state.
+
+## Cross-platform baseline — Sprint 7.5
+
+Эта секция имеет приоритет над прежними Windows-only формулировками.
+
+- Portable core: `NetLoom.Domain`, `NetLoom.Application`, `NetLoom.Contracts`, `NetLoom.Topology` → `netstandard2.0`.
+- Adapters: `NetLoom.Protocols.Snmp`, `NetLoom.Persistence.Sqlite` → `net48;net8.0`.
+- `NetLoom.Service` и `NetLoom.Wpf` остаются `net48` для legacy Windows deployment и совместимости с Windows 8.1.
+- `NetLoom.Engine` — modern Windows/Linux backend; сейчас `net8.0` под SDK 8.0.424, целевой production runtime — .NET 10 LTS после отдельного обновления toolchain.
+- DPAPI — только Windows-реализация `ISecretProtector`; Linux secret protector добавляется отдельно.
+- UI ↔ backend определяется transport-neutral contracts. Named Pipes — только возможный локальный Windows transport. Сетевой transport для Linux/remote будет выбран отдельным ADR.
+- WPF после service split не пишет SQLite напрямую.
+- Основной backend остаётся C#/.NET. Go допускается только как возможный будущий `NetLoom.Probe`.

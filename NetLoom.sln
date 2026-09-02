@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -34,6 +34,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetLoom.Tests.Integration", "tests\NetLoom.Tests.Integration\NetLoom.Tests.Integration.csproj", "{BAB856F2-A830-4747-B4F3-CF6D238539AF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetLoom.Tests.Snapshots", "tests\NetLoom.Tests.Snapshots\NetLoom.Tests.Snapshots.csproj", "{06E65BD8-3B90-480F-B2BC-F67ADBADA6E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetLoom.Engine", "src\NetLoom.Engine\NetLoom.Engine.csproj", "{ABFC0A94-D78A-472D-83C6-FD64C19A0086}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,6 +98,10 @@ Global
 		{06E65BD8-3B90-480F-B2BC-F67ADBADA6E0}.Debug|x64.Build.0 = Debug|x64
 		{06E65BD8-3B90-480F-B2BC-F67ADBADA6E0}.Release|x64.ActiveCfg = Release|x64
 		{06E65BD8-3B90-480F-B2BC-F67ADBADA6E0}.Release|x64.Build.0 = Release|x64
+		{ABFC0A94-D78A-472D-83C6-FD64C19A0086}.Debug|x64.ActiveCfg = Debug|x64
+		{ABFC0A94-D78A-472D-83C6-FD64C19A0086}.Debug|x64.Build.0 = Debug|x64
+		{ABFC0A94-D78A-472D-83C6-FD64C19A0086}.Release|x64.ActiveCfg = Release|x64
+		{ABFC0A94-D78A-472D-83C6-FD64C19A0086}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{6BA43C65-6FD4-469C-A0FB-1BDA9E17211C} = {35DB91B0-248B-489B-B0E1-1CF17644EFBC}
@@ -111,5 +117,6 @@ Global
 		{055BE179-7951-49D9-9C69-F15A7DC05B3C} = {2F60D033-82A7-4A36-95A9-57513E9ECFD4}
 		{BAB856F2-A830-4747-B4F3-CF6D238539AF} = {2F60D033-82A7-4A36-95A9-57513E9ECFD4}
 		{06E65BD8-3B90-480F-B2BC-F67ADBADA6E0} = {2F60D033-82A7-4A36-95A9-57513E9ECFD4}
+		{ABFC0A94-D78A-472D-83C6-FD64C19A0086} = {35DB91B0-248B-489B-B0E1-1CF17644EFBC}
 	EndGlobalSection
 EndGlobal

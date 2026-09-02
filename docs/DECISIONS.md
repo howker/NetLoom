@@ -1,4 +1,4 @@
-﻿# DECISIONS
+# DECISIONS
 
 ## ADR-001
 
@@ -197,3 +197,17 @@ STP state хранится как Observation с InstanceId.
 - observation_id связывает raw varbinds и нормализованный LLDP snapshot;
 - PhysicalLink будет создаваться позднее topology resolver на основании LLDP/CDP и других evidence;
 - удаление observation каскадно удаляет его нормализованные LLDP rows, но не означает автоматическое удаление существующего PhysicalLink.
+
+## ADR-028 — Portable core + legacy Service + modern Engine
+
+**Решение:** основной backend остаётся на C#/.NET. `Domain`, `Application`, `Contracts`, `Topology` используют `netstandard2.0`; `Protocols.Snmp` и `Persistence.Sqlite` — `net48;net8.0`; `Service`/`Wpf` сохраняют `net48`; `NetLoom.Engine` является modern Windows/Linux host.
+
+На Sprint 7.5 Engine использует `net8.0` из-за текущего SDK 8.0.424. Целевой production modern runtime — .NET 10 LTS после контролируемого обновления toolchain.
+
+**Следствия:** portable core не использует Windows-only API; DPAPI остаётся Windows implementation `ISecretProtector`; Linux secret protection добавляется отдельно; legacy Service и modern Engine используют одинаковые Application/Domain contracts.
+
+## ADR-029 — Transport-neutral IPC
+
+**Решение:** UI ↔ backend определяется контрактами, а не Named Pipes. Named Pipes допустим как локальный Windows transport. Сетевой transport для Linux/remote deployment выбирается отдельным ADR.
+
+**Следствия:** `NetLoom.Contracts` не зависит от WPF/Named Pipes/transport library; после service split UI не пишет SQLite напрямую; выбор gRPC/HTTP не фиксируется заранее. Go не является backend Engine и может рассматриваться только для будущего отдельного `NetLoom.Probe`.
