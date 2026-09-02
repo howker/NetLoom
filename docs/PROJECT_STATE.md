@@ -98,3 +98,21 @@ Sprint 3: SNMP transport.
 - сборка проходит без предупреждений компилятора.
 
 Следующий Sprint: Sprint 5 — Discovery.
+
+## Sprint 5 — Discovery завершен
+
+Реализовано:
+- модели DiscoveryRequest, DiscoveryTarget, DiscoveryCandidate и DiscoverySnmpProfile;
+- DiscoveryEngine без записи в БД;
+- ICMP используется только как дополнительный сигнал и не блокирует SNMP;
+- открытые TCP-порты могут создавать кандидата без SNMP;
+- исключения имеют приоритет и исключённые адреса не опрашиваются;
+- IPv4 CIDR expander с ограничением максимального количества адресов;
+- поддержка целей IpAddress, Cidr и Hostname;
+- дедупликация адресов после раскрытия целей;
+- SystemNetworkDiscoveryProbe для ICMP/TCP;
+- SystemHostnameResolver для DNS;
+- management IP остаётся адресом наблюдения и не используется как DeviceId;
+- unit-тесты для ICMP/TCP, CIDR, DNS, exclusions и discovery-логики.
+
+Следующий Sprint: Sprint 6 — Observation layer.
