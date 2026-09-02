@@ -254,3 +254,20 @@ STP state хранится как Observation с InstanceId.
 - совпадение IP ↔ MAC ↔ FDB port увеличивает объём evidence, но не доказывает прямой физический кабель.
 
 **Следствие:** решение о PhysicalLink принимает только Topology Resolver на следующем этапе.
+## ADR-033 — PhysicalLinkCandidate отделён от PhysicalLink
+
+**ешение:** Topology Resolver сначала формирует объяснимые `PhysicalLinkCandidate`, а не записывает наблюдения напрямую как физические связи.
+
+**равила:**
+- LLDP/CDP adjacency является strong topology evidence;
+- ARP/FDB correlation является weak supporting evidence;
+- weak evidence самостоятельно не создаёт link candidate;
+- endpoint identity хранится как claim и не становится внутренним DeviceId без отдельного identity resolution;
+- IP address не используется как DeviceId;
+- LLDP localPortNumber не считается ifIndex;
+- CDP cdpCacheIfIndex не считается ifIndex;
+- FDB bridgePortIndex разрешается только через dot1dBasePortIfIndex;
+- confidence и evidence strength являются разными характеристиками;
+- каждый candidate сохраняет объяснимый набор evidence.
+
+**Следствие:** материализация, объединение, lifecycle и удаление/устаревание физических связей выполняются отдельным слоем после topology resolution.

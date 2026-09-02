@@ -218,3 +218,20 @@ Sprint 3: SNMP transport.
 - проверены полный regression suite и linux-x64 Engine.
 
 Следующий Sprint: Sprint 11 — Topology Resolver v1.
+## Sprint 11 — Topology Resolver v1 завершен
+
+еализовано:
+- отдельная модель PhysicalLinkCandidate;
+- LinkEndpointClaim не является DeviceId;
+- LLDP и CDP создают strong adjacency evidence;
+- ARP/FDB correlation является только weak supporting evidence;
+- ARP/FDB correlation без LLDP/CDP не создаёт link candidate;
+- LLDP localPortNumber сохраняет собственную семантику;
+- CDP cdpCacheIfIndex не преобразуется автоматически в ifIndex;
+- candidate содержит источник, observation_id, capturedUtc и объяснение evidence;
+- confidence отделён от типа evidence;
+- настоящий PhysicalLink на этом этапе не материализуется;
+- regression tests защищают запрет FDB-only link и port-index guessing;
+- проверены полный regression suite и linux-x64 Engine.
+
+Следующий Sprint: Sprint 12 — stale/lifecycle.

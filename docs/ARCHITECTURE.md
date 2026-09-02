@@ -52,3 +52,28 @@ WPF Map
 - UI ↔ backend определяется transport-neutral contracts. Named Pipes — только возможный локальный Windows transport. Сетевой transport для Linux/remote будет выбран отдельным ADR.
 - WPF после service split не пишет SQLite напрямую.
 - Основной backend остаётся C#/.NET. Go допускается только как возможный будущий `NetLoom.Probe`.
+
+## Topology resolution boundary
+
+Pipeline физической топологии:
+
+`raw observations → normalized evidence → correlation → PhysicalLinkCandidate → lifecycle/materialization → PhysicalLink`
+
+`PhysicalLinkCandidate` является промежуточным объяснимым результатом resolver.
+
+н содержит:
+- local/remote endpoint claims;
+- protocol-specific port references;
+- confidence;
+- список evidence;
+- ссылки на исходные observations там, где они существуют.
+
+апрещено:
+- создавать PhysicalLink непосредственно из FDB;
+- создавать PhysicalLink непосредственно из ARP/FDB correlation;
+- использовать IP как внутренний DeviceId;
+- считать LLDP localPortNumber равным ifIndex;
+- считать CDP cdpCacheIfIndex равным ifIndex;
+- считать bridgePortIndex равным ifIndex.
+
+атериализация PhysicalLink и lifecycle выполняются после resolver отдельным слоем.
