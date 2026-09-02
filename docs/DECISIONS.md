@@ -238,3 +238,19 @@ STP state хранится как Observation с InstanceId.
 - значение FDB port 0 не разрешается в интерфейс;
 - MAC из FDB означает только «MAC наблюдался за данным bridge-port»;
 - PhysicalLink может появиться только на более позднем этапе topology resolution при достаточном наборе evidence.
+## ADR-032 — ARP/ND + FDB correlation является evidence, а не PhysicalLink
+
+**ешение:** IP/MAC correlation объединяет наблюдения ARP/Neighbor Discovery и FDB, но сама по себе не создаёт физический линк.
+
+**равила:**
+- modern source — ipNetToPhysicalTable;
+- legacy IPv4 fallback — ipNetToMediaTable;
+- fallback разрешён только при SNMP Protocol failure;
+- timeout, socket и authentication/credentials failures не скрываются;
+- ARP/ND ifIndex сохраняется как IF-MIB ifIndex;
+- FDB interface разрешается только через явный bridgePortIndex → dot1dBasePortIfIndex → ifIndex;
+- при неоднозначном bridge mapping FdbIfIndex остаётся unresolved;
+- invalid, local и incomplete neighbor entries не используются как neighbor evidence;
+- совпадение IP ↔ MAC ↔ FDB port увеличивает объём evidence, но не доказывает прямой физический кабель.
+
+**Следствие:** решение о PhysicalLink принимает только Topology Resolver на следующем этапе.

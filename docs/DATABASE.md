@@ -89,3 +89,25 @@ Sprint 2 добавляет:
 `bridge_port_index` не является ifIndex. Для перехода к интерфейсу требуется запись из `bridge_port_mappings`.
 
 FDB-запись не является PhysicalLink.
+## arp_observations
+
+ормализованные ARP/Neighbor Discovery observations.
+
+люч:
+
+`observation_id + if_index + address_type + ip_address + table_kind`
+
+оля:
+- `if_index`;
+- `address_type`;
+- `ip_address`;
+- `physical_address`;
+- `entry_type`;
+- `entry_state`;
+- `table_kind`.
+
+`table_kind` различает modern `ipNetToPhysicalTable` и legacy `ipNetToMediaTable`.
+
+`if_index` является IF-MIB ifIndex устройства, на котором получено neighbor observation.
+
+MAC/IP запись является observation evidence и не является DeviceId или PhysicalLink.

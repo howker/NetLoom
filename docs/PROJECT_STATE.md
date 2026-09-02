@@ -199,3 +199,22 @@ Sprint 3: SNMP transport.
 - проверены legacy net48 и linux-x64 Engine.
 
 Следующий Sprint: Sprint 10 — ARP/MAC correlation.
+## Sprint 10 — ARP/MAC correlation завершен
+
+еализовано:
+- modern ipNetToPhysicalTable parser;
+- IPv4 ARP и IPv6 Neighbor Discovery;
+- legacy ipNetToMediaTable fallback;
+- fallback выполняется только при SNMP Protocol failure;
+- timeout/socket ошибки не подавляются;
+- raw Observation сохраняется до normalized ARP/ND;
+- Migration007ArpObservations;
+- таблица arp_observations;
+- MAC correlation объединяет ARP/ND и FDB evidence;
+- корреляция не создаёт PhysicalLink;
+- неоднозначный bridgePort mapping не приводит к угадыванию ifIndex;
+- invalid/local/incomplete neighbor entries не используются для корреляции;
+- regression tests покрывают IPv6 ND, ambiguous mapping и отсутствие ложной MAC correlation;
+- проверены полный regression suite и linux-x64 Engine.
+
+Следующий Sprint: Sprint 11 — Topology Resolver v1.
