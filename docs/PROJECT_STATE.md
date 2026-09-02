@@ -116,3 +116,22 @@ Sprint 3: SNMP transport.
 - unit-тесты для ICMP/TCP, CIDR, DNS, exclusions и discovery-логики.
 
 Следующий Sprint: Sprint 6 — Observation layer.
+
+## Sprint 6 — Observation layer завершен
+
+еализовано:
+- нейтральная доменная модель Observation;
+- ObservationKind для SNMP inventory, LLDP, CDP, FDB, ARP, Health и STP;
+- Application-контракт IObservationStore;
+- SnmpObservation с сохранением raw SNMP varbinds;
+- Migration003Observations;
+- таблицы observations и snmp_varbinds;
+- индексы по времени, источнику/типу и OID;
+- атомарное сохранение observation + varbinds;
+- восстановление raw varbinds без потери порядка и encoded value;
+- удаление observation каскадно удаляет его varbinds;
+- source_address является адресом источника наблюдения, а не DeviceId;
+- Observation layer не создаёт Device или Link автоматически;
+- integration-тесты хранения и migration 003.
+
+Следующий Sprint: Sprint 7 — LLDP.
