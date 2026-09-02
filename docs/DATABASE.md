@@ -38,3 +38,14 @@
 - operator actions.
 
 Схема данных будет реализована дальше, на следующих спринтах.
+
+## AccessProfile и секреты
+
+Sprint 2 добавляет:
+- `access_profiles` — параметры профиля доступа без секретов;
+- `secrets` — DPAPI-защищённые значения;
+- `access_profile_targets` — области применения профиля;
+- `access_profile_exclusions` — исключения;
+- `access_profile_tcp_ports` — разрешённые TCP-порты.
+
+Секреты хранятся как BLOB после DPAPI-защиты. Plaintext community/password в SQLite не допускается. Удаление AccessProfile каскадно удаляет связанные секреты, targets, exclusions и TCP-порты.

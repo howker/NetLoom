@@ -97,3 +97,18 @@ STP state хранится как Observation с InstanceId.
 - solution по умолчанию собирается как Debug|x64 / Release|x64;
 - все проекты, включая тесты, должны проходить обычные dotnet build/test без ручного указания Platform;
 - native e_sqlite3.dll должна попадать в выходной каталог потребителя SQLite.
+
+## ADR-022 — Хранение секретов AccessProfile
+
+**Решение:** секреты AccessProfile не хранятся в открытом виде. Перед записью в SQLite они шифруются Windows DPAPI с областью `DataProtectionScope.CurrentUser`.
+
+**Причины:**
+- исключить plaintext community/password из базы данных;
+- использовать встроенный механизм защиты Windows без собственного криптографического формата;
+- привязать возможность расшифровки к учётной записи, под которой работает NetLoom.
+
+**Следствия:**
+- таблица `secrets` хранит только защищённый BLOB;
+- SNMP community, authentication password и privacy password не должны попадать в логи;
+- при будущем переносе NetLoom в Windows Service потребуется явно определить сервисную учётную запись и сценарий миграции секретов;
+- замена секрета выполняется только через слой `ISecretProtector`.

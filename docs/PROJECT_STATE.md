@@ -2,53 +2,64 @@
 
 ## Текущая версия
 
-0.1-dev
+0.2-dev
 
-## Текущий этап
+## Текущее состояние
 
-Спринт 1 завершён — SQLite и базовый механизм миграций реализованы.
+Sprint 0, Sprint 1 и Sprint 2 завершены.
 
-Следующий этап: Спринт 2 — AccessProfile и безопасное хранение учётных данных.
+Следующий этап: Sprint 3 — SNMP transport.
 
-## Работает
+## Основа проекта
 
-- solution из 13 проектов;
+- решение из 13 проектов;
 - целевая платформа .NET Framework 4.8;
-- сборка по умолчанию x64;
+- архитектура сборки x64;
 - WPF-каркас;
-- базовая тестовая инфраструктура;
-- System.Data.SQLite;
+- базовая тестовая инфраструктура MSTest;
+- SQLite через System.Data.SQLite;
 - native SQLite через SourceGear.sqlite3;
-- создание SQLite-файла;
-- PRAGMA foreign_keys = ON;
-- таблица schema_migrations;
-- таблица app_settings;
+- миграции схемы с таблицей schema_migrations;
+- включён PRAGMA foreign_keys = ON.
+
+## Sprint 1 — SQLite и миграции
+
+Реализованы:
+- SqliteConnectionFactory;
+- DatabaseInitializer;
 - MigrationRunner;
+- schema_migrations;
+- app_settings;
 - транзакционное применение миграций;
-- идемпотентная повторная инициализация БД;
-- запрет дублирующихся версий миграций;
-- rollback ошибочной миграции.
+- защита от повторной версии миграции;
+- rollback ошибочной миграции;
+- повторная инициализация базы без повторного применения миграций.
 
-## Проверка
+## Sprint 2 — AccessProfile и секреты
 
-- dotnet test NetLoom.sln — успешно;
-- всего тестов: 6;
-- не пройдено: 0;
-- dotnet clean NetLoom.sln — успешно;
-- предупреждений сборки: 0;
-- ошибок сборки: 0;
-- git diff --check — без ошибок.
+Реализованы:
+- модель AccessProfile;
+- SNMP версии v1/v2c/v3;
+- ISecretProtector;
+- DPAPI-защита секретов с DataProtectionScope.CurrentUser;
+- таблицы access_profiles, secrets, access_profile_targets, access_profile_exclusions, access_profile_tcp_ports;
+- AccessProfileRepository;
+- SecretRepository;
+- AccessProfileScopeRepository;
+- каскадное удаление связанных данных;
+- проверка диапазона TCP-портов;
+- integration-тесты, подтверждающие отсутствие plaintext-секрета в SQLite.
 
 ## Известные ограничения
 
-- функциональная доменная модель ещё не реализована;
-- AccessProfile и секреты ещё не реализованы;
-- SNMP ещё не реализован;
+- SNMP transport ещё не реализован;
 - discovery ещё не реализован;
-- карта ещё не реализована;
-- мониторинг ещё не реализован;
-- текущая сборка использует x64 для совместимости с native SQLite.
+- сбор инвентаря ещё не реализован;
+- построение физической топологии ещё не реализовано;
+- карта и мониторинг ещё не реализованы;
+- текущая сборка x64;
+- DPAPI CurrentUser требует отдельного решения для сервисной учётной записи при переходе к Windows Service.
 
 ## Следующий шаг
 
-Спринт 2: реализовать AccessProfile, модель целей/исключений и безопасное хранение секретов через DPAPI.
+Sprint 3: SNMP transport.

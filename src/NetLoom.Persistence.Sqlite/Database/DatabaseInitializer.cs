@@ -17,7 +17,8 @@ namespace NetLoom.Persistence.Sqlite.Database
             _migrationRunner = new MigrationRunner(
                 new IMigration[]
                 {
-                    new Migration001Initial()
+                    new Migration001Initial(),
+                    new Migration002AccessProfiles()
                 });
         }
 

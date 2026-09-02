@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\NetLoom.Domain\NetLoom.Domain.csproj" />
     <ProjectReference Include="..\NetLoom.Application\NetLoom.Application.csproj" />
@@ -11,4 +11,7 @@
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.Security" />
+  </ItemGroup>
 </Project>
