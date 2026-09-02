@@ -77,3 +77,28 @@ Pipeline физической топологии:
 - считать bridgePortIndex равным ifIndex.
 
 атериализация PhysicalLink и lifecycle выполняются после resolver отдельным слоем.
+## Topology lifecycle boundary
+
+осле topology resolution lifecycle обрабатывается отдельно от discovery и polling.
+
+Pipeline:
+
+`Observation → evidence → PhysicalLinkCandidate → lifecycle/materialization → PhysicalLink`
+
+Lifecycle различает:
+- existence физического объекта;
+- freshness последнего подтверждающего evidence.
+
+Freshness:
+- Fresh;
+- Aging;
+- Stale.
+
+апрещено:
+- удалять устройство по timeout;
+- удалять link по poll failure;
+- удалять topology только потому, что новый poll не вернул evidence;
+- считать Stale эквивалентом Deleted;
+- изменять manual topology discovery-процессом.
+
+о появления стабильных materialized DeviceId/PhysicalLinkId lifecycle policy остаётся чистой доменной логикой без отдельного persistence по строковому subjectKey.

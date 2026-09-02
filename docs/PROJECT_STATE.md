@@ -235,3 +235,21 @@ Sprint 3: SNMP transport.
 - проверены полный regression suite и linux-x64 Engine.
 
 Следующий Sprint: Sprint 12 — stale/lifecycle.
+## Sprint 12 — stale/lifecycle завершен
+
+еализовано:
+- состояния Fresh / Aging / Stale;
+- FirstSeenUtc и LastSeenUtc;
+- deterministic lifecycle policy через переданный nowUtc;
+- poll failure не удаляет устройство или линк;
+- отсутствие нового evidence не удаляет устройство или линк;
+- stale не означает deleted;
+- новое evidence возвращает discovered topology в Fresh;
+- старое observation не перемещает LastSeenUtc назад;
+- manual topology не стареет и не удаляется discovery/lifecycle;
+- regression tests защищают lifecycle-инварианты;
+- полный regression suite и linux-x64 Engine проходят.
+
+Persistence lifecycle намеренно отложен до появления стабильных materialized DeviceId/PhysicalLinkId. ременный subjectKey не является постоянным идентификатором .
+
+Следующий Sprint: Sprint 13 — map v1.

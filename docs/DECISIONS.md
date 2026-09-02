@@ -271,3 +271,25 @@ STP state хранится как Observation с InstanceId.
 - каждый candidate сохраняет объяснимый набор evidence.
 
 **Следствие:** материализация, объединение, lifecycle и удаление/устаревание физических связей выполняются отдельным слоем после topology resolution.
+## ADR-034 — stale является состоянием freshness, а не удалением
+
+**ешение:** lifecycle физической топологии разделяет freshness и existence.
+
+Состояния freshness:
+- Fresh;
+- Aging;
+- Stale.
+
+**равила:**
+- timeout/poll failure не удаляет Device или PhysicalLink;
+- отсутствие нового evidence не удаляет Device или PhysicalLink;
+- Stale не эквивалентен Deleted;
+- новое валидное evidence может вернуть объект в Fresh;
+- FirstSeenUtc не изменяется при повторных наблюдениях;
+- LastSeenUtc никогда не перемещается назад;
+- manual topology не удаляется и не стареет из-за discovery;
+- lifecycle вычисляется через явно переданный nowUtc для детерминированности.
+
+**Persistence:** отдельная lifecycle-таблица на этом этапе не создаётся. Сохранение FirstSeenUtc/LastSeenUtc/Freshness будет добавлено вместе с materialized topology, когда появятся стабильные DeviceId/PhysicalLinkId. роизвольный subjectKey не должен становиться постоянным идентификатором .
+
+**Следствие:** факт отсутствия ответа является состоянием наблюдения, а не доказательством отсутствия физического объекта.
