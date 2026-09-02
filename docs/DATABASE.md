@@ -49,3 +49,17 @@ Sprint 2 добавляет:
 - `access_profile_tcp_ports` — разрешённые TCP-порты.
 
 Секреты хранятся как BLOB после DPAPI-защиты. Plaintext community/password в SQLite не допускается. Удаление AccessProfile каскадно удаляет связанные секреты, targets, exclusions и TCP-порты.
+
+## cdp_observations
+
+ормализованные CDP-наблюдения.
+
+люч:
+
+`observation_id + cache_if_index + device_index`
+
+Таблица хранит CDP address/device/port/platform/capabilities, native VLAN, duplex, sysName, sysObjectID, management address, physical location и lastChange.
+
+`observation_id` ссылается на `observations` с `ON DELETE CASCADE`.
+
+`cache_if_index` сохраняется как исходное наблюдаемое значение. н не является `InterfaceId` и не должен использоваться как внутренний идентификатор интерфейса без отдельного сопоставления.

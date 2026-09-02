@@ -61,7 +61,7 @@ namespace NetLoom.Tests.Integration
                             connection,
                             "SELECT COUNT(*) FROM schema_migrations WHERE version = 1;"));
 
-                    Assert.AreEqual(4L,
+                    Assert.AreEqual(5L,
                         ExecuteScalarInt64(
                             connection,
                             "SELECT COUNT(*) FROM schema_migrations;"));

@@ -211,3 +211,20 @@ STP state хранится как Observation с InstanceId.
 **Решение:** UI ↔ backend определяется контрактами, а не Named Pipes. Named Pipes допустим как локальный Windows transport. Сетевой transport для Linux/remote deployment выбирается отдельным ADR.
 
 **Следствия:** `NetLoom.Contracts` не зависит от WPF/Named Pipes/transport library; после service split UI не пишет SQLite напрямую; выбор gRPC/HTTP не фиксируется заранее. Go не является backend Engine и может рассматриваться только для будущего отдельного `NetLoom.Probe`.
+
+## ADR-030 — CDP является evidence, а cdpCacheIfIndex сохраняется без преждевременного связывания
+
+**ешение:** CDP хранится как raw SNMP Observation и как нормализованное CDP-наблюдение. аличие CDP-записи само по себе не создаёт PhysicalLink.
+
+**ричины:**
+- cdpCacheEntry индексируется парой cdpCacheIfIndex + cdpCacheDeviceIndex;
+- cdpCacheIfIndex сохраняется как исходное наблюдаемое значение;
+- DeviceId, sysObjectID, management address и имя соседа являются identity claims/evidence, а не внутренним DeviceId NetLoom;
+- связывание локального и удалённого интерфейсов выполняется отдельным topology resolver на основе совокупности evidence.
+
+**Следствия:**
+- raw varbinds сохраняются до нормализации;
+- raw и normalized CDP используют один observation_id;
+- malformed CDP rows не создают ложные сущности;
+- CDP и LLDP остаются независимыми источниками evidence;
+- topology resolver сможет сопоставлять CDP с inventory и другими наблюдениями позднее.

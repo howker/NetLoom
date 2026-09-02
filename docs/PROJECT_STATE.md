@@ -166,3 +166,20 @@ Sprint 3: SNMP transport.
 Целевой production modern runtime: .NET 10 LTS после контролируемого обновления SDK/toolchain.
 
 Следующий Sprint: Sprint 8 — CDP.
+
+## Sprint 8 — CDP завершен
+
+еализовано:
+- модель CDP-наблюдений;
+- parser CISCO-CDP-MIB из raw SNMP varbinds;
+- составной индекс cdpCacheIfIndex + cdpCacheDeviceIndex;
+- cdpCacheIfIndex сохраняется как наблюдаемое значение и не превращается автоматически в InterfaceId;
+- CDP collector выполняет WALK cdpCacheEntry;
+- raw Observation сохраняется до нормализованных CDP-данных;
+- raw и normalized представления используют один observation_id;
+- Migration005CdpObservations;
+- таблица cdp_observations и поисковые индексы;
+- unit и integration тесты CDP pipeline;
+- CDP-наблюдение само по себе не создаёт PhysicalLink.
+
+Следующий Sprint: Sprint 9 — BridgePortResolver + FDB.
