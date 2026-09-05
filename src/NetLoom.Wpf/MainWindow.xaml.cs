@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using NetLoom.Contracts.TopologyMap;
+using NetLoom.Wpf.Localization;
 
 namespace NetLoom.Wpf;
 
@@ -17,6 +18,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        Title = UiText.Get("WindowTitle");
+        MapTitleText.Text = UiText.Get("MapTitle");
 
         ShowMap(
             new MapSnapshot(
@@ -37,7 +41,7 @@ public partial class MainWindow : Window
         if (snapshot.Nodes.Count == 0)
         {
             MapStatusText.Text =
-                "арта пока не загружена.";
+                UiText.Get("MapNotLoaded");
 
             return;
         }
@@ -64,8 +68,8 @@ public partial class MainWindow : Window
         }
 
         MapStatusText.Text =
-            string.Format(
-                "злов: {0}   Связей: {1}   асположений: {2}",
+            UiText.Format(
+                "MapSummary",
                 snapshot.Nodes.Count,
                 snapshot.Links.Count,
                 snapshot.Locations.Count);
@@ -100,7 +104,8 @@ public partial class MainWindow : Window
                 Y1 = y1,
                 X2 = x2,
                 Y2 = y2,
-                Stroke = SystemColors.ControlDarkBrush,
+                Stroke =
+                    SystemColors.ControlDarkBrush,
                 StrokeThickness = 2.0
             };
 
@@ -113,10 +118,16 @@ public partial class MainWindow : Window
                     ConfidenceText(link.Confidence) +
                     " • " +
                     FreshnessText(link.Freshness) +
-                    " • подтверждений: " +
-                    link.Evidence.Count,
-                Background = SystemColors.WindowBrush,
-                Padding = new Thickness(4, 2, 4, 2)
+                    " • " +
+                    UiText.Format(
+                        "EvidenceCount",
+                        link.Evidence.Count),
+
+                Background =
+                    SystemColors.WindowBrush,
+
+                Padding =
+                    new Thickness(4, 2, 4, 2)
             };
 
         Canvas.SetLeft(
@@ -138,8 +149,10 @@ public partial class MainWindow : Window
             new TextBlock
             {
                 Text = node.Label,
-                FontWeight = FontWeights.SemiBold,
-                TextTrimming = TextTrimming.CharacterEllipsis
+                FontWeight =
+                    FontWeights.SemiBold,
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
             };
 
         var secondary =
@@ -150,8 +163,12 @@ public partial class MainWindow : Window
                         node.SecondaryText)
                         ? string.Empty
                         : node.SecondaryText,
-                Margin = new Thickness(0, 5, 0, 0),
-                TextTrimming = TextTrimming.CharacterEllipsis
+
+                Margin =
+                    new Thickness(0, 5, 0, 0),
+
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
             };
 
         var locationText =
@@ -161,8 +178,12 @@ public partial class MainWindow : Window
                     BuildLocationText(
                         node,
                         locations),
-                Margin = new Thickness(0, 4, 0, 0),
-                TextTrimming = TextTrimming.CharacterEllipsis
+
+                Margin =
+                    new Thickness(0, 4, 0, 0),
+
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
             };
 
         var content =
@@ -178,7 +199,8 @@ public partial class MainWindow : Window
                 Width = NodeWidth,
                 Height = NodeHeight,
                 Padding = new Thickness(10),
-                BorderThickness = new Thickness(1),
+                BorderThickness =
+                    new Thickness(1),
                 BorderBrush =
                     SystemColors.ControlDarkBrush,
                 Background =
@@ -198,7 +220,8 @@ public partial class MainWindow : Window
     {
         if (!node.LocationId.HasValue)
         {
-            return "асположение: не назначено";
+            return UiText.Get(
+                "LocationUnassigned");
         }
 
         MapLocation location;
@@ -207,10 +230,13 @@ public partial class MainWindow : Window
                 node.LocationId.Value,
                 out location))
         {
-            return "асположение: неизвестно";
+            return UiText.Get(
+                "LocationUnknown");
         }
 
-        return "асположение: " + location.Name;
+        return UiText.Format(
+            "LocationNamed",
+            location.Name);
     }
 
     private static string ConfidenceText(
@@ -219,13 +245,16 @@ public partial class MainWindow : Window
         switch (confidence)
         {
             case MapConfidence.High:
-                return "ысокая уверенность";
+                return UiText.Get(
+                    "ConfidenceHigh");
 
             case MapConfidence.Medium:
-                return "Средняя уверенность";
+                return UiText.Get(
+                    "ConfidenceMedium");
 
             default:
-                return "изкая уверенность";
+                return UiText.Get(
+                    "ConfidenceLow");
         }
     }
 
@@ -235,13 +264,16 @@ public partial class MainWindow : Window
         switch (freshness)
         {
             case MapFreshness.Fresh:
-                return "ктуально";
+                return UiText.Get(
+                    "FreshnessFresh");
 
             case MapFreshness.Aging:
-                return "старевает";
+                return UiText.Get(
+                    "FreshnessAging");
 
             default:
-                return "старело";
+                return UiText.Get(
+                    "FreshnessStale");
         }
     }
 }

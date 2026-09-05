@@ -67,7 +67,7 @@ namespace NetLoom.Protocols.Snmp.Fdb
                         DateTime.UtcNow),
                     variables);
 
-            // ??????? ????????? ???????? SNMP evidence.
+            // Сначала сохраняем исходное SNMP evidence.
             _rawStore.SaveSnmp(raw);
 
             var parsed =

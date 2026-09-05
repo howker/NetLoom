@@ -77,13 +77,13 @@ namespace NetLoom.Protocols.Snmp.Arp
                         DateTime.UtcNow),
                     variables);
 
-            // ??????? ????????? raw evidence.
+            // Сначала сохраняем raw evidence.
             _rawStore.SaveSnmp(raw);
 
             var parsed =
                 _parser.Parse(raw);
 
-            // ???? ??????????????? ?????????????.
+            // атем сохраняем нормализованное наблюдение.
             _arpStore.Save(parsed);
 
             return parsed;

@@ -292,3 +292,10 @@ Persistence lifecycle намеренно отложен до появления 
 - полный regression suite и linux-x64 publish проходят.
 
 Следующий Sprint: Sprint 15 — manual media converters / unmanaged devices.
+## Cross-cutting project hygiene
+
+- ктивный cross-cutting backlog ведётся в `docs/BACKLOG.md`.
+- еальные проблемы эксплуатации фиксируются в `docs/FRICTION_LOG.md`.
+- Third-party зависимости учитываются в `THIRD-PARTY.md`.
+- ользовательские строки WPF переводятся на resource-based localization.
+- linux-x64 publish считается проверкой совместимости сборки/публикации; полноценная runtime-проверка Linux будет добавлена после появления реальной логики в NetLoom.Engine.

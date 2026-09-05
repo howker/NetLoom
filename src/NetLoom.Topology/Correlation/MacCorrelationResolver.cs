@@ -97,8 +97,8 @@ namespace NetLoom.Topology.Correlation
                 return false;
             }
 
-            // modern local(5) ? ??? ??????????? ????? ??????????,
-            // ? ?? ?????.
+            // modern local(5) — это локальная запись интерфейса устройства,
+            // а не сосед.
             if (entry.TableKind ==
                     ArpTableKind.IpNetToPhysical &&
                 entry.Type == 5)
