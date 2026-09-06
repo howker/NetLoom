@@ -584,3 +584,23 @@ Stable `InterfaceId` разрешается только по единствен
 Projection детерминирована и не имеет write-path в topology persistence.
 
 Migration count остаётся 11. Physical ring detection и Ring protection analyzer остаются отдельными следующими слоями.
+
+## ADR-051 — Physical ring detection использует deterministic cycle basis materialized multigraph
+
+Статус: принято.
+
+Physical ring detector анализирует только materialized `PhysicalLink` facts как undirected multigraph по stable DeviceId.
+
+Canonical `PhysicalLink.LinkKey` определяет физическую edge identity с endpoint'ами `(DeviceId, InterfaceId?)`. Одинаковый LinkKey дедуплицируется; разные LinkKey между теми же DeviceId остаются parallel physical edges.
+
+Две разные parallel physical edges являются 2-edge physical cycle. Это не является утверждением о LAG, STP, forwarding loop или vendor protection protocol. Протокольная интерпретация выполняется отдельным `Ring protection analyzer`.
+
+Чтобы избежать экспоненциального перечисления всех simple cycles, detector возвращает deterministic fundamental cycle basis. Порядок обработки задаётся stable `PhysicalLink.Id`. `PhysicalRing.RingKey` строится из отсортированных stable link IDs.
+
+`IsArchived` исключает link из current ring analysis. `IsHidden` не исключает physical fact. Fresh/Aging/Stale не определяют existence и не фильтруют detector. Manual links участвуют наравне с automatic.
+
+Self-device physical links не становятся ring result.
+
+Detector не использует IP/sourceAddress, FDB/ARP или STP state и не имеет write-path в topology persistence.
+
+Migration count остаётся 11. Следующий слой — `Ring protection analyzer`.

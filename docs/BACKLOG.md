@@ -25,7 +25,8 @@
 - [x] STP/RSTP Collector.
 - [x] Sprint 24 — STP tree projection foundation.
 - [x] STP tree projection.
-- [ ] Physical ring detection.
+- [x] Sprint 25 — deterministic physical ring detection.
+- [x] Physical ring detection.
 - [ ] Ring protection analyzer.
 - [ ] Удобный поиск MAC/IP до конкретного switch/interface.
 - [ ] Минимальные alerts для реально полезных topology/ring failures.

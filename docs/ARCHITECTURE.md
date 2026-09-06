@@ -432,3 +432,33 @@ SQLite schema не меняется. Migration011 остаётся послед�
 `MapLink` остаётся моделью физической связи и намеренно не перегружается STP semantics. UI integration может потреблять `StpTreeSnapshot` отдельным read-only overlay boundary.
 
 Следующий P0 после Sprint 24 — `Physical ring detection`.
+
+## Sprint 25 — Physical ring detection
+
+Sprint 25 добавляет pure deterministic detector физических L2 cycles поверх уже materialized `PhysicalLink`.
+
+Input:
+`IEnumerable<PhysicalLink> -> PhysicalRingDetector -> IReadOnlyList<PhysicalRing>`.
+
+Граф является undirected multigraph на уровне stable `DeviceId`. Каждая canonical materialized physical link является отдельным edge. `InterfaceId` остаётся частью `PhysicalLink.LinkKey`, поэтому разные interface-to-interface cables между той же парой devices являются различимыми parallel edges.
+
+Перед анализом одинаковый `LinkKey` дедуплицируется. Это защищает от reverse/duplicate representation одной физической связи, не схлопывая настоящие parallel links.
+
+Detector строит детерминированный fundamental cycle basis по `PhysicalLink.Id`, а не перечисляет все simple cycles. Это ограничивает размер результата cycle rank графа и не создаёт экспоненциальную выдачу на больших topology snapshots.
+
+Два разных parallel PhysicalLink между двумя devices образуют 2-edge physical cycle. Это только утверждение о physical multigraph и не означает LAG, STP protection, forwarding loop или vendor ring protocol.
+
+`PhysicalRing.RingKey` вычисляется из отсортированного набора stable `PhysicalLink.Id`, поэтому не зависит от порядка входа и сохраняется при endpoint refinement, если сохраняются link IDs.
+
+Eligibility:
+- `IsArchived = true` исключает link из current physical graph analysis;
+- `IsHidden` не исключает link: hidden является presentation state, а не доказательством отсутствия кабеля;
+- Fresh/Aging/Stale не фильтруют link: freshness не эквивалентна deletion;
+- manual PhysicalLink участвует наравне с automatic;
+- self-device links detector игнорирует как невалидный physical-ring edge.
+
+Detector не использует IP/sourceAddress, FDB/ARP, STP state или vendor ring protocols и не изменяет materialized topology.
+
+SQLite schema не меняется; Migration011 остаётся последней.
+
+Следующий P0 — `Ring protection analyzer`.

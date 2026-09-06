@@ -607,3 +607,35 @@ Migration011 остаётся последней migration; количество
 Backlog `STP tree projection` закрыт.
 
 Следующий P0: `Physical ring detection`.
+
+## Sprint 25 — Physical ring detection
+
+Реализовано:
+- transport-neutral `PhysicalRing`;
+- pure `PhysicalRingDetector`;
+- undirected materialized PhysicalLink multigraph;
+- reverse/duplicate dedupe по canonical LinkKey;
+- сохранение настоящих parallel links;
+- 2-edge parallel physical cycles;
+- deterministic fundamental cycle basis;
+- stable `RingKey` из PhysicalLink.Id;
+- manual topology participation;
+- Stale/Aging/Fresh links сохраняют physical-fact semantics;
+- archived links исключаются;
+- hidden links остаются physical facts;
+- unit regressions для triangle, acyclic/disconnected graph, manual link, reverse duplicate, parallel cycle, hidden/stale/archive semantics и bounded cycle basis.
+
+Не изменены:
+- PhysicalLink и его persistence;
+- FDB/ARP resolver semantics;
+- STP collector/tree projection;
+- MonitoringRuntime/Scheduler;
+- MapLink/WPF;
+- SQLite schema;
+- vendor ring/MSTP logic.
+
+Migration011 остаётся последней migration; количество migrations: 11.
+
+Backlog `Physical ring detection` закрыт.
+
+Следующий P0: `Ring protection analyzer`.

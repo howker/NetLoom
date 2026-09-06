@@ -272,3 +272,13 @@ Sprint 24 не добавляет migrations и не меняет SQLite schema.
 Projection потребляет уже normalized `StpObservation` и materialized interfaces в памяти. Она не записывает STP state в `physical_links`, `interfaces` или другие materialized topology facts.
 
 Migration011 остаётся последней migration. Количество migrations: 11.
+
+## Sprint 25 — Physical ring detection persistence boundary
+
+Sprint 25 не добавляет migrations и не меняет SQLite schema.
+
+`PhysicalRingDetector` работает in-memory поверх existing materialized `PhysicalLink` read model. `IMaterializedTopologyRepository.GetPhysicalLinks()` уже является достаточным persistence read boundary.
+
+Результаты ring detection в Sprint 25 не сохраняются в SQLite и не изменяют `physical_links`, evidence или STP observations.
+
+Migration011 остаётся последней migration. Количество migrations: 11.
