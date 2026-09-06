@@ -8,12 +8,15 @@ using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
 using NetLoom.Application.Observations.Lldp;
+using NetLoom.Application.Observations.Stp;
 using NetLoom.Application.Snmp;
 using NetLoom.Domain.Access;
+using NetLoom.Domain.Observations;
 using NetLoom.Domain.Observations.Arp;
 using NetLoom.Domain.Observations.Cdp;
 using NetLoom.Domain.Observations.Fdb;
 using NetLoom.Domain.Observations.Lldp;
+using NetLoom.Domain.Observations.Stp;
 
 namespace NetLoom.Engine
 {
@@ -28,7 +31,8 @@ namespace NetLoom.Engine
                     new SmokeFdbCollector(),
                     new SmokeArpCollector(),
                     new SmokeHealthCollector(),
-                    new SmokeInterfaceCollector());
+                    new SmokeInterfaceCollector(),
+                    stpCollector: new SmokeStpCollector());
 
             var deviceId =
                 Guid.Parse(
@@ -51,7 +55,8 @@ namespace NetLoom.Engine
                         MonitoringPollKind.Fdb,
                         MonitoringPollKind.Arp,
                         MonitoringPollKind.Health,
-                        MonitoringPollKind.Interface
+                        MonitoringPollKind.Interface,
+                        MonitoringPollKind.Stp
                     },
                     deviceId);
 
@@ -61,6 +66,7 @@ namespace NetLoom.Engine
 
             MonitoringPollStepResult healthStep = null;
             MonitoringPollStepResult interfaceStep = null;
+            MonitoringPollStepResult stpStep = null;
 
             foreach (var step in pollResult.Steps)
             {
@@ -73,6 +79,11 @@ namespace NetLoom.Engine
                     MonitoringPollKind.Interface)
                 {
                     interfaceStep = step;
+                }
+                else if (step.Kind ==
+                    MonitoringPollKind.Stp)
+                {
+                    stpStep = step;
                 }
             }
 
@@ -113,9 +124,11 @@ namespace NetLoom.Engine
 
                 return
                     pollResult.AllSucceeded &&
-                    pollResult.Steps.Count == 6 &&
+                    pollResult.Steps.Count == 7 &&
                     interfaceStep != null &&
                     interfaceStep.InterfaceSnapshots.Count == 1 &&
+                    stpStep != null &&
+                    stpStep.Succeeded &&
                     health != null &&
                     health.DeviceId == deviceId &&
                     health.Status == HealthStatus.Up &&
@@ -195,6 +208,28 @@ namespace NetLoom.Engine
                     DateTime.UtcNow,
                     HealthStatus.Up,
                     TimeSpan.FromSeconds(10));
+            }
+        }
+
+        private sealed class SmokeStpCollector :
+            IStpCollector
+        {
+            public StpObservation Collect(
+                StpCollectionRequest request)
+            {
+                return new StpObservation(
+                    new Observation(
+                        Guid.NewGuid(),
+                        ObservationKind.Stp,
+                        request.Address.ToString(),
+                        DateTime.UtcNow),
+                    "cist",
+                    3,
+                    null,
+                    0,
+                    0,
+                    null,
+                    Array.Empty<StpPortState>());
             }
         }
     }

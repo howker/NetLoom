@@ -245,3 +245,16 @@ Migration011 добавляет:
 Materialized topology tables не меняются. High-frequency metric/time-series storage не затрагивается.
 
 Количество migrations после Sprint 23a: 11.
+
+## Sprint 23b1 — STP runtime persistence boundary
+
+Sprint 23b1 не добавляет migrations и не меняет schema.
+
+Production STP runtime переиспользует Migration011:
+- raw `observations` + `snmp_varbinds`;
+- normalized `stp_observations`;
+- normalized `stp_port_states`.
+
+Количество migrations остаётся 11.
+
+STP runtime не пишет materialized topology факты и не создаёт metric/time-series storage.

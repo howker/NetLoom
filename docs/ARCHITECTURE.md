@@ -373,3 +373,21 @@ Collector сначала сохраняет immutable raw `SnmpObservation` с `
 STP observation не создаёт и не изменяет `Device`, `DeviceInterface` или `PhysicalLink`. STP tree projection остаётся отдельным следующим слоем.
 
 Sprint 23a не реализует MSTP instances, vendor ring protocols или Turbo Ring. Runtime/Scheduler/Simulator integration будет завершено отдельной частью до закрытия backlog `STP/RSTP Collector`.
+
+## Sprint 23b1 — STP MonitoringRuntime + Engine integration
+
+Sprint 23b1 подключает уже существующий production `IStpCollector` к общему `MonitoringRuntime` как `MonitoringPollKind.Stp`.
+
+STP выполняется внутри того же per-step exception boundary, что LLDP/CDP/FDB/ARP/Health/Interface. Ошибка STP не отменяет остальные protocol steps и не удаляет Device, DeviceInterface, PhysicalLink или last-known topology state.
+
+Engine production composition использует существующие `SqliteObservationStore`, `SqliteStpObservationStore`, `StpObservationParser` и `StpCollector`. Отдельной runtime-only STP логики нет.
+
+`poll-once` и `schedule` получают STP через существующий generic kinds parser; default kinds включают STP. Независимый cadence доступен как `schedule --kinds stp`.
+
+Scheduler implementation не меняется.
+
+Runtime smoke включает STP и ищет Health/Interface/STP steps по `MonitoringPollKind`, а не по фиксированной позиции.
+
+Sprint 23b1 не меняет SQLite schema: Migration011 остаётся последней миграцией. STP tree projection, ring detection, MSTP и vendor ring protocols не входят.
+
+Simulator raw STP replay остаётся Sprint 23b2, поэтому backlog `STP/RSTP Collector` ещё открыт.

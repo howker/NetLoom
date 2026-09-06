@@ -6,6 +6,7 @@ using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
 using NetLoom.Application.Observations.Lldp;
+using NetLoom.Application.Observations.Stp;
 
 namespace NetLoom.Application.Monitoring
 {
@@ -17,6 +18,7 @@ namespace NetLoom.Application.Monitoring
         private readonly IArpCollector _arpCollector;
         private readonly IHealthCollector _healthCollector;
         private readonly IInterfaceCollector _interfaceCollector;
+        private readonly IStpCollector _stpCollector;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -61,7 +63,8 @@ namespace NetLoom.Application.Monitoring
             IArpCollector arpCollector,
             IHealthCollector healthCollector,
             IInterfaceCollector interfaceCollector,
-            Func<DateTime> utcNow = null)
+            Func<DateTime> utcNow = null,
+            IStpCollector stpCollector = null)
         {
             _lldpCollector =
                 lldpCollector ??
@@ -84,6 +87,7 @@ namespace NetLoom.Application.Monitoring
 
             _interfaceCollector =
                 interfaceCollector;
+            _stpCollector = stpCollector;
 
             _utcNow =
                 utcNow ??
@@ -166,6 +170,24 @@ namespace NetLoom.Application.Monitoring
                     case MonitoringPollKind.Arp:
                         _arpCollector.Collect(
                             new ArpCollectionRequest(
+                                request.Address,
+                                request.Port,
+                                request.Version,
+                                request.Credentials,
+                                request.TimeoutMilliseconds,
+                                request.RetryCount,
+                                request.MaxRepetitions));
+                        break;
+
+                    case MonitoringPollKind.Stp:
+                        if (_stpCollector == null)
+                        {
+                            throw new InvalidOperationException(
+                                "STP collector is not configured.");
+                        }
+
+                        _stpCollector.Collect(
+                            new StpCollectionRequest(
                                 request.Address,
                                 request.Port,
                                 request.Version,

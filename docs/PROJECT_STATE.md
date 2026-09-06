@@ -538,3 +538,27 @@ STP/RSTP Collector остаётся следующим P0 этапом.
 `STP/RSTP Collector` остаётся открытым до runtime + simulator completion.
 
 Количество migrations: 11.
+
+## Sprint 23b1 — STP MonitoringRuntime + Engine integration
+
+Реализовано:
+- `MonitoringPollKind.Stp`;
+- isolated STP step в `MonitoringRuntime`;
+- production Engine wiring `StpCollector + StpObservationParser + SqliteStpObservationStore`;
+- STP включён в default Engine kinds;
+- `schedule --kinds stp` переиспользует общий Scheduler;
+- runtime-smoke включает STP и ищет step по kind, без positional assumptions;
+- unit regression подтверждает, что failed STP step не отменяет следующий collector;
+- failed STP poll не меняет materialized topology.
+
+Не входят:
+- Simulator raw STP replay/fixture;
+- STP tree projection;
+- physical ring detection;
+- Ring protection analyzer;
+- MSTP instances;
+- Turbo Ring/vendor ring protocols.
+
+Migration011 остаётся последней migration; количество migrations: 11.
+
+`STP/RSTP Collector` остаётся открытым до Sprint 23b2 Simulator completion.

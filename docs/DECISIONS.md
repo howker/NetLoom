@@ -536,3 +536,19 @@ BRIDGE-MIB port state и root data являются evidence и не мутир�
 Turbo Ring и другие vendor ring protocols не интерпретируются как RSTP.
 
 Sprint 23a добавляет Migration011 только для normalized STP observations. Runtime/Scheduler/Simulator integration остаётся обязательной следующей частью перед закрытием `STP/RSTP Collector`.
+
+## ADR-048 — STP polling переиспользует MonitoringRuntime и Scheduler
+
+Статус: принято.
+
+STP добавляется как `MonitoringPollKind.Stp` в существующий `MonitoringRuntime`.
+
+Production Engine использует тот же `StpCollector`, `StpObservationParser`, raw store и normalized STP store, которые определены observation pipeline. Runtime-only parser/collector не создаётся.
+
+STP step изолирован общим per-step exception boundary. Failed STP poll не является topology deletion и не удаляет last-known Device/Interface/PhysicalLink.
+
+Используется существующий fixed-delay `MonitoringScheduler`; отдельный STP scheduler запрещён.
+
+Default Engine kinds включают STP; independent cadence использует `schedule --kinds stp`.
+
+Migration count остаётся 11. Simulator raw STP replay остаётся обязательным Sprint 23b2 перед закрытием `STP/RSTP Collector`.

@@ -214,7 +214,8 @@ namespace NetLoom.Engine
                     MonitoringPollKind.Fdb,
                     MonitoringPollKind.Arp,
                     MonitoringPollKind.Health,
-                    MonitoringPollKind.Interface
+                    MonitoringPollKind.Interface,
+                    MonitoringPollKind.Stp
                 };
             }
 

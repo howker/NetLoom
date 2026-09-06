@@ -14,6 +14,8 @@ using NetLoom.Protocols.Snmp.Health;
 using NetLoom.Protocols.Snmp.Interfaces;
 using NetLoom.Protocols.Snmp.Lldp;
 using NetLoom.Protocols.Snmp.Transport;
+using NetLoom.Persistence.Sqlite.Stp;
+using NetLoom.Protocols.Snmp.Stp;
 
 namespace NetLoom.Engine
 {
@@ -44,6 +46,14 @@ namespace NetLoom.Engine
             var transport =
                 new SharpSnmpTransport();
 
+            var stpCollector =
+                new StpCollector(
+                    transport,
+                    rawStore,
+                    new SqliteStpObservationStore(
+                        connectionFactory),
+                    new StpObservationParser());
+
             return new MonitoringRuntime(
                 new LldpCollector(
                     transport,
@@ -72,7 +82,8 @@ namespace NetLoom.Engine
                 new SnmpHealthCollector(
                     transport),
                 new SnmpInterfaceStatusCollector(
-                    transport));
+                    transport),
+                stpCollector: stpCollector);
         }
     }
 }
