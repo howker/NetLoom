@@ -14,6 +14,7 @@
 - [x] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
 - [x] Monitoring Runtime.
 - [x] Scheduler.
+- [x] Sprint 20 — metric/time-series storage boundary + Health snapshot model.
 - [ ] Health monitoring.
 - [ ] Interface monitoring.
 - [ ] STP/RSTP Collector.
@@ -25,7 +26,7 @@
 
 ## P0 — архитектурные gates
 
-- [ ] До массовой записи метрик в monitoring ввести отдельную abstraction metric/time-series storage.
+- [x] До массовой записи метрик в monitoring ввести отдельную abstraction metric/time-series storage.
 - [ ] Не складывать высокочастотные временные ряды в topology/configuration SQLite без отдельного решения.
 - [x] Когда NetLoom.Engine начнёт выполнять реальные polling/runtime задачи, добавить настоящий Linux runtime smoke test.
 - [x] Simulator должен уметь воспроизводить raw protocol snapshots без обхода production parsers.

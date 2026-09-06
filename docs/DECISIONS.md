@@ -472,3 +472,19 @@ Cancellation останавливает ожидание и предотвращ
 Первый concrete host — `NetLoom.Engine schedule`. `Ctrl+C` преобразуется в graceful cancellation.
 
 Scheduler не пишет Health/Interface metrics и не изменяет topology/configuration SQLite schema. Metric/time-series storage gates остаются открытыми.
+
+## ADR-044 — отдельная metric/time-series storage boundary
+
+Статус: принято.
+
+High-frequency monitoring metrics не записываются в topology/configuration SQLite.
+
+Application вводит `IMonitoringMetricStore` как отдельный boundary для будущего metric/time-series backend. Concrete backend не фиксируется заранее.
+
+Metric-series identity использует стабильный `DeviceId` и, для interface metrics, опциональный `InterfaceId`. IP-адрес не является DeviceId и не используется как постоянный series key.
+
+`HealthSnapshot` может быть unbound (`DeviceId = null`) для operator/probe результата, но `HealthMetricProjector` не создаёт persistent metric sample до identity binding.
+
+Sprint 20 вводит модель Health availability/uptime и storage abstraction, но не объявляет Health collector или high-frequency persistence реализованными.
+
+Отдельное решение по concrete metric/time-series backend, retention и aggregation остаётся обязательным до массовой записи Health/Interface history.

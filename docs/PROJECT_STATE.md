@@ -433,3 +433,27 @@ Health/Interface high-frequency metrics не записываются. Metric/ti
 Health/Interface monitoring и metric/time-series storage не входят в Sprint 19.
 
 Новых миграций нет. Количество миграций остаётся 10.
+
+## Sprint 20 — metric storage boundary + Health snapshot model
+
+Реализовано:
+- `IMonitoringMetricStore` как отдельный Application boundary;
+- `MonitoringMetricSample` со стабильным `DeviceId` и опциональным `InterfaceId`;
+- `MonitoringMetricKind.HealthAvailability`;
+- `MonitoringMetricKind.HealthUptimeSeconds`;
+- `HealthSnapshot`;
+- `HealthStatus`;
+- `HealthMetricProjector`;
+- запрет persistent metric projection для Health snapshot без стабильного DeviceId;
+- unit regressions для identity/UTC/availability/uptime.
+
+Не реализовано:
+- concrete time-series backend;
+- Health SNMP collector;
+- Health scheduler command;
+- Interface monitoring;
+- retention/aggregation.
+
+Health monitoring остаётся следующим P0 пунктом.
+
+Новых migrations нет. Количество migrations остаётся 10.

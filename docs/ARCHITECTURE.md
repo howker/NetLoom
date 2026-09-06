@@ -302,3 +302,21 @@ Stop/cancellation semantics:
 - `Ctrl+C` в Engine запрашивает graceful stop и не удаляет последнее состояние/observations.
 
 Scheduler не является Health/Interface monitoring и не вводит metric/time-series storage.
+
+## Sprint 20 — metric storage boundary + Health snapshot model
+
+До реализации high-frequency Health/Interface collection вводится отдельная Application abstraction `IMonitoringMetricStore`.
+
+Topology/configuration SQLite не является metric/time-series storage. Sprint 20 не добавляет туда metric tables и не создаёт migrations.
+
+`MonitoringMetricSample` идентифицируется стабильным `DeviceId` и опциональным `InterfaceId`. IP-адрес не используется как metric-series identity.
+
+`HealthSnapshot` допускает отсутствие `DeviceId`, потому что operator/runtime observation может существовать до identity binding. Такой snapshot не проецируется в persistent metric sample до появления стабильного DeviceId.
+
+На этом этапе определены только два Health metric kinds:
+- availability;
+- uptime seconds.
+
+Concrete time-series backend, retention, aggregation и Interface counters не выбираются в Sprint 20.
+
+Health collector/polling ещё не реализован и остаётся следующим P0 этапом.
