@@ -426,3 +426,17 @@ WPF не получает ссылок на `NetLoom.Persistence.Sqlite` или 
 Эта схема намеренно допускает будущую замену in-process provider на IPC proxy после service split без изменения WPF renderer.
 
 `NetLoom.Engine` и `NetLoom.Service` в этом решении не объявляются monitoring runtime: их polling/runtime orchestration остаётся отдельным backlog.
+
+## ADR-041 — Raw SNMP snapshot replay через production parsers
+
+Статус: принято.
+
+Simulator использует версионированный raw snapshot format v1 и восстанавливает настоящий `SnmpObservation`/`SnmpVariable`.
+
+Encoded varbind value сохраняется отдельно в Base64 и не восстанавливается из display text. Это необходимо для parser-ов, использующих raw BER payload.
+
+После восстановления raw observation Simulator вызывает те же LLDP/CDP/FDB/ARP parser classes, которые использует production collection pipeline.
+
+Отдельная simulator-only интерпретация OID не допускается.
+
+Inventory replay откладывается до появления production raw inventory parser boundary; обход через fake transport не считается эквивалентом raw parser replay.

@@ -234,3 +234,29 @@ WPF обновляет snapshot периодически и не пишет topo
 1. `--database <path>`;
 2. переменная окружения `NETLOOM_DATABASE`;
 3. `%LOCALAPPDATA%\NetLoom\netloom.db`.
+
+## Sprint 17 — Simulator raw SNMP replay
+
+`NetLoom.Simulator` воспроизводит сохранённые raw SNMP varbind snapshots без сетевого transport и без дублирования protocol parsing.
+
+Поток:
+`JSON snapshot v1 → RawSnmpSnapshotCodec → SnmpObservation/SnmpVariable → production parser → normalized observation`.
+
+Production parsers не копируются и не подменяются. Replay dispatch использует существующие:
+- `LldpObservationParser`;
+- `CdpObservationParser`;
+- `FdbObservationParser`;
+- `ArpObservationParser`.
+
+Snapshot v1 хранит:
+- observation id;
+- ObservationKind;
+- source address;
+- captured UTC;
+- для каждого varbind: OID, type code, display value и raw encoded value в Base64.
+
+Replay infrastructure находится в tool-проекте `NetLoom.Simulator`, а не в production Engine/Persistence слоях.
+
+`SnmpInventory` намеренно не эмулируется: сейчас inventory реализован transport-driven collector-ом и не имеет отдельного production raw parser. Искусственный parser в Simulator не вводится.
+
+Новых runtime/NuGet dependencies нет; используется framework `System.Runtime.Serialization`.

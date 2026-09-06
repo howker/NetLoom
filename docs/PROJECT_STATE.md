@@ -374,3 +374,21 @@ Linux `linux-x64` publish в этом спринте является compatibil
 Новых миграций нет. Количество миграций остаётся 10.
 
 `NetLoom.Engine` и `NetLoom.Service` пока не становятся monitoring runtime; это отдельные следующие этапы.
+
+## Sprint 17 — Simulator raw SNMP replay
+
+Реализовано:
+- JSON raw SNMP snapshot schema v1;
+- `RawSnmpSnapshotCodec` load/save/capture/build;
+- сохранение OID/type/display/raw encoded bytes;
+- replay через настоящие LLDP/CDP/FDB/ARP parsers;
+- CLI `NetLoom.Simulator replay <file-or-directory>`;
+- четыре безопасных fixture snapshots;
+- snapshot regressions для LLDP/CDP/FDB/ARP;
+- ARP regression подтверждает использование сохранённого BER payload;
+- FDB regression подтверждает bridgePort → ifIndex mapping без подмены bridgePort на ifIndex.
+
+Новых миграций нет. Количество миграций остаётся 10.
+Новых сторонних зависимостей нет.
+
+Inventory raw replay не объявлен реализованным, поскольку отдельного production raw inventory parser сейчас нет.

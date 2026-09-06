@@ -11,7 +11,7 @@
 - [x] Sprint 15.1b - canonical PhysicalLink identity + monotonic lifecycle timestamps.
 - [x] Sprint 15.1c - bounded current PhysicalLink evidence + map explainability.
 - [x] Подключить реальный backend pipeline к MapSnapshot и WPF, чтобы карта показывала живую сеть.
-- [ ] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
+- [x] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
 - [ ] Monitoring Runtime.
 - [ ] Scheduler.
 - [ ] Health monitoring.
@@ -28,7 +28,7 @@
 - [ ] До массовой записи метрик в monitoring ввести отдельную abstraction metric/time-series storage.
 - [ ] Не складывать высокочастотные временные ряды в topology/configuration SQLite без отдельного решения.
 - [ ] Когда NetLoom.Engine начнёт выполнять реальные polling/runtime задачи, добавить настоящий Linux runtime smoke test.
-- [ ] Simulator должен уметь воспроизводить raw protocol snapshots без обхода production parsers.
+- [x] Simulator должен уметь воспроизводить raw protocol snapshots без обхода production parsers.
 
 ## P1 — полезно после появления рабочей карты
 

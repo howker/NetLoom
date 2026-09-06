@@ -14,8 +14,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetLoom.Domain\NetLoom.Domain.csproj" />
+    <ProjectReference Include="..\..\tools\NetLoom.Simulator\NetLoom.Simulator.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Protocols.Snmp\NetLoom.Protocols.Snmp.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Topology\NetLoom.Topology.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Fixtures\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
