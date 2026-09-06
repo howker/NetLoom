@@ -282,3 +282,31 @@ Sprint 25 не добавляет migrations и не меняет SQLite schema.
 Результаты ring detection в Sprint 25 не сохраняются в SQLite и не изменяют `physical_links`, evidence или STP observations.
 
 Migration011 остаётся последней migration. Количество migrations: 11.
+
+## Sprint 26A — WAL and concurrent writers
+
+SQLite connection policy:
+- journal mode: WAL;
+- busy timeout: 5000 ms;
+- synchronous: NORMAL;
+- foreign keys: ON.
+
+`SqliteConnectionFactory` формирует строку через `SQLiteConnectionStringBuilder`, а не конкатенацией.
+
+`SavePhysicalLink`, `SaveDevice` и `SaveInterface` используют immediate write scope вокруг полного read-modify-write решения. Это предотвращает TOCTOU между identity/manual-protection SELECT и последующим INSERT/UPDATE.
+
+`MigrationRunner.ApplyPending` после idempotent bootstrap `schema_migrations` выполняет все pending migrations одного запуска в одной immediate atomic batch. При ошибке batch откатывается целиком. Ранее применённые до запуска migrations остаются применёнными.
+
+Migration011 остаётся последней migration. Количество migrations: 11. Migration012 не создаётся.
+
+### WAL backup/export rule
+
+WAL использует связанные с database файлы `-wal` и `-shm`, а journal mode сохраняется между переподключениями. Копирование только активного `.db` файла не считается корректным live backup/export workflow.
+
+Для live backup/export должен использоваться SQLite Backup API или `VACUUM INTO`/эквивалентный контролируемый snapshot. Перед offline file-copy database должна быть корректно закрыта всеми процессами и WAL state должен быть checkpointed/согласован.
+
+### Retention boundary
+
+Sprint 26A не удаляет observations. Sprint 26B должен использовать time-based retention по `captured_utc`, не вводя IP/source_address как DeviceId.
+
+`physical_link_evidence_current.observation_id` не является foreign key на `observations`; поэтому Sprint 26B обязан отдельно определить explainability state для evidence, raw observation которого уже удалён, и не делать retention window короче согласованного current-evidence/freshness window.

@@ -462,3 +462,35 @@ Detector не использует IP/sourceAddress, FDB/ARP, STP state или v
 SQLite schema не меняется; Migration011 остаётся последней.
 
 Следующий P0 — `Ring protection analyzer`.
+
+## Sprint 26A — SQLite concurrency hardening
+
+NetLoom Desktop и Engine могут одновременно открывать одну локальную SQLite database. Поэтому connection и write-decision policy является общей persistence boundary.
+
+Каждый `SqliteConnectionFactory.OpenConnection()` использует `SQLiteConnectionStringBuilder`:
+- `ForeignKeys = true`;
+- `JournalMode = WAL`;
+- `BusyTimeout = 5000 ms`;
+- `SyncMode = Normal`.
+
+WAL является persistent database mode. Database должна находиться на локальной файловой системе; WAL не рассматривается как network-filesystem transport.
+
+Repository read-modify-write методы `SavePhysicalLink`, `SaveDevice` и `SaveInterface` выполняют решение внутри одного `BEGIN IMMEDIATE ... COMMIT/ROLLBACK` scope:
+- `ResolvePhysicalLinkTarget` и последующий merge/save атомарны относительно другого writer;
+- `ProtectManualDevice` и upsert атомарны;
+- `ProtectManualInterface` и upsert атомарны.
+
+Это не меняет PhysicalLink identity/refinement policy и не меняет manual-topology rules — только делает уже существующее решение serializable между процессами.
+
+Migration policy:
+1. `schema_migrations` bootstrap остаётся idempotent `CREATE TABLE IF NOT EXISTS`;
+2. после bootstrap `ApplyPending` получает immediate write lock;
+3. applied versions читаются после получения lock;
+4. все pending migrations данного запуска выполняются как одна atomic batch;
+5. при ошибке batch откатывается целиком; migrations, применённые до данного запуска, не затрагиваются.
+
+Это сознательное уточнение Sprint 1 semantics. Перечисление migrations остаётся прежним, Migration011 последняя, Migration012 не вводится.
+
+Raw observation retention не входит в Sprint 26A и остаётся Sprint 26B. SourceAddress/IP не становится DeviceId.
+
+Ring protection analyzer остаётся отложенным. Basis-independent forwarding-cycle/bridge/blast-radius анализ можно реализовать независимо от user-facing ring naming semantics.

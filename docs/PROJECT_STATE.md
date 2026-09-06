@@ -639,3 +639,32 @@ Migration011 остаётся последней migration; количество
 Backlog `Physical ring detection` закрыт.
 
 Следующий P0: `Ring protection analyzer`.
+
+## Sprint 26A — SQLite concurrency hardening
+
+Реализовано:
+- SQLiteConnectionStringBuilder;
+- WAL;
+- BusyTimeout = 5000 ms;
+- synchronous NORMAL;
+- existing foreign_keys ON policy сохранена;
+- immediate atomic SavePhysicalLink decision;
+- immediate atomic SaveDevice manual protection + upsert;
+- immediate atomic SaveInterface manual protection + upsert;
+- serialized atomic pending migration batch;
+- concurrent reader/writer regression;
+- concurrent provisional/refined PhysicalLink regression;
+- concurrent manual Device/Interface protection regressions;
+- concurrent clean DatabaseInitializer regression;
+- pending-batch rollback regression;
+- connection PRAGMA regression.
+
+PhysicalLink identity/refinement logic, Domain, materialized schema и migration list не менялись.
+
+Migration011 остаётся последней migration; количество migrations: 11.
+
+WAL backup/export rule зафиксировано: live copy одного `.db` запрещён как supported backup workflow; использовать SQLite Backup API/VACUUM INTO или корректный offline snapshot.
+
+Следующий эксплуатационный P0: Sprint 26B — bounded raw observation retention + evidence expiry semantics.
+
+Ring protection analyzer пока не применяется. Отдельно в backlog вынесены basis-independent graph safety analysis и user-facing ring semantics.

@@ -30,84 +30,90 @@ namespace NetLoom.Persistence.Sqlite.Topology
 
             using (var connection = _connectionFactory.OpenConnection())
             {
-                ProtectManualDevice(connection, device);
+                SqliteImmediateWrite.Execute(
+                    connection,
+                    () =>
+                    {
+                    ProtectManualDevice(connection, device);
 
-                var now = FormatUtc(DateTime.UtcNow);
+                    var now = FormatUtc(DateTime.UtcNow);
 
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-INSERT INTO devices
-(
-    id, location_id, custom_name, category,
-    discovery_origin, monitoring_capability,
-    vendor_override, model_override, notes,
-    is_hidden, is_archived,
-    first_seen_utc, last_seen_utc, last_resolved_utc,
-    created_at_utc, updated_at_utc
-)
-VALUES
-(
-    @id, @locationId, @customName, @category,
-    @origin, @capability,
-    @vendor, @model, @notes,
-    @hidden, @archived,
-    @firstSeen, @lastSeen, @lastResolved,
-    @created, @updated
-)
-ON CONFLICT(id) DO UPDATE SET
-    location_id = excluded.location_id,
-    custom_name = excluded.custom_name,
-    category = excluded.category,
-    discovery_origin = excluded.discovery_origin,
-    monitoring_capability = excluded.monitoring_capability,
-    vendor_override = excluded.vendor_override,
-    model_override = excluded.model_override,
-    notes = excluded.notes,
-    is_hidden = excluded.is_hidden,
-    is_archived = excluded.is_archived,
-    first_seen_utc =
-        CASE
-            WHEN devices.first_seen_utc IS NULL THEN excluded.first_seen_utc
-            WHEN excluded.first_seen_utc IS NULL THEN devices.first_seen_utc
-            WHEN excluded.first_seen_utc < devices.first_seen_utc THEN excluded.first_seen_utc
-            ELSE devices.first_seen_utc
-        END,
-    last_seen_utc =
-        CASE
-            WHEN devices.last_seen_utc IS NULL THEN excluded.last_seen_utc
-            WHEN excluded.last_seen_utc IS NULL THEN devices.last_seen_utc
-            WHEN excluded.last_seen_utc > devices.last_seen_utc THEN excluded.last_seen_utc
-            ELSE devices.last_seen_utc
-        END,
-    last_resolved_utc =
-        CASE
-            WHEN devices.last_resolved_utc IS NULL THEN excluded.last_resolved_utc
-            WHEN excluded.last_resolved_utc IS NULL THEN devices.last_resolved_utc
-            WHEN excluded.last_resolved_utc > devices.last_resolved_utc THEN excluded.last_resolved_utc
-            ELSE devices.last_resolved_utc
-        END,
-    updated_at_utc = excluded.updated_at_utc;";
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = @"
+    INSERT INTO devices
+    (
+        id, location_id, custom_name, category,
+        discovery_origin, monitoring_capability,
+        vendor_override, model_override, notes,
+        is_hidden, is_archived,
+        first_seen_utc, last_seen_utc, last_resolved_utc,
+        created_at_utc, updated_at_utc
+    )
+    VALUES
+    (
+        @id, @locationId, @customName, @category,
+        @origin, @capability,
+        @vendor, @model, @notes,
+        @hidden, @archived,
+        @firstSeen, @lastSeen, @lastResolved,
+        @created, @updated
+    )
+    ON CONFLICT(id) DO UPDATE SET
+        location_id = excluded.location_id,
+        custom_name = excluded.custom_name,
+        category = excluded.category,
+        discovery_origin = excluded.discovery_origin,
+        monitoring_capability = excluded.monitoring_capability,
+        vendor_override = excluded.vendor_override,
+        model_override = excluded.model_override,
+        notes = excluded.notes,
+        is_hidden = excluded.is_hidden,
+        is_archived = excluded.is_archived,
+        first_seen_utc =
+            CASE
+                WHEN devices.first_seen_utc IS NULL THEN excluded.first_seen_utc
+                WHEN excluded.first_seen_utc IS NULL THEN devices.first_seen_utc
+                WHEN excluded.first_seen_utc < devices.first_seen_utc THEN excluded.first_seen_utc
+                ELSE devices.first_seen_utc
+            END,
+        last_seen_utc =
+            CASE
+                WHEN devices.last_seen_utc IS NULL THEN excluded.last_seen_utc
+                WHEN excluded.last_seen_utc IS NULL THEN devices.last_seen_utc
+                WHEN excluded.last_seen_utc > devices.last_seen_utc THEN excluded.last_seen_utc
+                ELSE devices.last_seen_utc
+            END,
+        last_resolved_utc =
+            CASE
+                WHEN devices.last_resolved_utc IS NULL THEN excluded.last_resolved_utc
+                WHEN excluded.last_resolved_utc IS NULL THEN devices.last_resolved_utc
+                WHEN excluded.last_resolved_utc > devices.last_resolved_utc THEN excluded.last_resolved_utc
+                ELSE devices.last_resolved_utc
+            END,
+        updated_at_utc = excluded.updated_at_utc;";
 
-                    Add(command, "@id", device.Id.ToString("D"));
-                    AddGuid(command, "@locationId", device.LocationId);
-                    Add(command, "@customName", device.CustomName);
-                    Add(command, "@category", device.Category.ToString());
-                    Add(command, "@origin", device.DiscoveryOrigin.ToString());
-                    Add(command, "@capability", device.MonitoringCapability.ToString());
-                    Add(command, "@vendor", device.VendorOverride);
-                    Add(command, "@model", device.ModelOverride);
-                    Add(command, "@notes", device.Notes);
-                    Add(command, "@hidden", device.IsHidden ? 1 : 0);
-                    Add(command, "@archived", device.IsArchived ? 1 : 0);
-                    AddDate(command, "@firstSeen", device.FirstSeenUtc);
-                    AddDate(command, "@lastSeen", device.LastSeenUtc);
-                    AddDate(command, "@lastResolved", device.LastResolvedUtc);
-                    Add(command, "@created", now);
-                    Add(command, "@updated", now);
+                        Add(command, "@id", device.Id.ToString("D"));
+                        AddGuid(command, "@locationId", device.LocationId);
+                        Add(command, "@customName", device.CustomName);
+                        Add(command, "@category", device.Category.ToString());
+                        Add(command, "@origin", device.DiscoveryOrigin.ToString());
+                        Add(command, "@capability", device.MonitoringCapability.ToString());
+                        Add(command, "@vendor", device.VendorOverride);
+                        Add(command, "@model", device.ModelOverride);
+                        Add(command, "@notes", device.Notes);
+                        Add(command, "@hidden", device.IsHidden ? 1 : 0);
+                        Add(command, "@archived", device.IsArchived ? 1 : 0);
+                        AddDate(command, "@firstSeen", device.FirstSeenUtc);
+                        AddDate(command, "@lastSeen", device.LastSeenUtc);
+                        AddDate(command, "@lastResolved", device.LastResolvedUtc);
+                        Add(command, "@created", now);
+                        Add(command, "@updated", now);
 
-                    command.ExecuteNonQuery();
-                }
+                        command.ExecuteNonQuery();
+                    }
+
+                    });
             }
         }
 
@@ -120,79 +126,85 @@ ON CONFLICT(id) DO UPDATE SET
 
             using (var connection = _connectionFactory.OpenConnection())
             {
-                ProtectManualInterface(connection, networkInterface);
+                SqliteImmediateWrite.Execute(
+                    connection,
+                    () =>
+                    {
+                    ProtectManualInterface(connection, networkInterface);
 
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-INSERT INTO interfaces
-(
-    id, device_id, if_index,
-    if_name, if_descr, if_alias, custom_name,
-    mac_address, admin_status, oper_status,
-    speed_bps, media_type_auto, media_type_override,
-    is_manual, is_hidden,
-    first_seen_utc, last_seen_utc
-)
-VALUES
-(
-    @id, @deviceId, @ifIndex,
-    @ifName, @ifDescr, @ifAlias, @customName,
-    @mac, @admin, @oper,
-    @speed, @mediaAuto, @mediaOverride,
-    @manual, @hidden,
-    @firstSeen, @lastSeen
-)
-ON CONFLICT(id) DO UPDATE SET
-    device_id = excluded.device_id,
-    if_index = excluded.if_index,
-    if_name = excluded.if_name,
-    if_descr = excluded.if_descr,
-    if_alias = excluded.if_alias,
-    custom_name = excluded.custom_name,
-    mac_address = excluded.mac_address,
-    admin_status = excluded.admin_status,
-    oper_status = excluded.oper_status,
-    speed_bps = excluded.speed_bps,
-    media_type_auto = excluded.media_type_auto,
-    media_type_override = excluded.media_type_override,
-    is_manual = excluded.is_manual,
-    is_hidden = excluded.is_hidden,
-    first_seen_utc =
-        CASE
-            WHEN interfaces.first_seen_utc IS NULL THEN excluded.first_seen_utc
-            WHEN excluded.first_seen_utc IS NULL THEN interfaces.first_seen_utc
-            WHEN excluded.first_seen_utc < interfaces.first_seen_utc THEN excluded.first_seen_utc
-            ELSE interfaces.first_seen_utc
-        END,
-    last_seen_utc =
-        CASE
-            WHEN interfaces.last_seen_utc IS NULL THEN excluded.last_seen_utc
-            WHEN excluded.last_seen_utc IS NULL THEN interfaces.last_seen_utc
-            WHEN excluded.last_seen_utc > interfaces.last_seen_utc THEN excluded.last_seen_utc
-            ELSE interfaces.last_seen_utc
-        END;";
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = @"
+    INSERT INTO interfaces
+    (
+        id, device_id, if_index,
+        if_name, if_descr, if_alias, custom_name,
+        mac_address, admin_status, oper_status,
+        speed_bps, media_type_auto, media_type_override,
+        is_manual, is_hidden,
+        first_seen_utc, last_seen_utc
+    )
+    VALUES
+    (
+        @id, @deviceId, @ifIndex,
+        @ifName, @ifDescr, @ifAlias, @customName,
+        @mac, @admin, @oper,
+        @speed, @mediaAuto, @mediaOverride,
+        @manual, @hidden,
+        @firstSeen, @lastSeen
+    )
+    ON CONFLICT(id) DO UPDATE SET
+        device_id = excluded.device_id,
+        if_index = excluded.if_index,
+        if_name = excluded.if_name,
+        if_descr = excluded.if_descr,
+        if_alias = excluded.if_alias,
+        custom_name = excluded.custom_name,
+        mac_address = excluded.mac_address,
+        admin_status = excluded.admin_status,
+        oper_status = excluded.oper_status,
+        speed_bps = excluded.speed_bps,
+        media_type_auto = excluded.media_type_auto,
+        media_type_override = excluded.media_type_override,
+        is_manual = excluded.is_manual,
+        is_hidden = excluded.is_hidden,
+        first_seen_utc =
+            CASE
+                WHEN interfaces.first_seen_utc IS NULL THEN excluded.first_seen_utc
+                WHEN excluded.first_seen_utc IS NULL THEN interfaces.first_seen_utc
+                WHEN excluded.first_seen_utc < interfaces.first_seen_utc THEN excluded.first_seen_utc
+                ELSE interfaces.first_seen_utc
+            END,
+        last_seen_utc =
+            CASE
+                WHEN interfaces.last_seen_utc IS NULL THEN excluded.last_seen_utc
+                WHEN excluded.last_seen_utc IS NULL THEN interfaces.last_seen_utc
+                WHEN excluded.last_seen_utc > interfaces.last_seen_utc THEN excluded.last_seen_utc
+                ELSE interfaces.last_seen_utc
+            END;";
 
-                    Add(command, "@id", networkInterface.Id.ToString("D"));
-                    Add(command, "@deviceId", networkInterface.DeviceId.ToString("D"));
-                    Add(command, "@ifIndex", networkInterface.IfIndex);
-                    Add(command, "@ifName", networkInterface.IfName);
-                    Add(command, "@ifDescr", networkInterface.IfDescription);
-                    Add(command, "@ifAlias", networkInterface.IfAlias);
-                    Add(command, "@customName", networkInterface.CustomName);
-                    Add(command, "@mac", networkInterface.MacAddress);
-                    Add(command, "@admin", networkInterface.AdminStatus);
-                    Add(command, "@oper", networkInterface.OperStatus);
-                    Add(command, "@speed", networkInterface.SpeedBps);
-                    Add(command, "@mediaAuto", networkInterface.MediaTypeAuto);
-                    Add(command, "@mediaOverride", networkInterface.MediaTypeOverride);
-                    Add(command, "@manual", networkInterface.IsManual ? 1 : 0);
-                    Add(command, "@hidden", networkInterface.IsHidden ? 1 : 0);
-                    AddDate(command, "@firstSeen", networkInterface.FirstSeenUtc);
-                    AddDate(command, "@lastSeen", networkInterface.LastSeenUtc);
+                        Add(command, "@id", networkInterface.Id.ToString("D"));
+                        Add(command, "@deviceId", networkInterface.DeviceId.ToString("D"));
+                        Add(command, "@ifIndex", networkInterface.IfIndex);
+                        Add(command, "@ifName", networkInterface.IfName);
+                        Add(command, "@ifDescr", networkInterface.IfDescription);
+                        Add(command, "@ifAlias", networkInterface.IfAlias);
+                        Add(command, "@customName", networkInterface.CustomName);
+                        Add(command, "@mac", networkInterface.MacAddress);
+                        Add(command, "@admin", networkInterface.AdminStatus);
+                        Add(command, "@oper", networkInterface.OperStatus);
+                        Add(command, "@speed", networkInterface.SpeedBps);
+                        Add(command, "@mediaAuto", networkInterface.MediaTypeAuto);
+                        Add(command, "@mediaOverride", networkInterface.MediaTypeOverride);
+                        Add(command, "@manual", networkInterface.IsManual ? 1 : 0);
+                        Add(command, "@hidden", networkInterface.IsHidden ? 1 : 0);
+                        AddDate(command, "@firstSeen", networkInterface.FirstSeenUtc);
+                        AddDate(command, "@lastSeen", networkInterface.LastSeenUtc);
 
-                    command.ExecuteNonQuery();
-                }
+                        command.ExecuteNonQuery();
+                    }
+
+                    });
             }
         }
 
@@ -205,120 +217,126 @@ ON CONFLICT(id) DO UPDATE SET
 
             using (var connection = _connectionFactory.OpenConnection())
             {
-                var existing =
-                    ResolvePhysicalLinkTarget(
-                        connection,
-                        link);
+                return SqliteImmediateWrite.Execute(
+                    connection,
+                    () =>
+                    {
+                    var existing =
+                        ResolvePhysicalLinkTarget(
+                            connection,
+                            link);
 
-                ProtectManualLink(
-                    existing,
-                    link);
-
-                var persisted =
-                    MergePhysicalLink(
+                    ProtectManualLink(
                         existing,
                         link);
 
-                ValidateInterfaceEndpoint(
-                    connection,
-                    persisted.DeviceAId,
-                    persisted.InterfaceAId);
+                    var persisted =
+                        MergePhysicalLink(
+                            existing,
+                            link);
 
-                ValidateInterfaceEndpoint(
-                    connection,
-                    persisted.DeviceBId,
-                    persisted.InterfaceBId);
+                    ValidateInterfaceEndpoint(
+                        connection,
+                        persisted.DeviceAId,
+                        persisted.InterfaceAId);
 
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-INSERT INTO physical_links
-(
-    id, link_key,
-    device_a_id, interface_a_id,
-    device_b_id, interface_b_id,
-    strength, freshness,
-    media_type_resolved, speed_bps_resolved,
-    source_summary,
-    first_seen_utc, last_seen_utc, last_confirmed_utc,
-    resolver_version,
-    is_hidden, is_archived,
-    notes
-)
-VALUES
-(
-    @id, @linkKey,
-    @deviceA, @interfaceA,
-    @deviceB, @interfaceB,
-    @strength, @freshness,
-    @media, @speed,
-    @source,
-    @firstSeen, @lastSeen, @lastConfirmed,
-    @resolver,
-    @hidden, @archived,
-    @notes
-)
-ON CONFLICT(id) DO UPDATE SET
-    link_key = excluded.link_key,
-    device_a_id = excluded.device_a_id,
-    interface_a_id = excluded.interface_a_id,
-    device_b_id = excluded.device_b_id,
-    interface_b_id = excluded.interface_b_id,
-    strength = excluded.strength,
-    freshness = excluded.freshness,
-    media_type_resolved = excluded.media_type_resolved,
-    speed_bps_resolved = excluded.speed_bps_resolved,
-    source_summary = excluded.source_summary,
-    first_seen_utc =
-        CASE
-            WHEN excluded.first_seen_utc < physical_links.first_seen_utc
-                THEN excluded.first_seen_utc
-            ELSE physical_links.first_seen_utc
-        END,
-    last_seen_utc =
-        CASE
-            WHEN excluded.last_seen_utc > physical_links.last_seen_utc
-                THEN excluded.last_seen_utc
-            ELSE physical_links.last_seen_utc
-        END,
-    last_confirmed_utc =
-        CASE
-            WHEN physical_links.last_confirmed_utc IS NULL
-                THEN excluded.last_confirmed_utc
-            WHEN excluded.last_confirmed_utc IS NULL
-                THEN physical_links.last_confirmed_utc
-            WHEN excluded.last_confirmed_utc > physical_links.last_confirmed_utc
-                THEN excluded.last_confirmed_utc
-            ELSE physical_links.last_confirmed_utc
-        END,
-    resolver_version = excluded.resolver_version,
-    is_hidden = excluded.is_hidden,
-    is_archived = excluded.is_archived,
-    notes = excluded.notes;";
+                    ValidateInterfaceEndpoint(
+                        connection,
+                        persisted.DeviceBId,
+                        persisted.InterfaceBId);
 
-                    Add(command, "@id", persisted.Id.ToString("D"));
-                    Add(command, "@linkKey", persisted.LinkKey);
-                    Add(command, "@deviceA", persisted.DeviceAId.ToString("D"));
-                    AddGuid(command, "@interfaceA", persisted.InterfaceAId);
-                    Add(command, "@deviceB", persisted.DeviceBId.ToString("D"));
-                    AddGuid(command, "@interfaceB", persisted.InterfaceBId);
-                    Add(command, "@strength", persisted.Strength.ToString());
-                    Add(command, "@freshness", persisted.Freshness.ToString());
-                    Add(command, "@media", persisted.MediaTypeResolved);
-                    Add(command, "@speed", persisted.SpeedBpsResolved);
-                    Add(command, "@source", persisted.SourceSummary);
-                    Add(command, "@firstSeen", FormatUtc(persisted.FirstSeenUtc));
-                    Add(command, "@lastSeen", FormatUtc(persisted.LastSeenUtc));
-                    AddDate(command, "@lastConfirmed", persisted.LastConfirmedUtc);
-                    Add(command, "@resolver", persisted.ResolverVersion);
-                    Add(command, "@hidden", persisted.IsHidden ? 1 : 0);
-                    Add(command, "@archived", persisted.IsArchived ? 1 : 0);
-                    Add(command, "@notes", persisted.Notes);
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = @"
+    INSERT INTO physical_links
+    (
+        id, link_key,
+        device_a_id, interface_a_id,
+        device_b_id, interface_b_id,
+        strength, freshness,
+        media_type_resolved, speed_bps_resolved,
+        source_summary,
+        first_seen_utc, last_seen_utc, last_confirmed_utc,
+        resolver_version,
+        is_hidden, is_archived,
+        notes
+    )
+    VALUES
+    (
+        @id, @linkKey,
+        @deviceA, @interfaceA,
+        @deviceB, @interfaceB,
+        @strength, @freshness,
+        @media, @speed,
+        @source,
+        @firstSeen, @lastSeen, @lastConfirmed,
+        @resolver,
+        @hidden, @archived,
+        @notes
+    )
+    ON CONFLICT(id) DO UPDATE SET
+        link_key = excluded.link_key,
+        device_a_id = excluded.device_a_id,
+        interface_a_id = excluded.interface_a_id,
+        device_b_id = excluded.device_b_id,
+        interface_b_id = excluded.interface_b_id,
+        strength = excluded.strength,
+        freshness = excluded.freshness,
+        media_type_resolved = excluded.media_type_resolved,
+        speed_bps_resolved = excluded.speed_bps_resolved,
+        source_summary = excluded.source_summary,
+        first_seen_utc =
+            CASE
+                WHEN excluded.first_seen_utc < physical_links.first_seen_utc
+                    THEN excluded.first_seen_utc
+                ELSE physical_links.first_seen_utc
+            END,
+        last_seen_utc =
+            CASE
+                WHEN excluded.last_seen_utc > physical_links.last_seen_utc
+                    THEN excluded.last_seen_utc
+                ELSE physical_links.last_seen_utc
+            END,
+        last_confirmed_utc =
+            CASE
+                WHEN physical_links.last_confirmed_utc IS NULL
+                    THEN excluded.last_confirmed_utc
+                WHEN excluded.last_confirmed_utc IS NULL
+                    THEN physical_links.last_confirmed_utc
+                WHEN excluded.last_confirmed_utc > physical_links.last_confirmed_utc
+                    THEN excluded.last_confirmed_utc
+                ELSE physical_links.last_confirmed_utc
+            END,
+        resolver_version = excluded.resolver_version,
+        is_hidden = excluded.is_hidden,
+        is_archived = excluded.is_archived,
+        notes = excluded.notes;";
 
-                    command.ExecuteNonQuery();
-                }
+                        Add(command, "@id", persisted.Id.ToString("D"));
+                        Add(command, "@linkKey", persisted.LinkKey);
+                        Add(command, "@deviceA", persisted.DeviceAId.ToString("D"));
+                        AddGuid(command, "@interfaceA", persisted.InterfaceAId);
+                        Add(command, "@deviceB", persisted.DeviceBId.ToString("D"));
+                        AddGuid(command, "@interfaceB", persisted.InterfaceBId);
+                        Add(command, "@strength", persisted.Strength.ToString());
+                        Add(command, "@freshness", persisted.Freshness.ToString());
+                        Add(command, "@media", persisted.MediaTypeResolved);
+                        Add(command, "@speed", persisted.SpeedBpsResolved);
+                        Add(command, "@source", persisted.SourceSummary);
+                        Add(command, "@firstSeen", FormatUtc(persisted.FirstSeenUtc));
+                        Add(command, "@lastSeen", FormatUtc(persisted.LastSeenUtc));
+                        AddDate(command, "@lastConfirmed", persisted.LastConfirmedUtc);
+                        Add(command, "@resolver", persisted.ResolverVersion);
+                        Add(command, "@hidden", persisted.IsHidden ? 1 : 0);
+                        Add(command, "@archived", persisted.IsArchived ? 1 : 0);
+                        Add(command, "@notes", persisted.Notes);
 
-                return persisted;
+                        command.ExecuteNonQuery();
+                    }
+
+                    return persisted;
+
+                    });
             }
         }
 

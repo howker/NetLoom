@@ -604,3 +604,28 @@ Self-device physical links не становятся ring result.
 Detector не использует IP/sourceAddress, FDB/ARP или STP state и не имеет write-path в topology persistence.
 
 Migration count остаётся 11. Следующий слой — `Ring protection analyzer`.
+
+## ADR-053 — SQLite WAL + immediate write decisions + atomic pending migration batch
+
+Статус: принято.
+
+Одна локальная NetLoom SQLite database может одновременно использоваться Desktop reader и Engine writer.
+
+Connection policy:
+- WAL;
+- BusyTimeout 5000 ms;
+- synchronous NORMAL;
+- foreign_keys ON;
+- connection string через SQLiteConnectionStringBuilder.
+
+Read-modify-write repository operations `SavePhysicalLink`, `SaveDevice`, `SaveInterface` используют один immediate write scope на весь decision path. Это исключает stale decision между SELECT и write и сохраняет canonical PhysicalLink/manual-topology semantics.
+
+Migration concurrency решается без nested transactions. `schema_migrations` создаётся idempotently, затем `ApplyPending` сериализует чтение applied versions и весь pending batch одним immediate write scope.
+
+Failure semantics явно уточняются: pending migrations одного запуска atomic как batch. Если одна pending migration падает, откатывается весь pending batch этого запуска. Migrations, committed до запуска, не откатываются.
+
+WAL меняет backup operational contract: активный `.db` нельзя отдельно копировать как live backup; используется Backup API/VACUUM INTO или корректный offline/checkpointed workflow.
+
+Raw observation retention является отдельным Sprint 26B. Никакого IP-as-DeviceId.
+
+Новых migrations нет. Migration count остаётся 11.

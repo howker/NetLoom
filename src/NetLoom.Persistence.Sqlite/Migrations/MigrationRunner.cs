@@ -33,18 +33,27 @@ namespace NetLoom.Persistence.Sqlite.Migrations
 
             EnsureSchemaMigrationsTable(connection);
 
-            var appliedVersions = LoadAppliedVersions(connection);
-
-            foreach (var migration in _migrations)
-            {
-                if (appliedVersions.Contains(migration.Version))
+            NetLoom.Persistence.Sqlite.Database.SqliteImmediateWrite.Execute(
+                connection,
+                () =>
                 {
-                    continue;
-                }
+                    var appliedVersions =
+                        LoadAppliedVersions(connection);
 
-                ApplyMigration(connection, migration);
-            }
-        }
+                    foreach (var migration in _migrations)
+                    {
+                        if (appliedVersions.Contains(
+                            migration.Version))
+                        {
+                            continue;
+                        }
+
+                        ApplyMigration(
+                            connection,
+                            migration);
+                    }
+                });
+}
 
         private void ValidateVersions()
         {
@@ -102,22 +111,22 @@ CREATE TABLE IF NOT EXISTS schema_migrations
             SQLiteConnection connection,
             IMigration migration)
         {
-            using (var transaction = connection.BeginTransaction())
+            foreach (var statement in migration.Statements)
             {
-                foreach (var statement in migration.Statements)
+                using (var command =
+                    connection.CreateCommand())
                 {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.Transaction = transaction;
-                        command.CommandText = statement;
-                        command.ExecuteNonQuery();
-                    }
-                }
+                    command.CommandText =
+                        statement;
 
-                using (var command = connection.CreateCommand())
-                {
-                    command.Transaction = transaction;
-                    command.CommandText = @"
+                    command.ExecuteNonQuery();
+                }
+            }
+
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.CommandText = @"
 INSERT INTO schema_migrations
 (
     version,
@@ -131,25 +140,22 @@ VALUES
     @appliedUtc
 );";
 
-                    command.Parameters.AddWithValue(
-                        "@version",
-                        migration.Version);
+                command.Parameters.AddWithValue(
+                    "@version",
+                    migration.Version);
 
-                    command.Parameters.AddWithValue(
-                        "@name",
-                        migration.Name);
+                command.Parameters.AddWithValue(
+                    "@name",
+                    migration.Name);
 
-                    command.Parameters.AddWithValue(
-                        "@appliedUtc",
-                        DateTime.UtcNow.ToString(
-                            "o",
-                            CultureInfo.InvariantCulture));
+                command.Parameters.AddWithValue(
+                    "@appliedUtc",
+                    DateTime.UtcNow.ToString(
+                        "o",
+                        CultureInfo.InvariantCulture));
 
-                    command.ExecuteNonQuery();
-                }
-
-                transaction.Commit();
+                command.ExecuteNonQuery();
             }
-        }
+}
     }
 }

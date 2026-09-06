@@ -32,8 +32,19 @@ namespace NetLoom.Persistence.Sqlite.Database
                 Directory.CreateDirectory(directory);
             }
 
-            var connection = new SQLiteConnection(
-                "Data Source=" + _databasePath + ";Foreign Keys=True;");
+            var builder =
+                new SQLiteConnectionStringBuilder
+                {
+                    DataSource = _databasePath,
+                    ForeignKeys = true,
+                    JournalMode = SQLiteJournalModeEnum.Wal,
+                    BusyTimeout = 5000,
+                    SyncMode = SynchronizationModes.Normal
+                };
+
+            var connection =
+                new SQLiteConnection(
+                    builder.ConnectionString);
 
             connection.Open();
 
