@@ -260,3 +260,26 @@ Replay infrastructure находится в tool-проекте `NetLoom.Simulat
 `SnmpInventory` намеренно не эмулируется: сейчас inventory реализован transport-driven collector-ом и не имеет отдельного production raw parser. Искусственный parser в Simulator не вводится.
 
 Новых runtime/NuGet dependencies нет; используется framework `System.Runtime.Serialization`.
+
+## Sprint 18 — Monitoring Runtime
+
+`NetLoom.Application.Monitoring.MonitoringRuntime` является синхронным one-cycle orchestration boundary. Scheduler в него не встроен.
+
+Один poll cycle:
+`MonitoringPollRequest → LLDP/CDP/FDB/ARP production collectors → existing raw + normalized observation stores → MonitoringPollResult`.
+
+Каждый protocol poll является независимым step: ошибка одного collector не прекращает остальные step'ы того же cycle.
+
+`NetLoom.Engine` является первым concrete host:
+- `poll-once` выполняет реальный SNMP polling;
+- используется `SharpSnmpTransport`;
+- используются существующие production parsers;
+- raw и normalized protocol observations записываются существующими stores;
+- secrets не принимаются в command-line arguments и не печатаются;
+- v1/v2 community и v3 secret material читаются только из environment variables.
+
+Monitoring Runtime не создаёт Scheduler, Health metrics или Interface metrics и не пишет high-frequency time series в topology/configuration SQLite.
+
+Linux runtime gate проверяется фактическим запуском опубликованного linux-x64 Engine с командой `runtime-smoke` внутри WSL или Docker. Этот smoke выполняет реальный MonitoringRuntime orchestration path, но намеренно не выполняет внешний SNMP network access.
+
+Self-contained publish включает managed/.NET runtime, но Linux host всё равно должен предоставлять стандартные native runtime dependencies ОС (включая ICU, OpenSSL, libc, libstdc++ и zlib); acceptance проверяет запуск в реальной Linux-среде.

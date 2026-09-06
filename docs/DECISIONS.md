@@ -440,3 +440,19 @@ Encoded varbind value сохраняется отдельно в Base64 и не 
 Отдельная simulator-only интерпретация OID не допускается.
 
 Inventory replay откладывается до появления production raw inventory parser boundary; обход через fake transport не считается эквивалентом raw parser replay.
+
+## ADR-042 — Monitoring Runtime one-cycle boundary
+
+Статус: принято.
+
+Monitoring Runtime отделяется от Scheduler.
+
+`MonitoringRuntime.PollOnce` оркестрирует один набор выбранных protocol collectors и возвращает результат по каждому step. Ошибка одного protocol collector не отменяет другие collectors.
+
+Runtime переиспользует существующие production LLDP/CDP/FDB/ARP collectors, parsers и observation stores. Отдельная runtime-only protocol logic не создаётся.
+
+Первый concrete host — modern `NetLoom.Engine`. Legacy `NetLoom.Service` может позднее собрать тот же Application runtime boundary.
+
+Persisted access profiles пока не используются Engine runtime автоматически: существующий Linux target не имеет DPAPI implementation, а scope repository пока не является полным read model. До отдельного cross-platform secret/config decision Engine получает операторские SNMP secrets только через environment variables и никогда не выводит их.
+
+Monitoring Runtime не является Scheduler и не вводит monitoring metric storage.

@@ -203,3 +203,11 @@ Migration010 добавляет таблицу `physical_link_evidence_current`.
 `physical_link_evidence_current.physical_link_id` использует `ON DELETE CASCADE` к `physical_links(id)`.
 
 Количество миграций: 10.
+
+## Monitoring Runtime boundary
+
+Monitoring Runtime использует существующие observation tables только для raw и normalized protocol evidence LLDP/CDP/FDB/ARP.
+
+Он не создаёт таблиц monitoring metrics и не записывает high-frequency time series в topology/configuration SQLite.
+
+Перед Health/Interface metric ingestion остаётся обязательным отдельное решение для metric/time-series storage abstraction.

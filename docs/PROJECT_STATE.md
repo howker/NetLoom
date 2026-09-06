@@ -392,3 +392,24 @@ Linux `linux-x64` publish в этом спринте является compatibil
 Новых сторонних зависимостей нет.
 
 Inventory raw replay не объявлен реализованным, поскольку отдельного production raw inventory parser сейчас нет.
+
+## Sprint 18 — Monitoring Runtime
+
+Реализовано:
+- `MonitoringPollRequest`, `MonitoringPollResult` и per-protocol step result;
+- синхронный `MonitoringRuntime.PollOnce`;
+- независимый запуск LLDP/CDP/FDB/ARP production collectors;
+- продолжение cycle после ошибки отдельного protocol collector;
+- `NetLoom.Engine poll-once`;
+- concrete composition `SharpSnmpTransport + existing SQLite raw/normalized stores + production parsers`;
+- operator-supplied SNMP secrets только через environment variables;
+- секреты не принимаются через command line и не выводятся;
+- `runtime-smoke` path без network access;
+- фактический запуск self-contained linux-x64 Engine подтверждён через WSL Ubuntu с установленными native runtime dependencies;
+- unit regressions для isolation/subset/UTC.
+
+Scheduler не реализован и остаётся следующим отдельным P0 этапом.
+
+Health/Interface high-frequency metrics не записываются. Metric/time-series storage gate остаётся открытым до соответствующего спринта.
+
+Новых миграций нет. Количество миграций остаётся 10.
