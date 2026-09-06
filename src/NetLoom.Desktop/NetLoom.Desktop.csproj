@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>NetLoom.Desktop</RootNamespace>
+    <AssemblyName>NetLoom.Desktop</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetLoom.Application\NetLoom.Application.csproj" />
+    <ProjectReference Include="..\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
+    <ProjectReference Include="..\NetLoom.Topology\NetLoom.Topology.csproj" />
+    <ProjectReference Include="..\NetLoom.Wpf\NetLoom.Wpf.csproj" />
+  </ItemGroup>
+</Project>

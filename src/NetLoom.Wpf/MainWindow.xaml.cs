@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using NetLoom.Application.TopologyMap;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
 
@@ -15,18 +18,90 @@ public partial class MainWindow : Window
     private const double NodeWidth = 190.0;
     private const double NodeHeight = 92.0;
 
+    private readonly IMapSnapshotProvider
+        _mapSnapshotProvider;
+
+    private readonly DispatcherTimer
+        _refreshTimer;
+
     public MainWindow()
+        : this(new EmptyMapSnapshotProvider())
+    {
+    }
+
+    public MainWindow(
+        IMapSnapshotProvider mapSnapshotProvider)
     {
         InitializeComponent();
+
+        _mapSnapshotProvider =
+            mapSnapshotProvider ??
+            throw new ArgumentNullException(
+                nameof(mapSnapshotProvider));
+
+        _refreshTimer =
+            new DispatcherTimer
+            {
+                Interval =
+                    TimeSpan.FromSeconds(5)
+            };
+
+        _refreshTimer.Tick +=
+            OnRefreshTimerTick;
+
+        Loaded += OnWindowLoaded;
+        Closed += OnWindowClosed;
 
         Title = UiText.Get("WindowTitle");
         MapTitleText.Text = UiText.Get("MapTitle");
 
-        ShowMap(
-            new MapSnapshot(
-                DateTime.UtcNow,
-                new MapNode[0],
-                new MapLink[0]));
+        ShowMap(EmptySnapshot());
+    }
+
+    private void OnWindowLoaded(
+        object sender,
+        RoutedEventArgs e)
+    {
+        RefreshMap();
+        _refreshTimer.Start();
+    }
+
+    private void OnWindowClosed(
+        object sender,
+        EventArgs e)
+    {
+        _refreshTimer.Stop();
+    }
+
+    private void OnRefreshTimerTick(
+        object sender,
+        EventArgs e)
+    {
+        RefreshMap();
+    }
+
+    private void RefreshMap()
+    {
+        try
+        {
+            ShowMap(
+                _mapSnapshotProvider.GetSnapshot());
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                error.ToString());
+
+            ShowMap(EmptySnapshot());
+        }
+    }
+
+    private static MapSnapshot EmptySnapshot()
+    {
+        return new MapSnapshot(
+            DateTime.UtcNow,
+            new MapNode[0],
+            new MapLink[0]);
     }
 
     public void ShowMap(MapSnapshot snapshot)
@@ -360,6 +435,15 @@ public partial class MainWindow : Window
             default:
                 return UiText.Get(
                     "ConfidenceLow");
+        }
+    }
+
+    private sealed class EmptyMapSnapshotProvider :
+        IMapSnapshotProvider
+    {
+        public MapSnapshot GetSnapshot()
+        {
+            return EmptySnapshot();
         }
     }
 

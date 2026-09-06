@@ -214,3 +214,23 @@ Resolver evidence и materialized evidence разделены по слоям.
 SQLite хранит только bounded current evidence snapshot для materialized PhysicalLink. Это не append-only history и не time-series storage.
 
 `MaterializedTopologyMapProjector` читает current evidence и передаёт provenance на MapLink. Manual PhysicalLink продолжает формировать synthetic Manual evidence.
+
+## Sprint 16 — Live Map backend bridge
+
+Рабочая Windows composition root — `NetLoom.Desktop`.
+
+Поток чтения карты:
+`SQLite materialized graph → repositories → MaterializedMapSnapshotProvider → MaterializedTopologyMapProjector → MapSnapshot → WPF`.
+
+`IMapSnapshotProvider` находится в Application и является границей между UI и backend projection.
+
+`NetLoom.Wpf` по-прежнему не получает прямых ссылок на Persistence или Topology. Renderer знает только Application/Contracts. `NetLoom.Desktop` является composition root и связывает конкретные SQLite/Topology реализации с WPF.
+
+Текущая реализация работает in-process. Это переходная композиция до service/IPC split: будущий IPC client сможет реализовать тот же `IMapSnapshotProvider`, не меняя renderer.
+
+WPF обновляет snapshot периодически и не пишет topology/configuration SQLite.
+
+Путь БД для Desktop:
+1. `--database <path>`;
+2. переменная окружения `NETLOOM_DATABASE`;
+3. `%LOCALAPPDATA%\NetLoom\netloom.db`.

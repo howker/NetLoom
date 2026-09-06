@@ -406,3 +406,23 @@ Evidence slot идентифицируется сочетанием:
 `SlotDiscriminator` обязателен и формируется там, где известна семантика evidence. SourceAddress остаётся частью ключа, поэтому evidence разных направлений не схлопывается.
 
 Current evidence имеет replace-snapshot / last-write-wins semantics и не является историческим или time-series хранилищем.
+
+## ADR-040 — Desktop composition root и IMapSnapshotProvider
+
+Статус: принято.
+
+Для подключения реального materialized graph к WPF вводится Application boundary `IMapSnapshotProvider`.
+
+Конкретный provider находится в Topology и читает только через существующие Application repository interfaces.
+
+Windows executable `NetLoom.Desktop` является composition root:
+- инициализирует SQLite schema;
+- создаёт topology/location repositories;
+- создаёт `MaterializedMapSnapshotProvider`;
+- передаёт provider в WPF `MainWindow`.
+
+WPF не получает ссылок на `NetLoom.Persistence.Sqlite` или `NetLoom.Topology`.
+
+Эта схема намеренно допускает будущую замену in-process provider на IPC proxy после service split без изменения WPF renderer.
+
+`NetLoom.Engine` и `NetLoom.Service` в этом решении не объявляются monitoring runtime: их polling/runtime orchestration остаётся отдельным backlog.

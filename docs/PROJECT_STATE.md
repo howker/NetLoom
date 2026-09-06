@@ -357,3 +357,20 @@ Linux `linux-x64` publish в этом спринте является compatibil
 - end-to-end regression: provisional → reverse rediscovery → refinement → newer poll → evidence readback → Map.
 
 Количество миграций: 10.
+
+## Sprint 16 — Live Map backend bridge
+
+Реализовано:
+- `IMapSnapshotProvider` в Application;
+- `MaterializedMapSnapshotProvider` в Topology;
+- реальный read pipeline из materialized SQLite graph в `MapSnapshot`;
+- отдельный Windows composition root `NetLoom.Desktop`;
+- WPF получает provider через constructor injection;
+- автоматическое обновление карты каждые 5 секунд;
+- WPF по-прежнему не зависит напрямую от Persistence/Topology;
+- Desktop принимает `--database`, затем `NETLOOM_DATABASE`, затем использует `%LOCALAPPDATA%\NetLoom\netloom.db`;
+- integration regression проверяет SQLite → provider → projector → MapSnapshot с current link evidence.
+
+Новых миграций нет. Количество миграций остаётся 10.
+
+`NetLoom.Engine` и `NetLoom.Service` пока не становятся monitoring runtime; это отдельные следующие этапы.

@@ -10,7 +10,7 @@
 - [x] Sprint 15.1a - text integrity hardening.
 - [x] Sprint 15.1b - canonical PhysicalLink identity + monotonic lifecycle timestamps.
 - [x] Sprint 15.1c - bounded current PhysicalLink evidence + map explainability.
-- [ ] Подключить реальный backend pipeline к MapSnapshot и WPF, чтобы карта показывала живую сеть.
+- [x] Подключить реальный backend pipeline к MapSnapshot и WPF, чтобы карта показывала живую сеть.
 - [ ] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
 - [ ] Monitoring Runtime.
 - [ ] Scheduler.
