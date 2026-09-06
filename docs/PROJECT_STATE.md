@@ -507,3 +507,34 @@ Interface counter/rate history и concrete metric backend не реализов�
 STP/RSTP Collector остаётся следующим P0 этапом.
 
 Новых migrations нет. Количество migrations остаётся 10.
+
+## Sprint 23a — BRIDGE-MIB STP observation foundation
+
+Реализовано:
+- Domain `StpObservation` и `StpPortState`;
+- explicit common `InstanceId = cist`;
+- Application `IStpCollector`, `IStpObservationParser`, `IStpObservationStore`, `StpCollectionRequest`;
+- production `StpCollector`;
+- production `StpObservationParser`;
+- raw `ObservationKind.Stp` сохраняется до normalized rows;
+- root bridge/root cost/root bridge port;
+- port priority/state/enable/path cost/designated bridge data;
+- поддержка `dot1dStpPortPathCost32`;
+- explicit `dot1dBasePortIfIndex` mapping;
+- отсутствие fallback `bridgePortIndex == ifIndex`;
+- `SqliteStpObservationStore`;
+- Migration011 `stp_observations` + `stp_port_states`;
+- unit/integration regressions для mapping, ambiguity, path cost и persistence.
+
+Не входят в Sprint 23a:
+- MonitoringRuntime/Engine/Scheduler integration;
+- Simulator replay/fixture;
+- MSTP instance collection;
+- STP tree projection;
+- physical ring detection;
+- Ring protection analyzer;
+- Turbo Ring/vendor ring collection.
+
+`STP/RSTP Collector` остаётся открытым до runtime + simulator completion.
+
+Количество migrations: 11.

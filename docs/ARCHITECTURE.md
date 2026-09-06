@@ -354,3 +354,22 @@ Production collector выполняет только два IF-MIB walk:
 Sprint 22 не создаёт interface counter/rate history и не пишет high-frequency interface data в topology/configuration SQLite. Concrete metric backend остаётся отдельным gate.
 
 Для независимого cadence используется существующий `schedule --kinds interface`.
+
+## Sprint 23a — BRIDGE-MIB STP normalized observation foundation
+
+Sprint 23a вводит production raw + normalized observation boundary для common STP/RSTP tree, но ещё не подключает STP к `MonitoringRuntime`, Engine Scheduler или Simulator CLI.
+
+Источник v1 — BRIDGE-MIB:
+- `dot1dBasePortIfIndex` для явного `bridgePortIndex -> ifIndex`;
+- bridge-level `dot1dStpProtocolSpecification`, `dot1dStpDesignatedRoot`, `dot1dStpRootCost`, `dot1dStpRootPort`;
+- `dot1dStpPortTable`, включая `dot1dStpPortState` и `dot1dStpPortPathCost32`.
+
+Common tree получает явный `InstanceId = cist`. `InstanceId` не опускается даже для единственного common-tree snapshot.
+
+`bridgePortIndex` никогда не подменяет `ifIndex`. При отсутствии или неоднозначности `dot1dBasePortIfIndex` normalized `IfIndex` остаётся `null`.
+
+Collector сначала сохраняет immutable raw `SnmpObservation` с `ObservationKind.Stp`, затем production parser создаёт normalized STP observation и store сохраняет его под тем же `observation_id`.
+
+STP observation не создаёт и не изменяет `Device`, `DeviceInterface` или `PhysicalLink`. STP tree projection остаётся отдельным следующим слоем.
+
+Sprint 23a не реализует MSTP instances, vendor ring protocols или Turbo Ring. Runtime/Scheduler/Simulator integration будет завершено отдельной частью до закрытия backlog `STP/RSTP Collector`.

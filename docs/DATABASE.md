@@ -231,3 +231,17 @@ Sprint 22 не добавляет interface metric/history tables и не мен
 Current Interface monitoring result возвращается через runtime step и не сохраняется в topology/configuration SQLite.
 
 Количество миграций остаётся 10.
+
+## Migration011 — normalized STP observations
+
+Migration011 добавляет:
+- `stp_observations` с ключом `(observation_id, instance_id)`;
+- `stp_port_states` с ключом `(observation_id, instance_id, bridge_port_index)`.
+
+Обе таблицы являются normalized observation data и каскадно зависят от существующего `observations.observation_id`.
+
+`root_bridge_port_index` и `bridge_port_index` сохраняют BRIDGE-MIB port number. `root_if_index` и `if_index` заполняются только при однозначном `dot1dBasePortIfIndex` mapping.
+
+Materialized topology tables не меняются. High-frequency metric/time-series storage не затрагивается.
+
+Количество migrations после Sprint 23a: 11.

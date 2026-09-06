@@ -520,3 +520,19 @@ Polling failure остаётся failed step и не удаляет Device/Inter
 Используется существующий fixed-delay Scheduler; отдельный interface scheduler не создаётся.
 
 Sprint 22 не выбирает concrete metric backend и не пишет high-frequency interface history в topology/configuration SQLite.
+
+## ADR-047 — STP v1 хранится как raw + normalized BRIDGE-MIB Observation
+
+Статус: принято.
+
+STP/RSTP common-tree evidence сохраняется по существующему observation pattern: raw `SnmpObservation` с `ObservationKind.Stp` сохраняется раньше normalized STP rows и имеет тот же `observation_id`.
+
+Common tree получает явный `InstanceId = cist`. Это не означает поддержку MSTP instances: она не заявляется Sprint 23a.
+
+`bridgePortIndex` не является `ifIndex`. Единственный разрешённый mapping: `bridgePortIndex -> dot1dBasePortIfIndex -> ifIndex`. При отсутствующем или неоднозначном mapping `IfIndex` остаётся unresolved.
+
+BRIDGE-MIB port state и root data являются evidence и не мутируют `DeviceInterface`, `PhysicalLink` или физическую топологию.
+
+Turbo Ring и другие vendor ring protocols не интерпретируются как RSTP.
+
+Sprint 23a добавляет Migration011 только для normalized STP observations. Runtime/Scheduler/Simulator integration остаётся обязательной следующей частью перед закрытием `STP/RSTP Collector`.

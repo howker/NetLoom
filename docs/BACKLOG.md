@@ -19,6 +19,7 @@
 - [x] Health monitoring.
 - [x] Sprint 22 — IF-MIB current interface status monitoring.
 - [x] Interface monitoring.
+- [x] Sprint 23a — BRIDGE-MIB STP normalized observation foundation.
 - [ ] STP/RSTP Collector.
 - [ ] STP tree projection.
 - [ ] Physical ring detection.
