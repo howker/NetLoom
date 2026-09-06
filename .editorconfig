@@ -8,6 +8,9 @@ trim_trailing_whitespace = true
 [*.{cs,xaml,csproj,sln,ps1,resx,config}]
 end_of_line = crlf
 
+[*.ps1]
+charset = utf-8-bom
+
 [*.{md,json,yml,yaml}]
 end_of_line = lf
 
