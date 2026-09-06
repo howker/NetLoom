@@ -391,3 +391,18 @@ Reconciliation:
 5. manual PhysicalLink защищается по разрешённой физической идентичности, а не только по входящему GUID.
 
 `Migration009MaterializedTopology` остаётся неизменной.
+
+## ADR-039 — Bounded current PhysicalLink evidence
+
+Статус: принято.
+
+Materialized PhysicalLink хранит отдельный bounded current evidence snapshot.
+
+Resolver `TopologyEvidence` не передаётся напрямую в persistence, потому что это создало бы недопустимую зависимость Persistence → Topology. Для границы materialization используется Domain-модель `PhysicalLinkEvidence`.
+
+Evidence slot идентифицируется сочетанием:
+`physical_link_id + evidence_kind + source_address + slot_discriminator`.
+
+`SlotDiscriminator` обязателен и формируется там, где известна семантика evidence. SourceAddress остаётся частью ключа, поэтому evidence разных направлений не схлопывается.
+
+Current evidence имеет replace-snapshot / last-write-wins semantics и не является историческим или time-series хранилищем.

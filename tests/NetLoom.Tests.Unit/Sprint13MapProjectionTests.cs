@@ -374,6 +374,7 @@ namespace NetLoom.Tests.Unit
                 Guid.NewGuid(),
                 Now,
                 "192.0.2.254",
+                "test-slot",
                 "test evidence");
         }
     }

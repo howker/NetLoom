@@ -341,3 +341,19 @@ linux-x64 publish остаётся compatibility smoke-test сборки/пуб�
 Количество миграций остаётся 9.
 
 Linux `linux-x64` publish в этом спринте является compatibility smoke test и не считается доказательством полноценной Linux runtime-функциональности Engine.
+
+## Sprint 15.1c — current PhysicalLink evidence
+
+Реализовано:
+- обязательный `TopologyEvidence.SlotDiscriminator`;
+- LLDP/CDP local-port slot identity;
+- ARP/FDB correlation MAC slot identity;
+- Domain-модель `PhysicalLinkEvidence`;
+- `PhysicalLinkEvidenceMaterializer`;
+- Migration010 `physical_link_evidence_current`;
+- bounded replace-snapshot persistence с last-write-wins для одного slot;
+- current evidence readback по одной связи и по всему materialized graph;
+- automatic current evidence в `MaterializedTopologyMapProjector`;
+- end-to-end regression: provisional → reverse rediscovery → refinement → newer poll → evidence readback → Map.
+
+Количество миграций: 10.

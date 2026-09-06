@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using NetLoom.Domain.Observations.Cdp;
 using NetLoom.Domain.Observations.Lldp;
@@ -97,6 +98,12 @@ namespace NetLoom.Topology.Resolution
                         observation.Observation.Id,
                         observation.Observation.CapturedUtc,
                         observation.Observation.SourceAddress,
+                        BuildPortSlotDiscriminator(
+                            "lldp-local",
+                            neighbor.LocalPortNumber,
+                            neighbor.LocalPort == null
+                                ? null
+                                : neighbor.LocalPort.PortId),
                         "LLDP adjacency")
                 };
 
@@ -160,6 +167,12 @@ namespace NetLoom.Topology.Resolution
                         observation.Observation.Id,
                         observation.Observation.CapturedUtc,
                         observation.Observation.SourceAddress,
+                        BuildPortSlotDiscriminator(
+                            "cdp-local",
+                            neighbor.CacheIfIndex > 0
+                                ? (int?)neighbor.CacheIfIndex
+                                : null,
+                            null),
                         "CDP adjacency")
                 };
 
@@ -255,8 +268,58 @@ namespace NetLoom.Topology.Resolution
                         null,
                         null,
                         correlation.FdbSourceAddress,
+                        BuildCorrelationSlotDiscriminator(
+                            correlation),
                         "ARP/FDB MAC correlation"));
             }
+        }
+
+        private static string BuildPortSlotDiscriminator(
+            string prefix,
+            int? portIndex,
+            string portId)
+        {
+            if (portIndex.HasValue)
+            {
+                return
+                    prefix +
+                    ":index:" +
+                    portIndex.Value.ToString(
+                        CultureInfo.InvariantCulture);
+            }
+
+            if (!string.IsNullOrWhiteSpace(portId))
+            {
+                return
+                    prefix +
+                    ":id:" +
+                    portId.Trim();
+            }
+
+            return prefix + ":unknown";
+        }
+
+        private static string BuildCorrelationSlotDiscriminator(
+            MacCorrelation correlation)
+        {
+            var normalizedMac =
+                NormalizeMac(
+                    correlation.MacAddress);
+
+            if (normalizedMac != null)
+            {
+                return "mac:" + normalizedMac;
+            }
+
+            if (!string.IsNullOrWhiteSpace(
+                correlation.IpAddress))
+            {
+                return
+                    "ip:" +
+                    correlation.IpAddress.Trim();
+            }
+
+            return "correlation:unknown";
         }
 
         private static bool Same(

@@ -25,7 +25,8 @@ namespace NetLoom.Persistence.Sqlite.Database
                     new Migration006FdbObservations(),
                     new Migration007ArpObservations(),
                     new Migration008Locations(),
-                    new Migration009MaterializedTopology()
+                    new Migration009MaterializedTopology(),
+                    new Migration010PhysicalLinkEvidenceCurrent()
                 });
         }
 

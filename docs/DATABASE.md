@@ -178,3 +178,28 @@ High-frequency monitoring metrics are not stored in these topology tables.
 Существующие строки Sprint 15 с прежним caller-supplied `link_key` нормализуются при следующем успешном reconciliation; массовое переписывание Migration009 не выполняется.
 
 Удаление connected manual device/interface по-прежнему запрещается repository pre-check'ом до raw foreign-key ошибки.
+
+## Sprint 15.1c — physical_link_evidence_current
+
+Migration010 добавляет таблицу `physical_link_evidence_current`.
+
+Ключ current evidence slot:
+`(physical_link_id, evidence_kind, source_address, slot_discriminator)`.
+
+Поля:
+- `physical_link_id`;
+- `evidence_kind`;
+- `evidence_strength`;
+- `source_address`;
+- `slot_discriminator`;
+- `observation_id` nullable;
+- `captured_utc` nullable;
+- `detail` nullable.
+
+`ReplacePhysicalLinkEvidence` заменяет весь current snapshot конкретной физической связи. Повтор одного slot внутри входного snapshot имеет last-write-wins semantics. Пустой snapshot очищает current evidence.
+
+Исторический evidence и high-frequency metrics в эту таблицу не добавляются.
+
+`physical_link_evidence_current.physical_link_id` использует `ON DELETE CASCADE` к `physical_links(id)`.
+
+Количество миграций: 10.

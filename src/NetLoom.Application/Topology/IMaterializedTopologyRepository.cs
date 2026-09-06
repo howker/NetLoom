@@ -20,6 +20,16 @@ namespace NetLoom.Application.Topology
 
         IReadOnlyList<PhysicalLink> GetPhysicalLinks();
 
+        void ReplacePhysicalLinkEvidence(
+            Guid physicalLinkId,
+            IEnumerable<PhysicalLinkEvidence> evidence);
+
+        IReadOnlyList<PhysicalLinkEvidence>
+            GetPhysicalLinkEvidence();
+
+        IReadOnlyList<PhysicalLinkEvidence>
+            GetPhysicalLinkEvidence(Guid physicalLinkId);
+
         void DeleteManualPhysicalLink(Guid id);
 
         void DeleteManualInterface(Guid id);

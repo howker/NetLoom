@@ -1,18 +1,26 @@
 using System;
 
-namespace NetLoom.Topology.Resolution
+namespace NetLoom.Domain.Topology
 {
-    public sealed class TopologyEvidence
+    public sealed class PhysicalLinkEvidence
     {
-        public TopologyEvidence(
-            TopologyEvidenceKind kind,
-            TopologyEvidenceStrength strength,
-            Guid? observationId,
-            DateTime? capturedUtc,
+        public PhysicalLinkEvidence(
+            Guid physicalLinkId,
+            PhysicalLinkEvidenceKind kind,
+            PhysicalLinkEvidenceStrength strength,
             string sourceAddress,
             string slotDiscriminator,
+            Guid? observationId,
+            DateTime? capturedUtc,
             string detail)
         {
+            if (physicalLinkId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Physical link id is required.",
+                    nameof(physicalLinkId));
+            }
+
             if (string.IsNullOrWhiteSpace(sourceAddress))
             {
                 throw new ArgumentException(
@@ -43,29 +51,50 @@ namespace NetLoom.Topology.Resolution
                     nameof(capturedUtc));
             }
 
+            PhysicalLinkId = physicalLinkId;
             Kind = kind;
             Strength = strength;
-            ObservationId = observationId;
-            CapturedUtc = capturedUtc;
             SourceAddress = sourceAddress.Trim();
             SlotDiscriminator = slotDiscriminator.Trim();
-            Detail = string.IsNullOrWhiteSpace(detail)
-                ? null
-                : detail.Trim();
+            ObservationId = observationId;
+            CapturedUtc = capturedUtc;
+            Detail = Normalize(detail);
         }
 
-        public TopologyEvidenceKind Kind { get; }
+        public Guid PhysicalLinkId { get; }
 
-        public TopologyEvidenceStrength Strength { get; }
+        public PhysicalLinkEvidenceKind Kind { get; }
 
-        public Guid? ObservationId { get; }
-
-        public DateTime? CapturedUtc { get; }
+        public PhysicalLinkEvidenceStrength Strength { get; }
 
         public string SourceAddress { get; }
 
         public string SlotDiscriminator { get; }
 
+        public Guid? ObservationId { get; }
+
+        public DateTime? CapturedUtc { get; }
+
         public string Detail { get; }
+
+        private static string Normalize(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? null
+                : value.Trim();
+        }
+    }
+
+    public enum PhysicalLinkEvidenceKind
+    {
+        Lldp,
+        Cdp,
+        ArpFdbCorrelation
+    }
+
+    public enum PhysicalLinkEvidenceStrength
+    {
+        Weak,
+        Strong
     }
 }

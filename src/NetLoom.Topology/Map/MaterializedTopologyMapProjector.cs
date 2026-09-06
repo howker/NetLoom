@@ -19,6 +19,23 @@ namespace NetLoom.Topology.Map
             IEnumerable<Location> locations,
             DateTime generatedUtc)
         {
+            return Project(
+                devices,
+                interfaces,
+                links,
+                new PhysicalLinkEvidence[0],
+                locations,
+                generatedUtc);
+        }
+
+        public MapSnapshot Project(
+            IEnumerable<TopologyDevice> devices,
+            IEnumerable<DeviceInterface> interfaces,
+            IEnumerable<PhysicalLink> links,
+            IEnumerable<PhysicalLinkEvidence> linkEvidence,
+            IEnumerable<Location> locations,
+            DateTime generatedUtc)
+        {
             if (devices == null)
             {
                 throw new ArgumentNullException(nameof(devices));
@@ -32,6 +49,11 @@ namespace NetLoom.Topology.Map
             if (links == null)
             {
                 throw new ArgumentNullException(nameof(links));
+            }
+
+            if (linkEvidence == null)
+            {
+                throw new ArgumentNullException(nameof(linkEvidence));
             }
 
             if (locations == null)
@@ -64,6 +86,32 @@ namespace NetLoom.Topology.Map
                 interfaces.ToDictionary(
                     networkInterface =>
                         networkInterface.Id);
+
+            var currentEvidence =
+                linkEvidence.ToArray();
+
+            if (currentEvidence.Any(item => item == null))
+            {
+                throw new ArgumentException(
+                    "Physical link evidence cannot contain null items.",
+                    nameof(linkEvidence));
+            }
+
+            var evidenceByLink =
+                currentEvidence
+                    .GroupBy(item => item.PhysicalLinkId)
+                    .ToDictionary(
+                        group => group.Key,
+                        group =>
+                            group
+                                .OrderBy(item => item.Kind)
+                                .ThenBy(
+                                    item => item.SourceAddress,
+                                    StringComparer.Ordinal)
+                                .ThenBy(
+                                    item => item.SlotDiscriminator,
+                                    StringComparer.Ordinal)
+                                .ToArray());
 
             var nodeKeyByDevice =
                 visibleDevices.ToDictionary(
@@ -150,7 +198,9 @@ namespace NetLoom.Topology.Map
                                 "User",
                                 null)
                         }
-                        : new MapEvidenceItem[0];
+                        : MapCurrentEvidence(
+                            link.Id,
+                            evidenceByLink);
 
                 mapLinks.Add(
                     new MapLink(
@@ -192,6 +242,52 @@ namespace NetLoom.Topology.Map
                 mapNodes,
                 mapLinks,
                 mapLocations);
+        }
+
+        private static MapEvidenceItem[] MapCurrentEvidence(
+            Guid physicalLinkId,
+            IReadOnlyDictionary<Guid, PhysicalLinkEvidence[]>
+                evidenceByLink)
+        {
+            PhysicalLinkEvidence[] evidence;
+
+            if (!evidenceByLink.TryGetValue(
+                physicalLinkId,
+                out evidence))
+            {
+                return new MapEvidenceItem[0];
+            }
+
+            return evidence
+                .Select(
+                    item =>
+                        new MapEvidenceItem(
+                            MapEvidenceKindFor(item.Kind),
+                            item.Strength ==
+                            PhysicalLinkEvidenceStrength.Strong
+                                ? MapEvidenceStrength.Strong
+                                : MapEvidenceStrength.Weak,
+                            item.ObservationId,
+                            item.CapturedUtc,
+                            item.SourceAddress,
+                            item.Detail))
+                .ToArray();
+        }
+
+        private static MapEvidenceKind MapEvidenceKindFor(
+            PhysicalLinkEvidenceKind kind)
+        {
+            switch (kind)
+            {
+                case PhysicalLinkEvidenceKind.Lldp:
+                    return MapEvidenceKind.Lldp;
+
+                case PhysicalLinkEvidenceKind.Cdp:
+                    return MapEvidenceKind.Cdp;
+
+                default:
+                    return MapEvidenceKind.ArpFdbCorrelation;
+            }
         }
 
         private static string BuildSecondaryText(

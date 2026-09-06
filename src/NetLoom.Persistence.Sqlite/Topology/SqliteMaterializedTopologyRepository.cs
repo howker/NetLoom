@@ -446,6 +446,182 @@ ORDER BY id;";
             return result;
         }
 
+        public void ReplacePhysicalLinkEvidence(
+            Guid physicalLinkId,
+            IEnumerable<PhysicalLinkEvidence> evidence)
+        {
+            if (physicalLinkId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Physical link id is required.",
+                    nameof(physicalLinkId));
+            }
+
+            if (evidence == null)
+            {
+                throw new ArgumentNullException(nameof(evidence));
+            }
+
+            var currentBySlot =
+                new Dictionary<string, PhysicalLinkEvidence>(
+                    StringComparer.Ordinal);
+
+            foreach (var item in evidence)
+            {
+                if (item == null)
+                {
+                    throw new ArgumentException(
+                        "Evidence item cannot be null.",
+                        nameof(evidence));
+                }
+
+                if (item.PhysicalLinkId != physicalLinkId)
+                {
+                    throw new InvalidOperationException(
+                        "Evidence belongs to another physical link.");
+                }
+
+                currentBySlot[EvidenceSlotKey(item)] = item;
+            }
+
+            using (var connection = _connectionFactory.OpenConnection())
+            {
+                var existing =
+                    ScalarString(
+                        connection,
+                        "SELECT id FROM physical_links WHERE id = @id;",
+                        physicalLinkId);
+
+                if (existing == null)
+                {
+                    throw new InvalidOperationException(
+                        "Physical link does not exist.");
+                }
+
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var delete = connection.CreateCommand())
+                    {
+                        delete.Transaction = transaction;
+                        delete.CommandText = @"
+DELETE FROM physical_link_evidence_current
+WHERE physical_link_id = @physicalLinkId;";
+
+                        Add(
+                            delete,
+                            "@physicalLinkId",
+                            physicalLinkId.ToString("D"));
+
+                        delete.ExecuteNonQuery();
+                    }
+
+                    foreach (var item in currentBySlot.Values)
+                    {
+                        using (var insert = connection.CreateCommand())
+                        {
+                            insert.Transaction = transaction;
+                            insert.CommandText = @"
+INSERT INTO physical_link_evidence_current
+(
+    physical_link_id,
+    evidence_kind,
+    evidence_strength,
+    source_address,
+    slot_discriminator,
+    observation_id,
+    captured_utc,
+    detail
+)
+VALUES
+(
+    @physicalLinkId,
+    @kind,
+    @strength,
+    @sourceAddress,
+    @slotDiscriminator,
+    @observationId,
+    @capturedUtc,
+    @detail
+);";
+
+                            Add(
+                                insert,
+                                "@physicalLinkId",
+                                item.PhysicalLinkId.ToString("D"));
+
+                            Add(
+                                insert,
+                                "@kind",
+                                item.Kind.ToString());
+
+                            Add(
+                                insert,
+                                "@strength",
+                                item.Strength.ToString());
+
+                            Add(
+                                insert,
+                                "@sourceAddress",
+                                item.SourceAddress);
+
+                            Add(
+                                insert,
+                                "@slotDiscriminator",
+                                item.SlotDiscriminator);
+
+                            AddGuid(
+                                insert,
+                                "@observationId",
+                                item.ObservationId);
+
+                            AddDate(
+                                insert,
+                                "@capturedUtc",
+                                item.CapturedUtc);
+
+                            Add(
+                                insert,
+                                "@detail",
+                                item.Detail);
+
+                            insert.ExecuteNonQuery();
+                        }
+                    }
+
+                    transaction.Commit();
+                }
+            }
+        }
+
+        public IReadOnlyList<PhysicalLinkEvidence>
+            GetPhysicalLinkEvidence()
+        {
+            using (var connection = _connectionFactory.OpenConnection())
+            {
+                return ReadPhysicalLinkEvidence(
+                    connection,
+                    null);
+            }
+        }
+
+        public IReadOnlyList<PhysicalLinkEvidence>
+            GetPhysicalLinkEvidence(Guid physicalLinkId)
+        {
+            if (physicalLinkId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Physical link id is required.",
+                    nameof(physicalLinkId));
+            }
+
+            using (var connection = _connectionFactory.OpenConnection())
+            {
+                return ReadPhysicalLinkEvidence(
+                    connection,
+                    physicalLinkId);
+            }
+        }
+
         public void DeleteManualPhysicalLink(Guid id)
         {
             using (var connection = _connectionFactory.OpenConnection())
@@ -955,6 +1131,79 @@ WHERE id = @id;";
                 throw new InvalidOperationException(
                     "Only manual topology can be deleted by this operation.");
             }
+        }
+
+        private static IReadOnlyList<PhysicalLinkEvidence>
+            ReadPhysicalLinkEvidence(
+                SQLiteConnection connection,
+                Guid? physicalLinkId)
+        {
+            var result =
+                new List<PhysicalLinkEvidence>();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    physical_link_id,
+    evidence_kind,
+    evidence_strength,
+    source_address,
+    slot_discriminator,
+    observation_id,
+    captured_utc,
+    detail
+FROM physical_link_evidence_current" +
+                    (physicalLinkId.HasValue
+                        ? " WHERE physical_link_id = @physicalLinkId"
+                        : string.Empty) +
+                    @"
+ORDER BY
+    physical_link_id,
+    evidence_kind,
+    source_address,
+    slot_discriminator;";
+
+                if (physicalLinkId.HasValue)
+                {
+                    Add(
+                        command,
+                        "@physicalLinkId",
+                        physicalLinkId.Value.ToString("D"));
+                }
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        result.Add(
+                            new PhysicalLinkEvidence(
+                                Guid.Parse(reader.GetString(0)),
+                                Parse<PhysicalLinkEvidenceKind>(
+                                    reader.GetString(1)),
+                                Parse<PhysicalLinkEvidenceStrength>(
+                                    reader.GetString(2)),
+                                reader.GetString(3),
+                                reader.GetString(4),
+                                GuidNullable(reader, 5),
+                                DateNullable(reader, 6),
+                                StringNullable(reader, 7)));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static string EvidenceSlotKey(
+            PhysicalLinkEvidence evidence)
+        {
+            return
+                evidence.Kind +
+                "\u001f" +
+                evidence.SourceAddress +
+                "\u001f" +
+                evidence.SlotDiscriminator;
         }
 
         private static TopologyDevice ReadDevice(

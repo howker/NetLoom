@@ -200,3 +200,17 @@ Map presentation keys remain separate from persistent topology identity. Localiz
 - automatic topology не может заменить manual PhysicalLink даже при другом входящем GUID.
 
 Persistence объединяет lifecycle timestamps монотонно: `FirstSeenUtc` движется только к более раннему значению, а `LastSeenUtc`, `LastConfirmedUtc` и `LastResolvedUtc` — только к более позднему.
+
+## Sprint 15.1c — current PhysicalLink evidence
+
+Resolver evidence и materialized evidence разделены по слоям.
+
+`TopologyEvidence` остаётся resolver-моделью в `NetLoom.Topology`. Перед persistence она переводится в Domain-модель `PhysicalLinkEvidence`. Поэтому `NetLoom.Persistence.Sqlite` не получает зависимость на `NetLoom.Topology`.
+
+Каждый evidence имеет обязательный `SlotDiscriminator`, описывающий стабильный семантический slot:
+- LLDP/CDP — directional local-port identity;
+- ARP/FDB correlation — correlation MAC или детерминированный fallback.
+
+SQLite хранит только bounded current evidence snapshot для materialized PhysicalLink. Это не append-only history и не time-series storage.
+
+`MaterializedTopologyMapProjector` читает current evidence и передаёт provenance на MapLink. Manual PhysicalLink продолжает формировать synthetic Manual evidence.

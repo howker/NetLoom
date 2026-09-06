@@ -11,6 +11,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetLoom.Application\NetLoom.Application.csproj" />
+    <ProjectReference Include="..\..\src\NetLoom.Contracts\NetLoom.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\NetLoom.Topology\NetLoom.Topology.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
   </ItemGroup>
 </Project>
