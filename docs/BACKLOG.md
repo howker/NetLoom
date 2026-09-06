@@ -7,6 +7,9 @@
 ## P0 — нужен для собственного рабочего NetLoom
 
 - [x] Sprint 15 — materialized graph + manual/unmanaged topology.
+- [x] Sprint 15.1a - text integrity hardening.
+- [ ] Sprint 15.1b - canonical PhysicalLink identity + monotonic lifecycle timestamps.
+- [ ] Sprint 15.1c - bounded current PhysicalLink evidence + map explainability.
 - [ ] Подключить реальный backend pipeline к MapSnapshot и WPF, чтобы карта показывала живую сеть.
 - [ ] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
 - [ ] Monitoring Runtime.
