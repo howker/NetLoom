@@ -264,3 +264,11 @@ STP runtime не пишет materialized topology факты и не созда�
 Sprint 23b2 не добавляет migrations и не меняет SQLite schema. Simulator replay работает с raw snapshot in-memory и production parser; simulator-only persistence не создаётся.
 
 Migration011 остаётся последней migration. Количество migrations: 11.
+
+## Sprint 24 — STP tree projection persistence boundary
+
+Sprint 24 не добавляет migrations и не меняет SQLite schema.
+
+Projection потребляет уже normalized `StpObservation` и materialized interfaces в памяти. Она не записывает STP state в `physical_links`, `interfaces` или другие materialized topology facts.
+
+Migration011 остаётся последней migration. Количество migrations: 11.

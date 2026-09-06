@@ -564,3 +564,23 @@ STP fixture не содержит отдельной simulator-only семант
 Missing/ambiguous mapping остаётся unresolved по production parser rules и защищён Sprint 23a unit regressions. Новых migrations нет; Migration011 остаётся последней.
 
 После runtime integration Sprint 23b1 и raw Simulator replay Sprint 23b2 backlog `STP/RSTP Collector` закрывается. Следующий слой — `STP tree projection`.
+
+## ADR-050 — STP tree является отдельной projection, а не PhysicalLink state
+
+Статус: принято.
+
+STP/RSTP state проецируется в отдельный transport-neutral `StpTreeSnapshot`.
+
+`MapLink` и `PhysicalLink` продолжают означать физическую связь. STP port state не превращается в физическую adjacency и не перезаписывает link truth.
+
+Projection получает stable `DeviceId` явно от caller. `Observation.SourceAddress` не используется как DeviceId.
+
+Stable `InterfaceId` разрешается только по единственному совпадению `(DeviceId, IfIndex)`. При missing/ambiguous/cross-device match binding остаётся unresolved.
+
+`BridgePortIndex` сохраняется как protocol index и не подменяет `IfIndex`.
+
+`DesignatedRoot` остаётся protocol bridge identifier и не объявляется NetLoom DeviceId без отдельного identity-resolution evidence.
+
+Projection детерминирована и не имеет write-path в topology persistence.
+
+Migration count остаётся 11. Physical ring detection и Ring protection analyzer остаются отдельными следующими слоями.

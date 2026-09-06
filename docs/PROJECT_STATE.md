@@ -578,3 +578,32 @@ Migration011 остаётся последней migration; количество
 Migration011 остаётся последней migration; количество migrations: 11.
 
 `STP/RSTP Collector` завершён и закрыт. Следующий P0: `STP tree projection`.
+
+## Sprint 24 — STP tree projection
+
+Реализовано:
+- transport-neutral `StpTreeSnapshot`;
+- `StpTreePort` и normalized `StpTreePortState`;
+- pure deterministic `StpTreeProjector`;
+- explicit stable DeviceId input;
+- binding `IfIndex -> InterfaceId` только внутри указанного Device и только при единственном совпадении;
+- root port projection;
+- forwarding/blocking/listening/learning/disabled/broken/unknown states;
+- unresolved/cross-device/ambiguous binding остаётся `InterfaceId = null`;
+- deterministic ordering по BridgePortIndex;
+- unit regressions для root/forwarding/blocking, safe InterfaceId binding, unresolved/ambiguity и determinism.
+
+Не изменены:
+- PhysicalLink и materialized physical topology;
+- MonitoringRuntime/Scheduler;
+- STP collector/parser/store;
+- SQLite schema;
+- MapLink physical semantics;
+- WPF persistence boundary;
+- MSTP/Turbo Ring/vendor ring protocols.
+
+Migration011 остаётся последней migration; количество migrations: 11.
+
+Backlog `STP tree projection` закрыт.
+
+Следующий P0: `Physical ring detection`.

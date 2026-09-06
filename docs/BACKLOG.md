@@ -23,7 +23,8 @@
 - [x] Sprint 23b1 — STP MonitoringRuntime + Engine integration.
 - [x] Sprint 23b2 — Simulator raw STP replay through production parser.
 - [x] STP/RSTP Collector.
-- [ ] STP tree projection.
+- [x] Sprint 24 — STP tree projection foundation.
+- [x] STP tree projection.
 - [ ] Physical ring detection.
 - [ ] Ring protection analyzer.
 - [ ] Удобный поиск MAC/IP до конкретного switch/interface.

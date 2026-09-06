@@ -403,3 +403,32 @@ Fixture `stp-basic.json` содержит bridge scalars, explicit `dot1dBasePor
 Missing/ambiguous mapping остаётся покрыт unit regressions production parser из Sprint 23a. Sprint 23b2 не меняет SQLite schema, Scheduler, MonitoringRuntime, materialized topology, STP tree projection, MSTP или vendor ring protocols.
 
 После Sprint 23b2 backlog `STP/RSTP Collector` закрыт. Следующий P0 — `STP tree projection`.
+
+## Sprint 24 — STP tree projection
+
+Sprint 24 вводит отдельную transport-neutral projection model для normalized STP state.
+
+Pipeline:
+`StpObservation + explicit stable DeviceId + materialized DeviceInterface[] -> StpTreeProjector -> Contracts.StpTreeSnapshot`.
+
+Projection не использует source IP как DeviceId. Stable `DeviceId` передаётся caller'ом явно.
+
+Resolved `IfIndex` связывается со stable `InterfaceId` только при единственном совпадении `(DeviceId, IfIndex)`. Если совпадения нет, оно принадлежит другому Device или неоднозначно, `InterfaceId` остаётся `null`.
+
+`BridgePortIndex` сохраняется отдельно и никогда не используется как fallback для `IfIndex`.
+
+`StpTreeSnapshot` содержит:
+- explicit `InstanceId`;
+- protocol root identifier (`DesignatedRoot`) без подмены его NetLoom DeviceId;
+- root bridge-port/ifIndex/stable InterfaceId, если привязка однозначна;
+- детерминированно упорядоченные STP ports;
+- transport-neutral port state: Disabled/Blocking/Listening/Learning/Forwarding/Broken/Unknown;
+- stable InterfaceId только при безопасной привязке.
+
+STP projection не читает и не изменяет `PhysicalLink`, не создаёт active-tree cable facts и не выполняет ring detection.
+
+SQLite schema не меняется. Migration011 остаётся последней.
+
+`MapLink` остаётся моделью физической связи и намеренно не перегружается STP semantics. UI integration может потреблять `StpTreeSnapshot` отдельным read-only overlay boundary.
+
+Следующий P0 после Sprint 24 — `Physical ring detection`.
