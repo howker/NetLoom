@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "observationId": "55555555-5555-5555-5555-555555555555",
+  "kind": "Stp",
+  "sourceAddress": "192.0.2.50",
+  "capturedUtc": "2026-01-01T10:20:00.0000000Z",
+  "variables": [
+    {
+      "oid": "1.3.6.1.2.1.17.2.1.0",
+      "typeCode": 2,
+      "displayValue": "2",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.5.0",
+      "typeCode": 4,
+      "displayValue": "8000.001122334455",
+      "encodedValueBase64": "BAiAAAARIjNEVQ=="
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.6.0",
+      "typeCode": 2,
+      "displayValue": "0",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.7.0",
+      "typeCode": 2,
+      "displayValue": "5",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.1.4.1.2.5",
+      "typeCode": 2,
+      "displayValue": "101",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.2.5",
+      "typeCode": 2,
+      "displayValue": "128",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.3.5",
+      "typeCode": 2,
+      "displayValue": "5",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.4.5",
+      "typeCode": 2,
+      "displayValue": "1",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.5.5",
+      "typeCode": 2,
+      "displayValue": "100",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.6.5",
+      "typeCode": 4,
+      "displayValue": "8000.001122334455",
+      "encodedValueBase64": "BAiAAAARIjNEVQ=="
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.7.5",
+      "typeCode": 2,
+      "displayValue": "0",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.8.5",
+      "typeCode": 4,
+      "displayValue": "8000.00AABBCCDDEE",
+      "encodedValueBase64": "BAiAAACqu8zd7g=="
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.9.5",
+      "typeCode": 4,
+      "displayValue": "128.5",
+      "encodedValueBase64": "BAKABQ=="
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.10.5",
+      "typeCode": 2,
+      "displayValue": "7",
+      "encodedValueBase64": ""
+    },
+    {
+      "oid": "1.3.6.1.2.1.17.2.15.1.11.5",
+      "typeCode": 2,
+      "displayValue": "20000",
+      "encodedValueBase64": ""
+    }
+  ]
+}

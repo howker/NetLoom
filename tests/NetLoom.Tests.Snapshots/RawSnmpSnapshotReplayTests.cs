@@ -5,6 +5,7 @@ using NetLoom.Domain.Observations.Arp;
 using NetLoom.Domain.Observations.Cdp;
 using NetLoom.Domain.Observations.Fdb;
 using NetLoom.Domain.Observations.Lldp;
+using NetLoom.Domain.Observations.Stp;
 using NetLoom.Simulator.Replay;
 
 namespace NetLoom.Tests.Snapshots
@@ -123,6 +124,28 @@ namespace NetLoom.Tests.Snapshots
                     .PhysicalAddress);
         }
 
+        [TestMethod]
+        public void StpFixtureUsesProductionParserAndBridgeMapping()
+        {
+            var result =
+                Replay("stp-basic.json");
+
+            var parsed =
+                result.ParsedObservation
+                as StpObservation;
+
+            Assert.IsNotNull(parsed);
+            Assert.AreEqual("cist", parsed.InstanceId);
+            Assert.AreEqual(5, parsed.RootPortBridgePortIndex);
+            Assert.AreEqual(101, parsed.RootPortIfIndex);
+            Assert.AreEqual(1, parsed.Ports.Count);
+
+            var port =
+                parsed.Ports[0];
+
+            Assert.AreEqual(5, port.BridgePortIndex);
+            Assert.AreEqual(101, port.IfIndex);
+        }
         [TestMethod]
         public void CodecRoundTripPreservesEncodedValue()
         {

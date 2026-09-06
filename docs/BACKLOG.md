@@ -21,7 +21,8 @@
 - [x] Interface monitoring.
 - [x] Sprint 23a — BRIDGE-MIB STP normalized observation foundation.
 - [x] Sprint 23b1 — STP MonitoringRuntime + Engine integration.
-- [ ] STP/RSTP Collector.
+- [x] Sprint 23b2 — Simulator raw STP replay through production parser.
+- [x] STP/RSTP Collector.
 - [ ] STP tree projection.
 - [ ] Physical ring detection.
 - [ ] Ring protection analyzer.

@@ -562,3 +562,19 @@ STP/RSTP Collector остаётся следующим P0 этапом.
 Migration011 остаётся последней migration; количество migrations: 11.
 
 `STP/RSTP Collector` остаётся открытым до Sprint 23b2 Simulator completion.
+
+## Sprint 23b2 — Simulator raw STP replay
+
+Реализовано:
+- `SnmpSnapshotReplayer` поддерживает `ObservationKind.Stp`;
+- replay вызывает production `StpObservationParser`;
+- добавлен versioned raw fixture `stp-basic.json`;
+- fixture содержит bridge-level STP scalars, `dot1dBasePortIfIndex` и STP port rows;
+- snapshot regression подтверждает `InstanceId = cist` и mapping `BridgePortIndex 5 -> IfIndex 101`;
+- existing Sprint 23a parser regressions продолжают покрывать missing/ambiguous mapping.
+
+Не изменены MonitoringRuntime/Scheduler, SQLite schema, materialized Device/DeviceInterface/PhysicalLink, STP tree projection, physical ring detection, MSTP и Turbo Ring/vendor protocols.
+
+Migration011 остаётся последней migration; количество migrations: 11.
+
+`STP/RSTP Collector` завершён и закрыт. Следующий P0: `STP tree projection`.

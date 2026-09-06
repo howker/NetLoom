@@ -4,6 +4,7 @@ using NetLoom.Protocols.Snmp.Arp;
 using NetLoom.Protocols.Snmp.Cdp;
 using NetLoom.Protocols.Snmp.Fdb;
 using NetLoom.Protocols.Snmp.Lldp;
+using NetLoom.Protocols.Snmp.Stp;
 
 namespace NetLoom.Simulator.Replay
 {
@@ -74,6 +75,16 @@ namespace NetLoom.Simulator.Replay
                         raw,
                         arp,
                         arp.Entries.Count);
+
+                case ObservationKind.Stp:
+                    var stp =
+                        new StpObservationParser()
+                            .Parse(raw);
+
+                    return new SnmpSnapshotReplayResult(
+                        raw,
+                        stp,
+                        stp.Ports.Count);
 
                 default:
                     throw new NotSupportedException(

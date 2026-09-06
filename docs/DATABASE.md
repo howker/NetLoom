@@ -258,3 +258,9 @@ Production STP runtime переиспользует Migration011:
 Количество migrations остаётся 11.
 
 STP runtime не пишет materialized topology факты и не создаёт metric/time-series storage.
+
+## Sprint 23b2 — Simulator STP replay persistence boundary
+
+Sprint 23b2 не добавляет migrations и не меняет SQLite schema. Simulator replay работает с raw snapshot in-memory и production parser; simulator-only persistence не создаётся.
+
+Migration011 остаётся последней migration. Количество migrations: 11.

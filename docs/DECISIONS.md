@@ -552,3 +552,15 @@ STP step изолирован общим per-step exception boundary. Failed STP
 Default Engine kinds включают STP; independent cadence использует `schedule --kinds stp`.
 
 Migration count остаётся 11. Simulator raw STP replay остаётся обязательным Sprint 23b2 перед закрытием `STP/RSTP Collector`.
+
+## ADR-049 — Simulator STP replay использует только production parser
+
+Статус: принято.
+
+`NetLoom.Simulator` восстанавливает raw `SnmpObservation` через существующий versioned snapshot codec и для `ObservationKind.Stp` вызывает production `StpObservationParser`.
+
+STP fixture не содержит отдельной simulator-only семантики OID. Mapping `bridgePortIndex -> dot1dBasePortIfIndex -> ifIndex` выполняется production parser. Common-tree replay сохраняет explicit `InstanceId = cist`; это не объявляет поддержку MSTP instances.
+
+Missing/ambiguous mapping остаётся unresolved по production parser rules и защищён Sprint 23a unit regressions. Новых migrations нет; Migration011 остаётся последней.
+
+После runtime integration Sprint 23b1 и raw Simulator replay Sprint 23b2 backlog `STP/RSTP Collector` закрывается. Следующий слой — `STP tree projection`.

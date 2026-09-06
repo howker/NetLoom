@@ -391,3 +391,15 @@ Runtime smoke включает STP и ищет Health/Interface/STP steps по `
 Sprint 23b1 не меняет SQLite schema: Migration011 остаётся последней миграцией. STP tree projection, ring detection, MSTP и vendor ring protocols не входят.
 
 Simulator raw STP replay остаётся Sprint 23b2, поэтому backlog `STP/RSTP Collector` ещё открыт.
+
+## Sprint 23b2 — Simulator raw STP replay
+
+Sprint 23b2 завершает STP/RSTP Collector boundary добавлением raw STP snapshot replay в существующий `NetLoom.Simulator`.
+
+Simulator продолжает использовать versioned raw SNMP snapshot format v1 и существующий codec, восстанавливающий тот же `SnmpObservation`/`SnmpVariable`, что используется production pipeline. Для `ObservationKind.Stp` `SnmpSnapshotReplayer` вызывает непосредственно production `StpObservationParser`; simulator-only разбор STP OID запрещён.
+
+Fixture `stp-basic.json` содержит bridge scalars, explicit `dot1dBasePortIfIndex` mapping и STP port rows. Snapshot regression подтверждает `InstanceId = cist`, root `bridgePortIndex = 5 -> ifIndex = 101` и port `BridgePortIndex = 5 -> IfIndex = 101`. Тем самым replay не допускает fallback `bridgePortIndex == ifIndex`.
+
+Missing/ambiguous mapping остаётся покрыт unit regressions production parser из Sprint 23a. Sprint 23b2 не меняет SQLite schema, Scheduler, MonitoringRuntime, materialized topology, STP tree projection, MSTP или vendor ring protocols.
+
+После Sprint 23b2 backlog `STP/RSTP Collector` закрыт. Следующий P0 — `STP tree projection`.
