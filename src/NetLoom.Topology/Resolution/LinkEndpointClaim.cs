@@ -37,8 +37,8 @@ namespace NetLoom.Topology.Resolution
 
         public string ChassisId { get; }
 
-        // то только identity claim, полученный из протокола.
-        // н не является NetLoom DeviceId.
+        // Это только identity claim, полученный из протокола.
+        // Он не является NetLoom DeviceId.
         public string DeviceIdClaim { get; }
 
         public LinkPortReferenceKind PortReferenceKind { get; }

@@ -61,14 +61,14 @@ Pipeline физической топологии:
 
 `PhysicalLinkCandidate` является промежуточным объяснимым результатом resolver.
 
-н содержит:
+Он содержит:
 - local/remote endpoint claims;
 - protocol-specific port references;
 - confidence;
 - список evidence;
 - ссылки на исходные observations там, где они существуют.
 
-апрещено:
+Запрещено:
 - создавать PhysicalLink непосредственно из FDB;
 - создавать PhysicalLink непосредственно из ARP/FDB correlation;
 - использовать IP как внутренний DeviceId;
@@ -76,10 +76,10 @@ Pipeline физической топологии:
 - считать CDP cdpCacheIfIndex равным ifIndex;
 - считать bridgePortIndex равным ifIndex.
 
-атериализация PhysicalLink и lifecycle выполняются после resolver отдельным слоем.
+Материализация PhysicalLink и lifecycle выполняются после resolver отдельным слоем.
 ## Topology lifecycle boundary
 
-осле topology resolution lifecycle обрабатывается отдельно от discovery и polling.
+После topology resolution lifecycle обрабатывается отдельно от discovery и polling.
 
 Pipeline:
 
@@ -94,17 +94,17 @@ Freshness:
 - Aging;
 - Stale.
 
-апрещено:
+Запрещено:
 - удалять устройство по timeout;
 - удалять link по poll failure;
 - удалять topology только потому, что новый poll не вернул evidence;
 - считать Stale эквивалентом Deleted;
 - изменять manual topology discovery-процессом.
 
-о появления стабильных materialized DeviceId/PhysicalLinkId lifecycle policy остаётся чистой доменной логикой без отдельного persistence по строковому subjectKey.
+До появления стабильных materialized DeviceId/PhysicalLinkId lifecycle policy остаётся чистой доменной логикой без отдельного persistence по строковому subjectKey.
 ## Map projection boundary
 
-изуализация физической топологии отделена от topology resolution.
+Визуализация физической топологии отделена от topology resolution.
 
 Pipeline:
 
@@ -125,7 +125,7 @@ Pipeline:
 
 `NetLoom.Wpf` выполняет только отображение MapSnapshot.
 
-апрещено:
+Запрещено:
 - выполнять topology resolver в WPF;
 - использовать IP как DeviceId;
 - считать MapNode.Key внутренним DeviceId;
@@ -145,13 +145,13 @@ Map contracts являются частью transport-neutral boundary для б
 
 Location hierarchy не участвует в identity resolution или PhysicalLink resolution.
 
-аблюдаемые значения `sysLocation` и CDP `PhysicalLocation` являются evidence/metadata и не должны автоматически превращаться в постоянный Location без явной политики или действия оператора.
+Наблюдаемые значения `sysLocation` и CDP `PhysicalLocation` являются evidence/metadata и не должны автоматически превращаться в постоянный Location без явной политики или действия оператора.
 
 Map projection может получить transient Location assignment:
 
 `Location → MapLocation → MapNode.LocationId → WPF`
 
-апрещено:
+Запрещено:
 - использовать Location как DeviceId;
 - использовать IP или MapNode.Key как постоянный foreign key назначения Device→Location;
 - изменять PhysicalLink из-за rename/move/delete Location;

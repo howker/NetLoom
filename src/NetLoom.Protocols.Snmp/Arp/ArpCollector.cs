@@ -83,7 +83,7 @@ namespace NetLoom.Protocols.Snmp.Arp
             var parsed =
                 _parser.Parse(raw);
 
-            // атем сохраняем нормализованное наблюдение.
+            // Затем сохраняем нормализованное наблюдение.
             _arpStore.Save(parsed);
 
             return parsed;

@@ -297,7 +297,7 @@ STP state хранится как Observation с InstanceId.
 
 **ешение:** WPF не строит физическую топологию самостоятельно. Backend/topology layer формирует transport-neutral `MapSnapshot`, который UI только отображает.
 
-азделение:
+Разделение:
 
 `Topology Resolver / Lifecycle → TopologyMapProjector → Contracts.MapSnapshot → WPF`
 
@@ -316,7 +316,7 @@ STP state хранится как Observation с InstanceId.
 
 **ешение:** физическое расположение моделируется отдельной сущностью `Location` с собственным GUID.
 
-ерархия строится через `ParentLocationId`.
+Иерархия строится через `ParentLocationId`.
 
 **равила:**
 - LocationId не является DeviceId;
@@ -329,7 +329,7 @@ STP state хранится как Observation с InstanceId.
 - Location с дочерними Location нельзя удалить;
 - MapNode может содержать опциональный LocationId только как presentation metadata.
 
-о появления materialized Device с внутренним GUID постоянная таблица Device→Location не создаётся. апрещено сохранять такое назначение по IP или MapNode.Key.
+До появления materialized Device с внутренним GUID постоянная таблица Device→Location не создаётся. Запрещено сохранять такое назначение по IP или MapNode.Key.
 ## ADR-037 — Common materialized physical graph
 
 **Status:** Accepted.

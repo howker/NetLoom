@@ -52,9 +52,9 @@ Sprint 2 добавляет:
 
 ## cdp_observations
 
-ормализованные CDP-наблюдения.
+Нормализованные CDP-наблюдения.
 
-люч:
+Ключ:
 
 `observation_id + cache_if_index + device_index`
 
@@ -91,13 +91,13 @@ Sprint 2 добавляет:
 FDB-запись не является PhysicalLink.
 ## arp_observations
 
-ормализованные ARP/Neighbor Discovery observations.
+Нормализованные ARP/Neighbor Discovery observations.
 
-люч:
+Ключ:
 
 `observation_id + if_index + address_type + ip_address + table_kind`
 
-оля:
+Поля:
 - `if_index`;
 - `address_type`;
 - `ip_address`;
@@ -113,9 +113,9 @@ FDB-запись не является PhysicalLink.
 MAC/IP запись является observation evidence и не является DeviceId или PhysicalLink.
 ## locations
 
-ерархический справочник физических расположений.
+Иерархический справочник физических расположений.
 
-оля:
+Поля:
 - `location_id` — GUID;
 - `parent_location_id` — nullable GUID;
 - `name`;
@@ -125,13 +125,13 @@ MAC/IP запись является observation evidence и не являетс
 
 `parent_location_id` ссылается на `locations.location_id`.
 
-граничения:
+Ограничения:
 - Location не может быть своим parent;
 - repository запрещает циклы;
 - repository запрещает удаление Location с дочерними Location;
 - rename/move сохраняют `location_id`.
 
-а Sprint 14 таблица назначения Device→Location намеренно отсутствует, поскольку стабильная materialized Device entity ещё не введена. IP и MapNode.Key не используются как постоянные идентификаторы такого назначения.
+На Sprint 14 таблица назначения Device→Location намеренно отсутствует, поскольку стабильная materialized Device entity ещё не введена. IP и MapNode.Key не используются как постоянные идентификаторы такого назначения.
 ## Migration 009 — Materialized physical topology
 
 Migration 009 adds the persistent common physical graph:

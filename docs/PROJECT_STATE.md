@@ -66,7 +66,7 @@ Sprint 3: SNMP transport.
 
 ## Sprint 3 — SNMP transport завершен
 
-еализовано:
+Реализовано:
 - транспортный контракт ISnmpTransport;
 - SNMP GET для v1 и v2c;
 - SNMPv3 USM;
@@ -119,7 +119,7 @@ Sprint 3: SNMP transport.
 
 ## Sprint 6 — Observation layer завершен
 
-еализовано:
+Реализовано:
 - нейтральная доменная модель Observation;
 - ObservationKind для SNMP inventory, LLDP, CDP, FDB, ARP, Health и STP;
 - Application-контракт IObservationStore;
@@ -169,7 +169,7 @@ Sprint 3: SNMP transport.
 
 ## Sprint 8 — CDP завершен
 
-еализовано:
+Реализовано:
 - модель CDP-наблюдений;
 - parser CISCO-CDP-MIB из raw SNMP varbinds;
 - составной индекс cdpCacheIfIndex + cdpCacheDeviceIndex;
@@ -201,7 +201,7 @@ Sprint 3: SNMP transport.
 Следующий Sprint: Sprint 10 — ARP/MAC correlation.
 ## Sprint 10 — ARP/MAC correlation завершен
 
-еализовано:
+Реализовано:
 - modern ipNetToPhysicalTable parser;
 - IPv4 ARP и IPv6 Neighbor Discovery;
 - legacy ipNetToMediaTable fallback;
@@ -220,7 +220,7 @@ Sprint 3: SNMP transport.
 Следующий Sprint: Sprint 11 — Topology Resolver v1.
 ## Sprint 11 — Topology Resolver v1 завершен
 
-еализовано:
+Реализовано:
 - отдельная модель PhysicalLinkCandidate;
 - LinkEndpointClaim не является DeviceId;
 - LLDP и CDP создают strong adjacency evidence;
@@ -237,7 +237,7 @@ Sprint 3: SNMP transport.
 Следующий Sprint: Sprint 12 — stale/lifecycle.
 ## Sprint 12 — stale/lifecycle завершен
 
-еализовано:
+Реализовано:
 - состояния Fresh / Aging / Stale;
 - FirstSeenUtc и LastSeenUtc;
 - deterministic lifecycle policy через переданный nowUtc;
@@ -255,7 +255,7 @@ Persistence lifecycle намеренно отложен до появления 
 Следующий Sprint: Sprint 13 — map v1.
 ## Sprint 13 — Map v1 завершен
 
-еализовано:
+Реализовано:
 - transport-neutral MapSnapshot / MapNode / MapLink contracts;
 - MapEvidenceItem с confidence, freshness и evidence;
 - TopologyMapProjector вынесен из WPF;
@@ -274,7 +274,7 @@ Persistence lifecycle намеренно отложен до появления 
 Следующий Sprint: Sprint 14 — locations.
 ## Sprint 14 — Locations завершен
 
-еализовано:
+Реализовано:
 - отдельная сущность Location с GUID LocationId;
 - ParentLocationId для иерархии площадка / здание / этаж / помещение / шкаф;
 - имя и необязательное описание;
@@ -294,14 +294,14 @@ Persistence lifecycle намеренно отложен до появления 
 Следующий Sprint: Sprint 15 — manual media converters / unmanaged devices.
 ## Cross-cutting project hygiene
 
-- ктивный cross-cutting backlog ведётся в `docs/BACKLOG.md`.
-- еальные проблемы эксплуатации фиксируются в `docs/FRICTION_LOG.md`.
+- Активный cross-cutting backlog ведётся в `docs/BACKLOG.md`.
+- Реальные проблемы эксплуатации фиксируются в `docs/FRICTION_LOG.md`.
 - Third-party зависимости учитываются в `THIRD-PARTY.md`.
-- ользовательские строки WPF переводятся на resource-based localization.
+- Пользовательские строки WPF переводятся на resource-based localization.
 - linux-x64 publish считается проверкой совместимости сборки/публикации; полноценная runtime-проверка Linux будет добавлена после появления реальной логики в NetLoom.Engine.
 ## Sprint 15 — Materialized physical graph
 
-еализовано:
+Реализовано:
 
 - общий постоянный граф TopologyDevice / DeviceInterface / PhysicalLink;
 - внутренние GUID для устройств, интерфейсов и физических связей;
@@ -322,6 +322,6 @@ Persistence lifecycle намеренно отложен до появления 
 - WPF отображает новые значения только через .resx;
 - location overlay сохраняет Sprint 15 metadata.
 
-оличество миграций: 9.
+Количество миграций: 9.
 
 linux-x64 publish остаётся compatibility smoke-test сборки/публикации и пока не является подтверждением полноценной Linux runtime-функциональности Engine.

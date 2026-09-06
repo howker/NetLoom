@@ -48,7 +48,7 @@ namespace NetLoom.Topology.Resolution
                 }
             }
 
-            // ажно:
+            // Важно:
             // MAC/FDB correlation сама по себе
             // не создаёт кандидата физической связи.
 
