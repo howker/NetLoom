@@ -8,6 +8,7 @@ namespace NetLoom.Domain.Observations
         Fdb,
         Arp,
         Health,
-        Stp
+        Stp,
+        Manual
     }
 }

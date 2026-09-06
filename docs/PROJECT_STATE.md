@@ -299,3 +299,29 @@ Persistence lifecycle намеренно отложен до появления 
 - Third-party зависимости учитываются в `THIRD-PARTY.md`.
 - ользовательские строки WPF переводятся на resource-based localization.
 - linux-x64 publish считается проверкой совместимости сборки/публикации; полноценная runtime-проверка Linux будет добавлена после появления реальной логики в NetLoom.Engine.
+## Sprint 15 — Materialized physical graph
+
+еализовано:
+
+- общий постоянный граф TopologyDevice / DeviceInterface / PhysicalLink;
+- внутренние GUID для устройств, интерфейсов и физических связей;
+- Migration009 с таблицами devices, interfaces, physical_links;
+- постоянная привязка Device к Location через devices.location_id;
+- ручные неуправляемые устройства через DiscoveryOrigin = Manual;
+- MonitoringCapability.None для ручных неуправляемых устройств;
+- ручные интерфейсы с ifIndex = null и IsManual = true;
+- ручные физические связи с PhysicalLinkStrength.Manual;
+- защита ручной топологии от автоматической перезаписи;
+- запрет удаления связанных ручных устройств и интерфейсов;
+- проверка принадлежности interface endpoint соответствующему device;
+- ObservationKind.Manual в существующей observation-модели;
+- источник ручного действия: SourceAddress = User;
+- общий MapSnapshot для автоматической и ручной топологии;
+- opaque presentation keys, не раскрывающие DeviceId;
+- transport-neutral map metadata: origin, monitoring capability, category;
+- WPF отображает новые значения только через .resx;
+- location overlay сохраняет Sprint 15 metadata.
+
+оличество миграций: 9.
+
+linux-x64 publish остаётся compatibility smoke-test сборки/публикации и пока не является подтверждением полноценной Linux runtime-функциональности Engine.

@@ -1,4 +1,4 @@
-﻿# DATABASE
+# DATABASE
 
 База данных NetLoom использует SQLite.
 
@@ -132,3 +132,33 @@ MAC/IP запись является observation evidence и не являетс
 - rename/move сохраняют `location_id`.
 
 а Sprint 14 таблица назначения Device→Location намеренно отсутствует, поскольку стабильная materialized Device entity ещё не введена. IP и MapNode.Key не используются как постоянные идентификаторы такого назначения.
+## Migration 009 — Materialized physical topology
+
+Migration 009 adds the persistent common physical graph:
+
+- devices;
+- interfaces;
+- physical_links.
+
+Internal identifiers are GUID values serialized as text.
+
+devices.location_id references the actual Sprint 14 primary key:
+
+locations(location_id)
+
+Manual and discovered topology use the same tables.
+
+Manual topology is stored as:
+
+- devices.discovery_origin = Manual;
+- devices.monitoring_capability = None;
+- interfaces.is_manual = 1;
+- physical_links.strength = Manual.
+
+Automatic persistence must not replace an existing manual device, interface, or physical link.
+
+A physical-link interface endpoint must belong to the device specified for that endpoint.
+
+A connected manual device or interface cannot be deleted while a physical link references it.
+
+High-frequency monitoring metrics are not stored in these topology tables.

@@ -18,12 +18,36 @@ namespace NetLoom.Contracts.TopologyMap
     {
         Lldp,
         Cdp,
-        ArpFdbCorrelation
+        ArpFdbCorrelation,
+        Manual
     }
 
     public enum MapEvidenceStrength
     {
         Weak,
         Strong
+    }
+
+    public enum MapNodeOrigin
+    {
+        Unknown,
+        Automatic,
+        Manual,
+        Imported
+    }
+
+    public enum MapMonitoringCapability
+    {
+        Unknown,
+        None
+    }
+
+    public enum MapNodeCategory
+    {
+        Unknown,
+        MediaConverter,
+        UnmanagedSwitch,
+        OpticalConverter,
+        PassiveNetworkEquipment
     }
 }

@@ -159,4 +159,28 @@
   <data name="LocationNamed" xml:space="preserve">
     <value>асположение: {0}</value>
   </data>
+  <data name="NodeOriginManual" xml:space="preserve">
+    <value>учной</value>
+  </data>
+  <data name="NodeOriginAutomatic" xml:space="preserve">
+    <value>втоматический</value>
+  </data>
+  <data name="NodeOriginImported" xml:space="preserve">
+    <value>мпортированный</value>
+  </data>
+  <data name="MonitoringNone" xml:space="preserve">
+    <value>е контролируется</value>
+  </data>
+  <data name="CategoryMediaConverter" xml:space="preserve">
+    <value>едиаконвертор</value>
+  </data>
+  <data name="CategoryUnmanagedSwitch" xml:space="preserve">
+    <value>еуправляемый коммутатор</value>
+  </data>
+  <data name="CategoryOpticalConverter" xml:space="preserve">
+    <value>птический преобразователь</value>
+  </data>
+  <data name="CategoryPassiveNetworkEquipment" xml:space="preserve">
+    <value>ассивное сетевое устройство</value>
+  </data>
 </root>

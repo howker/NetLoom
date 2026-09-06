@@ -156,3 +156,31 @@ Map projection может получить transient Location assignment:
 - использовать IP или MapNode.Key как постоянный foreign key назначения Device→Location;
 - изменять PhysicalLink из-за rename/move/delete Location;
 - выполнять Location assignment business logic внутри WPF.
+## Materialized physical graph (Sprint 15)
+
+Sprint 15 introduces the first persistent common physical topology graph.
+
+The graph contains:
+
+- TopologyDevice with an internal GUID identity;
+- DeviceInterface with an internal GUID and optional IF-MIB ifIndex;
+- PhysicalLink with an internal GUID and stable link_key;
+- persistent Device-to-Location association through devices.location_id.
+
+Manual and discovered topology use the same entities and the same graph. Separate manual_* tables are not used.
+
+Manual topology is represented by explicit attributes:
+
+- device: DiscoveryOrigin = Manual;
+- device: MonitoringCapability = None;
+- interface: IsManual = true;
+- link: PhysicalLinkStrength = Manual;
+- observation: ObservationKind.Manual, SourceAddress = User.
+
+Automatic discovery must not replace or delete existing manual topology.
+
+IP addresses, MAC addresses, host names and protocol identifiers are not NetLoom DeviceId.
+
+FDB/ARP correlation alone still cannot create a direct physical cable.
+
+Map presentation keys remain separate from persistent topology identity. Localized labels remain in the client resource layer.

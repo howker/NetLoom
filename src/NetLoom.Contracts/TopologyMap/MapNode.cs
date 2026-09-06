@@ -10,7 +10,11 @@ namespace NetLoom.Contracts.TopologyMap
             string secondaryText,
             double x,
             double y,
-            Guid? locationId = null)
+            Guid? locationId = null,
+            MapNodeOrigin origin = MapNodeOrigin.Unknown,
+            MapMonitoringCapability monitoringCapability =
+                MapMonitoringCapability.Unknown,
+            MapNodeCategory category = MapNodeCategory.Unknown)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -32,6 +36,9 @@ namespace NetLoom.Contracts.TopologyMap
             X = x;
             Y = y;
             LocationId = locationId;
+            Origin = origin;
+            MonitoringCapability = monitoringCapability;
+            Category = category;
         }
 
         // Presentation key only.
@@ -47,5 +54,11 @@ namespace NetLoom.Contracts.TopologyMap
         public double Y { get; }
 
         public Guid? LocationId { get; }
+
+        public MapNodeOrigin Origin { get; }
+
+        public MapMonitoringCapability MonitoringCapability { get; }
+
+        public MapNodeCategory Category { get; }
     }
 }

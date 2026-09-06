@@ -330,3 +330,47 @@ STP state хранится как Observation с InstanceId.
 - MapNode может содержать опциональный LocationId только как presentation metadata.
 
 о появления materialized Device с внутренним GUID постоянная таблица Device→Location не создаётся. апрещено сохранять такое назначение по IP или MapNode.Key.
+## ADR-037 — Common materialized physical graph
+
+**Status:** Accepted.
+
+### Context
+
+Before Sprint 15 NetLoom had observations, evidence, topology candidates, lifecycle policy and map projection, but no persistent common physical graph with stable internal identities.
+
+Manual unmanaged equipment must participate in the same physical topology as discovered devices.
+
+### Decision
+
+Use one materialized physical graph for both discovered and manually entered topology.
+
+Internal identities for devices, interfaces and physical links are GUID-based.
+
+Do not create separate manual_* tables.
+
+Manual topology is represented through explicit attributes:
+
+- DeviceDiscoveryOrigin.Manual;
+- MonitoringCapability.None;
+- DeviceInterface.IsManual = true;
+- PhysicalLinkStrength.Manual.
+
+Automatic discovery must not silently replace or delete existing manual topology.
+
+Persistent Device-to-Location assignment now uses stable internal DeviceId.
+
+Manual user actions use the existing observation model:
+
+- ObservationKind.Manual;
+- SourceAddress = User.
+
+Map contracts expose neutral enums for origin, monitoring capability and category. Localized presentation remains in WPF resources.
+
+### Consequences
+
+- manual and discovered devices participate in the same physical graph;
+- future ring detection operates across both manual and automatic topology;
+- IP address remains separate from DeviceId;
+- FDB/ARP correlation alone still does not create a direct physical cable;
+- topology lifecycle can now be associated with stable materialized identifiers;
+- WPF remains independent from SQLite persistence.

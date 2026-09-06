@@ -171,6 +171,18 @@ public partial class MainWindow : Window
                     TextTrimming.CharacterEllipsis
             };
 
+        var topologyMetadata =
+            new TextBlock
+            {
+                Text =
+                    BuildTopologyMetadata(node),
+
+                Margin =
+                    new Thickness(0, 4, 0, 0),
+
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
+            };
         var locationText =
             new TextBlock
             {
@@ -191,6 +203,7 @@ public partial class MainWindow : Window
 
         content.Children.Add(title);
         content.Children.Add(secondary);
+        content.Children.Add(topologyMetadata);
         content.Children.Add(locationText);
 
         var border =
@@ -214,6 +227,98 @@ public partial class MainWindow : Window
         MapCanvas.Children.Add(border);
     }
 
+    private static string BuildTopologyMetadata(
+        MapNode node)
+    {
+        var values =
+            new List<string>();
+
+        var origin =
+            OriginText(node.Origin);
+
+        if (!string.IsNullOrWhiteSpace(origin))
+        {
+            values.Add(origin);
+        }
+
+        var category =
+            CategoryText(node.Category);
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            values.Add(category);
+        }
+
+        var monitoring =
+            MonitoringText(
+                node.MonitoringCapability);
+
+        if (!string.IsNullOrWhiteSpace(monitoring))
+        {
+            values.Add(monitoring);
+        }
+
+        return string.Join(
+            " • ",
+            values);
+    }
+
+    private static string OriginText(
+        MapNodeOrigin origin)
+    {
+        switch (origin)
+        {
+            case MapNodeOrigin.Manual:
+                return UiText.Get(
+                    "NodeOriginManual");
+
+            case MapNodeOrigin.Imported:
+                return UiText.Get(
+                    "NodeOriginImported");
+
+            case MapNodeOrigin.Automatic:
+                return UiText.Get(
+                    "NodeOriginAutomatic");
+
+            default:
+                return null;
+        }
+    }
+
+    private static string MonitoringText(
+        MapMonitoringCapability capability)
+    {
+        return capability ==
+               MapMonitoringCapability.None
+            ? UiText.Get("MonitoringNone")
+            : null;
+    }
+
+    private static string CategoryText(
+        MapNodeCategory category)
+    {
+        switch (category)
+        {
+            case MapNodeCategory.MediaConverter:
+                return UiText.Get(
+                    "CategoryMediaConverter");
+
+            case MapNodeCategory.UnmanagedSwitch:
+                return UiText.Get(
+                    "CategoryUnmanagedSwitch");
+
+            case MapNodeCategory.OpticalConverter:
+                return UiText.Get(
+                    "CategoryOpticalConverter");
+
+            case MapNodeCategory.PassiveNetworkEquipment:
+                return UiText.Get(
+                    "CategoryPassiveNetworkEquipment");
+
+            default:
+                return null;
+        }
+    }
     private static string BuildLocationText(
         MapNode node,
         IReadOnlyDictionary<Guid, MapLocation> locations)

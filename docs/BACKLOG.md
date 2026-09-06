@@ -6,7 +6,7 @@
 
 ## P0 — нужен для собственного рабочего NetLoom
 
-- [ ] Sprint 15 — materialized graph + manual/unmanaged topology.
+- [x] Sprint 15 — materialized graph + manual/unmanaged topology.
 - [ ] одключить реальный backend pipeline к MapSnapshot и WPF, чтобы карта показывала живую сеть.
 - [ ] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
 - [ ] Monitoring Runtime.

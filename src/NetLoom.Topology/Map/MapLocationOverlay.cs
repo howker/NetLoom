@@ -93,7 +93,11 @@ namespace NetLoom.Topology.Map
                                     node.Key,
                                     out locationId)
                                         ? (Guid?)locationId
-                                        : null);
+                                        : null,
+                                node.Origin,
+                                node.MonitoringCapability,
+                                node.Category
+                            );
                         })
                     .ToArray();
 
