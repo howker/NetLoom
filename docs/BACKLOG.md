@@ -15,7 +15,8 @@
 - [x] Monitoring Runtime.
 - [x] Scheduler.
 - [x] Sprint 20 — metric/time-series storage boundary + Health snapshot model.
-- [ ] Health monitoring.
+- [x] Sprint 21 — SNMP Health monitoring via sysUpTime.
+- [x] Health monitoring.
 - [ ] Interface monitoring.
 - [ ] STP/RSTP Collector.
 - [ ] STP tree projection.

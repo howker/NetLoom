@@ -457,3 +457,27 @@ Health/Interface monitoring и metric/time-series storage не входят в S
 Health monitoring остаётся следующим P0 пунктом.
 
 Новых migrations нет. Количество migrations остаётся 10.
+
+## Sprint 21 — SNMP Health monitoring
+
+Реализовано:
+- `IHealthCollector` и `HealthCollectionRequest`;
+- production `SnmpHealthCollector`;
+- lightweight GET только `sysUpTime.0`;
+- tolerant sysUpTime parser;
+- `MonitoringPollKind.Health`;
+- Health step в `MonitoringRuntime`;
+- current `HealthSnapshot` в `MonitoringPollStepResult`;
+- optional stable `--device-id <guid>` в Engine;
+- Health включён в default poll kinds;
+- `schedule --kinds health` использует существующий Scheduler;
+- runtime-smoke покрывает Health path;
+- unit regressions для uptime parsing, stable/unbound DeviceId и failure isolation.
+
+Failed SNMP Health poll не означает исчезновение Device и не создаёт `HealthStatus.Down` автоматически.
+
+Concrete metric backend/history не реализован. High-frequency Health history не пишется в topology/configuration SQLite.
+
+Interface monitoring остаётся следующим P0 этапом.
+
+Новых migrations нет. Количество migrations остаётся 10.

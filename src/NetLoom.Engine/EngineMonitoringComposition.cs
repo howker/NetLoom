@@ -10,6 +10,7 @@ using NetLoom.Persistence.Sqlite.Observations;
 using NetLoom.Protocols.Snmp.Arp;
 using NetLoom.Protocols.Snmp.Cdp;
 using NetLoom.Protocols.Snmp.Fdb;
+using NetLoom.Protocols.Snmp.Health;
 using NetLoom.Protocols.Snmp.Lldp;
 using NetLoom.Protocols.Snmp.Transport;
 
@@ -66,7 +67,9 @@ namespace NetLoom.Engine
                     rawStore,
                     new SqliteArpObservationStore(
                         connectionFactory),
-                    new ArpObservationParser()));
+                    new ArpObservationParser()),
+                new SnmpHealthCollector(
+                    transport));
         }
     }
 }

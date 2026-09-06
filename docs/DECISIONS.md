@@ -488,3 +488,19 @@ Metric-series identity использует стабильный `DeviceId` и, 
 Sprint 20 вводит модель Health availability/uptime и storage abstraction, но не объявляет Health collector или high-frequency persistence реализованными.
 
 Отдельное решение по concrete metric/time-series backend, retention и aggregation остаётся обязательным до массовой записи Health/Interface history.
+
+## ADR-045 — Health poll использует отдельный sysUpTime GET
+
+Статус: принято.
+
+Health polling не переиспользует полный `SnmpInventoryCollector`, потому что это ненужно запускало бы interface walks на Health cadence.
+
+Production `SnmpHealthCollector` выполняет отдельный SNMP GET `sysUpTime.0`.
+
+Успешный GET формирует `HealthSnapshot(Status=Up)`. Transport/protocol/credential exception остаётся failed poll step и не объявляется `Down` или отсутствием Device.
+
+Stable identity передаётся отдельно как nullable `DeviceId`; source IP не используется как DeviceId. Unbound Health result допустим для live operator output.
+
+Health интегрируется в существующие `MonitoringRuntime`/`MonitoringScheduler`; отдельный scheduler implementation не создаётся.
+
+Sprint 21 не выбирает concrete metric backend и не пишет high-frequency Health history в topology/configuration SQLite. Открытый gate по concrete metric backend/retention сохраняется.

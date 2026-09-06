@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading;
 using NetLoom.Application.Monitoring;
 
@@ -162,7 +163,8 @@ namespace NetLoom.Engine
                 options.TimeoutMilliseconds,
                 options.RetryCount,
                 options.MaxRepetitions,
-                options.Kinds);
+                options.Kinds,
+                options.DeviceId);
         }
 
         private static void WritePollResult(
@@ -185,6 +187,12 @@ namespace NetLoom.Engine
                         " FAIL " +
                         step.ErrorType);
                 }
+
+                if (step.HealthSnapshot != null)
+                {
+                    WriteHealth(
+                        step.HealthSnapshot);
+                }
             }
 
             var succeeded = 0;
@@ -202,6 +210,30 @@ namespace NetLoom.Engine
                 succeeded +
                 " failed=" +
                 (result.Steps.Count - succeeded));
+        }
+
+        private static void WriteHealth(
+            Application.Monitoring.Health.HealthSnapshot snapshot)
+        {
+            var uptime =
+                snapshot.Uptime.HasValue
+                    ? snapshot.Uptime.Value.TotalSeconds.ToString(
+                        "0.##",
+                        CultureInfo.InvariantCulture)
+                    : "unknown";
+
+            var device =
+                snapshot.DeviceId.HasValue
+                    ? snapshot.DeviceId.Value.ToString("D")
+                    : "unbound";
+
+            Console.WriteLine(
+                "HEALTH: status=" +
+                snapshot.Status +
+                " uptimeSeconds=" +
+                uptime +
+                " deviceId=" +
+                device);
         }
     }
 }

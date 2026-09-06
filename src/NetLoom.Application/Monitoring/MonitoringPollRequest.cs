@@ -17,13 +17,22 @@ namespace NetLoom.Application.Monitoring
             int timeoutMilliseconds,
             int retryCount,
             int maxRepetitions,
-            IEnumerable<MonitoringPollKind> kinds)
+            IEnumerable<MonitoringPollKind> kinds,
+            Guid? deviceId = null)
         {
             Address = address ??
                 throw new ArgumentNullException(nameof(address));
 
             Credentials = credentials ??
                 throw new ArgumentNullException(nameof(credentials));
+
+            if (deviceId.HasValue &&
+                deviceId.Value == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Monitoring DeviceId cannot be empty.",
+                    nameof(deviceId));
+            }
 
             if (port < 1 || port > 65535)
             {
@@ -64,6 +73,7 @@ namespace NetLoom.Application.Monitoring
                     nameof(kinds));
             }
 
+            DeviceId = deviceId;
             Port = port;
             Version = version;
             TimeoutMilliseconds = timeoutMilliseconds;
@@ -71,6 +81,8 @@ namespace NetLoom.Application.Monitoring
             MaxRepetitions = maxRepetitions;
             Kinds = selectedKinds;
         }
+
+        public Guid? DeviceId { get; }
 
         public IPAddress Address { get; }
 

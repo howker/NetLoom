@@ -211,3 +211,13 @@ Monitoring Runtime использует существующие observation tab
 Он не создаёт таблиц monitoring metrics и не записывает high-frequency time series в topology/configuration SQLite.
 
 Перед Health/Interface metric ingestion остаётся обязательным отдельное решение для metric/time-series storage abstraction.
+
+## Sprint 21 — Health monitoring persistence boundary
+
+Sprint 21 не добавляет Health metric/history tables в topology/configuration SQLite.
+
+Health poll возвращает current `HealthSnapshot` через runtime result. `IMonitoringMetricStore` остаётся abstraction без concrete backend.
+
+Raw high-frequency Health SNMP polling также не добавляется в append-only `observations/snmp_varbinds`, чтобы не использовать topology/configuration SQLite как скрытое time-series storage.
+
+Количество миграций остаётся 10.

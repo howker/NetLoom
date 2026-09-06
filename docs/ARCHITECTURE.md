@@ -320,3 +320,19 @@ Topology/configuration SQLite не является metric/time-series storage. 
 Concrete time-series backend, retention, aggregation и Interface counters не выбираются в Sprint 20.
 
 Health collector/polling ещё не реализован и остаётся следующим P0 этапом.
+
+## Sprint 21 — SNMP Health monitoring
+
+Health monitoring подключается как отдельный `MonitoringPollKind.Health` к существующему `MonitoringRuntime` и `MonitoringScheduler`.
+
+Production source — lightweight SNMP GET только `sysUpTime.0` (`1.3.6.1.2.1.1.3.0`). Полная Inventory/interface collection для Health poll не запускается.
+
+Успешный SNMP GET означает `HealthStatus.Up`. Значение sysUpTime при возможности преобразуется в `TimeSpan`. Отсутствующий/неразбираемый sysUpTime не превращает успешный poll в failure: uptime остаётся null.
+
+SNMP timeout/socket/protocol/credential failures не преобразуются автоматически в `HealthStatus.Down`: exception остаётся failed monitoring step. Это важно, потому что failed poll не является доказательством отсутствия устройства.
+
+`MonitoringPollRequest.DeviceId` nullable. Engine принимает optional `--device-id <guid>`. IP остаётся только source address и никогда не становится DeviceId.
+
+`poll-once`/`schedule` по умолчанию включают Health. Для независимого Health cadence оператор может запускать `schedule --kinds health`.
+
+Health snapshot возвращается в `MonitoringPollStepResult` и выводится Engine как current result. Sprint 21 не пишет Health time-series history в topology/configuration SQLite и не добавляет concrete `IMonitoringMetricStore`.

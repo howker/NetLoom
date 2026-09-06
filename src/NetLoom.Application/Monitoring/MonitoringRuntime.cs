@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NetLoom.Application.Monitoring.Health;
 using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
@@ -13,6 +14,7 @@ namespace NetLoom.Application.Monitoring
         private readonly ICdpCollector _cdpCollector;
         private readonly IFdbCollector _fdbCollector;
         private readonly IArpCollector _arpCollector;
+        private readonly IHealthCollector _healthCollector;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -20,6 +22,23 @@ namespace NetLoom.Application.Monitoring
             ICdpCollector cdpCollector,
             IFdbCollector fdbCollector,
             IArpCollector arpCollector,
+            Func<DateTime> utcNow = null)
+            : this(
+                lldpCollector,
+                cdpCollector,
+                fdbCollector,
+                arpCollector,
+                null,
+                utcNow)
+        {
+        }
+
+        public MonitoringRuntime(
+            ILldpCollector lldpCollector,
+            ICdpCollector cdpCollector,
+            IFdbCollector fdbCollector,
+            IArpCollector arpCollector,
+            IHealthCollector healthCollector,
             Func<DateTime> utcNow = null)
         {
             _lldpCollector =
@@ -37,6 +56,9 @@ namespace NetLoom.Application.Monitoring
             _arpCollector =
                 arpCollector ??
                 throw new ArgumentNullException(nameof(arpCollector));
+
+            _healthCollector =
+                healthCollector;
 
             _utcNow =
                 utcNow ??
@@ -127,6 +149,31 @@ namespace NetLoom.Application.Monitoring
                                 request.RetryCount,
                                 request.MaxRepetitions));
                         break;
+
+                    case MonitoringPollKind.Health:
+                        if (_healthCollector == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Health collector is not configured.");
+                        }
+
+                        var health =
+                            _healthCollector.Collect(
+                                new HealthCollectionRequest(
+                                    request.DeviceId,
+                                    request.Address,
+                                    request.Port,
+                                    request.Version,
+                                    request.Credentials,
+                                    request.TimeoutMilliseconds,
+                                    request.RetryCount));
+
+                        return new MonitoringPollStepResult(
+                            kind,
+                            true,
+                            null,
+                            null,
+                            health);
 
                     default:
                         throw new ArgumentOutOfRangeException(

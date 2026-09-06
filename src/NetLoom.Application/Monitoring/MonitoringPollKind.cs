@@ -5,6 +5,7 @@ namespace NetLoom.Application.Monitoring
         Lldp,
         Cdp,
         Fdb,
-        Arp
+        Arp,
+        Health
     }
 }

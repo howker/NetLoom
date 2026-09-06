@@ -20,6 +20,8 @@ namespace NetLoom.Engine
 
         public IPAddress Address { get; private set; }
 
+        public Guid? DeviceId { get; private set; }
+
         public int Port { get; private set; }
 
         public SnmpVersion Version { get; private set; }
@@ -94,15 +96,13 @@ namespace NetLoom.Engine
                     Get(values, "version") ?? "V2C",
                     "INVALID_SNMP_VERSION");
 
-            var kinds =
-                ParseKinds(
-                    Get(values, "kinds"));
-
             return new EngineCommandLine
             {
                 Command = command,
                 DatabasePath = Get(values, "database"),
                 Address = address,
+                DeviceId = ParseOptionalGuid(
+                    Get(values, "device-id")),
                 Port = ParseInt(
                     Get(values, "port"),
                     161,
@@ -134,7 +134,8 @@ namespace NetLoom.Engine
                     1,
                     int.MaxValue,
                     "INVALID_INTERVAL_SECONDS"),
-                Kinds = kinds
+                Kinds = ParseKinds(
+                    Get(values, "kinds"))
             };
         }
 
@@ -178,6 +179,7 @@ namespace NetLoom.Engine
                     {
                         "address",
                         "database",
+                        "device-id",
                         "port",
                         "version",
                         "timeout-ms",
@@ -210,7 +212,8 @@ namespace NetLoom.Engine
                     MonitoringPollKind.Lldp,
                     MonitoringPollKind.Cdp,
                     MonitoringPollKind.Fdb,
-                    MonitoringPollKind.Arp
+                    MonitoringPollKind.Arp,
+                    MonitoringPollKind.Health
                 };
             }
 
@@ -244,6 +247,27 @@ namespace NetLoom.Engine
             }
 
             return result;
+        }
+
+        private static Guid? ParseOptionalGuid(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            Guid parsed;
+
+            if (!Guid.TryParse(
+                value,
+                out parsed) ||
+                parsed == Guid.Empty)
+            {
+                throw Invalid("INVALID_DEVICE_ID");
+            }
+
+            return parsed;
         }
 
         private static int ParseInt(
