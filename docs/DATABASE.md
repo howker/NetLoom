@@ -221,3 +221,13 @@ Health poll возвращает current `HealthSnapshot` через runtime res
 Raw high-frequency Health SNMP polling также не добавляется в append-only `observations/snmp_varbinds`, чтобы не использовать topology/configuration SQLite как скрытое time-series storage.
 
 Количество миграций остаётся 10.
+
+## Sprint 22 — Interface monitoring persistence boundary
+
+Sprint 22 не добавляет interface metric/history tables и не меняет materialized `interfaces` table.
+
+`interfaces.admin_status`, `interfaces.oper_status` и `interfaces.speed_bps` остаются topology/materialized metadata, а не high-frequency time series.
+
+Current Interface monitoring result возвращается через runtime step и не сохраняется в topology/configuration SQLite.
+
+Количество миграций остаётся 10.

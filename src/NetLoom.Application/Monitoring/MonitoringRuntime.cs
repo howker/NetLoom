@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NetLoom.Application.Monitoring.Health;
+using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
@@ -15,6 +16,7 @@ namespace NetLoom.Application.Monitoring
         private readonly IFdbCollector _fdbCollector;
         private readonly IArpCollector _arpCollector;
         private readonly IHealthCollector _healthCollector;
+        private readonly IInterfaceCollector _interfaceCollector;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -29,6 +31,7 @@ namespace NetLoom.Application.Monitoring
                 fdbCollector,
                 arpCollector,
                 null,
+                null,
                 utcNow)
         {
         }
@@ -39,6 +42,25 @@ namespace NetLoom.Application.Monitoring
             IFdbCollector fdbCollector,
             IArpCollector arpCollector,
             IHealthCollector healthCollector,
+            Func<DateTime> utcNow = null)
+            : this(
+                lldpCollector,
+                cdpCollector,
+                fdbCollector,
+                arpCollector,
+                healthCollector,
+                null,
+                utcNow)
+        {
+        }
+
+        public MonitoringRuntime(
+            ILldpCollector lldpCollector,
+            ICdpCollector cdpCollector,
+            IFdbCollector fdbCollector,
+            IArpCollector arpCollector,
+            IHealthCollector healthCollector,
+            IInterfaceCollector interfaceCollector,
             Func<DateTime> utcNow = null)
         {
             _lldpCollector =
@@ -59,6 +81,9 @@ namespace NetLoom.Application.Monitoring
 
             _healthCollector =
                 healthCollector;
+
+            _interfaceCollector =
+                interfaceCollector;
 
             _utcNow =
                 utcNow ??
@@ -174,6 +199,33 @@ namespace NetLoom.Application.Monitoring
                             null,
                             null,
                             health);
+
+                    case MonitoringPollKind.Interface:
+                        if (_interfaceCollector == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Interface collector is not configured.");
+                        }
+
+                        var interfaces =
+                            _interfaceCollector.Collect(
+                                new InterfaceCollectionRequest(
+                                    request.DeviceId,
+                                    request.Address,
+                                    request.Port,
+                                    request.Version,
+                                    request.Credentials,
+                                    request.TimeoutMilliseconds,
+                                    request.RetryCount,
+                                    request.MaxRepetitions));
+
+                        return new MonitoringPollStepResult(
+                            kind,
+                            true,
+                            null,
+                            null,
+                            null,
+                            interfaces);
 
                     default:
                         throw new ArgumentOutOfRangeException(

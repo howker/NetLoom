@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using NetLoom.Application.Monitoring.Health;
+using NetLoom.Application.Monitoring.Interfaces;
 
 namespace NetLoom.Application.Monitoring
 {
@@ -15,6 +17,7 @@ namespace NetLoom.Application.Monitoring
                 succeeded,
                 errorType,
                 errorMessage,
+                null,
                 null)
         {
         }
@@ -25,6 +28,23 @@ namespace NetLoom.Application.Monitoring
             string errorType,
             string errorMessage,
             HealthSnapshot healthSnapshot)
+            : this(
+                kind,
+                succeeded,
+                errorType,
+                errorMessage,
+                healthSnapshot,
+                null)
+        {
+        }
+
+        public MonitoringPollStepResult(
+            MonitoringPollKind kind,
+            bool succeeded,
+            string errorType,
+            string errorMessage,
+            HealthSnapshot healthSnapshot,
+            IReadOnlyList<InterfaceMonitoringSnapshot> interfaceSnapshots)
         {
             if (succeeded &&
                 (!string.IsNullOrWhiteSpace(errorType) ||
@@ -41,11 +61,22 @@ namespace NetLoom.Application.Monitoring
                     "Failed poll step cannot contain a Health snapshot.");
             }
 
+            if (!succeeded &&
+                interfaceSnapshots != null &&
+                interfaceSnapshots.Count > 0)
+            {
+                throw new ArgumentException(
+                    "Failed poll step cannot contain Interface snapshots.");
+            }
+
             Kind = kind;
             Succeeded = succeeded;
             ErrorType = Normalize(errorType);
             ErrorMessage = Normalize(errorMessage);
             HealthSnapshot = healthSnapshot;
+            InterfaceSnapshots =
+                interfaceSnapshots ??
+                Array.Empty<InterfaceMonitoringSnapshot>();
         }
 
         public MonitoringPollKind Kind { get; }
@@ -57,6 +88,9 @@ namespace NetLoom.Application.Monitoring
         public string ErrorMessage { get; }
 
         public HealthSnapshot HealthSnapshot { get; }
+
+        public IReadOnlyList<InterfaceMonitoringSnapshot>
+            InterfaceSnapshots { get; }
 
         private static string Normalize(
             string value)

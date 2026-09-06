@@ -504,3 +504,19 @@ Stable identity передаётся отдельно как nullable `DeviceId`
 Health интегрируется в существующие `MonitoringRuntime`/`MonitoringScheduler`; отдельный scheduler implementation не создаётся.
 
 Sprint 21 не выбирает concrete metric backend и не пишет high-frequency Health history в topology/configuration SQLite. Открытый gate по concrete metric backend/retention сохраняется.
+
+## ADR-046 — Interface monitoring использует lightweight IF-MIB status walks
+
+Статус: принято.
+
+Interface monitoring не переиспользует полный `SnmpInventoryCollector`: production collector выполняет только `ifAdminStatus` и `ifOperStatus` walks.
+
+`ifIndex` является device-local SNMP index. Он не становится глобальным или persistent `InterfaceId`.
+
+Current result может быть unbound по stable interface identity; до появления explicit binding к materialized `InterfaceId` он не проецируется в persistent interface metric series.
+
+Polling failure остаётся failed step и не удаляет Device/Interface и не переписывает materialized topology state.
+
+Используется существующий fixed-delay Scheduler; отдельный interface scheduler не создаётся.
+
+Sprint 22 не выбирает concrete metric backend и не пишет high-frequency interface history в topology/configuration SQLite.

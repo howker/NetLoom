@@ -193,6 +193,13 @@ namespace NetLoom.Engine
                     WriteHealth(
                         step.HealthSnapshot);
                 }
+
+                foreach (var snapshot in
+                    step.InterfaceSnapshots)
+                {
+                    WriteInterface(
+                        snapshot);
+                }
             }
 
             var succeeded = 0;
@@ -210,6 +217,31 @@ namespace NetLoom.Engine
                 succeeded +
                 " failed=" +
                 (result.Steps.Count - succeeded));
+        }
+
+        private static void WriteInterface(
+            Application.Monitoring.Interfaces.InterfaceMonitoringSnapshot snapshot)
+        {
+            var device =
+                snapshot.DeviceId.HasValue
+                    ? snapshot.DeviceId.Value.ToString("D")
+                    : "unbound";
+
+            Console.WriteLine(
+                "INTERFACE: ifIndex=" +
+                snapshot.IfIndex +
+                " admin=" +
+                (snapshot.AdminStatus.HasValue
+                    ? snapshot.AdminStatus.Value.ToString(
+                        CultureInfo.InvariantCulture)
+                    : "unknown") +
+                " oper=" +
+                (snapshot.OperStatus.HasValue
+                    ? snapshot.OperStatus.Value.ToString(
+                        CultureInfo.InvariantCulture)
+                    : "unknown") +
+                " deviceId=" +
+                device);
         }
 
         private static void WriteHealth(

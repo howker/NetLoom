@@ -11,6 +11,7 @@ using NetLoom.Protocols.Snmp.Arp;
 using NetLoom.Protocols.Snmp.Cdp;
 using NetLoom.Protocols.Snmp.Fdb;
 using NetLoom.Protocols.Snmp.Health;
+using NetLoom.Protocols.Snmp.Interfaces;
 using NetLoom.Protocols.Snmp.Lldp;
 using NetLoom.Protocols.Snmp.Transport;
 
@@ -69,6 +70,8 @@ namespace NetLoom.Engine
                         connectionFactory),
                     new ArpObservationParser()),
                 new SnmpHealthCollector(
+                    transport),
+                new SnmpInterfaceStatusCollector(
                     transport));
         }
     }

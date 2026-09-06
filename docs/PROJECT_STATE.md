@@ -481,3 +481,29 @@ Concrete metric backend/history не реализован. High-frequency Health
 Interface monitoring остаётся следующим P0 этапом.
 
 Новых migrations нет. Количество migrations остаётся 10.
+
+## Sprint 22 — IF-MIB current interface status monitoring
+
+Реализовано:
+- `IInterfaceCollector`;
+- `InterfaceCollectionRequest`;
+- `InterfaceMonitoringSnapshot`;
+- production `SnmpInterfaceStatusCollector`;
+- lightweight `ifAdminStatus` + `ifOperStatus` walks;
+- tolerant status/index parser;
+- `MonitoringPollKind.Interface`;
+- Interface step в `MonitoringRuntime`;
+- current Interface snapshots в `MonitoringPollStepResult`;
+- Engine output для current admin/oper status;
+- default poll kinds включают Interface;
+- `schedule --kinds interface` использует существующий Scheduler;
+- runtime-smoke покрывает Interface path;
+- unit regressions для parser, DeviceId separation и failure isolation.
+
+`ifIndex` не является `InterfaceId`. Persistent interface metric identity не создаётся из ifIndex.
+
+Interface counter/rate history и concrete metric backend не реализованы. High-frequency interface history не пишется в topology/configuration SQLite.
+
+STP/RSTP Collector остаётся следующим P0 этапом.
+
+Новых migrations нет. Количество migrations остаётся 10.

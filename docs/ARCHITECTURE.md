@@ -336,3 +336,21 @@ SNMP timeout/socket/protocol/credential failures не преобразуются
 `poll-once`/`schedule` по умолчанию включают Health. Для независимого Health cadence оператор может запускать `schedule --kinds health`.
 
 Health snapshot возвращается в `MonitoringPollStepResult` и выводится Engine как current result. Sprint 21 не пишет Health time-series history в topology/configuration SQLite и не добавляет concrete `IMonitoringMetricStore`.
+
+## Sprint 22 — IF-MIB current interface status monitoring
+
+Interface monitoring подключается как `MonitoringPollKind.Interface` к существующим `MonitoringRuntime` и `MonitoringScheduler`.
+
+Production collector выполняет только два IF-MIB walk:
+- `ifAdminStatus` (`1.3.6.1.2.1.2.2.1.7`);
+- `ifOperStatus` (`1.3.6.1.2.1.2.2.1.8`).
+
+Полный `SnmpInventoryCollector` не запускается на interface-monitoring cadence.
+
+`ifIndex` извлекается из OID suffix и остаётся device-local protocol index. Он не является `InterfaceId` и не используется как persistent metric-series identity.
+
+`InterfaceMonitoringSnapshot` является current observation result: nullable stable `DeviceId`, `IfIndex`, admin/oper status и UTC timestamp. IP остаётся source address request'а и не становится identity.
+
+Sprint 22 не создаёт interface counter/rate history и не пишет high-frequency interface data в topology/configuration SQLite. Concrete metric backend остаётся отдельным gate.
+
+Для независимого cadence используется существующий `schedule --kinds interface`.

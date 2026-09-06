@@ -17,7 +17,8 @@
 - [x] Sprint 20 — metric/time-series storage boundary + Health snapshot model.
 - [x] Sprint 21 — SNMP Health monitoring via sysUpTime.
 - [x] Health monitoring.
-- [ ] Interface monitoring.
+- [x] Sprint 22 — IF-MIB current interface status monitoring.
+- [x] Interface monitoring.
 - [ ] STP/RSTP Collector.
 - [ ] STP tree projection.
 - [ ] Physical ring detection.
