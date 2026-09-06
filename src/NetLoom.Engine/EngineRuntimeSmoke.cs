@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Threading;
 using NetLoom.Application.Monitoring;
 using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
@@ -25,28 +26,65 @@ namespace NetLoom.Engine
                     new SmokeFdbCollector(),
                     new SmokeArpCollector());
 
-            var result =
-                runtime.PollOnce(
-                    new MonitoringPollRequest(
-                        IPAddress.Loopback,
-                        161,
-                        SnmpVersion.V2C,
-                        new SnmpCommunityCredentials(
-                            new byte[] { 1 }),
-                        1,
-                        0,
-                        1,
-                        new[]
-                        {
-                            MonitoringPollKind.Lldp,
-                            MonitoringPollKind.Cdp,
-                            MonitoringPollKind.Fdb,
-                            MonitoringPollKind.Arp
-                        }));
+            var request =
+                new MonitoringPollRequest(
+                    IPAddress.Loopback,
+                    161,
+                    SnmpVersion.V2C,
+                    new SnmpCommunityCredentials(
+                        new byte[] { 1 }),
+                    1,
+                    0,
+                    1,
+                    new[]
+                    {
+                        MonitoringPollKind.Lldp,
+                        MonitoringPollKind.Cdp,
+                        MonitoringPollKind.Fdb,
+                        MonitoringPollKind.Arp
+                    });
 
-            return
-                result.AllSucceeded &&
-                result.Steps.Count == 4;
+            var pollResult =
+                runtime.PollOnce(
+                    request);
+
+            var waitCount = 0;
+
+            var scheduler =
+                new MonitoringScheduler(
+                    runtime,
+                    (interval, cancellationToken) =>
+                    {
+                        waitCount++;
+                    });
+
+            using (var cancellation =
+                new CancellationTokenSource())
+            {
+                var callbackCount = 0;
+
+                var schedulerResult =
+                    scheduler.Run(
+                        request,
+                        TimeSpan.FromSeconds(1),
+                        cancellation.Token,
+                        result =>
+                        {
+                            callbackCount++;
+
+                            if (callbackCount == 2)
+                            {
+                                cancellation.Cancel();
+                            }
+                        });
+
+                return
+                    pollResult.AllSucceeded &&
+                    pollResult.Steps.Count == 4 &&
+                    schedulerResult.CompletedCycles == 2 &&
+                    schedulerResult.CancellationRequested &&
+                    waitCount == 1;
+            }
         }
 
         private sealed class SmokeLldpCollector :

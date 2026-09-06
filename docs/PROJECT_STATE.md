@@ -413,3 +413,23 @@ Scheduler не реализован и остаётся следующим от�
 Health/Interface high-frequency metrics не записываются. Metric/time-series storage gate остаётся открытым до соответствующего спринта.
 
 Новых миграций нет. Количество миграций остаётся 10.
+
+## Sprint 19 — Scheduler
+
+Реализовано:
+- Application `MonitoringScheduler`;
+- немедленный первый poll cycle;
+- fixed-delay cadence между завершёнными cycle;
+- отсутствие overlap by construction;
+- bounded scheduler result без накопления истории cycle в памяти;
+- graceful cancellation между cycle;
+- `NetLoom.Engine schedule --interval-seconds <N>`;
+- `Ctrl+C` запрашивает остановку Scheduler;
+- `runtime-smoke` теперь проверяет и Scheduler path;
+- unit regressions для cadence/cancellation/interval validation.
+
+Текущая граница cancellation: уже начатый synchronous collector не прерывается. Это будет возможно только после отдельного изменения collector contracts.
+
+Health/Interface monitoring и metric/time-series storage не входят в Sprint 19.
+
+Новых миграций нет. Количество миграций остаётся 10.

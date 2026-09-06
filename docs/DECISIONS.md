@@ -456,3 +456,19 @@ Runtime переиспользует существующие production LLDP/CD
 Persisted access profiles пока не используются Engine runtime автоматически: существующий Linux target не имеет DPAPI implementation, а scope repository пока не является полным read model. До отдельного cross-platform secret/config decision Engine получает операторские SNMP secrets только через environment variables и никогда не выводит их.
 
 Monitoring Runtime не является Scheduler и не вводит monitoring metric storage.
+
+## ADR-043 — Scheduler fixed-delay без overlap
+
+Статус: принято.
+
+Scheduler остаётся отдельным Application boundary над `MonitoringRuntime.PollOnce`.
+
+Используется fixed-delay cadence: следующий cycle начинается только после завершения предыдущего cycle и последующего interval wait. Fixed-rate параллельный запуск не используется, поэтому slow poll не создаёт overlap или очередь конкурентных SNMP cycle.
+
+Первый cycle выполняется немедленно.
+
+Cancellation останавливает ожидание и предотвращает следующий cycle. Уже выполняющийся synchronous poll завершается штатно; interrupt in-flight collector откладывается до отдельного изменения collector contracts с `CancellationToken`.
+
+Первый concrete host — `NetLoom.Engine schedule`. `Ctrl+C` преобразуется в graceful cancellation.
+
+Scheduler не пишет Health/Interface metrics и не изменяет topology/configuration SQLite schema. Metric/time-series storage gates остаются открытыми.

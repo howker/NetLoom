@@ -283,3 +283,22 @@ Monitoring Runtime не создаёт Scheduler, Health metrics или Interfac
 Linux runtime gate проверяется фактическим запуском опубликованного linux-x64 Engine с командой `runtime-smoke` внутри WSL или Docker. Этот smoke выполняет реальный MonitoringRuntime orchestration path, но намеренно не выполняет внешний SNMP network access.
 
 Self-contained publish включает managed/.NET runtime, но Linux host всё равно должен предоставлять стандартные native runtime dependencies ОС (включая ICU, OpenSSL, libc, libstdc++ и zlib); acceptance проверяет запуск в реальной Linux-среде.
+
+## Sprint 19 — Scheduler
+
+`MonitoringScheduler` находится в Application и повторяет существующий `MonitoringRuntime.PollOnce`.
+
+Scheduler использует fixed-delay semantics:
+`poll cycle completion → interval wait → next poll cycle`.
+
+Одновременные cycle для одного scheduler instance не запускаются. Это исключает overlap by construction и не требует блокировок вокруг `MonitoringRuntime`.
+
+Первый cycle запускается немедленно. `NetLoom.Engine schedule` использует `--interval-seconds`, значение по умолчанию — 60 секунд.
+
+Stop/cancellation semantics:
+- cancellation проверяется до нового cycle и после завершения cycle;
+- ожидание между cycle прерываемо;
+- уже начатый synchronous collector/poll не прерывается, потому что текущие collector interfaces не принимают `CancellationToken`;
+- `Ctrl+C` в Engine запрашивает graceful stop и не удаляет последнее состояние/observations.
+
+Scheduler не является Health/Interface monitoring и не вводит metric/time-series storage.

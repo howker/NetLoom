@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using NetLoom.Application.Monitoring;
 
 namespace NetLoom.Engine
@@ -31,6 +32,13 @@ namespace NetLoom.Engine
                     return 0;
                 }
 
+                if (options.Command ==
+                    "schedule")
+                {
+                    return RunScheduled(
+                        options);
+                }
+
                 return PollOnce(options);
             }
             catch (Exception exception)
@@ -46,30 +54,120 @@ namespace NetLoom.Engine
         private static int PollOnce(
             EngineCommandLine options)
         {
+            var runtime =
+                CreateRuntime(
+                    options);
+
+            var result =
+                runtime.PollOnce(
+                    CreateRequest(
+                        options));
+
+            WritePollResult(
+                result);
+
+            if (!result.AnySucceeded)
+            {
+                Console.Error.WriteLine(
+                    "ERROR: ALL_POLL_STEPS_FAILED");
+
+                return 3;
+            }
+
+            Console.WriteLine(
+                "SUCCESS: POLL_ONCE_COMPLETED");
+
+            return 0;
+        }
+
+        private static int RunScheduled(
+            EngineCommandLine options)
+        {
+            var runtime =
+                CreateRuntime(
+                    options);
+
+            var scheduler =
+                new MonitoringScheduler(
+                    runtime);
+
+            var request =
+                CreateRequest(
+                    options);
+
+            using (var cancellation =
+                new CancellationTokenSource())
+            {
+                ConsoleCancelEventHandler handler =
+                    (sender, eventArgs) =>
+                    {
+                        eventArgs.Cancel = true;
+                        cancellation.Cancel();
+                    };
+
+                Console.CancelKeyPress +=
+                    handler;
+
+                try
+                {
+                    Console.WriteLine(
+                        "SCHEDULER: started intervalSeconds=" +
+                        options.IntervalSeconds);
+
+                    var result =
+                        scheduler.Run(
+                            request,
+                            TimeSpan.FromSeconds(
+                                options.IntervalSeconds),
+                            cancellation.Token,
+                            WritePollResult);
+
+                    Console.WriteLine(
+                        "SCHEDULER: stopped cycles=" +
+                        result.CompletedCycles);
+
+                    return 0;
+                }
+                finally
+                {
+                    Console.CancelKeyPress -=
+                        handler;
+                }
+            }
+        }
+
+        private static MonitoringRuntime CreateRuntime(
+            EngineCommandLine options)
+        {
             var databasePath =
                 EngineDatabasePathResolver.Resolve(
                     options.DatabasePath);
 
+            return EngineMonitoringComposition.Create(
+                databasePath);
+        }
+
+        private static MonitoringPollRequest CreateRequest(
+            EngineCommandLine options)
+        {
             var credentials =
                 EngineSnmpCredentialFactory.Create(
                     options.Version);
 
-            var runtime =
-                EngineMonitoringComposition.Create(
-                    databasePath);
+            return new MonitoringPollRequest(
+                options.Address,
+                options.Port,
+                options.Version,
+                credentials,
+                options.TimeoutMilliseconds,
+                options.RetryCount,
+                options.MaxRepetitions,
+                options.Kinds);
+        }
 
-            var result =
-                runtime.PollOnce(
-                    new MonitoringPollRequest(
-                        options.Address,
-                        options.Port,
-                        options.Version,
-                        credentials,
-                        options.TimeoutMilliseconds,
-                        options.RetryCount,
-                        options.MaxRepetitions,
-                        options.Kinds));
-
+        private static void WritePollResult(
+            MonitoringPollResult result)
+        {
             foreach (var step in result.Steps)
             {
                 if (step.Succeeded)
@@ -104,19 +202,6 @@ namespace NetLoom.Engine
                 succeeded +
                 " failed=" +
                 (result.Steps.Count - succeeded));
-
-            if (!result.AnySucceeded)
-            {
-                Console.Error.WriteLine(
-                    "ERROR: ALL_POLL_STEPS_FAILED");
-
-                return 3;
-            }
-
-            Console.WriteLine(
-                "SUCCESS: POLL_ONCE_COMPLETED");
-
-            return 0;
         }
     }
 }

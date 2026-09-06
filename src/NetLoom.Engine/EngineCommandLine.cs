@@ -30,6 +30,8 @@ namespace NetLoom.Engine
 
         public int MaxRepetitions { get; private set; }
 
+        public int IntervalSeconds { get; private set; }
+
         public IReadOnlyList<MonitoringPollKind> Kinds { get; private set; }
 
         public static EngineCommandLine Parse(
@@ -58,7 +60,8 @@ namespace NetLoom.Engine
                 };
             }
 
-            if (command != "poll-once")
+            if (command != "poll-once" &&
+                command != "schedule")
             {
                 throw Invalid("UNKNOWN_COMMAND");
             }
@@ -66,6 +69,13 @@ namespace NetLoom.Engine
             var values =
                 ParseOptions(
                     args.Skip(1).ToArray());
+
+            if (command == "poll-once" &&
+                Get(values, "interval-seconds") != null)
+            {
+                throw Invalid(
+                    "INTERVAL_ONLY_VALID_FOR_SCHEDULE");
+            }
 
             var addressText =
                 Required(values, "address");
@@ -118,6 +128,12 @@ namespace NetLoom.Engine
                     1,
                     int.MaxValue,
                     "INVALID_MAX_REPETITIONS"),
+                IntervalSeconds = ParseInt(
+                    Get(values, "interval-seconds"),
+                    60,
+                    1,
+                    int.MaxValue,
+                    "INVALID_INTERVAL_SECONDS"),
                 Kinds = kinds
             };
         }
@@ -167,7 +183,8 @@ namespace NetLoom.Engine
                         "timeout-ms",
                         "retries",
                         "max-repetitions",
-                        "kinds"
+                        "kinds",
+                        "interval-seconds"
                     },
                     StringComparer.OrdinalIgnoreCase);
 

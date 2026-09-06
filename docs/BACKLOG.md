@@ -13,7 +13,7 @@
 - [x] Подключить реальный backend pipeline к MapSnapshot и WPF, чтобы карта показывала живую сеть.
 - [x] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
 - [x] Monitoring Runtime.
-- [ ] Scheduler.
+- [x] Scheduler.
 - [ ] Health monitoring.
 - [ ] Interface monitoring.
 - [ ] STP/RSTP Collector.
