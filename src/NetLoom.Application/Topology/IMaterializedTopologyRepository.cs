@@ -10,7 +10,7 @@ namespace NetLoom.Application.Topology
 
         void SaveInterface(DeviceInterface networkInterface);
 
-        void SavePhysicalLink(PhysicalLink link);
+        PhysicalLink SavePhysicalLink(PhysicalLink link);
 
         TopologyDevice GetDevice(Guid id);
 

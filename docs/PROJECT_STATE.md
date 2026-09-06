@@ -325,3 +325,19 @@ Persistence lifecycle намеренно отложен до появления 
 Количество миграций: 9.
 
 linux-x64 publish остаётся compatibility smoke-test сборки/публикации и пока не является подтверждением полноценной Linux runtime-функциональности Engine.
+
+## Sprint 15.1b — PhysicalLink identity integrity
+
+Реализовано:
+- Domain-owned canonical `PhysicalLink.LinkKey`;
+- одинаковая identity при reverse endpoint order;
+- сохранение `PhysicalLink.Id` при rediscovery и однозначном refinement;
+- отказ от угадывания при ambiguous refinement;
+- поддержка различимых parallel links;
+- защита manual PhysicalLink при automatic save с другим входящим GUID;
+- monotonic persistence для first/last seen, resolved и confirmed timestamps;
+- regression tests для reverse rediscovery, refinement, ambiguity, parallel links и timestamps.
+
+Количество миграций остаётся 9.
+
+Linux `linux-x64` publish в этом спринте является compatibility smoke test и не считается доказательством полноценной Linux runtime-функциональности Engine.

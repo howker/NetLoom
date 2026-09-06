@@ -83,7 +83,6 @@ namespace NetLoom.Tests.Integration
                 var link =
                     manual.CreateLink(
                         Guid.NewGuid(),
-                        "manual-a-b",
                         a.Id,
                         portA.Id,
                         b.Id,
@@ -247,7 +246,6 @@ namespace NetLoom.Tests.Integration
                 var link =
                     manual.CreateLink(
                         Guid.NewGuid(),
-                        "invalid-endpoint",
                         a.Id,
                         portB.Id,
                         b.Id,

@@ -66,7 +66,6 @@ namespace NetLoom.Tests.Unit
             var link =
                 new ManualTopologyFactory().CreateLink(
                     Guid.NewGuid(),
-                    "manual-link-1",
                     Guid.NewGuid(),
                     null,
                     Guid.NewGuid(),
@@ -168,7 +167,6 @@ namespace NetLoom.Tests.Unit
             var link =
                 manualFactory.CreateLink(
                     Guid.NewGuid(),
-                    "mixed-link",
                     automatic.Id,
                     null,
                     manual.Id,

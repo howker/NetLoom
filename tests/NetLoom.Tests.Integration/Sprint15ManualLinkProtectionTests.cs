@@ -70,7 +70,6 @@ namespace NetLoom.Tests.Integration
                 var manual =
                     factory.CreateLink(
                         Guid.NewGuid(),
-                        "manual-link",
                         a.Id,
                         null,
                         b.Id,
@@ -83,8 +82,7 @@ namespace NetLoom.Tests.Integration
 
                 var automatic =
                     new PhysicalLink(
-                        manual.Id,
-                        manual.LinkKey,
+                        Guid.NewGuid(),
                         a.Id,
                         null,
                         b.Id,

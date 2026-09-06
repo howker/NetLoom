@@ -374,3 +374,20 @@ Map contracts expose neutral enums for origin, monitoring capability and categor
 - FDB/ARP correlation alone still does not create a direct physical cable;
 - topology lifecycle can now be associated with stable materialized identifiers;
 - WPF remains independent from SQLite persistence.
+
+## ADR-038 — Canonical PhysicalLink identity
+
+Статус: принято.
+
+`PhysicalLink.Id` является постоянной идентичностью materialized физического соединения.
+
+`LinkKey` не принимается от caller и вычисляется Domain из канонически упорядоченных endpoint'ов `(DeviceId, InterfaceId?)`. Поэтому обратное направление наблюдения не создаёт другую физическую связь.
+
+Reconciliation:
+1. точное совпадение canonical endpoint'ов обновляет существующий PhysicalLink;
+2. один совместимый provisional PhysicalLink может быть уточнён с сохранением `Id` и `FirstSeenUtc`;
+3. несколько совместимых provisional PhysicalLink считаются неоднозначностью — выбор не угадывается;
+4. более грубое rediscovery не стирает уже известный interface endpoint;
+5. manual PhysicalLink защищается по разрешённой физической идентичности, а не только по входящему GUID.
+
+`Migration009MaterializedTopology` остаётся неизменной.

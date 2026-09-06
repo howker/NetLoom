@@ -79,9 +79,9 @@ namespace NetLoom.Domain.Topology
                 "User",
                 capturedUtc);
         }
+
         public PhysicalLink CreateLink(
             Guid id,
-            string linkKey,
             Guid deviceAId,
             Guid? interfaceAId,
             Guid deviceBId,
@@ -99,7 +99,6 @@ namespace NetLoom.Domain.Topology
 
             return new PhysicalLink(
                 id,
-                linkKey,
                 deviceAId,
                 interfaceAId,
                 deviceBId,

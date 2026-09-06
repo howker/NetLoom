@@ -66,9 +66,27 @@ ON CONFLICT(id) DO UPDATE SET
     notes = excluded.notes,
     is_hidden = excluded.is_hidden,
     is_archived = excluded.is_archived,
-    first_seen_utc = excluded.first_seen_utc,
-    last_seen_utc = excluded.last_seen_utc,
-    last_resolved_utc = excluded.last_resolved_utc,
+    first_seen_utc =
+        CASE
+            WHEN devices.first_seen_utc IS NULL THEN excluded.first_seen_utc
+            WHEN excluded.first_seen_utc IS NULL THEN devices.first_seen_utc
+            WHEN excluded.first_seen_utc < devices.first_seen_utc THEN excluded.first_seen_utc
+            ELSE devices.first_seen_utc
+        END,
+    last_seen_utc =
+        CASE
+            WHEN devices.last_seen_utc IS NULL THEN excluded.last_seen_utc
+            WHEN excluded.last_seen_utc IS NULL THEN devices.last_seen_utc
+            WHEN excluded.last_seen_utc > devices.last_seen_utc THEN excluded.last_seen_utc
+            ELSE devices.last_seen_utc
+        END,
+    last_resolved_utc =
+        CASE
+            WHEN devices.last_resolved_utc IS NULL THEN excluded.last_resolved_utc
+            WHEN excluded.last_resolved_utc IS NULL THEN devices.last_resolved_utc
+            WHEN excluded.last_resolved_utc > devices.last_resolved_utc THEN excluded.last_resolved_utc
+            ELSE devices.last_resolved_utc
+        END,
     updated_at_utc = excluded.updated_at_utc;";
 
                     Add(command, "@id", device.Id.ToString("D"));
@@ -140,8 +158,20 @@ ON CONFLICT(id) DO UPDATE SET
     media_type_override = excluded.media_type_override,
     is_manual = excluded.is_manual,
     is_hidden = excluded.is_hidden,
-    first_seen_utc = excluded.first_seen_utc,
-    last_seen_utc = excluded.last_seen_utc;";
+    first_seen_utc =
+        CASE
+            WHEN interfaces.first_seen_utc IS NULL THEN excluded.first_seen_utc
+            WHEN excluded.first_seen_utc IS NULL THEN interfaces.first_seen_utc
+            WHEN excluded.first_seen_utc < interfaces.first_seen_utc THEN excluded.first_seen_utc
+            ELSE interfaces.first_seen_utc
+        END,
+    last_seen_utc =
+        CASE
+            WHEN interfaces.last_seen_utc IS NULL THEN excluded.last_seen_utc
+            WHEN excluded.last_seen_utc IS NULL THEN interfaces.last_seen_utc
+            WHEN excluded.last_seen_utc > interfaces.last_seen_utc THEN excluded.last_seen_utc
+            ELSE interfaces.last_seen_utc
+        END;";
 
                     Add(command, "@id", networkInterface.Id.ToString("D"));
                     Add(command, "@deviceId", networkInterface.DeviceId.ToString("D"));
@@ -166,7 +196,7 @@ ON CONFLICT(id) DO UPDATE SET
             }
         }
 
-        public void SavePhysicalLink(PhysicalLink link)
+        public PhysicalLink SavePhysicalLink(PhysicalLink link)
         {
             if (link == null)
             {
@@ -175,17 +205,29 @@ ON CONFLICT(id) DO UPDATE SET
 
             using (var connection = _connectionFactory.OpenConnection())
             {
-                ProtectManualLink(connection, link);
+                var existing =
+                    ResolvePhysicalLinkTarget(
+                        connection,
+                        link);
+
+                ProtectManualLink(
+                    existing,
+                    link);
+
+                var persisted =
+                    MergePhysicalLink(
+                        existing,
+                        link);
 
                 ValidateInterfaceEndpoint(
                     connection,
-                    link.DeviceAId,
-                    link.InterfaceAId);
+                    persisted.DeviceAId,
+                    persisted.InterfaceAId);
 
                 ValidateInterfaceEndpoint(
                     connection,
-                    link.DeviceBId,
-                    link.InterfaceBId);
+                    persisted.DeviceBId,
+                    persisted.InterfaceBId);
 
                 using (var command = connection.CreateCommand())
                 {
@@ -227,35 +269,56 @@ ON CONFLICT(id) DO UPDATE SET
     media_type_resolved = excluded.media_type_resolved,
     speed_bps_resolved = excluded.speed_bps_resolved,
     source_summary = excluded.source_summary,
-    first_seen_utc = excluded.first_seen_utc,
-    last_seen_utc = excluded.last_seen_utc,
-    last_confirmed_utc = excluded.last_confirmed_utc,
+    first_seen_utc =
+        CASE
+            WHEN excluded.first_seen_utc < physical_links.first_seen_utc
+                THEN excluded.first_seen_utc
+            ELSE physical_links.first_seen_utc
+        END,
+    last_seen_utc =
+        CASE
+            WHEN excluded.last_seen_utc > physical_links.last_seen_utc
+                THEN excluded.last_seen_utc
+            ELSE physical_links.last_seen_utc
+        END,
+    last_confirmed_utc =
+        CASE
+            WHEN physical_links.last_confirmed_utc IS NULL
+                THEN excluded.last_confirmed_utc
+            WHEN excluded.last_confirmed_utc IS NULL
+                THEN physical_links.last_confirmed_utc
+            WHEN excluded.last_confirmed_utc > physical_links.last_confirmed_utc
+                THEN excluded.last_confirmed_utc
+            ELSE physical_links.last_confirmed_utc
+        END,
     resolver_version = excluded.resolver_version,
     is_hidden = excluded.is_hidden,
     is_archived = excluded.is_archived,
     notes = excluded.notes;";
 
-                    Add(command, "@id", link.Id.ToString("D"));
-                    Add(command, "@linkKey", link.LinkKey);
-                    Add(command, "@deviceA", link.DeviceAId.ToString("D"));
-                    AddGuid(command, "@interfaceA", link.InterfaceAId);
-                    Add(command, "@deviceB", link.DeviceBId.ToString("D"));
-                    AddGuid(command, "@interfaceB", link.InterfaceBId);
-                    Add(command, "@strength", link.Strength.ToString());
-                    Add(command, "@freshness", link.Freshness.ToString());
-                    Add(command, "@media", link.MediaTypeResolved);
-                    Add(command, "@speed", link.SpeedBpsResolved);
-                    Add(command, "@source", link.SourceSummary);
-                    Add(command, "@firstSeen", FormatUtc(link.FirstSeenUtc));
-                    Add(command, "@lastSeen", FormatUtc(link.LastSeenUtc));
-                    AddDate(command, "@lastConfirmed", link.LastConfirmedUtc);
-                    Add(command, "@resolver", link.ResolverVersion);
-                    Add(command, "@hidden", link.IsHidden ? 1 : 0);
-                    Add(command, "@archived", link.IsArchived ? 1 : 0);
-                    Add(command, "@notes", link.Notes);
+                    Add(command, "@id", persisted.Id.ToString("D"));
+                    Add(command, "@linkKey", persisted.LinkKey);
+                    Add(command, "@deviceA", persisted.DeviceAId.ToString("D"));
+                    AddGuid(command, "@interfaceA", persisted.InterfaceAId);
+                    Add(command, "@deviceB", persisted.DeviceBId.ToString("D"));
+                    AddGuid(command, "@interfaceB", persisted.InterfaceBId);
+                    Add(command, "@strength", persisted.Strength.ToString());
+                    Add(command, "@freshness", persisted.Freshness.ToString());
+                    Add(command, "@media", persisted.MediaTypeResolved);
+                    Add(command, "@speed", persisted.SpeedBpsResolved);
+                    Add(command, "@source", persisted.SourceSummary);
+                    Add(command, "@firstSeen", FormatUtc(persisted.FirstSeenUtc));
+                    Add(command, "@lastSeen", FormatUtc(persisted.LastSeenUtc));
+                    AddDate(command, "@lastConfirmed", persisted.LastConfirmedUtc);
+                    Add(command, "@resolver", persisted.ResolverVersion);
+                    Add(command, "@hidden", persisted.IsHidden ? 1 : 0);
+                    Add(command, "@archived", persisted.IsArchived ? 1 : 0);
+                    Add(command, "@notes", persisted.Notes);
 
                     command.ExecuteNonQuery();
                 }
+
+                return persisted;
             }
         }
 
@@ -506,20 +569,324 @@ WHERE device_a_id = @id
         }
 
         private static void ProtectManualLink(
-            SQLiteConnection connection,
+            PhysicalLink existing,
             PhysicalLink incoming)
         {
-            var existing = ScalarString(
-                connection,
-                "SELECT strength FROM physical_links WHERE id = @id;",
-                incoming.Id);
-
-            if (existing == PhysicalLinkStrength.Manual.ToString() &&
+            if (existing != null &&
+                existing.Strength == PhysicalLinkStrength.Manual &&
                 incoming.Strength != PhysicalLinkStrength.Manual)
             {
                 throw new InvalidOperationException(
                     "Automatic topology cannot replace a manual physical link.");
             }
+        }
+
+        private static PhysicalLink ResolvePhysicalLinkTarget(
+            SQLiteConnection connection,
+            PhysicalLink incoming)
+        {
+            var byId =
+                GetPhysicalLinkById(
+                    connection,
+                    incoming.Id);
+
+            if (byId != null &&
+                !SameDevicePair(byId, incoming))
+            {
+                throw new InvalidOperationException(
+                    "Physical link id cannot be reused for another device pair.");
+            }
+
+            var pairLinks =
+                GetPhysicalLinksForDevicePair(
+                    connection,
+                    incoming.DeviceAId,
+                    incoming.DeviceBId);
+
+            PhysicalLink exact = null;
+            var exactCount = 0;
+
+            foreach (var existing in pairLinks)
+            {
+                if (SameEndpoints(
+                    existing,
+                    incoming))
+                {
+                    exact = existing;
+                    exactCount++;
+                }
+            }
+
+            if (exactCount > 1)
+            {
+                throw new InvalidOperationException(
+                    "Multiple physical links have identical canonical endpoints.");
+            }
+
+            if (exact != null)
+            {
+                if (byId != null &&
+                    byId.Id != exact.Id)
+                {
+                    throw new InvalidOperationException(
+                        "Physical link id conflicts with an existing canonical link.");
+                }
+
+                return exact;
+            }
+
+            if (byId != null)
+            {
+                if (!EndpointsCompatible(
+                    byId,
+                    incoming))
+                {
+                    throw new InvalidOperationException(
+                        "Physical link id cannot move to incompatible endpoints.");
+                }
+
+                return byId;
+            }
+
+            PhysicalLink compatible = null;
+            var compatibleCount = 0;
+
+            foreach (var existing in pairLinks)
+            {
+                if (EndpointsCompatible(
+                    existing,
+                    incoming))
+                {
+                    compatible = existing;
+                    compatibleCount++;
+                }
+            }
+
+            if (compatibleCount > 1)
+            {
+                throw new InvalidOperationException(
+                    "Physical link refinement is ambiguous.");
+            }
+
+            return compatible;
+        }
+
+        private static PhysicalLink MergePhysicalLink(
+            PhysicalLink existing,
+            PhysicalLink incoming)
+        {
+            if (existing == null)
+            {
+                return incoming;
+            }
+
+            var interfaceA =
+                MergeInterface(
+                    existing.InterfaceAId,
+                    incoming.InterfaceAId);
+
+            var interfaceB =
+                MergeInterface(
+                    existing.InterfaceBId,
+                    incoming.InterfaceBId);
+
+            return new PhysicalLink(
+                existing.Id,
+                existing.DeviceAId,
+                interfaceA,
+                existing.DeviceBId,
+                interfaceB,
+                incoming.Strength,
+                incoming.Freshness,
+                incoming.MediaTypeResolved,
+                incoming.SpeedBpsResolved,
+                incoming.SourceSummary,
+                Min(
+                    existing.FirstSeenUtc,
+                    incoming.FirstSeenUtc),
+                Max(
+                    existing.LastSeenUtc,
+                    incoming.LastSeenUtc),
+                MaxNullable(
+                    existing.LastConfirmedUtc,
+                    incoming.LastConfirmedUtc),
+                incoming.ResolverVersion,
+                incoming.IsHidden,
+                incoming.IsArchived,
+                incoming.Notes);
+        }
+
+        private static PhysicalLink GetPhysicalLinkById(
+            SQLiteConnection connection,
+            Guid id)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    id, link_key,
+    device_a_id, interface_a_id,
+    device_b_id, interface_b_id,
+    strength, freshness,
+    media_type_resolved, speed_bps_resolved,
+    source_summary,
+    first_seen_utc, last_seen_utc, last_confirmed_utc,
+    resolver_version,
+    is_hidden, is_archived,
+    notes
+FROM physical_links
+WHERE id = @id;";
+
+                Add(command, "@id", id.ToString("D"));
+
+                using (var reader = command.ExecuteReader())
+                {
+                    return reader.Read()
+                        ? ReadLink(reader)
+                        : null;
+                }
+            }
+        }
+
+        private static IReadOnlyList<PhysicalLink>
+            GetPhysicalLinksForDevicePair(
+                SQLiteConnection connection,
+                Guid deviceAId,
+                Guid deviceBId)
+        {
+            var result =
+                new List<PhysicalLink>();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    id, link_key,
+    device_a_id, interface_a_id,
+    device_b_id, interface_b_id,
+    strength, freshness,
+    media_type_resolved, speed_bps_resolved,
+    source_summary,
+    first_seen_utc, last_seen_utc, last_confirmed_utc,
+    resolver_version,
+    is_hidden, is_archived,
+    notes
+FROM physical_links
+WHERE
+    (device_a_id = @deviceA AND device_b_id = @deviceB)
+ OR (device_a_id = @deviceB AND device_b_id = @deviceA)
+ORDER BY id;";
+
+                Add(command, "@deviceA", deviceAId.ToString("D"));
+                Add(command, "@deviceB", deviceBId.ToString("D"));
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        result.Add(ReadLink(reader));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static bool SameDevicePair(
+            PhysicalLink left,
+            PhysicalLink right)
+        {
+            return
+                left.DeviceAId == right.DeviceAId &&
+                left.DeviceBId == right.DeviceBId;
+        }
+
+        private static bool SameEndpoints(
+            PhysicalLink left,
+            PhysicalLink right)
+        {
+            return
+                SameDevicePair(left, right) &&
+                left.InterfaceAId == right.InterfaceAId &&
+                left.InterfaceBId == right.InterfaceBId;
+        }
+
+        private static bool EndpointsCompatible(
+            PhysicalLink left,
+            PhysicalLink right)
+        {
+            return
+                SameDevicePair(left, right) &&
+                InterfaceCompatible(
+                    left.InterfaceAId,
+                    right.InterfaceAId) &&
+                InterfaceCompatible(
+                    left.InterfaceBId,
+                    right.InterfaceBId);
+        }
+
+        private static bool InterfaceCompatible(
+            Guid? left,
+            Guid? right)
+        {
+            return
+                !left.HasValue ||
+                !right.HasValue ||
+                left.Value == right.Value;
+        }
+
+        private static Guid? MergeInterface(
+            Guid? existing,
+            Guid? incoming)
+        {
+            if (existing.HasValue &&
+                incoming.HasValue &&
+                existing.Value != incoming.Value)
+            {
+                throw new InvalidOperationException(
+                    "Physical link refinement has incompatible interfaces.");
+            }
+
+            return incoming.HasValue
+                ? incoming
+                : existing;
+        }
+
+        private static DateTime Min(
+            DateTime left,
+            DateTime right)
+        {
+            return left <= right
+                ? left
+                : right;
+        }
+
+        private static DateTime Max(
+            DateTime left,
+            DateTime right)
+        {
+            return left >= right
+                ? left
+                : right;
+        }
+
+        private static DateTime? MaxNullable(
+            DateTime? left,
+            DateTime? right)
+        {
+            if (!left.HasValue)
+            {
+                return right;
+            }
+
+            if (!right.HasValue)
+            {
+                return left;
+            }
+
+            return left.Value >= right.Value
+                ? left
+                : right;
         }
 
         private static void ValidateInterfaceEndpoint(
@@ -640,7 +1007,6 @@ WHERE id = @id;";
         {
             return new PhysicalLink(
                 Guid.Parse(reader.GetString(0)),
-                reader.GetString(1),
                 Guid.Parse(reader.GetString(2)),
                 GuidNullable(reader, 3),
                 Guid.Parse(reader.GetString(4)),

@@ -162,3 +162,19 @@ A physical-link interface endpoint must belong to the device specified for that 
 A connected manual device or interface cannot be deleted while a physical link references it.
 
 High-frequency monitoring metrics are not stored in these topology tables.
+
+## Sprint 15.1b — persistence identity и timestamps
+
+Для Sprint 15.1b новая схема не требуется: количество миграций остаётся 9, `Migration009MaterializedTopology` не переписывается.
+
+Новые записи `physical_links.link_key` получают canonical Domain-generated key. Repository сначала разрешает физическую идентичность связи по endpoint'ам и только затем выполняет сохранение с постоянным `PhysicalLink.Id`.
+
+Правила merge timestamps:
+- `first_seen_utc` = минимальное известное значение;
+- `last_seen_utc` = максимальное известное значение;
+- `last_resolved_utc` = максимальное известное значение;
+- `last_confirmed_utc` = максимальное известное значение с корректной обработкой `NULL`.
+
+Существующие строки Sprint 15 с прежним caller-supplied `link_key` нормализуются при следующем успешном reconciliation; массовое переписывание Migration009 не выполняется.
+
+Удаление connected manual device/interface по-прежнему запрещается repository pre-check'ом до raw foreign-key ошибки.

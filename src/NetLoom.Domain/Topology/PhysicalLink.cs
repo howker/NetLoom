@@ -6,7 +6,6 @@ namespace NetLoom.Domain.Topology
     {
         public PhysicalLink(
             Guid id,
-            string linkKey,
             Guid deviceAId,
             Guid? interfaceAId,
             Guid deviceBId,
@@ -31,26 +30,6 @@ namespace NetLoom.Domain.Topology
                     nameof(id));
             }
 
-            if (string.IsNullOrWhiteSpace(linkKey))
-            {
-                throw new ArgumentException(
-                    "Physical link key is required.",
-                    nameof(linkKey));
-            }
-
-            if (deviceAId == Guid.Empty ||
-                deviceBId == Guid.Empty)
-            {
-                throw new ArgumentException(
-                    "Both device ids are required.");
-            }
-
-            if (deviceAId == deviceBId)
-            {
-                throw new ArgumentException(
-                    "Physical link devices must differ.");
-            }
-
             RequireUtc(firstSeenUtc, nameof(firstSeenUtc));
             RequireUtc(lastSeenUtc, nameof(lastSeenUtc));
             RequireUtc(lastConfirmedUtc, nameof(lastConfirmedUtc));
@@ -69,12 +48,34 @@ namespace NetLoom.Domain.Topology
                     nameof(speedBpsResolved));
             }
 
+            Guid canonicalDeviceAId;
+            Guid? canonicalInterfaceAId;
+            Guid canonicalDeviceBId;
+            Guid? canonicalInterfaceBId;
+
+            PhysicalLinkIdentity.Canonicalize(
+                deviceAId,
+                interfaceAId,
+                deviceBId,
+                interfaceBId,
+                out canonicalDeviceAId,
+                out canonicalInterfaceAId,
+                out canonicalDeviceBId,
+                out canonicalInterfaceBId);
+
             Id = id;
-            LinkKey = linkKey.Trim();
-            DeviceAId = deviceAId;
-            InterfaceAId = interfaceAId;
-            DeviceBId = deviceBId;
-            InterfaceBId = interfaceBId;
+            DeviceAId = canonicalDeviceAId;
+            InterfaceAId = canonicalInterfaceAId;
+            DeviceBId = canonicalDeviceBId;
+            InterfaceBId = canonicalInterfaceBId;
+
+            LinkKey =
+                PhysicalLinkIdentity.BuildLinkKey(
+                    DeviceAId,
+                    InterfaceAId,
+                    DeviceBId,
+                    InterfaceBId);
+
             Strength = strength;
             Freshness = freshness;
             MediaTypeResolved = Normalize(mediaTypeResolved);

@@ -184,3 +184,19 @@ IP addresses, MAC addresses, host names and protocol identifiers are not NetLoom
 FDB/ARP correlation alone still cannot create a direct physical cable.
 
 Map presentation keys remain separate from persistent topology identity. Localized labels remain in the client resource layer.
+
+## Sprint 15.1b — целостность PhysicalLink identity
+
+Идентичность materialized PhysicalLink принадлежит Domain и не задаётся вызывающим кодом.
+
+Инварианты:
+- `PhysicalLink.Id` — постоянный идентификатор materialized физической связи;
+- `LinkKey` вычисляется централизованно из канонически упорядоченных полных endpoint'ов;
+- наблюдения `A:p1 ↔ B:p2` и `B:p2 ↔ A:p1` дают один `LinkKey`;
+- известный interface endpoint не понижается обратно до `null` при более слабом rediscovery;
+- единственный совместимый provisional link может быть уточнён с сохранением `PhysicalLink.Id` и `FirstSeenUtc`;
+- при нескольких совместимых provisional link resolver persistence не угадывает соответствие;
+- параллельные связи остаются различимыми, когда их различает interface identity;
+- automatic topology не может заменить manual PhysicalLink даже при другом входящем GUID.
+
+Persistence объединяет lifecycle timestamps монотонно: `FirstSeenUtc` движется только к более раннему значению, а `LastSeenUtc`, `LastConfirmedUtc` и `LastResolvedUtc` — только к более позднему.
