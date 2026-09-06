@@ -629,3 +629,23 @@ WAL меняет backup operational contract: активный `.db` нельз�
 Raw observation retention является отдельным Sprint 26B. Никакого IP-as-DeviceId.
 
 Новых migrations нет. Migration count остаётся 11.
+
+## ADR-054 — bounded raw retention is independent from topology freshness
+
+**Решение:** raw protocol observations в topology/configuration SQLite получают bounded time-based retention, независимый от topology freshness.
+
+Правила v1:
+- retention window = 24 часа;
+- cleanup использует только UTC `captured_utc`, без source/IP identity;
+- manual observations не входят в raw protocol cleanup;
+- один maintenance-run удаляет максимум 8 parent observations;
+- каждый parent удаляется отдельной immediate transaction, чтобы не держать один огромный writer lock на весь backlog;
+- existing cascade graph удаляет raw/normalized children;
+- cleanup запускается после poll cycle и изолирован от результата polling;
+- current PhysicalLink evidence не удаляется вместе с raw.
+
+Если current evidence содержит `observation_id`, которого больше нет в `observations`, это не отсутствие evidence и не ошибка. Это отдельное explainability состояние `Expired`; `evidence_kind`, `captured_utc`, `source_address`, `slot_discriminator` и `detail` остаются доступными.
+
+Production default для `TopologyLifecyclePolicy` сейчас не существует. Поэтому тестовые thresholds не используются для выбора retention window, а 24 часа являются операционным storage bound. При введении production lifecycle configuration связь между этими политиками должна быть пересмотрена отдельным решением.
+
+Schema change не требуется: Migration011 остаётся последней. На каждом cleanup запрещены автоматические `VACUUM` и ручной WAL checkpoint без измеренной необходимости.

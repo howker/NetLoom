@@ -668,3 +668,32 @@ WAL backup/export rule зафиксировано: live copy одного `.db` 
 Следующий эксплуатационный P0: Sprint 26B — bounded raw observation retention + evidence expiry semantics.
 
 Ring protection analyzer пока не применяется. Отдельно в backlog вынесены basis-independent graph safety analysis и user-facing ring semantics.
+
+## Sprint 26B — bounded raw observation retention
+
+Реализовано:
+- Application `IObservationRetentionStore`;
+- SQLite bounded time-only retention по `captured_utc`;
+- default raw window 24 часа;
+- максимум 8 parent observations на poll-cycle;
+- один parent delete на одну immediate transaction;
+- manual observations исключены из raw protocol cleanup;
+- existing FK cascades используются без новой schema;
+- Application explainability state `NotApplicable / Available / Expired`;
+- SQLite evidence explanation reader через `LEFT JOIN observations`, без загрузки varbinds;
+- Engine запускает cleanup после `poll-once` и каждого scheduler cycle;
+- retention failure изолирован от protocol poll result;
+- integration regressions для strict cutoff, bounded oldest-first, manual exclusion, cascade graph, expired current evidence и WAL reader/writer.
+
+Не изменены:
+- Device/Interface/PhysicalLink identity и lifecycle;
+- `TopologyLifecyclePolicy` и его thresholds;
+- MonitoringScheduler;
+- MapEvidenceItem/WPF;
+- SNMP WALK limit/cancellation/multi-device scheduler;
+- ring semantics/analyzer;
+- SQLite schema.
+
+Migration011 остаётся последней; migrations: 11.
+
+Следующий P0 после эксплуатационного hardening: basis-independent graph safety analysis. Отдельно в backlog остаются localized raw-expired UI, WALK limit, active-poll cancellation, multi-device scheduler и user-facing ring semantics.

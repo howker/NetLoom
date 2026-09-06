@@ -28,7 +28,7 @@
 - [x] Sprint 25 — deterministic physical ring detection.
 - [x] Physical ring detection.
 - [x] Sprint 26A — SQLite WAL + concurrency hardening.
-- [ ] Sprint 26B — bounded raw observation retention + evidence expiry semantics.
+- [x] Sprint 26B — bounded raw observation retention + evidence expiry semantics.
 - [ ] Basis-independent graph safety analysis: forwarding-cycle detection, bridges and blast radius.
 - [ ] User-facing ring semantics before per-ring protection labels.
 - [ ] Ring protection analyzer.
@@ -84,6 +84,7 @@
 Повторяющаяся реальная проблема из FRICTION_LOG имеет приоритет над speculative product feature.
 ## Operational hardening backlog
 
+- [ ] Surface raw-expired evidence state in localized evidence UI when that detail panel is implemented.
 - [ ] Configurable SNMP WALK varbind limit with explicit step failure before unbounded memory growth.
 - [ ] Propagate CancellationToken into the active poll/collector path; cancellation must not become a failed protocol step.
 - [ ] Multi-device scheduler: bounded parallelism, per-device cadence and startup jitter.

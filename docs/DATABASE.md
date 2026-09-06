@@ -310,3 +310,24 @@ WAL использует связанные с database файлы `-wal` и `-s
 Sprint 26A не удаляет observations. Sprint 26B должен использовать time-based retention по `captured_utc`, не вводя IP/source_address как DeviceId.
 
 `physical_link_evidence_current.observation_id` не является foreign key на `observations`; поэтому Sprint 26B обязан отдельно определить explainability state для evidence, raw observation которого уже удалён, и не делать retention window короче согласованного current-evidence/freshness window.
+
+## Sprint 26B — observation retention
+
+Raw protocol observation retention v1:
+- default window: 24 часа;
+- delete predicate: `captured_utc < cutoffUtc`;
+- cutoff строгий: observation ровно на границе сохраняется;
+- `source_address` не является DeviceId и не используется как retention key;
+- `ObservationKind.Manual` исключён из raw protocol cleanup;
+- максимум 8 parent observations за maintenance-run;
+- один parent observation удаляется за один `BEGIN IMMEDIATE`;
+- существующие `ON DELETE CASCADE` очищают `snmp_varbinds`, LLDP, CDP, FDB/bridge mapping, ARP и STP normalized rows;
+- `stp_port_states` удаляется каскадом через `stp_observations`.
+
+`physical_link_evidence_current.observation_id` по-прежнему не имеет FK на `observations`. Удаление raw не удаляет current evidence metadata. `SqlitePhysicalLinkEvidenceExplanationReader` делает `LEFT JOIN observations` и возвращает `Available`/`Expired` без чтения varbind payload.
+
+Retention не выполняет `VACUUM` и не вызывает ручной WAL checkpoint. SQLite auto-checkpoint остаётся штатным механизмом; отдельная maintenance policy для compaction/checkpoint может быть добавлена только после измерений.
+
+Production topology freshness default пока отсутствует, поэтому 24-часовое raw window является операционным storage bound, а не обещанием Fresh/Aging/Stale. При появлении production lifecycle configuration это значение должно быть пересмотрено явно.
+
+Новых migrations нет. Migration011 остаётся последней; количество migrations: 11.

@@ -494,3 +494,29 @@ Migration policy:
 Raw observation retention не входит в Sprint 26A и остаётся Sprint 26B. SourceAddress/IP не становится DeviceId.
 
 Ring protection analyzer остаётся отложенным. Basis-independent forwarding-cycle/bridge/blast-radius анализ можно реализовать независимо от user-facing ring naming semantics.
+
+## Sprint 26B — bounded raw observation retention
+
+Raw protocol observations имеют отдельную эксплуатационную retention-политику и не являются lifecycle-политикой materialized topology.
+
+Правила:
+- production default `TopologyLifecyclePolicy` сейчас отсутствует; тестовые 5/15 минут не являются production freshness window;
+- raw retention v1 использует фиксированное операционное окно 24 часа и не выводит его из Fresh/Aging/Stale;
+- cutoff определяется только по `observations.captured_utc`; `source_address` не участвует в grouping/identity;
+- `ObservationKind.Manual` не входит в raw protocol retention;
+- за один maintenance-run удаляется не более 8 parent observations;
+- каждый parent observation удаляется в отдельном `BEGIN IMMEDIATE`, после чего существующие FK cascade удаляют raw/normalized child rows;
+- cleanup выполняется после `poll-once` и после каждого завершённого scheduler cycle;
+- ошибка cleanup не превращает успешный protocol poll в failed poll;
+- retention не удаляет Device, DeviceInterface, PhysicalLink или manual topology.
+
+`physical_link_evidence_current` остаётся bounded current snapshot и может пережить удаление raw observation. Для explainability введён Application read model `ObservationRawAvailability`:
+- `NotApplicable` — evidence не имеет observation id;
+- `Available` — referenced observation ещё хранится;
+- `Expired` — current evidence сохранён, но referenced raw observation уже удалён retention.
+
+Raw presence проверяется через `LEFT JOIN observations` без загрузки `snmp_varbinds`.
+
+Sprint 26B не меняет `MapEvidenceItem`/WPF. Локализованное отображение raw-expired состояния добавляется отдельно при реализации evidence detail panel.
+
+SQLite schema не меняется; Migration011 остаётся последней. `VACUUM` и ручной WAL checkpoint не выполняются на каждом cleanup.

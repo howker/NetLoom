@@ -2,11 +2,21 @@ using System;
 using System.Globalization;
 using System.Threading;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.Observations;
+using NetLoom.Persistence.Sqlite.Database;
+using NetLoom.Persistence.Sqlite.Observations;
 
 namespace NetLoom.Engine
 {
     internal static class Program
     {
+        private static readonly TimeSpan
+            RawObservationRetentionWindow =
+                TimeSpan.FromHours(24);
+
+        private const int
+            RawObservationRetentionBatchSize = 8;
+
         private static int Main(
             string[] args)
         {
@@ -67,6 +77,9 @@ namespace NetLoom.Engine
             WritePollResult(
                 result);
 
+            RunObservationRetention(
+                options);
+
             if (!result.AnySucceeded)
             {
                 Console.Error.WriteLine(
@@ -121,7 +134,14 @@ namespace NetLoom.Engine
                             TimeSpan.FromSeconds(
                                 options.IntervalSeconds),
                             cancellation.Token,
-                            WritePollResult);
+                            pollResult =>
+                            {
+                                WritePollResult(
+                                    pollResult);
+
+                                RunObservationRetention(
+                                    options);
+                            });
 
                     Console.WriteLine(
                         "SCHEDULER: stopped cycles=" +
@@ -134,6 +154,46 @@ namespace NetLoom.Engine
                     Console.CancelKeyPress -=
                         handler;
                 }
+            }
+        }
+
+        private static void RunObservationRetention(
+            EngineCommandLine options)
+        {
+            try
+            {
+                var databasePath =
+                    EngineDatabasePathResolver.Resolve(
+                        options.DatabasePath);
+
+                IObservationRetentionStore retentionStore =
+                    new SqliteObservationRetentionStore(
+                        new SqliteConnectionFactory(
+                            databasePath));
+
+                var cutoffUtc =
+                    DateTime.UtcNow.Subtract(
+                        RawObservationRetentionWindow);
+
+                var deleted =
+                    retentionStore.DeleteOlderThan(
+                        cutoffUtc,
+                        RawObservationRetentionBatchSize);
+
+                if (deleted > 0)
+                {
+                    Console.WriteLine(
+                        "RETENTION: deletedObservations=" +
+                        deleted);
+                }
+            }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine(
+                    "RETENTION: FAIL " +
+                    exception.GetType().Name +
+                    " " +
+                    exception.Message);
             }
         }
 
