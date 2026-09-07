@@ -4,18 +4,18 @@ using System.Linq;
 
 namespace NetLoom.Contracts.Rings
 {
-    public sealed class PhysicalRing
+    public sealed class PhysicalCycleBasisElement
     {
-        public PhysicalRing(
-            string ringKey,
+        public PhysicalCycleBasisElement(
+            string cycleKey,
             IEnumerable<Guid> deviceIds,
             IEnumerable<Guid> physicalLinkIds)
         {
-            if (string.IsNullOrWhiteSpace(ringKey))
+            if (string.IsNullOrWhiteSpace(cycleKey))
             {
                 throw new ArgumentException(
-                    "Ring key is required.",
-                    nameof(ringKey));
+                    "Cycle key is required.",
+                    nameof(cycleKey));
             }
 
             if (deviceIds == null)
@@ -43,14 +43,14 @@ namespace NetLoom.Contracts.Rings
             if (devices.Length < 2)
             {
                 throw new ArgumentException(
-                    "Physical ring requires at least two devices.",
+                    "Physical cycle basis element requires at least two devices.",
                     nameof(deviceIds));
             }
 
             if (links.Length < 2)
             {
                 throw new ArgumentException(
-                    "Physical ring requires at least two links.",
+                    "Physical cycle basis element requires at least two links.",
                     nameof(physicalLinkIds));
             }
 
@@ -58,7 +58,7 @@ namespace NetLoom.Contracts.Rings
                 devices.Length)
             {
                 throw new ArgumentException(
-                    "Physical ring device ids must be unique.",
+                    "Physical cycle basis device ids must be unique.",
                     nameof(deviceIds));
             }
 
@@ -66,16 +66,16 @@ namespace NetLoom.Contracts.Rings
                 links.Length)
             {
                 throw new ArgumentException(
-                    "Physical ring link ids must be unique.",
+                    "Physical cycle basis link ids must be unique.",
                     nameof(physicalLinkIds));
             }
 
-            RingKey = ringKey.Trim();
+            CycleKey = cycleKey.Trim();
             DeviceIds = devices;
             PhysicalLinkIds = links;
         }
 
-        public string RingKey { get; }
+        public string CycleKey { get; }
 
         public IReadOnlyList<Guid> DeviceIds { get; }
 

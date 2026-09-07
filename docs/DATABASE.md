@@ -277,7 +277,7 @@ Migration011 остаётся последней migration. Количество
 
 Sprint 25 не добавляет migrations и не меняет SQLite schema.
 
-`PhysicalRingDetector` работает in-memory поверх existing materialized `PhysicalLink` read model. `IMaterializedTopologyRepository.GetPhysicalLinks()` уже является достаточным persistence read boundary.
+`PhysicalCycleBasisDetector` работает in-memory поверх existing materialized `PhysicalLink` read model. `IMaterializedTopologyRepository.GetPhysicalLinks()` уже является достаточным persistence read boundary.
 
 Результаты ring detection в Sprint 25 не сохраняются в SQLite и не изменяют `physical_links`, evidence или STP observations.
 
@@ -343,3 +343,15 @@ STP forwarding analysis принимает уже projected transport-neutral `S
 Bridge/SPOF, blast-radius и forwarding-cycle results являются вычисляемыми snapshot results и не materialize'ятся в topology/configuration SQLite.
 
 Migration011 остаётся последней migration; количество migrations: 11.
+
+## Sprint 28 — ring semantics persistence boundary
+
+Sprint 28 не добавляет persistence и не меняет SQLite schema.
+
+`PhysicalCycleBasisDetector` и `PhysicalRedundancyRegionDetector` являются pure in-memory analyzers поверх существующего `IMaterializedTopologyRepository.GetPhysicalLinks()` read boundary.
+
+`PhysicalRedundancyRegion.RegionKey` вычисляется из stable PhysicalLink.Id текущего region membership и не сохраняется в отдельной таблице.
+
+Physical redundancy regions являются вычисляемым snapshot result. Их не следует materialize'ить до появления доказанной необходимости persistent operator naming/history.
+
+Migration011 остаётся последней migration; migrations: 11. Migration012 не вводится.

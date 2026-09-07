@@ -9,9 +9,9 @@ using NetLoom.Domain.Topology;
 
 namespace NetLoom.Topology.Rings
 {
-    public sealed class PhysicalRingDetector
+    public sealed class PhysicalCycleBasisDetector
     {
-        public IReadOnlyList<PhysicalRing> Detect(
+        public IReadOnlyList<PhysicalCycleBasisElement> Detect(
             IEnumerable<PhysicalLink> links)
         {
             if (links == null)
@@ -56,10 +56,10 @@ namespace NetLoom.Topology.Rings
             var sets =
                 new DisjointSet();
 
-            var rings =
+            var cycles =
                 new Dictionary<
                     string,
-                    PhysicalRing>(
+                    PhysicalCycleBasisElement>(
                         StringComparer.Ordinal);
 
             foreach (var link in eligible)
@@ -134,20 +134,20 @@ namespace NetLoom.Topology.Rings
                     continue;
                 }
 
-                var ringKey =
-                    BuildRingKey(linkIds);
+                var cycleKey =
+                    BuildCycleKey(linkIds);
 
-                rings[ringKey] =
-                    new PhysicalRing(
-                        ringKey,
+                cycles[cycleKey] =
+                    new PhysicalCycleBasisElement(
+                        cycleKey,
                         deviceIds,
                         linkIds);
             }
 
             return
-                rings.Values
+                cycles.Values
                     .OrderBy(
-                        ring => ring.RingKey,
+                        ring => ring.CycleKey,
                         StringComparer.Ordinal)
                     .ToArray();
         }
@@ -276,7 +276,7 @@ namespace NetLoom.Topology.Rings
                 "Physical link is not incident to the requested device.");
         }
 
-        private static string BuildRingKey(
+        private static string BuildCycleKey(
             IEnumerable<Guid> physicalLinkIds)
         {
             var payload =
@@ -298,8 +298,8 @@ namespace NetLoom.Topology.Rings
 
                 var builder =
                     new StringBuilder(
-                        "pring-v1-",
-                        9 + (hash.Length * 2));
+                        "pcycle-basis-v1-",
+                        16 + (hash.Length * 2));
 
                 foreach (var value in hash)
                 {

@@ -611,14 +611,14 @@ Backlog `STP tree projection` закрыт.
 ## Sprint 25 — Physical ring detection
 
 Реализовано:
-- transport-neutral `PhysicalRing`;
-- pure `PhysicalRingDetector`;
+- transport-neutral `PhysicalCycleBasisElement`;
+- pure `PhysicalCycleBasisDetector`;
 - undirected materialized PhysicalLink multigraph;
 - reverse/duplicate dedupe по canonical LinkKey;
 - сохранение настоящих parallel links;
 - 2-edge parallel physical cycles;
 - deterministic fundamental cycle basis;
-- stable `RingKey` из PhysicalLink.Id;
+- stable `CycleKey` из PhysicalLink.Id;
 - manual topology participation;
 - Stale/Aging/Fresh links сохраняют physical-fact semantics;
 - archived links исключаются;
@@ -714,7 +714,7 @@ Migration011 остаётся последней; migrations: 11.
 - unit regressions для tree/triangle/disconnected semantics, parallel/reverse duplicate, manual/hidden/stale/archive/self, all-forwarding cycle, blocking break, missing/duplicate/transitional STP и deterministic input order.
 
 Не изменены:
-- `PhysicalRingDetector`;
+- `PhysicalCycleBasisDetector`;
 - materialized topology persistence;
 - STP observation/projector pipeline;
 - Engine runtime;
@@ -724,3 +724,31 @@ Migration011 остаётся последней; migrations: 11.
 Migration011 остаётся последней; migrations: 11.
 
 Следующий P0: user-facing ring semantics before per-ring protection labels. `Ring protection analyzer` остаётся отдельным последующим P0.
+
+## Sprint 28 — operator-facing ring semantics
+
+Реализовано:
+- Sprint 25 primitive переименован в `PhysicalCycleBasisElement` / `PhysicalCycleBasisDetector`;
+- legacy `RingKey` переименован в `CycleKey`;
+- отдельный transport-neutral `PhysicalRedundancyRegion`;
+- `PhysicalRedundancyRegionKind = SimpleRing / ParallelLinks / Composite`;
+- `PhysicalRedundancyRegionDetector`;
+- basis-independent vertex-biconnected decomposition;
+- stable RegionKey по PhysicalLink.Id membership;
+- simple-ring classification без enumeration всех simple cycles;
+- Composite semantics для chorded/dense regions;
+- ParallelLinks semantics без ложного user-facing ring;
+- articulation-separated rings остаются separate regions;
+- regression coverage для triangle, chorded square, figure-eight, parallel, reverse duplicate, acyclic/disconnected, manual/hidden/stale/archive, endpoint refinement и deterministic input order.
+
+Не изменены:
+- Sprint 27 graph-safety analyzers;
+- STP observation/tree projection;
+- materialized topology persistence;
+- Engine runtime;
+- MapSnapshot/WPF;
+- SQLite schema.
+
+Migration011 остаётся последней; migrations: 11.
+
+Следующий P0: Ring protection analyzer. Protection status должен потреблять stable operator-facing region semantics и не менять membership.

@@ -438,7 +438,7 @@ SQLite schema не меняется. Migration011 остаётся послед�
 Sprint 25 добавляет pure deterministic detector физических L2 cycles поверх уже materialized `PhysicalLink`.
 
 Input:
-`IEnumerable<PhysicalLink> -> PhysicalRingDetector -> IReadOnlyList<PhysicalRing>`.
+`IEnumerable<PhysicalLink> -> PhysicalCycleBasisDetector -> IReadOnlyList<PhysicalCycleBasisElement>`.
 
 Граф является undirected multigraph на уровне stable `DeviceId`. Каждая canonical materialized physical link является отдельным edge. `InterfaceId` остаётся частью `PhysicalLink.LinkKey`, поэтому разные interface-to-interface cables между той же парой devices являются различимыми parallel edges.
 
@@ -448,7 +448,7 @@ Detector строит детерминированный fundamental cycle basis
 
 Два разных parallel PhysicalLink между двумя devices образуют 2-edge physical cycle. Это только утверждение о physical multigraph и не означает LAG, STP protection, forwarding loop или vendor ring protocol.
 
-`PhysicalRing.RingKey` вычисляется из отсортированного набора stable `PhysicalLink.Id`, поэтому не зависит от порядка входа и сохраняется при endpoint refinement, если сохраняются link IDs.
+`PhysicalCycleBasisElement.CycleKey` вычисляется из отсортированного набора stable `PhysicalLink.Id`, поэтому не зависит от порядка входа и сохраняется при endpoint refinement, если сохраняются link IDs.
 
 Eligibility:
 - `IsArchived = true` исключает link из current physical graph analysis;
@@ -553,6 +553,52 @@ Forwarding warning не перечисляет fundamental cycles. Basis-indepen
 
 `ForwardingCycleAnalysis.IsComplete = false`, если хотя бы один eligible physical link имеет unresolved forwarding state. Отсутствие confirmed cycle при incomplete coverage не является доказательством отсутствия forwarding loop.
 
-`PhysicalRingDetector` Sprint 25 остаётся неизменным и не используется как source of truth для Sprint 27. Его user-facing naming/rename остаётся отдельной задачей перед per-ring protection labels.
+`PhysicalCycleBasisDetector` Sprint 25 остаётся неизменным и не используется как source of truth для Sprint 27. Его user-facing naming/rename остаётся отдельной задачей перед per-ring protection labels.
 
 SQLite schema, Engine runtime и WPF не меняются.
+
+## Sprint 28 — operator-facing ring semantics
+
+Sprint 28 разделяет два разных понятия.
+
+1. Sprint 25 primitive переименован:
+   - `PhysicalRing` -> `PhysicalCycleBasisElement`;
+   - `PhysicalRingDetector` -> `PhysicalCycleBasisDetector`;
+   - `RingKey` -> `CycleKey`.
+   Алгоритм остаётся deterministic fundamental cycle basis. Это внутренний bounded graph primitive, а не user-facing named ring.
+
+2. Для operator-facing semantics введён `PhysicalRedundancyRegionDetector`.
+
+`PhysicalRedundancyRegionDetector` строит maximal vertex-biconnected blocks materialized PhysicalLink multigraph. Это basis-independent O(V+E) decomposition и не перечисляет все simple cycles.
+
+Eligibility совпадает с Sprint 25/27:
+- adjacency только materialized PhysicalLink;
+- canonical LinkKey dedupe;
+- distinct parallel PhysicalLink сохраняются;
+- archived исключается;
+- hidden/stale/manual остаются physical facts;
+- STP/FDB/ARP/IP/vendor protocols не формируют membership.
+
+Каждый block минимум из двух edges классифицируется:
+- `SimpleRing` — минимум 3 DeviceId, число edges равно числу devices и degree каждого device внутри block равен 2;
+- `ParallelLinks` — redundancy block ровно между двумя DeviceId с двумя или более distinct physical edges;
+- `Composite` — chorded/dense/overlapping-by-edge redundancy block, который нельзя честно представить одним named ring.
+
+Только `SimpleRing` имеет `IsNamedRingCandidate = true`.
+
+Следствия:
+- квадрат без хорды — один named ring;
+- квадрат с диагональю — одна Composite redundancy region, а не произвольный набор basis/simple cycles;
+- две петли, соприкасающиеся только articulation device, являются двумя отдельными regions;
+- параллельные links не называются операторским кольцом;
+- UI не должен рисовать arbitrary ring outline для Composite region.
+
+`PhysicalRedundancyRegion.RegionKey` строится из отсортированного набора stable PhysicalLink.Id. Endpoint refinement не меняет region identity, если link IDs и membership сохраняются. Изменение membership меняет RegionKey.
+
+Region membership не заявляет completeness физической topology: freshness/evidence остаются отдельными атрибутами PhysicalLink/MapLink.
+
+Sprint 27 forwarding-cycle/bridge/blast-radius остаются отдельными overlays и не задают ring membership.
+
+Per-ring RSTP/protection classification не входит в Sprint 28 и остаётся следующим P0.
+
+SQLite schema, Engine runtime, MapSnapshot и WPF не меняются.

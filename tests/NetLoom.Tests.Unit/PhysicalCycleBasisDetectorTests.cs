@@ -7,7 +7,7 @@ using NetLoom.Topology.Rings;
 namespace NetLoom.Tests.Unit
 {
     [TestClass]
-    public sealed class PhysicalRingDetectorTests
+    public sealed class PhysicalCycleBasisDetectorTests
     {
         private static readonly DateTime Now =
             new DateTime(
@@ -20,7 +20,7 @@ namespace NetLoom.Tests.Unit
                 DateTimeKind.Utc);
 
         [TestMethod]
-        public void TriangleProducesOneDeterministicPhysicalRing()
+        public void TriangleProducesOneDeterministicCycleBasisElement()
         {
             var a =
                 Guid.Parse(
@@ -59,7 +59,7 @@ namespace NetLoom.Tests.Unit
                     null);
 
             var detector =
-                new PhysicalRingDetector();
+                new PhysicalCycleBasisDetector();
 
             var first =
                 detector.Detect(
@@ -74,8 +74,8 @@ namespace NetLoom.Tests.Unit
                 first.Count);
 
             Assert.AreEqual(
-                first[0].RingKey,
-                second[0].RingKey);
+                first[0].CycleKey,
+                second[0].CycleKey);
 
             CollectionAssert.AreEqual(
                 first[0].PhysicalLinkIds.ToArray(),
@@ -101,7 +101,7 @@ namespace NetLoom.Tests.Unit
             var e = Guid.NewGuid();
 
             var result =
-                new PhysicalRingDetector()
+                new PhysicalCycleBasisDetector()
                     .Detect(
                         new[]
                         {
@@ -131,7 +131,7 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
-        public void ManualLinkParticipatesInPhysicalRing()
+        public void ManualLinkParticipatesInCycleBasis()
         {
             var a = Guid.NewGuid();
             var b = Guid.NewGuid();
@@ -147,7 +147,7 @@ namespace NetLoom.Tests.Unit
                     PhysicalLinkStrength.Manual);
 
             var result =
-                new PhysicalRingDetector()
+                new PhysicalCycleBasisDetector()
                     .Detect(
                         new[]
                         {
@@ -208,7 +208,7 @@ namespace NetLoom.Tests.Unit
                 reverse.LinkKey);
 
             var result =
-                new PhysicalRingDetector()
+                new PhysicalCycleBasisDetector()
                     .Detect(
                         new[] { reverse, forward });
 
@@ -244,7 +244,7 @@ namespace NetLoom.Tests.Unit
                 second.LinkKey);
 
             var result =
-                new PhysicalRingDetector()
+                new PhysicalCycleBasisDetector()
                     .Detect(
                         new[] { second, first });
 
@@ -304,7 +304,7 @@ namespace NetLoom.Tests.Unit
                     null);
 
             var detector =
-                new PhysicalRingDetector();
+                new PhysicalCycleBasisDetector();
 
             var current =
                 detector.Detect(
@@ -354,7 +354,7 @@ namespace NetLoom.Tests.Unit
             var d = Guid.NewGuid();
 
             var result =
-                new PhysicalRingDetector()
+                new PhysicalCycleBasisDetector()
                     .Detect(
                         new[]
                         {
@@ -397,7 +397,7 @@ namespace NetLoom.Tests.Unit
             Assert.AreEqual(
                 2,
                 result
-                    .Select(item => item.RingKey)
+                    .Select(item => item.CycleKey)
                     .Distinct(
                         StringComparer.Ordinal)
                     .Count());
@@ -441,7 +441,7 @@ namespace NetLoom.Tests.Unit
                 freshness,
                 null,
                 null,
-                "ring-test",
+                "cycle-basis-test",
                 Now,
                 Now,
                 Now,

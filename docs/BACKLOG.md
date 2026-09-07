@@ -31,7 +31,8 @@
 - [x] Sprint 26B — bounded raw observation retention + evidence expiry semantics.
 - [x] Sprint 27 — basis-independent graph safety analysis.
 - [x] Basis-independent graph safety analysis: forwarding-cycle detection, bridges and blast radius.
-- [ ] User-facing ring semantics before per-ring protection labels.
+- [x] Sprint 28 — user-facing ring semantics + cycle-basis primitive clarification.
+- [x] User-facing ring semantics before per-ring protection labels.
 - [ ] Ring protection analyzer.
 - [ ] Удобный поиск MAC/IP до конкретного switch/interface.
 - [ ] Минимальные alerts для реально полезных topology/ring failures.
@@ -89,4 +90,4 @@
 - [ ] Configurable SNMP WALK varbind limit with explicit step failure before unbounded memory growth.
 - [ ] Propagate CancellationToken into the active poll/collector path; cancellation must not become a failed protocol step.
 - [ ] Multi-device scheduler: bounded parallelism, per-device cadence and startup jitter.
-- [ ] Clarify/rename fundamental cycle-basis primitive before exposing user-facing named rings.
+- [x] Clarify/rename fundamental cycle-basis primitive before exposing user-facing named rings.

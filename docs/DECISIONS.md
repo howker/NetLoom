@@ -595,7 +595,7 @@ Canonical `PhysicalLink.LinkKey` определяет физическую edge 
 
 Две разные parallel physical edges являются 2-edge physical cycle. Это не является утверждением о LAG, STP, forwarding loop или vendor protection protocol. Протокольная интерпретация выполняется отдельным `Ring protection analyzer`.
 
-Чтобы избежать экспоненциального перечисления всех simple cycles, detector возвращает deterministic fundamental cycle basis. Порядок обработки задаётся stable `PhysicalLink.Id`. `PhysicalRing.RingKey` строится из отсортированных stable link IDs.
+Чтобы избежать экспоненциального перечисления всех simple cycles, detector возвращает deterministic fundamental cycle basis. Порядок обработки задаётся stable `PhysicalLink.Id`. `PhysicalCycleBasisElement.CycleKey` строится из отсортированных stable link IDs.
 
 `IsArchived` исключает link из current ring analysis. `IsHidden` не исключает physical fact. Fresh/Aging/Stale не определяют existence и не фильтруют detector. Manual links участвуют наравне с automatic.
 
@@ -660,7 +660,7 @@ Bridge/SPOF определяется edge-aware low-link алгоритмом. P
 
 Blast radius для bridge — две disconnected части исходной connected component после удаления конкретного PhysicalLink и symmetric `SeparatedDevicePairCount`. Анализ не выбирает "пострадавшую" сторону без отдельного root/service context.
 
-Forwarding-cycle analysis не зависит от `PhysicalRingDetector` и не перечисляет выбранный cycle basis. STP только классифицирует уже существующие physical edges.
+Forwarding-cycle analysis не зависит от `PhysicalCycleBasisDetector` и не перечисляет выбранный cycle basis. STP только классифицирует уже существующие physical edges.
 
 Confirmed forwarding требует однозначной stable InterfaceId binding на обоих endpoint и состояние `Forwarding` на обоих. `Blocking`/`Disabled` являются stable non-forwarding state только при однозначно разрешённых обоих endpoint. Transitional/unknown/missing/ambiguous state возвращает unresolved.
 
@@ -669,3 +669,31 @@ Basis-independent forwarding-loop warning — все confirmed-forwarding Physic
 Incomplete STP coverage явно представляется `ForwardingCycleAnalysis.IsComplete = false`; отсутствие confirmed cycle при incomplete coverage не означает proven-safe.
 
 Анализ pure/read-only, deterministic, не использует IP/source_address, FDB/ARP или vendor protocol как physical adjacency и не меняет SQLite schema. Migration011 остаётся последней.
+
+## ADR-056 — operator-facing ring is a simple vertex-biconnected redundancy region
+
+**Статус:** принято.
+
+Sprint 25 fundamental cycle basis не является user-facing ring identity. Primitive переименовывается в `PhysicalCycleBasisElement` / `PhysicalCycleBasisDetector`, а его key — в `CycleKey`.
+
+Operator-facing topology использует отдельный basis-independent `PhysicalRedundancyRegion`: maximal vertex-biconnected block physical multigraph.
+
+Почему vertex-biconnected block:
+- decomposition deterministic и O(V+E);
+- не требует экспоненциального enumerating всех simple cycles;
+- square+diagonal становится одной Composite redundancy region;
+- figure-eight с общим articulation device остаётся двумя distinct regions;
+- overlapping/chorded structure не маскируется под произвольное named ring;
+- parallel physical links корректно образуют отдельный `ParallelLinks` region.
+
+Named ring candidate — только `SimpleRing`: block минимум с тремя DeviceId, где все вершины имеют degree 2 и edge count равен device count.
+
+`ParallelLinks` и `Composite` не получают ring/protection label только из-за наличия redundancy.
+
+Region identity — SHA-256 key от sorted stable PhysicalLink.Id. Он не зависит от traversal/cycle basis и остаётся стабильным при endpoint refinement, сохраняющем PhysicalLink.Id и membership.
+
+Manual/hidden/stale links участвуют; archived links исключаются. Freshness/evidence не смешиваются с membership.
+
+STP/RSTP, Sprint 27 ForwardingCycleAnalysis и vendor ring protocols не создают region membership. Они могут быть отдельными overlays/следующим protection analysis.
+
+No new persistence, no Migration012, no WPF hardcoded ring labels.
