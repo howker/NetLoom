@@ -697,3 +697,30 @@ Ring protection analyzer пока не применяется. Отдельно 
 Migration011 остаётся последней; migrations: 11.
 
 Следующий P0 после эксплуатационного hardening: basis-independent graph safety analysis. Отдельно в backlog остаются localized raw-expired UI, WALK limit, active-poll cancellation, multi-device scheduler и user-facing ring semantics.
+
+## Sprint 27 — basis-independent graph safety analysis
+
+Реализовано:
+- transport-neutral `PhysicalLinkFailureImpact`;
+- transport-neutral `ForwardingCycleAnalysis`;
+- pure `PhysicalGraphSafetyAnalyzer`;
+- edge-aware multigraph bridge/SPOF detection;
+- direction-neutral blast radius через две partitions и separated device-pair count;
+- basis-independent forwarding-cycle edge set;
+- conservative STP endpoint resolution через stable InterfaceId;
+- explicit unresolved coverage semantics;
+- parallel-edge correctness;
+- deterministic ordering;
+- unit regressions для tree/triangle/disconnected semantics, parallel/reverse duplicate, manual/hidden/stale/archive/self, all-forwarding cycle, blocking break, missing/duplicate/transitional STP и deterministic input order.
+
+Не изменены:
+- `PhysicalRingDetector`;
+- materialized topology persistence;
+- STP observation/projector pipeline;
+- Engine runtime;
+- MapLink/WPF;
+- SQLite schema.
+
+Migration011 остаётся последней; migrations: 11.
+
+Следующий P0: user-facing ring semantics before per-ring protection labels. `Ring protection analyzer` остаётся отдельным последующим P0.

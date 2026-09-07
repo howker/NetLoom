@@ -331,3 +331,15 @@ Retention не выполняет `VACUUM` и не вызывает ручной
 Production topology freshness default пока отсутствует, поэтому 24-часовое raw window является операционным storage bound, а не обещанием Fresh/Aging/Stale. При появлении production lifecycle configuration это значение должно быть пересмотрено явно.
 
 Новых migrations нет. Migration011 остаётся последней; количество migrations: 11.
+
+## Sprint 27 — graph safety analysis persistence boundary
+
+Sprint 27 не добавляет persistence и не меняет SQLite schema.
+
+Physical graph safety analyzer работает in-memory поверх materialized `PhysicalLink`. Существующего `IMaterializedTopologyRepository.GetPhysicalLinks()` достаточно как read boundary для physical graph.
+
+STP forwarding analysis принимает уже projected transport-neutral `StpTreeSnapshot`; analyzer сам не читает raw/normalized STP tables и не пишет результаты обратно.
+
+Bridge/SPOF, blast-radius и forwarding-cycle results являются вычисляемыми snapshot results и не materialize'ятся в topology/configuration SQLite.
+
+Migration011 остаётся последней migration; количество migrations: 11.

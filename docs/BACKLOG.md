@@ -29,7 +29,8 @@
 - [x] Physical ring detection.
 - [x] Sprint 26A — SQLite WAL + concurrency hardening.
 - [x] Sprint 26B — bounded raw observation retention + evidence expiry semantics.
-- [ ] Basis-independent graph safety analysis: forwarding-cycle detection, bridges and blast radius.
+- [x] Sprint 27 — basis-independent graph safety analysis.
+- [x] Basis-independent graph safety analysis: forwarding-cycle detection, bridges and blast radius.
 - [ ] User-facing ring semantics before per-ring protection labels.
 - [ ] Ring protection analyzer.
 - [ ] Удобный поиск MAC/IP до конкретного switch/interface.

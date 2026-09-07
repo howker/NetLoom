@@ -649,3 +649,23 @@ Raw observation retention является отдельным Sprint 26B. Ник
 Production default для `TopologyLifecyclePolicy` сейчас не существует. Поэтому тестовые thresholds не используются для выбора retention window, а 24 часа являются операционным storage bound. При введении production lifecycle configuration связь между этими политиками должна быть пересмотрена отдельным решением.
 
 Schema change не требуется: Migration011 остаётся последней. На каждом cleanup запрещены автоматические `VACUUM` и ручной WAL checkpoint без измеренной необходимости.
+
+## ADR-055 — graph safety analysis is basis-independent and read-only
+
+**Статус:** принято.
+
+Physical graph safety использует materialized `PhysicalLink` как undirected multigraph по stable DeviceId и сохраняет Sprint 25 eligibility semantics: canonical LinkKey dedupe, distinct parallel edges, archived exclusion, hidden/stale/manual inclusion, self-link exclusion.
+
+Bridge/SPOF определяется edge-aware low-link алгоритмом. Parallel edges не могут ложно стать bridges.
+
+Blast radius для bridge — две disconnected части исходной connected component после удаления конкретного PhysicalLink и symmetric `SeparatedDevicePairCount`. Анализ не выбирает "пострадавшую" сторону без отдельного root/service context.
+
+Forwarding-cycle analysis не зависит от `PhysicalRingDetector` и не перечисляет выбранный cycle basis. STP только классифицирует уже существующие physical edges.
+
+Confirmed forwarding требует однозначной stable InterfaceId binding на обоих endpoint и состояние `Forwarding` на обоих. `Blocking`/`Disabled` являются stable non-forwarding state только при однозначно разрешённых обоих endpoint. Transitional/unknown/missing/ambiguous state возвращает unresolved.
+
+Basis-independent forwarding-loop warning — все confirmed-forwarding PhysicalLink, принадлежащие хотя бы одному cycle, то есть non-bridge edges confirmed-forwarding subgraph. Parallel forwarding pair корректно даёт два cycle-edge без утверждения о LAG, RSTP protection или vendor ring protocol.
+
+Incomplete STP coverage явно представляется `ForwardingCycleAnalysis.IsComplete = false`; отсутствие confirmed cycle при incomplete coverage не означает proven-safe.
+
+Анализ pure/read-only, deterministic, не использует IP/source_address, FDB/ARP или vendor protocol как physical adjacency и не меняет SQLite schema. Migration011 остаётся последней.

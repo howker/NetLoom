@@ -520,3 +520,39 @@ Raw presence проверяется через `LEFT JOIN observations` без �
 Sprint 26B не меняет `MapEvidenceItem`/WPF. Локализованное отображение raw-expired состояния добавляется отдельно при реализации evidence detail panel.
 
 SQLite schema не меняется; Migration011 остаётся последней. `VACUUM` и ручной WAL checkpoint не выполняются на каждом cleanup.
+
+## Sprint 27 — basis-independent graph safety analysis
+
+Sprint 27 добавляет pure read-only анализ физического L2 multigraph, который не зависит от fundamental cycle basis Sprint 25.
+
+Physical graph eligibility совпадает с Sprint 25:
+- source of adjacency — только materialized `PhysicalLink`;
+- одинаковый canonical `LinkKey` дедуплицируется;
+- разные LinkKey между теми же DeviceId остаются parallel edges;
+- `IsArchived = true` исключает link;
+- `IsHidden`, Fresh/Aging/Stale и Manual не исключают физический факт;
+- self-device links игнорируются.
+
+`AnalyzePhysicalFailures` возвращает результат для каждого eligible PhysicalLink:
+- `IsBridge` показывает, является ли link graph bridge / single point of failure;
+- для bridge возвращаются две части исходной connected component после удаления link;
+- `SeparatedDevicePairCount = |SideA| * |SideB|`;
+- для redundant/non-bridge link обе части пусты и separated pair count равен 0.
+
+Blast radius намеренно direction-neutral. Без gateway/root/service context NetLoom не объявляет одну сторону "пострадавшей".
+
+`AnalyzeForwardingCycles` принимает тот же physical graph, transport-neutral `StpTreeSnapshot[]` и explicit `InstanceId`.
+Physical adjacency не создаётся из STP.
+
+Endpoint state разрешается только через stable `PhysicalLink.InterfaceId` -> ровно один `StpTreePort.InterfaceId` в ровно одном snapshot данного DeviceId/InstanceId:
+- оба endpoint `Forwarding` -> link confirmed forwarding;
+- оба endpoint однозначно разрешены и хотя бы один `Blocking`/`Disabled` -> confirmed non-forwarding;
+- missing InterfaceId/snapshot/port, duplicate snapshot/port, `Unknown`, `Listening`, `Learning` или `Broken` -> unresolved.
+
+Forwarding warning не перечисляет fundamental cycles. Basis-independent результат — отсортированный набор всех confirmed-forwarding PhysicalLink, которые принадлежат хотя бы одному циклу. В undirected multigraph это forwarding edges, не являющиеся bridges forwarding-subgraph. Поэтому две parallel forwarding edges обе входят в warning set.
+
+`ForwardingCycleAnalysis.IsComplete = false`, если хотя бы один eligible physical link имеет unresolved forwarding state. Отсутствие confirmed cycle при incomplete coverage не является доказательством отсутствия forwarding loop.
+
+`PhysicalRingDetector` Sprint 25 остаётся неизменным и не используется как source of truth для Sprint 27. Его user-facing naming/rename остаётся отдельной задачей перед per-ring protection labels.
+
+SQLite schema, Engine runtime и WPF не меняются.
