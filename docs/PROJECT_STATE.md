@@ -752,3 +752,31 @@ Migration011 остаётся последней; migrations: 11.
 Migration011 остаётся последней; migrations: 11.
 
 Следующий P0: Ring protection analyzer. Protection status должен потреблять stable operator-facing region semantics и не менять membership.
+
+## Sprint 29 — Ring protection analyzer
+
+Реализовано:
+- transport-neutral `RingProtectionAnalysis`;
+- `RingProtectionStatus = NotApplicable / Protected / Unprotected / Degraded / Unresolved`;
+- pure `RingProtectionAnalyzer`;
+- shared exact `StpEndpointStateResolver`;
+- Sprint 27 forwarding-cycle analysis переведён на тот же resolver без изменения его публичного contract;
+- protection применяется только к Sprint 28 `SimpleRing`;
+- Blocking и Disabled разделены;
+- complete exact endpoint coverage требуется для Protected/Unprotected/Degraded;
+- explainability buckets Forwarding/Blocking/Disabled/Unresolved PhysicalLinkId;
+- explicit InstanceId isolation;
+- manual/unmanaged missing InterfaceId -> Unresolved;
+- stale membership не меняет protection classification;
+- deterministic results.
+
+Не изменены:
+- PhysicalRedundancyRegion membership;
+- materialized topology persistence;
+- Engine runtime;
+- MapSnapshot/WPF;
+- SQLite schema.
+
+Migration011 остаётся последней; migrations: 11.
+
+Следующий P0 определяется актуальным `docs/BACKLOG.md`.

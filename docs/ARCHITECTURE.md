@@ -602,3 +602,41 @@ Sprint 27 forwarding-cycle/bridge/blast-radius остаются отдельны
 Per-ring RSTP/protection classification не входит в Sprint 28 и остаётся следующим P0.
 
 SQLite schema, Engine runtime, MapSnapshot и WPF не меняются.
+
+## Sprint 29 — Ring protection analyzer
+
+Sprint 29 добавляет pure read-only RSTP/STP protection classification поверх stable operator-facing `PhysicalRedundancyRegion`.
+
+Membership не вычисляется заново:
+- только `PhysicalRedundancyRegionKind.SimpleRing` eligible для ring protection v1;
+- `ParallelLinks` и `Composite` получают `NotApplicable`;
+- STP/RSTP не создаёт и не удаляет region/link membership.
+
+Exact endpoint binding вынесен в internal `StpEndpointStateResolver` и совместно используется Sprint 27 graph-safety и Sprint 29:
+- explicit `InstanceId`;
+- ровно один `StpTreeSnapshot` на DeviceId для выбранного instance;
+- stable `PhysicalLink.InterfaceId` -> ровно один `StpTreePort.InterfaceId`;
+- `Forwarding`, `Blocking`, `Disabled` сохраняются различимыми;
+- missing/duplicate port/snapshot и `Unknown/Listening/Learning/Broken` -> `Unresolved`;
+- BridgePortIndex и IfIndex не используются как fallback identity.
+
+Link classification:
+- любой unresolved endpoint -> Unresolved;
+- иначе любой Disabled endpoint -> Disabled;
+- иначе любой Blocking endpoint -> Blocking;
+- оба Forwarding -> Forwarding.
+
+Ring status v1:
+- `Protected` — complete SimpleRing, ровно один Blocking PhysicalLink, все остальные Forwarding, Disabled отсутствует;
+- `Unprotected` — complete SimpleRing, все PhysicalLink Forwarding;
+- `Degraded` — complete SimpleRing с Disabled link или с несколькими Blocking links;
+- `Unresolved` — хотя бы один member link не может быть однозначно классифицирован;
+- `NotApplicable` — region не `SimpleRing`.
+
+`Disabled` намеренно не считается защитным STP block: это может быть admin/fault state.
+
+Freshness/Hidden/Manual остаются отдельными от protection semantics. Stale link при полном STP coverage может иметь `Protected`; manual/unmanaged endpoint без InterfaceId даёт `Unresolved`.
+
+Результат содержит sorted PhysicalLinkId buckets Forwarding/Blocking/Disabled/Unresolved для explainability.
+
+SQLite, Engine runtime, MapSnapshot/WPF не меняются.

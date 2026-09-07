@@ -33,7 +33,8 @@
 - [x] Basis-independent graph safety analysis: forwarding-cycle detection, bridges and blast radius.
 - [x] Sprint 28 — user-facing ring semantics + cycle-basis primitive clarification.
 - [x] User-facing ring semantics before per-ring protection labels.
-- [ ] Ring protection analyzer.
+- [x] Sprint 29 — Ring protection analyzer.
+- [x] Ring protection analyzer.
 - [ ] Удобный поиск MAC/IP до конкретного switch/interface.
 - [ ] Минимальные alerts для реально полезных topology/ring failures.
 

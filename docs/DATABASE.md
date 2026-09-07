@@ -355,3 +355,17 @@ Sprint 28 не добавляет persistence и не меняет SQLite schema
 Physical redundancy regions являются вычисляемым snapshot result. Их не следует materialize'ить до появления доказанной необходимости persistent operator naming/history.
 
 Migration011 остаётся последней migration; migrations: 11. Migration012 не вводится.
+
+## Sprint 29 — Ring protection persistence boundary
+
+Sprint 29 не добавляет persistence и не меняет SQLite schema.
+
+`RingProtectionAnalyzer` работает in-memory поверх:
+- существующего `PhysicalRedundancyRegion`;
+- соответствующих materialized `PhysicalLink`;
+- projected transport-neutral `StpTreeSnapshot`;
+- explicit `InstanceId`.
+
+Protection result является вычисляемым snapshot result и не materialize'ится в topology/configuration SQLite.
+
+Migration011 остаётся последней migration; Migration012 не вводится.

@@ -4,6 +4,7 @@ using System.Linq;
 using NetLoom.Contracts.GraphSafety;
 using NetLoom.Contracts.StpTree;
 using NetLoom.Domain.Topology;
+using NetLoom.Topology.Stp;
 
 namespace NetLoom.Topology.Safety
 {
@@ -72,50 +73,13 @@ namespace NetLoom.Topology.Safety
                 IEnumerable<StpTreeSnapshot> stpSnapshots,
                 string instanceId)
         {
-            if (stpSnapshots == null)
-            {
-                throw new ArgumentNullException(
-                    nameof(stpSnapshots));
-            }
-
-            if (string.IsNullOrWhiteSpace(
-                instanceId))
-            {
-                throw new ArgumentException(
-                    "STP instance id is required.",
-                    nameof(instanceId));
-            }
-
-            var snapshots =
-                stpSnapshots.ToArray();
-
-            if (snapshots.Any(
-                snapshot => snapshot == null))
-            {
-                throw new ArgumentException(
-                    "STP snapshots cannot contain null.",
-                    nameof(stpSnapshots));
-            }
+            var endpointResolver =
+                new StpEndpointStateResolver(
+                    stpSnapshots,
+                    instanceId);
 
             var normalizedInstanceId =
-                instanceId.Trim();
-
-            var currentSnapshots =
-                snapshots
-                    .Where(
-                        snapshot =>
-                            string.Equals(
-                                snapshot.InstanceId,
-                                normalizedInstanceId,
-                                StringComparison.Ordinal))
-                    .GroupBy(
-                        snapshot =>
-                            snapshot.DeviceId)
-                    .ToDictionary(
-                        group =>
-                            group.Key,
-                        group =>
-                            group.ToArray());
+                endpointResolver.InstanceId;
 
             var edges =
                 BuildEligibleEdges(
@@ -130,21 +94,19 @@ namespace NetLoom.Topology.Safety
             foreach (var edge in edges)
             {
                 var endpointA =
-                    ResolveEndpointState(
-                        currentSnapshots,
+                    endpointResolver.Resolve(
                         edge.Link.DeviceAId,
                         edge.Link.InterfaceAId);
 
                 var endpointB =
-                    ResolveEndpointState(
-                        currentSnapshots,
+                    endpointResolver.Resolve(
                         edge.Link.DeviceBId,
                         edge.Link.InterfaceBId);
 
                 if (endpointA ==
-                        EndpointForwardingState.Unknown ||
+                        StpEndpointState.Unresolved ||
                     endpointB ==
-                        EndpointForwardingState.Unknown)
+                        StpEndpointState.Unresolved)
                 {
                     unresolved.Add(
                         edge.Link.Id);
@@ -153,9 +115,9 @@ namespace NetLoom.Topology.Safety
                 }
 
                 if (endpointA ==
-                        EndpointForwardingState.Forwarding &&
+                        StpEndpointState.Forwarding &&
                     endpointB ==
-                        EndpointForwardingState.Forwarding)
+                        StpEndpointState.Forwarding)
                 {
                     forwarding.Add(
                         edge);
@@ -481,64 +443,6 @@ namespace NetLoom.Topology.Safety
                 : link.DeviceAId;
         }
 
-        private static EndpointForwardingState
-            ResolveEndpointState(
-                IDictionary<
-                    Guid,
-                    StpTreeSnapshot[]> snapshots,
-                Guid deviceId,
-                Guid? interfaceId)
-        {
-            if (!interfaceId.HasValue)
-            {
-                return
-                    EndpointForwardingState.Unknown;
-            }
-
-            StpTreeSnapshot[] deviceSnapshots;
-
-            if (!snapshots.TryGetValue(
-                    deviceId,
-                    out deviceSnapshots) ||
-                deviceSnapshots.Length != 1)
-            {
-                return
-                    EndpointForwardingState.Unknown;
-            }
-
-            var matchingPorts =
-                deviceSnapshots[0]
-                    .Ports
-                    .Where(
-                        port =>
-                            port != null &&
-                            port.InterfaceId.HasValue &&
-                            port.InterfaceId.Value ==
-                                interfaceId.Value)
-                    .ToArray();
-
-            if (matchingPorts.Length != 1)
-            {
-                return
-                    EndpointForwardingState.Unknown;
-            }
-
-            switch (matchingPorts[0].State)
-            {
-                case StpTreePortState.Forwarding:
-                    return
-                        EndpointForwardingState.Forwarding;
-
-                case StpTreePortState.Blocking:
-                case StpTreePortState.Disabled:
-                    return
-                        EndpointForwardingState.NotForwarding;
-
-                default:
-                    return
-                        EndpointForwardingState.Unknown;
-            }
-        }
 
         private sealed class GraphEdge
         {
@@ -558,11 +462,6 @@ namespace NetLoom.Topology.Safety
             public PhysicalLink Link { get; }
         }
 
-        private enum EndpointForwardingState
-        {
-            Unknown = 0,
-            NotForwarding = 1,
-            Forwarding = 2
-        }
+
     }
 }

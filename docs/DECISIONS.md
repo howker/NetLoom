@@ -697,3 +697,29 @@ Manual/hidden/stale links участвуют; archived links исключают�
 STP/RSTP, Sprint 27 ForwardingCycleAnalysis и vendor ring protocols не создают region membership. Они могут быть отдельными overlays/следующим protection analysis.
 
 No new persistence, no Migration012, no WPF hardcoded ring labels.
+
+## ADR-057 — ring protection is complete exact-STP classification over SimpleRing only
+
+**Статус:** принято.
+
+Ring protection v1 применяется только к `PhysicalRedundancyRegionKind.SimpleRing`. `ParallelLinks` и `Composite` не получают ring protection label и возвращают `NotApplicable`.
+
+Membership задаётся Sprint 28 и не зависит от STP/RSTP.
+
+Exact endpoint binding централизован в pure internal `StpEndpointStateResolver`: DeviceId + explicit InstanceId + stable InterfaceId. Duplicate/missing snapshot или port и transitional/unknown states являются `Unresolved`. BridgePortIndex не трактуется как IfIndex.
+
+`Blocking` и `Disabled` различаются:
+- Blocking может быть intentional STP protection state;
+- Disabled является degradation/fault/admin state и не считается защитным block.
+
+Positive `Protected` разрешён только при complete coverage: ровно один Blocking physical edge и все остальные Forwarding.
+
+Complete all-Forwarding SimpleRing является `Unprotected`.
+
+Complete ring с Disabled edge или несколькими Blocking edges является `Degraded`.
+
+Любая неполнота exact endpoint classification имеет приоритет `Unresolved`; отсутствие данных не трактуется как Unprotected/Protected.
+
+Freshness, manual/hidden membership и protection status остаются отдельными concerns. Vendor ring protocols, IP/source_address и FDB/ARP не участвуют в v1 RSTP protection classification.
+
+Analyzer pure/read-only; no SQLite persistence, no Migration012, no UI write path.
