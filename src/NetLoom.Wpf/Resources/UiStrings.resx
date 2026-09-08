@@ -121,67 +121,67 @@
     <value>NetLoom — физическая топология</value>
   </data>
   <data name="MapTitle" xml:space="preserve">
-    <value>изическая топология</value>
+    <value>Физическая топология</value>
   </data>
   <data name="MapNotLoaded" xml:space="preserve">
-    <value>арта пока не загружена.</value>
+    <value>Карта пока не загружена.</value>
   </data>
   <data name="MapSummary" xml:space="preserve">
-    <value>злов: {0}   Связей: {1}   асположений: {2}</value>
+    <value>Узлов: {0}   Связей: {1}   Расположений: {2}</value>
   </data>
   <data name="ConfidenceHigh" xml:space="preserve">
-    <value>ысокая уверенность</value>
+    <value>Высокая уверенность</value>
   </data>
   <data name="ConfidenceMedium" xml:space="preserve">
     <value>Средняя уверенность</value>
   </data>
   <data name="ConfidenceLow" xml:space="preserve">
-    <value>изкая уверенность</value>
+    <value>Низкая уверенность</value>
   </data>
   <data name="FreshnessFresh" xml:space="preserve">
-    <value>ктуально</value>
+    <value>Актуально</value>
   </data>
   <data name="FreshnessAging" xml:space="preserve">
-    <value>старевает</value>
+    <value>Старевает</value>
   </data>
   <data name="FreshnessStale" xml:space="preserve">
-    <value>старело</value>
+    <value>Устарело</value>
   </data>
   <data name="EvidenceCount" xml:space="preserve">
     <value>подтверждений: {0}</value>
   </data>
   <data name="LocationUnassigned" xml:space="preserve">
-    <value>асположение: не назначено</value>
+    <value>Расположение: не назначено</value>
   </data>
   <data name="LocationUnknown" xml:space="preserve">
-    <value>асположение: неизвестно</value>
+    <value>Расположение: неизвестно</value>
   </data>
   <data name="LocationNamed" xml:space="preserve">
-    <value>асположение: {0}</value>
+    <value>Расположение: {0}</value>
   </data>
   <data name="NodeOriginManual" xml:space="preserve">
-    <value>учной</value>
+    <value>Ручной</value>
   </data>
   <data name="NodeOriginAutomatic" xml:space="preserve">
-    <value>втоматический</value>
+    <value>Автоматический</value>
   </data>
   <data name="NodeOriginImported" xml:space="preserve">
-    <value>мпортированный</value>
+    <value>Импортированный</value>
   </data>
   <data name="MonitoringNone" xml:space="preserve">
-    <value>е контролируется</value>
+    <value>Не контролируется</value>
   </data>
   <data name="CategoryMediaConverter" xml:space="preserve">
-    <value>едиаконвертор</value>
+    <value>Медиаконвертор</value>
   </data>
   <data name="CategoryUnmanagedSwitch" xml:space="preserve">
-    <value>еуправляемый коммутатор</value>
+    <value>Неуправляемый коммутатор</value>
   </data>
   <data name="CategoryOpticalConverter" xml:space="preserve">
-    <value>птический преобразователь</value>
+    <value>Оптический преобразователь</value>
   </data>
   <data name="CategoryPassiveNetworkEquipment" xml:space="preserve">
-    <value>ассивное сетевое устройство</value>
+    <value>Пассивное сетевое устройство</value>
   </data>
   <data name="LookupCandidateSummary" xml:space="preserve">
     <value>{0} • {1} • {2}</value>
@@ -223,7 +223,7 @@
     <value>ifIndex {0}</value>
   </data>
   <data name="LookupInterfaceUnavailable" xml:space="preserve">
-    <value>интерфейс не определён</value>
+    <value>Интерфейс не определён</value>
   </data>
   <data name="LookupInvalidQuery" xml:space="preserve">
     <value>Введите корректный MAC- или IP-адрес.</value>
