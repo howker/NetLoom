@@ -863,4 +863,21 @@ Commit `0e39460` (`Sprint 31B: add read-only topology alert surface`) отпра
 
 Sprint 31A + 31B закрывают backlog parent «Минимальные alerts для реально полезных topology/ring failures».
 
-Ближайший технический follow-up: расширить text-integrity audit на содержимое WPF `.resx` `<value>`. После этого следующий продуктовый этап определяется актуальными `docs/BACKLOG.md` и `FRICTION_LOG.md`; отдельный новый P0 feature сейчас не назначен.
+## Text-integrity hardening после Sprint 31
+
+Завершён ближайший технический follow-up из Product readiness:
+- `tools/Check-TextEncoding.ps1` теперь разбирает WPF `.resx` как XML и проверяет начало каждого operator-facing `<data><value>`;
+- подозрительное начало WPF resource value становится failing `RESX_DROPPED_CAPITAL`, а не только информационным `SUSPECT_DROPPED_CAPITAL`;
+- malformed WPF `.resx` отдельно даёт `INVALID_RESX_XML`;
+- намеренно строчный `EvidenceCount` разрешён явным resource-key exception;
+- добавлен unit regression `UiStringResourceIntegrityTests` для dropped-capital corruption.
+
+Проверка на рабочем репозитории перед commit:
+- `Check-TextEncoding.ps1` — PASS;
+- WPF `.resx <value>` text-integrity policy — PASS;
+- PowerShell UTF-8 BOM policy — PASS;
+- unit tests: 172/172.
+
+Commit `a695955` (`Harden WPF resource text integrity audit`) отправлен в `origin/main`; на момент закрытия `HEAD == origin/main`, worktree clean.
+
+Следующий продуктовый этап определяется актуальными `docs/BACKLOG.md` и `FRICTION_LOG.md`; отдельный новый P0 feature сейчас не назначен.

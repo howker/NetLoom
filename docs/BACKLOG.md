@@ -67,7 +67,7 @@
 - [x] UI business logic отделена от topology resolver.
 - [x] Encoding policy через .editorconfig.
 - [x] Восстановлены повреждённые кодировкой-комментарии в ARP/FDB/correlation/resolver и добавлен UTF-8 audit.
-- [ ] Расширить text-integrity audit на содержимое WPF `.resx` `<value>`, чтобы ловить повреждённые/съеденные начальные символы операторских строк.
+- [x] Расширить text-integrity audit на содержимое WPF `.resx` `<value>`, чтобы ловить повреждённые/съеденные начальные символы операторских строк.
 - [x] UI localization infrastructure.
 - [x] Реестр third-party лицензий.
 - [x] Friction log.
