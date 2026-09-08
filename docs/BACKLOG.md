@@ -38,9 +38,9 @@
 - [x] Удобный поиск MAC/IP до конкретного switch/interface.
   - [x] Sprint 30A — stable observation→DeviceId binding + backend MAC/IP evidence lookup.
   - [x] Sprint 30B — localized WPF MAC/IP search UX + navigation/highlight to switch/interface candidates.
-- [ ] Минимальные alerts для реально полезных topology/ring failures.
+- [x] Минимальные alerts для реально полезных topology/ring failures.
   - [x] Sprint 31A — pure current-state topology/ring alert semantics + deterministic AlertKey.
-  - [ ] Sprint 31B — operator-facing read-only alert surface + current-state transition/repeat suppression.
+  - [x] Sprint 31B — operator-facing read-only alert surface + current-state transition/repeat suppression.
 
 ## P0 — архитектурные gates
 
@@ -67,6 +67,7 @@
 - [x] UI business logic отделена от topology resolver.
 - [x] Encoding policy через .editorconfig.
 - [x] Восстановлены повреждённые кодировкой-комментарии в ARP/FDB/correlation/resolver и добавлен UTF-8 audit.
+- [ ] Расширить text-integrity audit на содержимое WPF `.resx` `<value>`, чтобы ловить повреждённые/съеденные начальные символы операторских строк.
 - [x] UI localization infrastructure.
 - [x] Реестр third-party лицензий.
 - [x] Friction log.

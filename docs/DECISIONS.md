@@ -767,3 +767,30 @@ Analyzer pure/read-only; no SQLite persistence, no Migration012, no UI write pat
 **Boundary.** FDB/ARP/IP не создают alert adjacency; bridgePortIndex не является ifIndex; manual topology не мутируется alert evaluator.
 
 **Persistence/UI.** Sprint 31A pure/read-only, без WPF integration и без persistence. Migration012 остаётся последней. Operator surface и repeat/transition suppression — Sprint 31B.
+
+## ADR-061 — topology alert surface is current-state and repeat suppression is process-local
+
+**Статус:** принято.
+
+**Read boundary.** WPF получает topology alerts только через Application `ITopologyAlertSnapshotProvider`. Concrete provider находится в Topology layer и on-demand вычисляет snapshot из current materialized PhysicalLink/interfaces и latest STP evidence. WPF не обращается к SQLite напрямую и не пишет topology/alert state.
+
+**STP identity.** Успешный STP poll при наличии `MonitoringPollRequest.DeviceId` переиспользует существующий `IObservationDeviceBindingStore`. `source_address` остаётся evidence metadata и не становится DeviceId.
+
+**Latest STP semantics.** `ILatestStpObservationReader.GetLatest(instanceId)` возвращает максимум один bound STP observation на DeviceId для explicit InstanceId. Latest определяется `captured_utc DESC`, а `observation_id DESC` является deterministic tie-break. Missing/unbound STP не превращается в guessed device snapshot.
+
+**Current alert composition.** `MaterializedTopologyAlertSnapshotProvider` выполняет существующие `StpTreeProjector`, forwarding-cycle analysis, redundancy-region/ring protection analysis и `TopologyAlertEvaluator`. Provider не вводит новые failure semantics поверх ADR-060.
+
+**Transition semantics.** `TopologyAlertTransitionTracker` сравнивает только набор deterministic AlertKey отдельно для каждого InstanceId:
+- первый non-empty active set -> `FirstAppearance`;
+- тот же set -> `Unchanged`;
+- другой non-empty set -> `Changed`;
+- non-empty -> empty -> `Resolved`;
+- empty -> non-empty после resolved state -> `FirstAppearance`.
+
+`Unchanged` подавляет повторный transition indicator, но не скрывает и не замораживает current alert list.
+
+**Restart semantics.** Tracker process-local и не сохраняется. После restart предыдущий set неизвестен; существующий active alert снова является `FirstAppearance`. Это намеренная v1 семантика, а не persistent incident history.
+
+**CIST.** Текущий WPF surface запрашивает explicit `"cist"`. CIST не смешивается с будущими MSTP instances; дальнейший multi-instance UI должен передавать InstanceId явно.
+
+**Persistence.** Alert snapshot, transition state, history, delivery, acknowledgement и silence не materialize'ятся. Существующая `Migration012ObservationDeviceBindings` переиспользуется для STP binding; `Migration013` не вводится.

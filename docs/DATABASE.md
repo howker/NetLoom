@@ -404,4 +404,28 @@ Sprint 31A не создаёт tables для alerts/incidents/history/acknowledg
 
 Текущий schema level остаётся `Migration012ObservationDeviceBindings`.
 
-Если persistent alert history понадобится в Sprint 31B или позже, storage policy должна отдельно определить identity, transitions, retention и acknowledgement semantics; текущий deterministic `AlertKey` сам по себе не является требованием создать DB primary key.
+Если persistent alert history понадобится позже, storage policy должна отдельно определить identity, transitions, retention и acknowledgement semantics; текущий deterministic `AlertKey` сам по себе не является требованием создать DB primary key.
+
+## Sprint 31B — current alert surface persistence boundary
+
+Sprint 31B не добавляет SQLite schema и не вводит `Migration013`.
+
+Существующая `observation_device_bindings` из Migration012 теперь также используется для успешных STP observations:
+- binding записывается только после успешного STP `Collect()`;
+- DeviceId берётся только из optional `MonitoringPollRequest.DeviceId`;
+- `source_address` не используется как identity;
+- существующий `ON DELETE CASCADE` по `observation_id` сохраняет raw-retention semantics без отдельной cleanup logic.
+
+`SqliteStpObservationStore` реализует read-only `ILatestStpObservationReader`. Для explicit InstanceId reader:
+- рассматривает только bound STP observations;
+- выбирает максимум один latest observation на каждый DeviceId;
+- сортирует по `captured_utc DESC`, затем `observation_id DESC` для deterministic tie-break;
+- возвращает normalized `StpObservation`, после чего topology layer выполняет projection/analysis in-memory.
+
+Latest/current STP selection не materialize'ится в отдельной таблице.
+
+`TopologyAlertSnapshot` и process-local `TopologyAlertTransitionTracker` также не сохраняются. Restart намеренно сбрасывает repeat-suppression state; persistent incident/history semantics не заявляются.
+
+WPF использует только read-only Application contracts. Alert UI не пишет SQLite.
+
+Текущий schema level после Sprint 31B остаётся `Migration012ObservationDeviceBindings`.

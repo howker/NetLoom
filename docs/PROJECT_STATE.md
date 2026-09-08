@@ -833,3 +833,34 @@ Sprint 30A + 30B закрывают backlog «Удобный поиск MAC/IP �
 - Migration012 остаётся последней.
 
 Backlog parent «Минимальные alerts для реально полезных topology/ring failures» остаётся открытым до Sprint 31B: operator-facing read-only alert surface + transition/repeat suppression.
+
+## Sprint 31B — operator-facing read-only topology alerts
+
+Реализовано:
+- успешный STP poll теперь использует существующий `IObservationDeviceBindingStore` и при наличии `MonitoringPollRequest.DeviceId` привязывает `StpObservation.Observation.Id` к stable DeviceId;
+- добавлен read-only `ILatestStpObservationReader`;
+- `SqliteStpObservationStore.GetLatest(instanceId)` выбирает по одному latest bound STP observation на каждый DeviceId для explicit InstanceId, с deterministic ordering `captured_utc DESC, observation_id DESC`;
+- source address не используется как device identity;
+- добавлен Application boundary `ITopologyAlertSnapshotProvider`;
+- `MaterializedTopologyAlertSnapshotProvider` on-demand читает current materialized PhysicalLink/interfaces и latest STP, затем выполняет `StpTreeProjector`, forwarding-cycle analysis, redundancy-region/ring protection analysis и существующий `TopologyAlertEvaluator`;
+- WPF получает provider только через read-only Application contract; SQLite из WPF не читается и не записывается напрямую;
+- текущий operator surface работает для explicit CIST instance `"cist"` и показывает current Critical/Warning alerts с reasons, region keys и PhysicalLinkId evidence;
+- `TopologyAlertTransitionTracker` хранит только process-local наборы AlertKey отдельно по InstanceId;
+- переходы: active без предыдущего active set -> `FirstAppearance`, тот же set -> `Unchanged`, другой non-empty set -> `Changed`, non-empty -> empty -> `Resolved`;
+- `Unchanged` подавляет повторный transition indicator, но current alert list продолжает обновляться как current-state surface;
+- после process restart suppression state отсутствует, поэтому существующий active alert снова классифицируется как `FirstAppearance`;
+- history, delivery, acknowledgement, silence и persistent transition state не добавлены;
+- существующий `Migration012ObservationDeviceBindings` переиспользован для STP; `Migration013` не вводится;
+- одновременно исправлены обнаруженные повреждённые русские operator-facing values в `UiStrings.resx`.
+
+Проверка на рабочем репозитории перед commit:
+- `git diff --check` — без ошибок;
+- unit tests: 171/171;
+- integration tests: 50/50;
+- `NetLoom.Desktop` build: 0 warnings, 0 errors.
+
+Commit `0e39460` (`Sprint 31B: add read-only topology alert surface`) отправлен в `origin/main`; на момент закрытия `HEAD == origin/main`, worktree clean.
+
+Sprint 31A + 31B закрывают backlog parent «Минимальные alerts для реально полезных topology/ring failures».
+
+Ближайший технический follow-up: расширить text-integrity audit на содержимое WPF `.resx` `<value>`. После этого следующий продуктовый этап определяется актуальными `docs/BACKLOG.md` и `FRICTION_LOG.md`; отдельный новый P0 feature сейчас не назначен.
