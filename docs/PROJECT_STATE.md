@@ -816,3 +816,20 @@ Migration011 остаётся последней; migrations: 11.
 - Migration012 остаётся последней.
 
 Sprint 30A + 30B закрывают backlog «Удобный поиск MAC/IP до конкретного switch/interface».
+
+## Sprint 31A — minimal topology/ring alert semantics
+
+Добавлен transport-neutral current-state alert contract и pure `TopologyAlertEvaluator`.
+
+Подтверждённые правила:
+- confirmed forwarding cycle -> Critical;
+- SimpleRing Unprotected не дублирует Critical и обязан совпадать с confirmed forwarding-cycle evidence того же InstanceId;
+- complete degraded SimpleRing -> Warning для Disabled и/или multiple Blocking links;
+- Protected / Unresolved / NotApplicable -> no alert;
+- bridge/SPOF, Aging/Stale и единичный poll failure -> no active topology-failure alert;
+- AlertKey deterministic и пригоден для current-state dedupe/transition comparison;
+- evaluator не меняет topology и не использует FDB/ARP/IP inference;
+- Sprint 31A не добавляет WPF, delivery, ack/silence/history;
+- Migration012 остаётся последней.
+
+Backlog parent «Минимальные alerts для реально полезных topology/ring failures» остаётся открытым до Sprint 31B: operator-facing read-only alert surface + transition/repeat suppression.

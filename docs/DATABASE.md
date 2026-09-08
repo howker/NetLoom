@@ -395,3 +395,13 @@ FK `device_id -> devices(id)` намеренно отсутствует: stable 
 Дополнительный индекс по `observation_device_bindings.device_id` в v1 не нужен: lookup входит в binding по `observation_id`.
 
 Migration012 не materialize-ит результат lookup и не создаёт PhysicalLink.
+
+## Sprint 31A — alerts remain computed current-state results
+
+`TopologyAlertSnapshot` является вычисляемым current-state result и не materialize'ится в topology/configuration SQLite.
+
+Sprint 31A не создаёт tables для alerts/incidents/history/acknowledgement/silence/delivery и не вводит `Migration013`.
+
+Текущий schema level остаётся `Migration012ObservationDeviceBindings`.
+
+Если persistent alert history понадобится в Sprint 31B или позже, storage policy должна отдельно определить identity, transitions, retention и acknowledgement semantics; текущий deterministic `AlertKey` сам по себе не является требованием создать DB primary key.

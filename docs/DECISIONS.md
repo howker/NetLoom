@@ -749,3 +749,21 @@ Analyzer pure/read-only; no SQLite persistence, no Migration012, no UI write pat
 **Evidence semantics.** Multiple candidates, unresolved states и timestamps остаются видимыми; UI не объявляет FDB sighting гарантированным access-port.
 
 **Persistence.** Новая schema не требуется; Migration012 остаётся последней.
+
+## ADR-060 — topology/ring alerts require positive failure evidence
+
+**Решение.** Минимальные topology/ring alerts создаются только из уже подтверждённых safety/ring analyses и не используют отсутствие данных как доказательство аварии.
+
+**Critical.** `ForwardingCycleAnalysis.HasConfirmedForwardingCycle` является положительным basis-independent доказательством forwarding loop и создаёт Critical alert. Наличие unresolved links вне подтверждённого cycle set не отменяет этот факт.
+
+**Ring Unprotected.** `RingProtectionStatus.Unprotected` не создаёт отдельный дублирующий Critical. Для включения SimpleRing в related regions его forwarding members должны входить в confirmed cycle set того же `InstanceId`; несогласованный snapshot отклоняется.
+
+**Warning.** `RingProtectionStatus.Degraded` создаёт Warning при Disabled PhysicalLink и/или нескольких Blocking PhysicalLink. `Protected`, `Unresolved` и `NotApplicable` не создают alert.
+
+**Не alerts.** Physical bridge/SPOF является structural risk; Aging/Stale и poll failure являются freshness/monitoring context. Они не объявляются topology failure без отдельного положительного failure signal.
+
+**Identity.** Deterministic `AlertKey` использует kind, explicit STP InstanceId и stable region/cycle membership. CIST не смешивается с будущими MSTP instances.
+
+**Boundary.** FDB/ARP/IP не создают alert adjacency; bridgePortIndex не является ifIndex; manual topology не мутируется alert evaluator.
+
+**Persistence/UI.** Sprint 31A pure/read-only, без WPF integration и без persistence. Migration012 остаётся последней. Operator surface и repeat/transition suppression — Sprint 31B.

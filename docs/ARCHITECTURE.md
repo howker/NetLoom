@@ -678,3 +678,26 @@ WPF получает `IMacIpLookupReader` как read-only dependency через
 - `ResolvedInterface` не означает доказанный конечный access-port.
 
 Sprint 30B schema-free; Migration012 остаётся последней.
+
+## Sprint 31A — current-state topology/ring alert semantics
+
+Минимальные alerts строятся только поверх уже подтверждённых pure analyses; alert evaluator не выполняет новую topology inference.
+
+Transport-neutral contracts:
+- `TopologyAlertSeverity = Warning / Critical`;
+- `TopologyAlertKind = ForwardingCycle / RingProtectionDegraded`;
+- `TopologyAlertReason = ConfirmedForwardingCycle / DisabledRingLink / MultipleBlockingRingLinks`;
+- `TopologyAlertSnapshot` — current-state snapshot для одного explicit STP `InstanceId`.
+
+Semantics v1:
+- `ForwardingCycleAnalysis.HasConfirmedForwardingCycle` создаёт `Critical`, даже если в том же global analysis есть другие unresolved links: confirmed cycle edges являются положительным доказательством forwarding loop;
+- `RingProtectionStatus.Unprotected` не создаёт второй дублирующий alert. Unprotected SimpleRing обязан независимо подтверждаться forwarding-cycle analysis из того же snapshot/InstanceId и добавляется как related region к Critical alert;
+- `RingProtectionStatus.Degraded` создаёт `Warning` только для complete degradation evidence: Disabled PhysicalLink и/или несколько Blocking PhysicalLink;
+- `Protected`, `Unresolved`, `NotApplicable` alert не создают;
+- bridge/SPOF/blast-radius — risk analysis, а не доказательство активной аварии;
+- Aging/Stale и единичный poll failure — context/diagnostic, а не topology failure alert;
+- FDB/ARP/IP не участвуют в alert inference.
+
+`AlertKey` детерминирован и вычисляется из kind + explicit InstanceId + stable region/cycle membership. Он предназначен для current-state identity/dedupe, но Sprint 31A не хранит history, acknowledgement, silence или notification delivery state.
+
+Sprint 31A pure/read-only и schema-free. WPF/operator surface и repeat/transition suppression остаются Sprint 31B.

@@ -39,6 +39,8 @@
   - [x] Sprint 30A — stable observation→DeviceId binding + backend MAC/IP evidence lookup.
   - [x] Sprint 30B — localized WPF MAC/IP search UX + navigation/highlight to switch/interface candidates.
 - [ ] Минимальные alerts для реально полезных topology/ring failures.
+  - [x] Sprint 31A — pure current-state topology/ring alert semantics + deterministic AlertKey.
+  - [ ] Sprint 31B — operator-facing read-only alert surface + current-state transition/repeat suppression.
 
 ## P0 — архитектурные gates
 
