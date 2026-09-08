@@ -73,6 +73,40 @@ $rxParagraph =
         ")" +
         ".*[.:]\s*$")
 
+$allowedWpfResxLowercaseNames =
+    @(
+        "EvidenceCount"
+    )
+
+function Get-RepositoryRelativePath
+{
+    param(
+        [string]$FullName
+    )
+
+    return $FullName.Substring(
+        $rootPath.Length).
+        TrimStart(
+            [IO.Path]::DirectorySeparatorChar,
+            [IO.Path]::AltDirectorySeparatorChar)
+}
+
+function Test-LowercaseCyrillicStart
+{
+    param(
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value))
+    {
+        return $false
+    }
+
+    return [regex]::IsMatch(
+        $Value,
+        "^\s*" + $lowerCyr)
+}
+
 foreach ($file in $files)
 {
     $bytes =
@@ -124,6 +158,75 @@ foreach ($file in $files)
         }
     }
 
+    $relative =
+        Get-RepositoryRelativePath `
+            -FullName $file.FullName
+
+    $relativeNormalized =
+        $relative.Replace("\", "/")
+
+    $isWpfResx =
+        $file.Extension.ToLowerInvariant() -eq ".resx" -and
+        $relativeNormalized.StartsWith(
+            "src/NetLoom.Wpf/Resources/",
+            [StringComparison]::OrdinalIgnoreCase)
+
+    if ($isWpfResx)
+    {
+        try
+        {
+            $xml =
+                New-Object System.Xml.XmlDocument
+
+            $xml.PreserveWhitespace = $true
+            $xml.LoadXml($text)
+
+            $dataNodes =
+                $xml.SelectNodes("/root/data")
+
+            foreach ($dataNode in $dataNodes)
+            {
+                $name =
+                    [string]$dataNode.GetAttribute("name")
+
+                $valueNode =
+                    $dataNode.SelectSingleNode("value")
+
+                if ($null -eq $valueNode)
+                {
+                    continue
+                }
+
+                $value =
+                    [string]$valueNode.InnerText
+
+                if ($allowedWpfResxLowercaseNames -contains $name)
+                {
+                    continue
+                }
+
+                if (Test-LowercaseCyrillicStart -Value $value)
+                {
+                    $issues.Add(
+                        "RESX_DROPPED_CAPITAL: " +
+                        $relative +
+                        ":" +
+                        $name +
+                        ": " +
+                        $value.Trim())
+                }
+            }
+        }
+        catch
+        {
+            $issues.Add(
+                "INVALID_RESX_XML: " +
+                $relative +
+                ": " +
+                $_.Exception.Message)
+        }
+    }
+
     $lines =
         $text -split "`r?`n"
 
@@ -146,13 +249,6 @@ foreach ($file in $files)
 
         if ($isSuspect)
         {
-            $relative =
-                $file.FullName.Substring(
-                    $rootPath.Length).
-                TrimStart(
-                    [IO.Path]::DirectorySeparatorChar,
-                    [IO.Path]::AltDirectorySeparatorChar)
-
             $suspects.Add(
                 "SUSPECT_DROPPED_CAPITAL: " +
                 $relative +
@@ -188,5 +284,6 @@ Write-Host "OK: all checked text is valid UTF-8"
 Write-Host "OK: no replacement characters"
 Write-Host "OK: no question-mark corruption"
 Write-Host "OK: all PowerShell scripts use UTF-8 BOM"
+Write-Host "OK: WPF .resx <value> starts passed text-integrity policy"
 Write-Host ("INFO: suspect dropped-capital lines: " + $suspects.Count)
 exit 0

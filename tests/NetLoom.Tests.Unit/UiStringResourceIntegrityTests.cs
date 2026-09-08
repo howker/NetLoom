@@ -52,11 +52,8 @@ namespace NetLoom.Tests.Unit
                             })
                     .Where(
                         item =>
-                            !string.IsNullOrEmpty(
-                                item.Name) &&
-                            !AllowedLowercaseStarts.Contains(
-                                item.Name) &&
-                            StartsWithLowercaseCyrillic(
+                            IsSuspicious(
+                                item.Name,
                                 item.Value))
                     .Select(
                         item =>
@@ -81,16 +78,51 @@ namespace NetLoom.Tests.Unit
                           offenders));
         }
 
+        [TestMethod]
+        public void
+            DroppedCapitalExampleIsRejectedButExplicitLowercaseIsAllowed()
+        {
+            Assert.IsTrue(
+                IsSuspicious(
+                    "MapTitle",
+                    "изическая топология"));
+
+            Assert.IsFalse(
+                IsSuspicious(
+                    "MapTitle",
+                    "Физическая топология"));
+
+            Assert.IsFalse(
+                IsSuspicious(
+                    "EvidenceCount",
+                    "подтверждений: {0}"));
+        }
+
+        private static bool IsSuspicious(
+            string name,
+            string value)
+        {
+            if (string.IsNullOrEmpty(name) ||
+                AllowedLowercaseStarts.Contains(name))
+            {
+                return false;
+            }
+
+            return StartsWithLowercaseCyrillic(
+                value);
+        }
+
         private static bool StartsWithLowercaseCyrillic(
             string value)
         {
-            if (string.IsNullOrEmpty(value))
+            if (string.IsNullOrWhiteSpace(value))
             {
                 return false;
             }
 
             var first =
-                value[0];
+                value
+                    .TrimStart()[0];
 
             return
                 (first >= 'а' &&
