@@ -9,8 +9,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using NetLoom.Application.Alerts;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.TopologyMap;
+using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
 
@@ -21,12 +23,19 @@ public partial class MainWindow : Window
     private const double NodeWidth = 190.0;
     private const double NodeHeight = 92.0;
     private const int LookupCandidateLimit = 100;
+    private const string CurrentStpInstanceId = "cist";
 
     private readonly IMapSnapshotProvider
         _mapSnapshotProvider;
 
     private readonly MacIpLookupSearchService
         _lookupSearchService;
+
+    private readonly ITopologyAlertSnapshotProvider
+        _alertSnapshotProvider;
+
+    private readonly TopologyAlertTransitionTracker
+        _alertTransitionTracker;
 
     private readonly DispatcherTimer
         _refreshTimer;
@@ -40,7 +49,8 @@ public partial class MainWindow : Window
     public MainWindow()
         : this(
             new EmptyMapSnapshotProvider(),
-            new EmptyMacIpLookupReader())
+            new EmptyMacIpLookupReader(),
+            new EmptyTopologyAlertSnapshotProvider())
     {
     }
 
@@ -48,13 +58,25 @@ public partial class MainWindow : Window
         IMapSnapshotProvider mapSnapshotProvider)
         : this(
             mapSnapshotProvider,
-            new EmptyMacIpLookupReader())
+            new EmptyMacIpLookupReader(),
+            new EmptyTopologyAlertSnapshotProvider())
     {
     }
 
     public MainWindow(
         IMapSnapshotProvider mapSnapshotProvider,
         IMacIpLookupReader lookupReader)
+        : this(
+            mapSnapshotProvider,
+            lookupReader,
+            new EmptyTopologyAlertSnapshotProvider())
+    {
+    }
+
+    public MainWindow(
+        IMapSnapshotProvider mapSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        ITopologyAlertSnapshotProvider alertSnapshotProvider)
     {
         InitializeComponent();
 
@@ -68,6 +90,14 @@ public partial class MainWindow : Window
                 lookupReader ??
                 throw new ArgumentNullException(
                     nameof(lookupReader)));
+
+        _alertSnapshotProvider =
+            alertSnapshotProvider ??
+            throw new ArgumentNullException(
+                nameof(alertSnapshotProvider));
+
+        _alertTransitionTracker =
+            new TopologyAlertTransitionTracker();
 
         _refreshTimer =
             new DispatcherTimer
@@ -103,6 +133,18 @@ public partial class MainWindow : Window
         LookupDetailsText.Text =
             UiText.Get("LookupSelectCandidate");
 
+        AlertTitleText.Text =
+            UiText.Get("AlertTitle");
+
+        AlertStatusText.Text =
+            UiText.Get("AlertNone");
+
+        AlertTransitionText.Text =
+            string.Empty;
+
+        AlertList.ItemsSource =
+            new AlertRow[0];
+
         ShowMap(EmptySnapshot());
     }
 
@@ -111,6 +153,7 @@ public partial class MainWindow : Window
         RoutedEventArgs e)
     {
         RefreshMap();
+        RefreshAlerts();
         _refreshTimer.Start();
     }
 
@@ -126,6 +169,7 @@ public partial class MainWindow : Window
         EventArgs e)
     {
         RefreshMap();
+        RefreshAlerts();
     }
 
     private void RefreshMap()
@@ -141,6 +185,216 @@ public partial class MainWindow : Window
                 error.ToString());
 
             ShowMap(EmptySnapshot());
+        }
+    }
+
+    private void RefreshAlerts()
+    {
+        try
+        {
+            var snapshot =
+                _alertSnapshotProvider.GetSnapshot(
+                    CurrentStpInstanceId);
+
+            var transition =
+                _alertTransitionTracker.Observe(
+                    snapshot);
+
+            ShowAlerts(
+                snapshot,
+                transition);
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                error.ToString());
+
+            AlertStatusText.Text =
+                UiText.Get(
+                    "AlertRefreshFailed");
+
+            AlertTransitionText.Text =
+                string.Empty;
+
+            AlertList.ItemsSource =
+                new AlertRow[0];
+        }
+    }
+
+    private static string AlertSeverityText(
+        TopologyAlertSeverity severity)
+    {
+        return severity ==
+               TopologyAlertSeverity.Critical
+            ? UiText.Get(
+                "AlertSeverityCritical")
+            : UiText.Get(
+                "AlertSeverityWarning");
+    }
+
+    private static string AlertKindText(
+        TopologyAlertKind kind)
+    {
+        switch (kind)
+        {
+            case TopologyAlertKind.ForwardingCycle:
+                return UiText.Get(
+                    "AlertKindForwardingCycle");
+
+            case TopologyAlertKind
+                .RingProtectionDegraded:
+                return UiText.Get(
+                    "AlertKindRingProtectionDegraded");
+
+            default:
+                return kind.ToString();
+        }
+    }
+
+    private static string AlertReasonText(
+        TopologyAlertReason reason)
+    {
+        switch (reason)
+        {
+            case TopologyAlertReason
+                .ConfirmedForwardingCycle:
+                return UiText.Get(
+                    "AlertReasonConfirmedForwardingCycle");
+
+            case TopologyAlertReason
+                .DisabledRingLink:
+                return UiText.Get(
+                    "AlertReasonDisabledRingLink");
+
+            case TopologyAlertReason
+                .MultipleBlockingRingLinks:
+                return UiText.Get(
+                    "AlertReasonMultipleBlockingRingLinks");
+
+            default:
+                return reason.ToString();
+        }
+    }
+
+    private static string BuildAlertSummary(
+        TopologyAlert alert)
+    {
+        var lines =
+            new List<string>
+            {
+                UiText.Format(
+                    "AlertRowHeader",
+                    AlertSeverityText(
+                        alert.Severity),
+                    AlertKindText(
+                        alert.Kind)),
+                UiText.Format(
+                    "AlertInstance",
+                    alert.InstanceId)
+            };
+
+        if (alert.RelatedRegionKeys.Count > 0)
+        {
+            lines.Add(
+                UiText.Format(
+                    "AlertRegions",
+                    string.Join(
+                        ", ",
+                        alert.RelatedRegionKeys)));
+        }
+
+        lines.Add(
+            UiText.Format(
+                "AlertLinks",
+                string.Join(
+                    ", ",
+                    alert.PhysicalLinkIds
+                        .Select(
+                            id =>
+                                id.ToString("D")))));
+
+        lines.Add(
+            UiText.Format(
+                "AlertReasons",
+                string.Join(
+                    ", ",
+                    alert.Reasons
+                        .Select(
+                            AlertReasonText))));
+
+        return string.Join(
+            Environment.NewLine,
+            lines);
+    }
+
+    private void ShowAlerts(
+        TopologyAlertSnapshot snapshot,
+        TopologyAlertTransitionKind transition)
+    {
+        var rows =
+            snapshot.Alerts
+                .Select(
+                    alert =>
+                        new AlertRow(
+                            BuildAlertSummary(
+                                alert)))
+                .ToArray();
+
+        AlertList.ItemsSource =
+            rows;
+
+        if (rows.Length == 0)
+        {
+            AlertStatusText.Text =
+                UiText.Get(
+                    "AlertNone");
+        }
+        else
+        {
+            var criticalCount =
+                snapshot.Alerts.Count(
+                    alert =>
+                        alert.Severity ==
+                        TopologyAlertSeverity.Critical);
+
+            var warningCount =
+                snapshot.Alerts.Count(
+                    alert =>
+                        alert.Severity ==
+                        TopologyAlertSeverity.Warning);
+
+            AlertStatusText.Text =
+                UiText.Format(
+                    "AlertSummary",
+                    criticalCount,
+                    warningCount);
+        }
+
+        switch (transition)
+        {
+            case TopologyAlertTransitionKind
+                .FirstAppearance:
+                AlertTransitionText.Text =
+                    UiText.Get(
+                        "AlertTransitionFirstAppearance");
+                break;
+
+            case TopologyAlertTransitionKind.Changed:
+                AlertTransitionText.Text =
+                    UiText.Get(
+                        "AlertTransitionChanged");
+                break;
+
+            case TopologyAlertTransitionKind.Resolved:
+                AlertTransitionText.Text =
+                    UiText.Get(
+                        "AlertTransitionResolved");
+                break;
+
+            default:
+                AlertTransitionText.Text =
+                    string.Empty;
+                break;
         }
     }
 
@@ -833,6 +1087,30 @@ public partial class MainWindow : Window
         public string Summary { get; }
 
         public string Details { get; }
+    }
+
+    private sealed class AlertRow
+    {
+        public AlertRow(
+            string summary)
+        {
+            Summary = summary;
+        }
+
+        public string Summary { get; }
+    }
+
+    private sealed class EmptyTopologyAlertSnapshotProvider :
+        ITopologyAlertSnapshotProvider
+    {
+        public TopologyAlertSnapshot GetSnapshot(
+            string instanceId)
+        {
+            return new TopologyAlertSnapshot(
+                DateTime.UtcNow,
+                instanceId,
+                new TopologyAlert[0]);
+        }
     }
 
     private sealed class EmptyMapSnapshotProvider :

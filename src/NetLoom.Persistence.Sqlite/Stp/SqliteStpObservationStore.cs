@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using NetLoom.Application.Observations.Stp;
@@ -9,7 +9,8 @@ using NetLoom.Persistence.Sqlite.Database;
 namespace NetLoom.Persistence.Sqlite.Stp
 {
     public sealed class SqliteStpObservationStore :
-        IStpObservationStore
+        IStpObservationStore,
+        ILatestStpObservationReader
     {
         private readonly SqliteConnectionFactory
             _connectionFactory;
@@ -170,6 +171,200 @@ LIMIT 1;";
                             rootCost,
                             rootBridgePort,
                             rootIfIndex,
+                            LoadPorts(
+                                connection,
+                                observationId,
+                                instanceId));
+                    }
+                }
+            }
+        }
+
+        public IReadOnlyList<BoundStpObservation>
+            GetLatest(
+                string instanceId)
+        {
+            if (string.IsNullOrWhiteSpace(
+                instanceId))
+            {
+                throw new ArgumentException(
+                    "STP instance id is required.",
+                    nameof(instanceId));
+            }
+
+            var normalizedInstanceId =
+                instanceId.Trim();
+
+            var selected =
+                new List<LatestObservationId>();
+
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    b.device_id,
+    s.observation_id
+FROM observation_device_bindings b
+JOIN observations o
+    ON o.observation_id = b.observation_id
+JOIN stp_observations s
+    ON s.observation_id = o.observation_id
+WHERE o.observation_kind = @kind
+  AND s.instance_id = @instanceId
+ORDER BY
+    b.device_id,
+    o.captured_utc DESC,
+    s.observation_id DESC;";
+
+                command.Parameters.AddWithValue(
+                    "@kind",
+                    ObservationKind.Stp.ToString());
+
+                command.Parameters.AddWithValue(
+                    "@instanceId",
+                    normalizedInstanceId);
+
+                var seenDevices =
+                    new HashSet<Guid>();
+
+                using (var reader =
+                    command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var deviceId =
+                            Guid.Parse(
+                                reader.GetString(0));
+
+                        if (!seenDevices.Add(
+                            deviceId))
+                        {
+                            continue;
+                        }
+
+                        selected.Add(
+                            new LatestObservationId(
+                                deviceId,
+                                Guid.Parse(
+                                    reader.GetString(1))));
+                    }
+                }
+            }
+
+            var result =
+                new List<BoundStpObservation>();
+
+            foreach (var item in selected)
+            {
+                var observation =
+                    Get(
+                        item.ObservationId,
+                        normalizedInstanceId);
+
+                if (observation == null)
+                {
+                    continue;
+                }
+
+                result.Add(
+                    new BoundStpObservation(
+                        item.DeviceId,
+                        observation));
+            }
+
+            return result;
+        }
+
+        private StpObservation Get(
+            Guid observationId,
+            string instanceId)
+        {
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            {
+                Observation observation;
+
+                using (var command =
+                    connection.CreateCommand())
+                {
+                    command.CommandText = @"
+SELECT
+    source_address,
+    captured_utc
+FROM observations
+WHERE observation_id = @id
+  AND observation_kind = @kind;";
+
+                    command.Parameters.AddWithValue(
+                        "@id",
+                        observationId.ToString("D"));
+
+                    command.Parameters.AddWithValue(
+                        "@kind",
+                        ObservationKind.Stp.ToString());
+
+                    using (var reader =
+                        command.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            return null;
+                        }
+
+                        observation =
+                            new Observation(
+                                observationId,
+                                ObservationKind.Stp,
+                                reader.GetString(0),
+                                DateTime.Parse(
+                                    reader.GetString(1),
+                                    CultureInfo.InvariantCulture,
+                                    DateTimeStyles.RoundtripKind));
+                    }
+                }
+
+                using (var command =
+                    connection.CreateCommand())
+                {
+                    command.CommandText = @"
+SELECT
+    protocol_specification,
+    designated_root,
+    root_cost,
+    root_bridge_port_index,
+    root_if_index
+FROM stp_observations
+WHERE observation_id = @id
+  AND instance_id = @instanceId
+LIMIT 1;";
+
+                    command.Parameters.AddWithValue(
+                        "@id",
+                        observationId.ToString("D"));
+
+                    command.Parameters.AddWithValue(
+                        "@instanceId",
+                        instanceId);
+
+                    using (var reader =
+                        command.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            return null;
+                        }
+
+                        return new StpObservation(
+                            observation,
+                            instanceId,
+                            NullableInt(reader, 0),
+                            NullableString(reader, 1),
+                            NullableLong(reader, 2),
+                            NullableInt(reader, 3),
+                            NullableInt(reader, 4),
                             LoadPorts(
                                 connection,
                                 observationId,
@@ -483,6 +678,22 @@ ORDER BY bridge_port_index;";
             return reader.IsDBNull(ordinal)
                 ? null
                 : reader.GetString(ordinal);
+        }
+
+
+        private sealed class LatestObservationId
+        {
+            public LatestObservationId(
+                Guid deviceId,
+                Guid observationId)
+            {
+                DeviceId = deviceId;
+                ObservationId = observationId;
+            }
+
+            public Guid DeviceId { get; }
+
+            public Guid ObservationId { get; }
         }
     }
 }

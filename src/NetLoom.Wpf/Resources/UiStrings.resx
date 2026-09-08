@@ -276,4 +276,61 @@
   <data name="LookupTitle" xml:space="preserve">
     <value>Поиск MAC/IP</value>
   </data>
+  <data name="AlertTitle" xml:space="preserve">
+    <value>Текущие предупреждения</value>
+  </data>
+  <data name="AlertNone" xml:space="preserve">
+    <value>Активных предупреждений топологии/колец нет.</value>
+  </data>
+  <data name="AlertSummary" xml:space="preserve">
+    <value>Критических: {0}   Предупреждений: {1}</value>
+  </data>
+  <data name="AlertRefreshFailed" xml:space="preserve">
+    <value>Не удалось обновить предупреждения. Подробности записаны в журнал.</value>
+  </data>
+  <data name="AlertSeverityCritical" xml:space="preserve">
+    <value>Критическое</value>
+  </data>
+  <data name="AlertSeverityWarning" xml:space="preserve">
+    <value>Предупреждение</value>
+  </data>
+  <data name="AlertKindForwardingCycle" xml:space="preserve">
+    <value>Цикл пересылки</value>
+  </data>
+  <data name="AlertKindRingProtectionDegraded" xml:space="preserve">
+    <value>Защита кольца деградировала</value>
+  </data>
+  <data name="AlertReasonConfirmedForwardingCycle" xml:space="preserve">
+    <value>Подтверждён цикл пересылки</value>
+  </data>
+  <data name="AlertReasonDisabledRingLink" xml:space="preserve">
+    <value>В кольце отключена связь</value>
+  </data>
+  <data name="AlertReasonMultipleBlockingRingLinks" xml:space="preserve">
+    <value>В кольце заблокировано несколько связей</value>
+  </data>
+  <data name="AlertRowHeader" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="AlertInstance" xml:space="preserve">
+    <value>Экземпляр STP: {0}</value>
+  </data>
+  <data name="AlertRegions" xml:space="preserve">
+    <value>Регион: {0}</value>
+  </data>
+  <data name="AlertLinks" xml:space="preserve">
+    <value>PhysicalLinkId: {0}</value>
+  </data>
+  <data name="AlertReasons" xml:space="preserve">
+    <value>Причины: {0}</value>
+  </data>
+  <data name="AlertTransitionFirstAppearance" xml:space="preserve">
+    <value>Появились новые предупреждения.</value>
+  </data>
+  <data name="AlertTransitionChanged" xml:space="preserve">
+    <value>Набор предупреждений изменился.</value>
+  </data>
+  <data name="AlertTransitionResolved" xml:space="preserve">
+    <value>Предупреждения разрешены.</value>
+  </data>
 </root>

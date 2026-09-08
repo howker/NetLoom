@@ -72,6 +72,36 @@
             </DockPanel>
         </Border>
 
+        <Border DockPanel.Dock="Bottom"
+                Height="190"
+                Padding="14"
+                BorderThickness="0,1,0,0">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock x:Name="AlertTitleText"
+                               FontSize="16"
+                               FontWeight="SemiBold" />
+                    <TextBlock x:Name="AlertStatusText"
+                               Margin="0,4,0,0"
+                               TextWrapping="Wrap" />
+                    <TextBlock x:Name="AlertTransitionText"
+                               Margin="0,4,0,8"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <ListBox x:Name="AlertList">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Summary}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,2" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
         <ScrollViewer x:Name="MapScrollViewer"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">

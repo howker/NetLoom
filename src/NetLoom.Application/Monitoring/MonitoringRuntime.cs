@@ -209,15 +209,23 @@ namespace NetLoom.Application.Monitoring
                                 "STP collector is not configured.");
                         }
 
-                        _stpCollector.Collect(
-                            new StpCollectionRequest(
-                                request.Address,
-                                request.Port,
-                                request.Version,
-                                request.Credentials,
-                                request.TimeoutMilliseconds,
-                                request.RetryCount,
-                                request.MaxRepetitions));
+                        var stp =
+                            _stpCollector.Collect(
+                                new StpCollectionRequest(
+                                    request.Address,
+                                    request.Port,
+                                    request.Version,
+                                    request.Credentials,
+                                    request.TimeoutMilliseconds,
+                                    request.RetryCount,
+                                    request.MaxRepetitions));
+
+                        BindObservation(
+                            stp == null
+                                ? (Guid?)null
+                                : stp.Observation.Id,
+                            request.DeviceId);
+
                         break;
 
                     case MonitoringPollKind.Health:
