@@ -780,3 +780,21 @@ Migration011 остаётся последней; migrations: 11.
 Migration011 остаётся последней; migrations: 11.
 
 Следующий P0 определяется актуальным `docs/BACKLOG.md`.
+
+## Sprint 30A — MAC/IP lookup backend
+
+Текущий schema level: Migration012.
+
+Реализован backend foundation для поиска MAC/IP:
+
+- optional stable observation→DeviceId binding;
+- runtime binding успешных ARP/FDB observations при наличии `MonitoringPollRequest.DeviceId`;
+- raw retention автоматически удаляет binding вместе с observation;
+- MAC lookup по persisted FDB evidence;
+- IP lookup через usable ARP IP→MAC evidence и затем FDB sightings;
+- exact `bridgePort -> ifIndex` ambiguity сохраняется;
+- exact `(DeviceId, ifIndex) -> InterfaceId` используется только при materialized interface;
+- состояния `FdbNotObserved`, `ObservationUnbound`, `BridgePortUnresolved`, `BridgePortAmbiguous`, `InterfaceNotMaterialized`, `ResolvedInterface`;
+- никакого access-port guessing и никакого PhysicalLink из FDB/ARP.
+
+Пользовательский backlog-пункт «поиск MAC/IP до switch/interface» остаётся открытым до Sprint 30B: локализованный WPF search UX, представление ambiguity/freshness и navigation/highlight.

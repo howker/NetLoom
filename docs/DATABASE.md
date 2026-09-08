@@ -369,3 +369,29 @@ Sprint 29 не добавляет persistence и не меняет SQLite schema
 Protection result является вычисляемым snapshot result и не materialize'ится в topology/configuration SQLite.
 
 Migration011 остаётся последней migration; Migration012 не вводится.
+
+## Sprint 30A — Migration012 observation device bindings
+
+`Migration012ObservationDeviceBindings` является текущей последней migration.
+
+Таблица `observation_device_bindings`:
+
+- `observation_id TEXT PRIMARY KEY`;
+- `device_id TEXT NOT NULL`;
+- FK только `observation_id -> observations(observation_id) ON DELETE CASCADE`.
+
+FK `device_id -> devices(id)` намеренно отсутствует: stable DeviceId может быть известен Monitoring Runtime до materialization строки `devices`. Это не превращает IP/source_address в identity — `device_id` приходит только из `MonitoringPollRequest.DeviceId`.
+
+При raw observation retention binding удаляется автоматически через `ON DELETE CASCADE`.
+
+Для MAC/IP lookup используются существующие индексы:
+
+- `ix_fdb_observations_mac`;
+- `ix_arp_observations_ip`;
+- `ix_arp_observations_physical_address`;
+- PK `bridge_port_mappings(observation_id, bridge_port_index, if_index)`;
+- `ux_interfaces_device_if_index`.
+
+Дополнительный индекс по `observation_device_bindings.device_id` в v1 не нужен: lookup входит в binding по `observation_id`.
+
+Migration012 не materialize-ит результат lookup и не создаёт PhysicalLink.

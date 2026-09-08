@@ -723,3 +723,15 @@ Complete ring с Disabled edge или несколькими Blocking edges яв
 Freshness, manual/hidden membership и protection status остаются отдельными concerns. Vendor ring protocols, IP/source_address и FDB/ARP не участвуют в v1 RSTP protection classification.
 
 Analyzer pure/read-only; no SQLite persistence, no Migration012, no UI write path.
+
+## ADR-058 — observation source address is not device identity
+
+**Решение.** Для MAC/IP lookup вводится отдельный optional `observation_id -> DeviceId` binding. `source_address` остаётся evidence metadata и не используется как внутренний идентификатор устройства.
+
+**Почему отдельная таблица.** ARP/FDB collectors создают и сохраняют raw+normalized observation до возврата в `MonitoringRuntime`; runtime уже имеет optional stable `MonitoringPollRequest.DeviceId`. Поэтому binding можно записать после успешного `Collect()` без изменения базового `Observation` и без протаскивания DeviceId через protocol request contracts.
+
+**FK policy.** `observation_id` имеет `ON DELETE CASCADE`; `device_id` не имеет FK на materialized `devices`, потому что stable DeviceId может предшествовать materialization. Перепривязка одного observation к другому DeviceId запрещена.
+
+**Lookup semantics.** MAC/IP поиск возвращает evidence candidates и причины unresolved/ambiguity. Ни FDB, ни ARP не создают PhysicalLink и не позволяют автоматически объявить конкретный sighting конечным access-port.
+
+**Следствие.** Sprint 30A — backend-only. Локализованный WPF search UX выполняется отдельным Sprint 30B.

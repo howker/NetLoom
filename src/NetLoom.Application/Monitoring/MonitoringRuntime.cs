@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NetLoom.Application.Monitoring.Health;
 using NetLoom.Application.Monitoring.Interfaces;
+using NetLoom.Application.Observations;
 using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
@@ -19,6 +20,8 @@ namespace NetLoom.Application.Monitoring
         private readonly IHealthCollector _healthCollector;
         private readonly IInterfaceCollector _interfaceCollector;
         private readonly IStpCollector _stpCollector;
+        private readonly IObservationDeviceBindingStore
+            _observationDeviceBindingStore;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -64,7 +67,9 @@ namespace NetLoom.Application.Monitoring
             IHealthCollector healthCollector,
             IInterfaceCollector interfaceCollector,
             Func<DateTime> utcNow = null,
-            IStpCollector stpCollector = null)
+            IStpCollector stpCollector = null,
+            IObservationDeviceBindingStore
+                observationDeviceBindingStore = null)
         {
             _lldpCollector =
                 lldpCollector ??
@@ -88,6 +93,8 @@ namespace NetLoom.Application.Monitoring
             _interfaceCollector =
                 interfaceCollector;
             _stpCollector = stpCollector;
+            _observationDeviceBindingStore =
+                observationDeviceBindingStore;
 
             _utcNow =
                 utcNow ??
@@ -156,27 +163,43 @@ namespace NetLoom.Application.Monitoring
                         break;
 
                     case MonitoringPollKind.Fdb:
-                        _fdbCollector.Collect(
-                            new FdbCollectionRequest(
-                                request.Address,
-                                request.Port,
-                                request.Version,
-                                request.Credentials,
-                                request.TimeoutMilliseconds,
-                                request.RetryCount,
-                                request.MaxRepetitions));
+                        var fdb =
+                            _fdbCollector.Collect(
+                                new FdbCollectionRequest(
+                                    request.Address,
+                                    request.Port,
+                                    request.Version,
+                                    request.Credentials,
+                                    request.TimeoutMilliseconds,
+                                    request.RetryCount,
+                                    request.MaxRepetitions));
+
+                        BindObservation(
+                            fdb == null
+                                ? (Guid?)null
+                                : fdb.Observation.Id,
+                            request.DeviceId);
+
                         break;
 
                     case MonitoringPollKind.Arp:
-                        _arpCollector.Collect(
-                            new ArpCollectionRequest(
-                                request.Address,
-                                request.Port,
-                                request.Version,
-                                request.Credentials,
-                                request.TimeoutMilliseconds,
-                                request.RetryCount,
-                                request.MaxRepetitions));
+                        var arp =
+                            _arpCollector.Collect(
+                                new ArpCollectionRequest(
+                                    request.Address,
+                                    request.Port,
+                                    request.Version,
+                                    request.Credentials,
+                                    request.TimeoutMilliseconds,
+                                    request.RetryCount,
+                                    request.MaxRepetitions));
+
+                        BindObservation(
+                            arp == null
+                                ? (Guid?)null
+                                : arp.Observation.Id,
+                            request.DeviceId);
+
                         break;
 
                     case MonitoringPollKind.Stp:
@@ -270,6 +293,21 @@ namespace NetLoom.Application.Monitoring
             }
         }
 
+        private void BindObservation(
+            Guid? observationId,
+            Guid? deviceId)
+        {
+            if (_observationDeviceBindingStore == null ||
+                !observationId.HasValue ||
+                !deviceId.HasValue)
+            {
+                return;
+            }
+
+            _observationDeviceBindingStore.Bind(
+                observationId.Value,
+                deviceId.Value);
+        }
         private DateTime NowUtc()
         {
             var value = _utcNow();

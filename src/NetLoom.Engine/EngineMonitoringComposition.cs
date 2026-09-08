@@ -83,7 +83,10 @@ namespace NetLoom.Engine
                     transport),
                 new SnmpInterfaceStatusCollector(
                     transport),
-                stpCollector: stpCollector);
+                stpCollector: stpCollector,
+                observationDeviceBindingStore:
+                    new SqliteObservationDeviceBindingStore(
+                        connectionFactory));
         }
     }
 }

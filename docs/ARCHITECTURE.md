@@ -640,3 +640,21 @@ Freshness/Hidden/Manual остаются отдельными от protection se
 Результат содержит sorted PhysicalLinkId buckets Forwarding/Blocking/Disabled/Unresolved для explainability.
 
 SQLite, Engine runtime, MapSnapshot/WPF не меняются.
+
+## Sprint 30A — MAC/IP lookup backend
+
+Поиск MAC/IP строится как evidence-oriented read model, а не как новый источник физической топологии.
+
+- `MonitoringPollRequest.DeviceId` — optional stable NetLoom DeviceId, предоставленный caller-ом.
+- `Observation.SourceAddress` остаётся адресом источника наблюдения и никогда не преобразуется в DeviceId.
+- После успешного ARP/FDB `Collect()` runtime связывает созданный observation с `request.DeviceId`, если DeviceId задан.
+- Binding хранится отдельно от `Observation`, поэтому legacy/discovery/simulator observations без stable DeviceId остаются допустимыми.
+- `bridgePortIndex` разрешается только через сохранённый `dot1dBasePortIfIndex` mapping; несколько ifIndex означают ambiguity.
+- `(DeviceId, ifIndex)` используется только для поиска materialized stable `InterfaceId`.
+- FDB sighting означает «MAC наблюдался за этим портом» и не доказывает access-port или прямой PhysicalLink.
+- MAC lookup возвращает все evidence candidates в порядке свежести.
+- IP lookup использует usable ARP IP→MAC evidence, затем FDB MAC sightings; несколько MAC/switch/interface candidates не схлопываются догадкой.
+- `ResolvedInterface` означает только точное разрешение observation source + bridge mapping + materialized interface, а не утверждение о конечном access-port.
+- UI/WPF и пользовательская навигация откладываются в Sprint 30B.
+
+Sprint 30A не создаёт и не изменяет `PhysicalLink`, не пишет topology из UI и не использует IP как identity.
