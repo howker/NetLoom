@@ -658,3 +658,23 @@ SQLite, Engine runtime, MapSnapshot/WPF не меняются.
 - UI/WPF и пользовательская навигация откладываются в Sprint 30B.
 
 Sprint 30A не создаёт и не изменяет `PhysicalLink`, не пишет topology из UI и не использует IP как identity.
+
+## Sprint 30B — localized WPF MAC/IP search and map navigation
+
+WPF получает `IMacIpLookupReader` как read-only dependency через Desktop composition root. WPF не открывает SQLite и не выполняет topology writes.
+
+`MapNode.Key` остаётся presentation-only ключом. Для навигации materialized `MapNode` дополнительно несёт optional stable `DeviceId`; это отдельное transport-neutral поле и не меняет presentation key.
+
+`MaterializedTopologyMapProjector` заполняет `MapNode.DeviceId` из `TopologyDevice.Id`, а overlays обязаны сохранять его. Legacy/provisional map projections могут оставлять `DeviceId = null`.
+
+Поиск:
+- auto-detect IP сначала через `AddressTextNormalizer.NormalizeIp`, затем MAC через `NormalizeMacColon`;
+- malformed input не передаётся reader-у;
+- все evidence candidates показываются пользователю, ambiguity не схлопывается;
+- timestamps FDB/ARP отображаются как freshness evidence;
+- только `ResolvedInterface` с stable DeviceId запускает навигацию;
+- карта подсвечивает устройство по DeviceId;
+- `InterfaceId`/`ifIndex` показываются в деталях, но отдельный port highlight не создаётся, потому что interface-level visual object отсутствует;
+- `ResolvedInterface` не означает доказанный конечный access-port.
+
+Sprint 30B schema-free; Migration012 остаётся последней.

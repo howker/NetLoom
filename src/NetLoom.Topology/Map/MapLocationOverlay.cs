@@ -96,7 +96,8 @@ namespace NetLoom.Topology.Map
                                         : null,
                                 node.Origin,
                                 node.MonitoringCapability,
-                                node.Category
+                                node.Category,
+                                node.DeviceId
                             );
                         })
                     .ToArray();

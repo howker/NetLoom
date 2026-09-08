@@ -183,4 +183,97 @@
   <data name="CategoryPassiveNetworkEquipment" xml:space="preserve">
     <value>ассивное сетевое устройство</value>
   </data>
+  <data name="LookupCandidateSummary" xml:space="preserve">
+    <value>{0} • {1} • {2}</value>
+  </data>
+  <data name="LookupDetailArpObserved" xml:space="preserve">
+    <value>ARP наблюдался: {0:G}</value>
+  </data>
+  <data name="LookupDetailArpSource" xml:space="preserve">
+    <value>Источник ARP-наблюдения: {0}</value>
+  </data>
+  <data name="LookupDetailBridgePort" xml:space="preserve">
+    <value>bridgePort: {0}</value>
+  </data>
+  <data name="LookupDetailDeviceId" xml:space="preserve">
+    <value>DeviceId: {0}</value>
+  </data>
+  <data name="LookupDetailFdbObserved" xml:space="preserve">
+    <value>FDB наблюдался: {0:G}</value>
+  </data>
+  <data name="LookupDetailFdbSource" xml:space="preserve">
+    <value>Источник FDB-наблюдения: {0}</value>
+  </data>
+  <data name="LookupDetailIfIndex" xml:space="preserve">
+    <value>ifIndex: {0}</value>
+  </data>
+  <data name="LookupDetailInterfaceId" xml:space="preserve">
+    <value>InterfaceId: {0}</value>
+  </data>
+  <data name="LookupDetailIp" xml:space="preserve">
+    <value>IP: {0}</value>
+  </data>
+  <data name="LookupDetailMac" xml:space="preserve">
+    <value>MAC: {0}</value>
+  </data>
+  <data name="LookupDetailStatus" xml:space="preserve">
+    <value>Состояние: {0}</value>
+  </data>
+  <data name="LookupInterfaceShort" xml:space="preserve">
+    <value>ifIndex {0}</value>
+  </data>
+  <data name="LookupInterfaceUnavailable" xml:space="preserve">
+    <value>интерфейс не определён</value>
+  </data>
+  <data name="LookupInvalidQuery" xml:space="preserve">
+    <value>Введите корректный MAC- или IP-адрес.</value>
+  </data>
+  <data name="LookupNoResults" xml:space="preserve">
+    <value>Совпадений не найдено.</value>
+  </data>
+  <data name="LookupQueryLabel" xml:space="preserve">
+    <value>MAC- или IP-адрес</value>
+  </data>
+  <data name="LookupReady" xml:space="preserve">
+    <value>Введите MAC- или IP-адрес.</value>
+  </data>
+  <data name="LookupResolvedInterfaceCaveat" xml:space="preserve">
+    <value>Найден точный switch/interface для этого наблюдения; это не является автоматическим доказательством конечного access-порта.</value>
+  </data>
+  <data name="LookupResultCount" xml:space="preserve">
+    <value>Найдено кандидатов: {0}. Запрос: {1}</value>
+  </data>
+  <data name="LookupResultsLabel" xml:space="preserve">
+    <value>Кандидаты</value>
+  </data>
+  <data name="LookupSearchAction" xml:space="preserve">
+    <value>Найти</value>
+  </data>
+  <data name="LookupSearchFailed" xml:space="preserve">
+    <value>Не удалось выполнить поиск. Подробности записаны в журнал.</value>
+  </data>
+  <data name="LookupSelectCandidate" xml:space="preserve">
+    <value>Выберите кандидата, чтобы увидеть подробности.</value>
+  </data>
+  <data name="LookupStatusBridgePortAmbiguous" xml:space="preserve">
+    <value>bridgePort разрешается неоднозначно</value>
+  </data>
+  <data name="LookupStatusBridgePortUnresolved" xml:space="preserve">
+    <value>bridgePort не разрешён</value>
+  </data>
+  <data name="LookupStatusFdbNotObserved" xml:space="preserve">
+    <value>FDB-наблюдение не найдено</value>
+  </data>
+  <data name="LookupStatusInterfaceNotMaterialized" xml:space="preserve">
+    <value>Интерфейс ещё не материализован</value>
+  </data>
+  <data name="LookupStatusObservationUnbound" xml:space="preserve">
+    <value>Наблюдение не связано с устройством</value>
+  </data>
+  <data name="LookupStatusResolvedInterface" xml:space="preserve">
+    <value>Устройство и интерфейс разрешены точно</value>
+  </data>
+  <data name="LookupTitle" xml:space="preserve">
+    <value>Поиск MAC/IP</value>
+  </data>
 </root>

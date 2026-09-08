@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Domain.Topology;
 using NetLoom.Persistence.Sqlite.Database;
@@ -103,6 +104,14 @@ namespace NetLoom.Tests.Integration
 
                 Assert.AreEqual(T2, snapshot.GeneratedUtc);
                 Assert.AreEqual(2, snapshot.Nodes.Count);
+                Assert.IsTrue(
+                    snapshot.Nodes.Any(
+                        node =>
+                            node.DeviceId == deviceA.Id));
+                Assert.IsTrue(
+                    snapshot.Nodes.Any(
+                        node =>
+                            node.DeviceId == deviceB.Id));
                 Assert.AreEqual(1, snapshot.Links.Count);
                 Assert.AreEqual(1, snapshot.Links[0].Evidence.Count);
                 Assert.AreEqual(0, snapshot.Locations.Count);

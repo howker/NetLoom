@@ -158,7 +158,8 @@ namespace NetLoom.Topology.Map
                         MapMonitoring(
                             device.MonitoringCapability),
                         MapCategory(
-                            device.Category)));
+                            device.Category),
+                        device.Id));
             }
 
             var mapLinks =

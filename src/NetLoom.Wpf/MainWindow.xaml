@@ -30,7 +30,50 @@
             </Grid>
         </Border>
 
-        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+        <Border DockPanel.Dock="Right"
+                Width="360"
+                Padding="14"
+                BorderThickness="1,0,0,0">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock x:Name="LookupTitleText"
+                               FontSize="16"
+                               FontWeight="SemiBold" />
+
+                    <TextBlock x:Name="LookupQueryLabelText"
+                               Margin="0,12,0,4" />
+
+                    <TextBox x:Name="LookupQueryTextBox"
+                             KeyDown="OnLookupQueryKeyDown" />
+
+                    <Button x:Name="LookupSearchButton"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Left"
+                            Padding="14,5"
+                            Click="OnLookupSearchClick" />
+
+                    <TextBlock x:Name="LookupStatusText"
+                               Margin="0,10,0,0"
+                               TextWrapping="Wrap" />
+
+                    <TextBlock x:Name="LookupResultsLabelText"
+                               Margin="0,14,0,4"
+                               FontWeight="SemiBold" />
+                </StackPanel>
+
+                <TextBlock x:Name="LookupDetailsText"
+                           DockPanel.Dock="Bottom"
+                           Margin="0,10,0,0"
+                           TextWrapping="Wrap" />
+
+                <ListBox x:Name="LookupResultsList"
+                         DisplayMemberPath="Summary"
+                         SelectionChanged="OnLookupSelectionChanged" />
+            </DockPanel>
+        </Border>
+
+        <ScrollViewer x:Name="MapScrollViewer"
+                      HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
             <Canvas x:Name="MapCanvas"
                     Width="1600"

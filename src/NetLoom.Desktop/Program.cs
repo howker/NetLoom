@@ -1,6 +1,7 @@
 using System;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Locations;
+using NetLoom.Persistence.Sqlite.Lookup;
 using NetLoom.Persistence.Sqlite.Topology;
 using NetLoom.Topology.Map;
 using NetLoom.Wpf;
@@ -37,7 +38,10 @@ namespace NetLoom.Desktop
                 new System.Windows.Application();
 
             application.Run(
-                new MainWindow(provider));
+                new MainWindow(
+                    provider,
+                    new SqliteMacIpLookupReader(
+                        connectionFactory)));
         }
     }
 }

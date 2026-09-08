@@ -735,3 +735,17 @@ Analyzer pure/read-only; no SQLite persistence, no Migration012, no UI write pat
 **Lookup semantics.** MAC/IP поиск возвращает evidence candidates и причины unresolved/ambiguity. Ни FDB, ни ARP не создают PhysicalLink и не позволяют автоматически объявить конкретный sighting конечным access-port.
 
 **Следствие.** Sprint 30A — backend-only. Локализованный WPF search UX выполняется отдельным Sprint 30B.
+
+## ADR-059 — map presentation key and stable navigation identity are separate
+
+**Решение.** `MapNode.Key` остаётся opaque presentation key и не становится DeviceId. Materialized map nodes получают отдельное optional поле `DeviceId` исключительно для stable navigation/highlight.
+
+**Причина.** MAC/IP lookup возвращает stable DeviceId + InterfaceId. Обратное вычисление DeviceId из `map-*`, поиск по label/IP или подмена presentation key внутренним identity нарушили бы существующую границу идентичности.
+
+**UI boundary.** WPF использует transport-neutral `IMacIpLookupReader`; Desktop создаёт SQLite implementation и передаёт её только как read-only interface. WPF не пишет SQLite.
+
+**Navigation semantics.** При `ResolvedInterface` подсвечивается device node по stable DeviceId. InterfaceId/ifIndex отображаются текстом. Отдельный port highlight не заявляется до появления interface-level visual contract.
+
+**Evidence semantics.** Multiple candidates, unresolved states и timestamps остаются видимыми; UI не объявляет FDB sighting гарантированным access-port.
+
+**Persistence.** Новая schema не требуется; Migration012 остаётся последней.

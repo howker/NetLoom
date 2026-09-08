@@ -798,3 +798,21 @@ Migration011 остаётся последней; migrations: 11.
 - никакого access-port guessing и никакого PhysicalLink из FDB/ARP.
 
 Пользовательский backlog-пункт «поиск MAC/IP до switch/interface» остаётся открытым до Sprint 30B: локализованный WPF search UX, представление ambiguity/freshness и navigation/highlight.
+
+## Sprint 30B — WPF MAC/IP search UX
+
+Реализован локализованный операторский поиск MAC/IP:
+
+- `MacIpLookupSearchService` auto-detects и нормализует IP/MAC;
+- WPF получает read-only `IMacIpLookupReader` через Desktop composition;
+- все пользовательские строки поиска находятся в `UiStrings.resx`;
+- candidate list сохраняет ambiguity и unresolved states;
+- отображаются FDB/ARP timestamps и evidence source;
+- materialized `MapNode` несёт optional stable DeviceId отдельно от opaque presentation Key;
+- `ResolvedInterface` подсвечивает устройство и прокручивает карту к нему;
+- InterfaceId/ifIndex показываются в деталях;
+- interface-level/port highlight не создаётся;
+- поиск не меняет topology, manual nodes, links или monitoring state;
+- Migration012 остаётся последней.
+
+Sprint 30A + 30B закрывают backlog «Удобный поиск MAC/IP до конкретного switch/interface».

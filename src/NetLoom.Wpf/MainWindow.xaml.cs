@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using NetLoom.Application.Lookup;
 using NetLoom.Application.TopologyMap;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
@@ -17,20 +20,41 @@ public partial class MainWindow : Window
 {
     private const double NodeWidth = 190.0;
     private const double NodeHeight = 92.0;
+    private const int LookupCandidateLimit = 100;
 
     private readonly IMapSnapshotProvider
         _mapSnapshotProvider;
 
+    private readonly MacIpLookupSearchService
+        _lookupSearchService;
+
     private readonly DispatcherTimer
         _refreshTimer;
 
+    private readonly Dictionary<Guid, Border>
+        _nodeBordersByDeviceId =
+            new Dictionary<Guid, Border>();
+
+    private Guid? _highlightedDeviceId;
+
     public MainWindow()
-        : this(new EmptyMapSnapshotProvider())
+        : this(
+            new EmptyMapSnapshotProvider(),
+            new EmptyMacIpLookupReader())
     {
     }
 
     public MainWindow(
         IMapSnapshotProvider mapSnapshotProvider)
+        : this(
+            mapSnapshotProvider,
+            new EmptyMacIpLookupReader())
+    {
+    }
+
+    public MainWindow(
+        IMapSnapshotProvider mapSnapshotProvider,
+        IMacIpLookupReader lookupReader)
     {
         InitializeComponent();
 
@@ -38,6 +62,12 @@ public partial class MainWindow : Window
             mapSnapshotProvider ??
             throw new ArgumentNullException(
                 nameof(mapSnapshotProvider));
+
+        _lookupSearchService =
+            new MacIpLookupSearchService(
+                lookupReader ??
+                throw new ArgumentNullException(
+                    nameof(lookupReader)));
 
         _refreshTimer =
             new DispatcherTimer
@@ -54,6 +84,24 @@ public partial class MainWindow : Window
 
         Title = UiText.Get("WindowTitle");
         MapTitleText.Text = UiText.Get("MapTitle");
+
+        LookupTitleText.Text =
+            UiText.Get("LookupTitle");
+
+        LookupQueryLabelText.Text =
+            UiText.Get("LookupQueryLabel");
+
+        LookupSearchButton.Content =
+            UiText.Get("LookupSearchAction");
+
+        LookupResultsLabelText.Text =
+            UiText.Get("LookupResultsLabel");
+
+        LookupStatusText.Text =
+            UiText.Get("LookupReady");
+
+        LookupDetailsText.Text =
+            UiText.Get("LookupSelectCandidate");
 
         ShowMap(EmptySnapshot());
     }
@@ -112,6 +160,7 @@ public partial class MainWindow : Window
         }
 
         MapCanvas.Children.Clear();
+        _nodeBordersByDeviceId.Clear();
 
         if (snapshot.Nodes.Count == 0)
         {
@@ -148,6 +197,8 @@ public partial class MainWindow : Window
                 snapshot.Nodes.Count,
                 snapshot.Links.Count,
                 snapshot.Locations.Count);
+
+        BringHighlightedDeviceIntoView();
     }
 
     private void DrawLink(
@@ -258,6 +309,7 @@ public partial class MainWindow : Window
                 TextTrimming =
                     TextTrimming.CharacterEllipsis
             };
+
         var locationText =
             new TextBlock
             {
@@ -281,6 +333,12 @@ public partial class MainWindow : Window
         content.Children.Add(topologyMetadata);
         content.Children.Add(locationText);
 
+        var isHighlighted =
+            node.DeviceId.HasValue &&
+            _highlightedDeviceId.HasValue &&
+            node.DeviceId.Value ==
+            _highlightedDeviceId.Value;
+
         var border =
             new Border
             {
@@ -288,18 +346,318 @@ public partial class MainWindow : Window
                 Height = NodeHeight,
                 Padding = new Thickness(10),
                 BorderThickness =
-                    new Thickness(1),
+                    isHighlighted
+                        ? new Thickness(3)
+                        : new Thickness(1),
                 BorderBrush =
-                    SystemColors.ControlDarkBrush,
+                    isHighlighted
+                        ? SystemColors.HighlightBrush
+                        : SystemColors.ControlDarkBrush,
                 Background =
                     SystemColors.WindowBrush,
                 Child = content
             };
 
+        if (node.DeviceId.HasValue)
+        {
+            _nodeBordersByDeviceId[
+                node.DeviceId.Value] =
+                border;
+        }
+
         Canvas.SetLeft(border, node.X);
         Canvas.SetTop(border, node.Y);
 
         MapCanvas.Children.Add(border);
+    }
+
+    private void OnLookupSearchClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        RunLookup();
+    }
+
+    private void OnLookupQueryKeyDown(
+        object sender,
+        KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            RunLookup();
+            e.Handled = true;
+        }
+    }
+
+    private void RunLookup()
+    {
+        LookupResultsList.ItemsSource = null;
+        LookupDetailsText.Text =
+            UiText.Get("LookupSelectCandidate");
+
+        _highlightedDeviceId = null;
+
+        try
+        {
+            var result =
+                _lookupSearchService.Search(
+                    LookupQueryTextBox.Text,
+                    LookupCandidateLimit);
+
+            var rows =
+                result.Candidates
+                    .Select(
+                        candidate =>
+                            new LookupCandidateRow(
+                                candidate,
+                                BuildCandidateSummary(
+                                    candidate),
+                                BuildCandidateDetails(
+                                    candidate)))
+                    .ToArray();
+
+            LookupResultsList.ItemsSource =
+                rows;
+
+            LookupStatusText.Text =
+                rows.Length == 0
+                    ? UiText.Get(
+                        "LookupNoResults")
+                    : UiText.Format(
+                        "LookupResultCount",
+                        rows.Length,
+                        result.NormalizedQuery);
+        }
+        catch (ArgumentException)
+        {
+            LookupStatusText.Text =
+                UiText.Get("LookupInvalidQuery");
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                error.ToString());
+
+            LookupStatusText.Text =
+                UiText.Get("LookupSearchFailed");
+        }
+
+        RefreshMap();
+    }
+
+    private void OnLookupSelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        var row =
+            LookupResultsList.SelectedItem
+            as LookupCandidateRow;
+
+        if (row == null)
+        {
+            return;
+        }
+
+        LookupDetailsText.Text =
+            row.Details;
+
+        var candidate =
+            row.Candidate;
+
+        if (candidate.Status ==
+                MacIpLookupCandidateStatus
+                    .ResolvedInterface &&
+            candidate.DeviceId.HasValue)
+        {
+            _highlightedDeviceId =
+                candidate.DeviceId.Value;
+
+            RefreshMap();
+        }
+        else
+        {
+            _highlightedDeviceId = null;
+            RefreshMap();
+        }
+    }
+
+    private void BringHighlightedDeviceIntoView()
+    {
+        if (!_highlightedDeviceId.HasValue)
+        {
+            return;
+        }
+
+        Border border;
+
+        if (_nodeBordersByDeviceId.TryGetValue(
+            _highlightedDeviceId.Value,
+            out border))
+        {
+            border.BringIntoView();
+        }
+    }
+
+    private static string BuildCandidateSummary(
+        MacIpLookupCandidate candidate)
+    {
+        var interfaceText =
+            candidate.IfIndex.HasValue
+                ? UiText.Format(
+                    "LookupInterfaceShort",
+                    candidate.IfIndex.Value)
+                : UiText.Get(
+                    "LookupInterfaceUnavailable");
+
+        return UiText.Format(
+            "LookupCandidateSummary",
+            StatusText(candidate.Status),
+            candidate.MacAddress,
+            interfaceText);
+    }
+
+    private static string BuildCandidateDetails(
+        MacIpLookupCandidate candidate)
+    {
+        var values =
+            new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(
+            candidate.IpAddress))
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailIp",
+                    candidate.IpAddress));
+        }
+
+        values.Add(
+            UiText.Format(
+                "LookupDetailMac",
+                candidate.MacAddress));
+
+        values.Add(
+            UiText.Format(
+                "LookupDetailStatus",
+                StatusText(
+                    candidate.Status)));
+
+        if (candidate.DeviceId.HasValue)
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailDeviceId",
+                    candidate.DeviceId.Value));
+        }
+
+        if (candidate.InterfaceId.HasValue)
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailInterfaceId",
+                    candidate.InterfaceId.Value));
+        }
+
+        if (candidate.IfIndex.HasValue)
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailIfIndex",
+                    candidate.IfIndex.Value));
+        }
+
+        if (candidate.BridgePortIndex.HasValue)
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailBridgePort",
+                    candidate.BridgePortIndex.Value));
+        }
+
+        if (candidate.FdbCapturedUtc.HasValue)
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailFdbObserved",
+                    candidate.FdbCapturedUtc.Value
+                        .ToLocalTime()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+            candidate.FdbSourceAddress))
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailFdbSource",
+                    candidate.FdbSourceAddress));
+        }
+
+        if (candidate.ArpCapturedUtc.HasValue)
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailArpObserved",
+                    candidate.ArpCapturedUtc.Value
+                        .ToLocalTime()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+            candidate.ArpSourceAddress))
+        {
+            values.Add(
+                UiText.Format(
+                    "LookupDetailArpSource",
+                    candidate.ArpSourceAddress));
+        }
+
+        if (candidate.Status ==
+                MacIpLookupCandidateStatus
+                    .ResolvedInterface)
+        {
+            values.Add(
+                UiText.Get(
+                    "LookupResolvedInterfaceCaveat"));
+        }
+
+        return string.Join(
+            Environment.NewLine,
+            values);
+    }
+
+    private static string StatusText(
+        MacIpLookupCandidateStatus status)
+    {
+        switch (status)
+        {
+            case MacIpLookupCandidateStatus
+                .FdbNotObserved:
+                return UiText.Get(
+                    "LookupStatusFdbNotObserved");
+
+            case MacIpLookupCandidateStatus
+                .ObservationUnbound:
+                return UiText.Get(
+                    "LookupStatusObservationUnbound");
+
+            case MacIpLookupCandidateStatus
+                .BridgePortUnresolved:
+                return UiText.Get(
+                    "LookupStatusBridgePortUnresolved");
+
+            case MacIpLookupCandidateStatus
+                .BridgePortAmbiguous:
+                return UiText.Get(
+                    "LookupStatusBridgePortAmbiguous");
+
+            case MacIpLookupCandidateStatus
+                .InterfaceNotMaterialized:
+                return UiText.Get(
+                    "LookupStatusInterfaceNotMaterialized");
+
+            default:
+                return UiText.Get(
+                    "LookupStatusResolvedInterface");
+        }
     }
 
     private static string BuildTopologyMetadata(
@@ -394,6 +752,7 @@ public partial class MainWindow : Window
                 return null;
         }
     }
+
     private static string BuildLocationText(
         MapNode node,
         IReadOnlyDictionary<Guid, MapLocation> locations)
@@ -407,8 +766,8 @@ public partial class MainWindow : Window
         MapLocation location;
 
         if (!locations.TryGetValue(
-                node.LocationId.Value,
-                out location))
+            node.LocationId.Value,
+            out location))
         {
             return UiText.Get(
                 "LocationUnknown");
@@ -438,15 +797,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private sealed class EmptyMapSnapshotProvider :
-        IMapSnapshotProvider
-    {
-        public MapSnapshot GetSnapshot()
-        {
-            return EmptySnapshot();
-        }
-    }
-
     private static string FreshnessText(
         MapFreshness freshness)
     {
@@ -463,6 +813,58 @@ public partial class MainWindow : Window
             default:
                 return UiText.Get(
                     "FreshnessStale");
+        }
+    }
+
+    private sealed class LookupCandidateRow
+    {
+        public LookupCandidateRow(
+            MacIpLookupCandidate candidate,
+            string summary,
+            string details)
+        {
+            Candidate = candidate;
+            Summary = summary;
+            Details = details;
+        }
+
+        public MacIpLookupCandidate Candidate { get; }
+
+        public string Summary { get; }
+
+        public string Details { get; }
+    }
+
+    private sealed class EmptyMapSnapshotProvider :
+        IMapSnapshotProvider
+    {
+        public MapSnapshot GetSnapshot()
+        {
+            return EmptySnapshot();
+        }
+    }
+
+    private sealed class EmptyMacIpLookupReader :
+        IMacIpLookupReader
+    {
+        public MacIpLookupResult FindByMac(
+            string macAddress,
+            int maxCandidates)
+        {
+            return new MacIpLookupResult(
+                MacIpLookupKind.Mac,
+                macAddress,
+                new MacIpLookupCandidate[0]);
+        }
+
+        public MacIpLookupResult FindByIp(
+            string ipAddress,
+            int maxCandidates)
+        {
+            return new MacIpLookupResult(
+                MacIpLookupKind.Ip,
+                ipAddress,
+                new MacIpLookupCandidate[0]);
         }
     }
 }

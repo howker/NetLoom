@@ -35,9 +35,9 @@
 - [x] User-facing ring semantics before per-ring protection labels.
 - [x] Sprint 29 — Ring protection analyzer.
 - [x] Ring protection analyzer.
-- [ ] Удобный поиск MAC/IP до конкретного switch/interface.
+- [x] Удобный поиск MAC/IP до конкретного switch/interface.
   - [x] Sprint 30A — stable observation→DeviceId binding + backend MAC/IP evidence lookup.
-  - [ ] Sprint 30B — localized WPF MAC/IP search UX + navigation/highlight to switch/interface candidates.
+  - [x] Sprint 30B — localized WPF MAC/IP search UX + navigation/highlight to switch/interface candidates.
 - [ ] Минимальные alerts для реально полезных topology/ring failures.
 
 ## P0 — архитектурные gates

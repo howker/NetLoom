@@ -223,7 +223,7 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
-        public void MaterializedMapDoesNotExposeDeviceId()
+        public void MaterializedMapKeepsStableDeviceIdSeparateFromPresentationKey()
         {
             var device =
                 new ManualTopologyFactory()
@@ -246,6 +246,10 @@ namespace NetLoom.Tests.Unit
             Assert.IsFalse(
                 snapshot.Nodes[0].Key.Contains(
                     device.Id.ToString("D")));
+
+            Assert.AreEqual(
+                device.Id,
+                snapshot.Nodes[0].DeviceId);
         }
 
         [TestMethod]
