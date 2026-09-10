@@ -22,6 +22,8 @@ namespace NetLoom.Application.Monitoring
         private readonly IStpCollector _stpCollector;
         private readonly IObservationDeviceBindingStore
             _observationDeviceBindingStore;
+        private readonly IMonitoringTopologyMaterializer
+            _topologyMaterializer;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -69,7 +71,9 @@ namespace NetLoom.Application.Monitoring
             Func<DateTime> utcNow = null,
             IStpCollector stpCollector = null,
             IObservationDeviceBindingStore
-                observationDeviceBindingStore = null)
+                observationDeviceBindingStore = null,
+            IMonitoringTopologyMaterializer
+                topologyMaterializer = null)
         {
             _lldpCollector =
                 lldpCollector ??
@@ -92,9 +96,15 @@ namespace NetLoom.Application.Monitoring
 
             _interfaceCollector =
                 interfaceCollector;
-            _stpCollector = stpCollector;
+
+            _stpCollector =
+                stpCollector;
+
             _observationDeviceBindingStore =
                 observationDeviceBindingStore;
+
+            _topologyMaterializer =
+                topologyMaterializer;
 
             _utcNow =
                 utcNow ??
@@ -139,27 +149,57 @@ namespace NetLoom.Application.Monitoring
                 switch (kind)
                 {
                     case MonitoringPollKind.Lldp:
-                        _lldpCollector.Collect(
-                            new LldpCollectionRequest(
-                                request.Address,
-                                request.Port,
-                                request.Version,
-                                request.Credentials,
-                                request.TimeoutMilliseconds,
-                                request.RetryCount,
-                                request.MaxRepetitions));
+                        var lldp =
+                            _lldpCollector.Collect(
+                                new LldpCollectionRequest(
+                                    request.Address,
+                                    request.Port,
+                                    request.Version,
+                                    request.Credentials,
+                                    request.TimeoutMilliseconds,
+                                    request.RetryCount,
+                                    request.MaxRepetitions));
+
+                        BindObservation(
+                            lldp == null
+                                ? (Guid?)null
+                                : lldp.Observation.Id,
+                            request.DeviceId);
+
+                        if (lldp != null)
+                        {
+                            MaterializeDevice(
+                                request.DeviceId,
+                                lldp.Observation.CapturedUtc);
+                        }
+
                         break;
 
                     case MonitoringPollKind.Cdp:
-                        _cdpCollector.Collect(
-                            new CdpCollectionRequest(
-                                request.Address,
-                                request.Port,
-                                request.Version,
-                                request.Credentials,
-                                request.TimeoutMilliseconds,
-                                request.RetryCount,
-                                request.MaxRepetitions));
+                        var cdp =
+                            _cdpCollector.Collect(
+                                new CdpCollectionRequest(
+                                    request.Address,
+                                    request.Port,
+                                    request.Version,
+                                    request.Credentials,
+                                    request.TimeoutMilliseconds,
+                                    request.RetryCount,
+                                    request.MaxRepetitions));
+
+                        BindObservation(
+                            cdp == null
+                                ? (Guid?)null
+                                : cdp.Observation.Id,
+                            request.DeviceId);
+
+                        if (cdp != null)
+                        {
+                            MaterializeDevice(
+                                request.DeviceId,
+                                cdp.Observation.CapturedUtc);
+                        }
+
                         break;
 
                     case MonitoringPollKind.Fdb:
@@ -180,6 +220,13 @@ namespace NetLoom.Application.Monitoring
                                 : fdb.Observation.Id,
                             request.DeviceId);
 
+                        if (fdb != null)
+                        {
+                            MaterializeDevice(
+                                request.DeviceId,
+                                fdb.Observation.CapturedUtc);
+                        }
+
                         break;
 
                     case MonitoringPollKind.Arp:
@@ -199,6 +246,13 @@ namespace NetLoom.Application.Monitoring
                                 ? (Guid?)null
                                 : arp.Observation.Id,
                             request.DeviceId);
+
+                        if (arp != null)
+                        {
+                            MaterializeDevice(
+                                request.DeviceId,
+                                arp.Observation.CapturedUtc);
+                        }
 
                         break;
 
@@ -226,6 +280,13 @@ namespace NetLoom.Application.Monitoring
                                 : stp.Observation.Id,
                             request.DeviceId);
 
+                        if (stp != null)
+                        {
+                            MaterializeDevice(
+                                request.DeviceId,
+                                stp.Observation.CapturedUtc);
+                        }
+
                         break;
 
                     case MonitoringPollKind.Health:
@@ -245,6 +306,10 @@ namespace NetLoom.Application.Monitoring
                                     request.Credentials,
                                     request.TimeoutMilliseconds,
                                     request.RetryCount));
+
+                        MaterializeDevice(
+                            request.DeviceId,
+                            NowUtc());
 
                         return new MonitoringPollStepResult(
                             kind,
@@ -271,6 +336,26 @@ namespace NetLoom.Application.Monitoring
                                     request.TimeoutMilliseconds,
                                     request.RetryCount,
                                     request.MaxRepetitions));
+
+                        var interfaceObservedUtc =
+                            NowUtc();
+
+                        MaterializeDevice(
+                            request.DeviceId,
+                            interfaceObservedUtc);
+
+                        if (_topologyMaterializer != null &&
+                            request.DeviceId.HasValue)
+                        {
+                            foreach (var snapshot in interfaces)
+                            {
+                                _topologyMaterializer
+                                    .MaterializeInterface(
+                                        request.DeviceId.Value,
+                                        snapshot.IfIndex,
+                                        interfaceObservedUtc);
+                            }
+                        }
 
                         return new MonitoringPollStepResult(
                             kind,
@@ -316,6 +401,22 @@ namespace NetLoom.Application.Monitoring
                 observationId.Value,
                 deviceId.Value);
         }
+
+        private void MaterializeDevice(
+            Guid? deviceId,
+            DateTime observedUtc)
+        {
+            if (_topologyMaterializer == null ||
+                !deviceId.HasValue)
+            {
+                return;
+            }
+
+            _topologyMaterializer.MaterializeDevice(
+                deviceId.Value,
+                observedUtc);
+        }
+
         private DateTime NowUtc()
         {
             var value = _utcNow();

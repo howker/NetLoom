@@ -7,15 +7,17 @@ using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Fdb;
 using NetLoom.Persistence.Sqlite.Lldp;
 using NetLoom.Persistence.Sqlite.Observations;
+using NetLoom.Persistence.Sqlite.Stp;
+using NetLoom.Persistence.Sqlite.Topology;
 using NetLoom.Protocols.Snmp.Arp;
 using NetLoom.Protocols.Snmp.Cdp;
 using NetLoom.Protocols.Snmp.Fdb;
 using NetLoom.Protocols.Snmp.Health;
 using NetLoom.Protocols.Snmp.Interfaces;
 using NetLoom.Protocols.Snmp.Lldp;
-using NetLoom.Protocols.Snmp.Transport;
-using NetLoom.Persistence.Sqlite.Stp;
 using NetLoom.Protocols.Snmp.Stp;
+using NetLoom.Protocols.Snmp.Transport;
+using NetLoom.Topology.Materialization;
 
 namespace NetLoom.Engine
 {
@@ -54,6 +56,10 @@ namespace NetLoom.Engine
                         connectionFactory),
                     new StpObservationParser());
 
+            var topologyRepository =
+                new SqliteMaterializedTopologyRepository(
+                    connectionFactory);
+
             return new MonitoringRuntime(
                 new LldpCollector(
                     transport,
@@ -86,7 +92,10 @@ namespace NetLoom.Engine
                 stpCollector: stpCollector,
                 observationDeviceBindingStore:
                     new SqliteObservationDeviceBindingStore(
-                        connectionFactory));
+                        connectionFactory),
+                topologyMaterializer:
+                    new MonitoringTopologyMaterializer(
+                        topologyRepository));
         }
     }
 }

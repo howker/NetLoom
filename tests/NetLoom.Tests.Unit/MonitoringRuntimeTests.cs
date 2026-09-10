@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.Observations;
 using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
 using NetLoom.Application.Observations.Lldp;
 using NetLoom.Application.Snmp;
 using NetLoom.Domain.Access;
+using NetLoom.Domain.Observations;
 using NetLoom.Domain.Observations.Arp;
 using NetLoom.Domain.Observations.Cdp;
 using NetLoom.Domain.Observations.Fdb;
@@ -23,6 +25,18 @@ namespace NetLoom.Tests.Unit
             new DateTime(
                 2026, 1, 1, 10, 0, 0,
                 DateTimeKind.Utc);
+
+        private static readonly Guid DeviceId =
+            new Guid(
+                "11111111-1111-1111-1111-111111111111");
+
+        private static readonly Guid LldpObservationId =
+            new Guid(
+                "22222222-2222-2222-2222-222222222222");
+
+        private static readonly Guid CdpObservationId =
+            new Guid(
+                "33333333-3333-3333-3333-333333333333");
 
         [TestMethod]
         public void FailureInOneCollectorDoesNotStopOthers()
@@ -43,6 +57,7 @@ namespace NetLoom.Tests.Unit
             var result =
                 runtime.PollOnce(
                     Request(
+                        null,
                         MonitoringPollKind.Lldp,
                         MonitoringPollKind.Cdp,
                         MonitoringPollKind.Fdb,
@@ -84,6 +99,7 @@ namespace NetLoom.Tests.Unit
             var result =
                 runtime.PollOnce(
                     Request(
+                        null,
                         MonitoringPollKind.Lldp,
                         MonitoringPollKind.Arp));
 
@@ -120,6 +136,7 @@ namespace NetLoom.Tests.Unit
             {
                 runtime.PollOnce(
                     Request(
+                        null,
                         MonitoringPollKind.Lldp));
 
                 Assert.Fail(
@@ -130,7 +147,154 @@ namespace NetLoom.Tests.Unit
             }
         }
 
+        [TestMethod]
+        public void LldpObservationIsBoundToExplicitDevice()
+        {
+            var calls =
+                new List<string>();
+            var bindings =
+                new RecordingObservationDeviceBindingStore();
+
+            var observation =
+                new Observation(
+                    LldpObservationId,
+                    ObservationKind.Lldp,
+                    "192.0.2.10",
+                    T1);
+
+            var lldp =
+                new LldpObservation(
+                    observation,
+                    new LldpRemoteNeighbor[0]);
+
+            var runtime =
+                CreateRuntime(
+                    calls,
+                    bindings,
+                    lldp,
+                    null);
+
+            var result =
+                runtime.PollOnce(
+                    Request(
+                        DeviceId,
+                        MonitoringPollKind.Lldp));
+
+            Assert.IsTrue(result.AllSucceeded);
+            Assert.AreEqual(1, bindings.Bindings.Count);
+            Assert.AreEqual(
+                LldpObservationId,
+                bindings.Bindings[0].ObservationId);
+            Assert.AreEqual(
+                DeviceId,
+                bindings.Bindings[0].DeviceId);
+        }
+
+        [TestMethod]
+        public void CdpObservationIsBoundToExplicitDevice()
+        {
+            var calls =
+                new List<string>();
+            var bindings =
+                new RecordingObservationDeviceBindingStore();
+
+            var observation =
+                new Observation(
+                    CdpObservationId,
+                    ObservationKind.Cdp,
+                    "192.0.2.10",
+                    T1);
+
+            var cdp =
+                new CdpObservation(
+                    observation,
+                    new CdpRemoteNeighbor[0]);
+
+            var runtime =
+                CreateRuntime(
+                    calls,
+                    bindings,
+                    null,
+                    cdp);
+
+            var result =
+                runtime.PollOnce(
+                    Request(
+                        DeviceId,
+                        MonitoringPollKind.Cdp));
+
+            Assert.IsTrue(result.AllSucceeded);
+            Assert.AreEqual(1, bindings.Bindings.Count);
+            Assert.AreEqual(
+                CdpObservationId,
+                bindings.Bindings[0].ObservationId);
+            Assert.AreEqual(
+                DeviceId,
+                bindings.Bindings[0].DeviceId);
+        }
+
+        [TestMethod]
+        public void ObservationIsNotBoundWithoutExplicitDevice()
+        {
+            var calls =
+                new List<string>();
+            var bindings =
+                new RecordingObservationDeviceBindingStore();
+
+            var observation =
+                new Observation(
+                    LldpObservationId,
+                    ObservationKind.Lldp,
+                    "192.0.2.10",
+                    T1);
+
+            var lldp =
+                new LldpObservation(
+                    observation,
+                    new LldpRemoteNeighbor[0]);
+
+            var runtime =
+                CreateRuntime(
+                    calls,
+                    bindings,
+                    lldp,
+                    null);
+
+            var result =
+                runtime.PollOnce(
+                    Request(
+                        null,
+                        MonitoringPollKind.Lldp));
+
+            Assert.IsTrue(result.AllSucceeded);
+            Assert.AreEqual(0, bindings.Bindings.Count);
+        }
+
+        private static MonitoringRuntime CreateRuntime(
+            IList<string> calls,
+            IObservationDeviceBindingStore bindingStore,
+            LldpObservation lldp,
+            CdpObservation cdp)
+        {
+            return new MonitoringRuntime(
+                new RecordingLldpCollector(
+                    calls,
+                    false,
+                    lldp),
+                new RecordingCdpCollector(
+                    calls,
+                    cdp),
+                new RecordingFdbCollector(calls),
+                new RecordingArpCollector(calls),
+                null,
+                null,
+                () => T1,
+                null,
+                bindingStore);
+        }
+
         private static MonitoringPollRequest Request(
+            Guid? deviceId,
             params MonitoringPollKind[] kinds)
         {
             return new MonitoringPollRequest(
@@ -142,7 +306,8 @@ namespace NetLoom.Tests.Unit
                 1000,
                 1,
                 10,
-                kinds);
+                kinds,
+                deviceId);
         }
 
         private sealed class RecordingLldpCollector :
@@ -150,13 +315,16 @@ namespace NetLoom.Tests.Unit
         {
             private readonly IList<string> _calls;
             private readonly bool _fail;
+            private readonly LldpObservation _observation;
 
             public RecordingLldpCollector(
                 IList<string> calls,
-                bool fail = false)
+                bool fail = false,
+                LldpObservation observation = null)
             {
                 _calls = calls;
                 _fail = fail;
+                _observation = observation;
             }
 
             public LldpObservation Collect(
@@ -170,7 +338,7 @@ namespace NetLoom.Tests.Unit
                         "test failure");
                 }
 
-                return null;
+                return _observation;
             }
         }
 
@@ -178,18 +346,21 @@ namespace NetLoom.Tests.Unit
             ICdpCollector
         {
             private readonly IList<string> _calls;
+            private readonly CdpObservation _observation;
 
             public RecordingCdpCollector(
-                IList<string> calls)
+                IList<string> calls,
+                CdpObservation observation = null)
             {
                 _calls = calls;
+                _observation = observation;
             }
 
             public CdpObservation Collect(
                 CdpCollectionRequest request)
             {
                 _calls.Add("Cdp");
-                return null;
+                return _observation;
             }
         }
 
@@ -229,6 +400,58 @@ namespace NetLoom.Tests.Unit
                 _calls.Add("Arp");
                 return null;
             }
+        }
+
+        private sealed class RecordingObservationDeviceBindingStore :
+            IObservationDeviceBindingStore
+        {
+            private readonly List<BindingCall> _bindings =
+                new List<BindingCall>();
+
+            public IReadOnlyList<BindingCall> Bindings =>
+                _bindings;
+
+            public void Bind(
+                Guid observationId,
+                Guid deviceId)
+            {
+                _bindings.Add(
+                    new BindingCall(
+                        observationId,
+                        deviceId));
+            }
+
+            public Guid? GetDeviceId(
+                Guid observationId)
+            {
+                for (var index = 0;
+                    index < _bindings.Count;
+                    index++)
+                {
+                    if (_bindings[index].ObservationId ==
+                        observationId)
+                    {
+                        return _bindings[index].DeviceId;
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        private sealed class BindingCall
+        {
+            public BindingCall(
+                Guid observationId,
+                Guid deviceId)
+            {
+                ObservationId = observationId;
+                DeviceId = deviceId;
+            }
+
+            public Guid ObservationId { get; }
+
+            public Guid DeviceId { get; }
         }
     }
 }
