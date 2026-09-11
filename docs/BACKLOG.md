@@ -98,3 +98,40 @@
 - [ ] Propagate CancellationToken into the active poll/collector path; cancellation must not become a failed protocol step.
 - [ ] Multi-device scheduler: bounded parallelism, per-device cadence and startup jitter.
 - [x] Clarify/rename fundamental cycle-basis primitive before exposing user-facing named rings.
+## P0 - Desktop operational reliability before the next product feature
+
+- [ ] Sprint 32A - coherent non-blocking Desktop refresh with last-known-good semantics.
+  - [ ] Capture one `MaterializedTopologyReadSet` per refresh on one SQLite connection and one read transaction.
+  - [ ] The read transaction contains only persistence reads and closes before projection, analysis, transition tracking, or UI work.
+  - [ ] `MaterializedTopologyReadSet` contains Devices, Interfaces, PhysicalLinks, PhysicalLinkEvidence, Locations, and LatestStp.
+  - [ ] Map and topology alerts are computed from the same captured read-set.
+  - [ ] At most one periodic refresh is in flight; timer ticks are skipped while it is running.
+  - [ ] SQLite reads and pure projection/analysis never block the WPF Dispatcher thread.
+  - [ ] `TopologyAlertTransitionTracker.Observe()` remains Dispatcher-owned and runs only for a successfully completed whole refresh result.
+  - [ ] Failed, cancelled, or invalidated refresh work does not mutate transition state.
+  - [ ] After the first successful refresh, a later failure keeps the last-known-good map and alerts visible.
+  - [ ] The UI shows stale/error state and the time of the last successful refresh; a later successful refresh clears stale state.
+  - [ ] A failure before the first successful refresh is distinct from a healthy empty-topology state.
+  - [ ] Window close stops scheduling, cancels or invalidates refresh/lookup work in flight, and prevents post-close UI apply.
+  - [ ] Normal cancellation during window close is not reported as a refresh failure.
+  - [ ] `SqliteStpObservationStore.GetLatest()` no longer performs N+1 connections/queries.
+  - [ ] A concurrent writer commit between read phases cannot produce a mixed topology snapshot or a false alert transition.
+  - [ ] The consistency integration test uses a deterministic synchronization seam and is demonstrated RED on the old multi-connection path before the fix.
+  - [ ] Lookup search runs off the Dispatcher thread.
+  - [ ] Lookup is single-flight: an older request cannot overwrite a newer result.
+  - [ ] Window close cancels or invalidates lookup work in flight and prevents post-close lookup apply.
+  - [ ] Lookup under SQLite contention does not freeze the Dispatcher.
+  - [ ] Manual contention acceptance confirms that the Desktop remains responsive while a SQLite writer holds a lock.
+
+- [ ] Sprint 32B - persistent host logging for Desktop and Engine.
+  - [ ] Use one logging mechanism for both hosts.
+  - [ ] Persist Desktop refresh/search failures instead of relying on debugger-only `Trace` output.
+  - [ ] Persist Engine polling/retention/materialization failures instead of relying on console-only output.
+  - [ ] Default Windows logs to `%ProgramData%\NetLoom\logs`.
+  - [ ] Define portable Linux log-path semantics for the `net8.0` Engine host.
+  - [ ] Make log level and rotation configurable.
+
+- [ ] Architecture gate before Sprint 32C - decide the final owner of localization resources and record it in `DECISIONS.md`.
+- [ ] Sprint 32C - localization foundation: English neutral resources, Russian satellite resources, explicit culture selection, pluralization, removal of the Topology text leak, `.cs` localization-integrity guard, and template-resource cleanup.
+- [ ] After 32A-32C, run a realistic 3-5 device SNMP/snmpsim stand acceptance and add only real operational observations to `FRICTION_LOG.md`.
+- [ ] Choose the next product feature only after stand acceptance and `FRICTION_LOG.md` review; do not start topology snapshots / time-machine work automatically.

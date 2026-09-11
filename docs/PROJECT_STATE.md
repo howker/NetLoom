@@ -913,3 +913,12 @@ SQLite schema не изменена; `Migration012` остаётся после�
 - до documentation closure `git diff --check` clean, worktree clean, `HEAD == origin/main == cc36fc0f71499a216413ac56f1862cdd1935b664`.
 
 Acceptance не потребовал изменений production-кода.
+## Sprint 32A planned - coherent non-blocking Desktop refresh
+
+Sprint 32A is the next P0 before any new product feature. Repository review confirmed three coupled operational risks in the current Desktop path: synchronous SQLite/read-analysis work on the WPF Dispatcher, multi-connection reads that can mix committed states inside one refresh, and failure handling that can replace active map/alert state with empty UI. Lookup search has the same Dispatcher-blocking risk.
+
+The frozen execution model is READ -> COMPUTE -> APPLY. READ captures one `MaterializedTopologyReadSet` on one SQLite connection and one read transaction, then closes the transaction. COMPUTE performs pure projection and topology/ring analysis in memory. APPLY returns to the Dispatcher for lifecycle checks, `TopologyAlertTransitionTracker.Observe()`, last-known-good state, and UI updates. Only one periodic refresh and one lookup may be active at a time.
+
+The first implementation artifact is a deterministic RED integration test that forces a writer commit between parts of the old multi-connection read path. The fix must prove one coherent SQLite snapshot per refresh. `SqliteStpObservationStore.GetLatest()` N+1 removal, last-known-good/first-load/stale semantics, cancellation on window close, and non-blocking single-flight lookup are part of the same Sprint 32A acceptance.
+
+Detailed acceptance criteria live in `docs/BACKLOG.md`; tests are the behavioral proof. No new product feature starts before Sprint 32A closes.
