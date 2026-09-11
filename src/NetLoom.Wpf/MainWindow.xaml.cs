@@ -37,6 +37,9 @@ public partial class MainWindow : Window
     private readonly TopologyAlertTransitionTracker
         _alertTransitionTracker;
 
+    private readonly TopologyRefreshStateTracker
+        _refreshStateTracker;
+
     private readonly DispatcherTimer
         _refreshTimer;
 
@@ -113,6 +116,9 @@ public partial class MainWindow : Window
 
         _alertTransitionTracker =
             new TopologyAlertTransitionTracker();
+
+        _refreshStateTracker =
+            new TopologyRefreshStateTracker();
 
         _refreshTimer =
             new DispatcherTimer
@@ -238,21 +244,9 @@ public partial class MainWindow : Window
             Trace.TraceError(
                 error.ToString());
 
-            _lastMapSnapshot =
-                EmptySnapshot();
-
-            ShowMap(
-                _lastMapSnapshot);
-
-            AlertStatusText.Text =
-                UiText.Get(
-                    "AlertRefreshFailed");
-
-            AlertTransitionText.Text =
-                string.Empty;
-
-            AlertList.ItemsSource =
-                new AlertRow[0];
+            ShowRefreshFailure(
+                _refreshStateTracker
+                    .ObserveFailure());
         }
         finally
         {
@@ -269,19 +263,74 @@ public partial class MainWindow : Window
                 nameof(refresh));
         }
 
+        var state =
+            _refreshStateTracker
+                .ObserveSuccess(
+                    refresh,
+                    DateTime.UtcNow);
+
         _lastMapSnapshot =
-            refresh.MapSnapshot;
+            state.Snapshot.MapSnapshot;
 
         ShowMap(
-            refresh.MapSnapshot);
+            state.Snapshot.MapSnapshot);
 
         var transition =
             _alertTransitionTracker.Observe(
-                refresh.AlertSnapshot);
+                state.Snapshot.AlertSnapshot);
 
         ShowAlerts(
-            refresh.AlertSnapshot,
+            state.Snapshot.AlertSnapshot,
             transition);
+    }
+
+    private void ShowRefreshFailure(
+        TopologyRefreshState state)
+    {
+        if (state == null)
+        {
+            throw new ArgumentNullException(
+                nameof(state));
+        }
+
+        AlertTransitionText.Text =
+            string.Empty;
+
+        if (state.Kind ==
+            TopologyRefreshStateKind.InitialFailure)
+        {
+            MapStatusText.Text =
+                UiText.Get(
+                    "TopologyRefreshInitialFailed");
+
+            AlertStatusText.Text =
+                UiText.Get(
+                    "TopologyRefreshInitialFailed");
+
+            return;
+        }
+
+        if (state.Kind !=
+                TopologyRefreshStateKind.Stale ||
+            !state.LastSuccessUtc.HasValue)
+        {
+            throw new InvalidOperationException(
+                "Refresh failure must be initial or stale.");
+        }
+
+        var lastSuccessLocal =
+            state.LastSuccessUtc.Value
+                .ToLocalTime();
+
+        MapStatusText.Text =
+            UiText.Format(
+                "MapRefreshStale",
+                lastSuccessLocal);
+
+        AlertStatusText.Text =
+            UiText.Format(
+                "AlertRefreshStale",
+                lastSuccessLocal);
     }
 
     private void RedrawCurrentMap()
@@ -293,6 +342,20 @@ public partial class MainWindow : Window
 
         ShowMap(
             _lastMapSnapshot);
+
+        var state =
+            _refreshStateTracker.Current;
+
+        if (state.Kind ==
+                TopologyRefreshStateKind.Stale &&
+            state.LastSuccessUtc.HasValue)
+        {
+            MapStatusText.Text =
+                UiText.Format(
+                    "MapRefreshStale",
+                    state.LastSuccessUtc.Value
+                        .ToLocalTime());
+        }
     }
 
     private static string AlertSeverityText(

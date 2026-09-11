@@ -333,4 +333,13 @@
   <data name="AlertTransitionResolved" xml:space="preserve">
     <value>Предупреждения разрешены.</value>
   </data>
+  <data name="TopologyRefreshInitialFailed" xml:space="preserve">
+    <value>Не удалось выполнить первое обновление топологии. Данных пока нет. Подробности записаны в журнал.</value>
+  </data>
+  <data name="MapRefreshStale" xml:space="preserve">
+    <value>Показана последняя успешная карта от {0:G}. Новое обновление не удалось.</value>
+  </data>
+  <data name="AlertRefreshStale" xml:space="preserve">
+    <value>Показаны последние успешные предупреждения от {0:G}. Новое обновление не удалось.</value>
+  </data>
 </root>
