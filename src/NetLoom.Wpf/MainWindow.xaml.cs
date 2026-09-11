@@ -34,6 +34,9 @@ public partial class MainWindow : Window
     private readonly MacIpLookupSearchService
         _lookupSearchService;
 
+    private readonly MacIpLookupRequestTracker
+        _lookupRequestTracker;
+
     private readonly TopologyAlertTransitionTracker
         _alertTransitionTracker;
 
@@ -114,6 +117,9 @@ public partial class MainWindow : Window
                 throw new ArgumentNullException(
                     nameof(lookupReader)));
 
+        _lookupRequestTracker =
+            new MacIpLookupRequestTracker();
+
         _alertTransitionTracker =
             new TopologyAlertTransitionTracker();
 
@@ -187,6 +193,8 @@ public partial class MainWindow : Window
         EventArgs e)
     {
         _refreshTimer.Stop();
+
+        _lookupRequestTracker.Close();
         _lifetimeCancellation.Cancel();
     }
 
@@ -762,78 +770,177 @@ public partial class MainWindow : Window
         MapCanvas.Children.Add(border);
     }
 
-    private void OnLookupSearchClick(
+    private async void OnLookupSearchClick(
         object sender,
         RoutedEventArgs e)
     {
-        RunLookup();
+        await QueueLookupAsync();
     }
 
-    private void OnLookupQueryKeyDown(
+    private async void OnLookupQueryKeyDown(
         object sender,
         KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
         {
-            RunLookup();
+            await QueueLookupAsync();
             e.Handled = true;
         }
     }
 
-    private void RunLookup()
+    private async Task QueueLookupAsync()
     {
+        if (_lifetimeCancellation
+            .IsCancellationRequested)
+        {
+            return;
+        }
+
+        _lookupRequestTracker.Queue(
+            LookupQueryTextBox.Text);
+
         LookupResultsList.ItemsSource = null;
+
         LookupDetailsText.Text =
-            UiText.Get("LookupSelectCandidate");
+            UiText.Get(
+                "LookupSelectCandidate");
 
         _highlightedDeviceId = null;
 
+        RedrawCurrentMap();
+
+        MacIpLookupRequest request;
+
+        if (!_lookupRequestTracker
+            .TryStartWorker(
+                out request))
+        {
+            return;
+        }
+
+        await RunLookupWorkerAsync(
+            request);
+    }
+
+    private async Task RunLookupWorkerAsync(
+        MacIpLookupRequest request)
+    {
         try
         {
-            var result =
-                _lookupSearchService.Search(
-                    LookupQueryTextBox.Text,
-                    LookupCandidateLimit);
+            while (request != null &&
+                   !_lifetimeCancellation
+                       .IsCancellationRequested)
+            {
+                MacIpLookupResult result =
+                    null;
 
-            var rows =
-                result.Candidates
-                    .Select(
-                        candidate =>
-                            new LookupCandidateRow(
-                                candidate,
-                                BuildCandidateSummary(
-                                    candidate),
-                                BuildCandidateDetails(
-                                    candidate)))
-                    .ToArray();
+                Exception error =
+                    null;
 
-            LookupResultsList.ItemsSource =
-                rows;
+                try
+                {
+                    var cancellationToken =
+                        _lifetimeCancellation.Token;
 
-            LookupStatusText.Text =
-                rows.Length == 0
-                    ? UiText.Get(
-                        "LookupNoResults")
-                    : UiText.Format(
-                        "LookupResultCount",
-                        rows.Length,
-                        result.NormalizedQuery);
+                    result =
+                        await Task.Run(
+                            () =>
+                                _lookupSearchService
+                                    .Search(
+                                        request.Query,
+                                        LookupCandidateLimit),
+                            cancellationToken);
+                }
+                catch (Exception lookupError)
+                {
+                    error =
+                        lookupError;
+                }
+
+                if (_lifetimeCancellation
+                    .IsCancellationRequested)
+                {
+                    return;
+                }
+
+                if (_lookupRequestTracker
+                    .IsCurrent(
+                        request))
+                {
+                    if (error is ArgumentException)
+                    {
+                        LookupStatusText.Text =
+                            UiText.Get(
+                                "LookupInvalidQuery");
+                    }
+                    else if (error != null)
+                    {
+                        Trace.TraceError(
+                            error.ToString());
+
+                        LookupStatusText.Text =
+                            UiText.Get(
+                                "LookupSearchFailed");
+                    }
+                    else
+                    {
+                        ApplyLookupResult(
+                            result);
+                    }
+                }
+
+                MacIpLookupRequest nextRequest;
+
+                if (!_lookupRequestTracker
+                    .TryTakePending(
+                        out nextRequest))
+                {
+                    return;
+                }
+
+                request =
+                    nextRequest;
+            }
         }
-        catch (ArgumentException)
+        finally
         {
-            LookupStatusText.Text =
-                UiText.Get("LookupInvalidQuery");
+            _lookupRequestTracker
+                .CompleteWorker();
         }
-        catch (Exception error)
+    }
+
+    private void ApplyLookupResult(
+        MacIpLookupResult result)
+    {
+        if (result == null)
         {
-            Trace.TraceError(
-                error.ToString());
-
-            LookupStatusText.Text =
-                UiText.Get("LookupSearchFailed");
+            throw new ArgumentNullException(
+                nameof(result));
         }
 
-        RedrawCurrentMap();
+        var rows =
+            result.Candidates
+                .Select(
+                    candidate =>
+                        new LookupCandidateRow(
+                            candidate,
+                            BuildCandidateSummary(
+                                candidate),
+                            BuildCandidateDetails(
+                                candidate)))
+                .ToArray();
+
+        LookupResultsList.ItemsSource =
+            rows;
+
+        LookupStatusText.Text =
+            rows.Length == 0
+                ? UiText.Get(
+                    "LookupNoResults")
+                : UiText.Format(
+                    "LookupResultCount",
+                    rows.Length,
+                    result.NormalizedQuery);
     }
 
     private void OnLookupSelectionChanged(
