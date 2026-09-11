@@ -1,0 +1,163 @@
+﻿# count<TAB>relative-path<TAB>trimmed suspect text
+# Reviewed from the 172-line suspect set before Sprint 32A implementation.
+1	docs/AI_DEVELOPMENT_RULES.md	- что осталось.
+1	docs/ARCHITECTURE.md	- выполнять Location assignment business logic внутри WPF.
+1	docs/ARCHITECTURE.md	- для redundant/non-bridge link обе части пусты и separated pair count равен 0.
+1	docs/ARCHITECTURE.md	- для каждого varbind: OID, type code, display value и raw encoded value в Base64.
+1	docs/ARCHITECTURE.md	- добавлять прямую зависимость WPF на NetLoom.Topology для принятия topology решений.
+1	docs/ARCHITECTURE.md	- изменять manual topology discovery-процессом.
+1	docs/ARCHITECTURE.md	- оба Forwarding -> Forwarding.
+1	docs/ARCHITECTURE.md	- передачу evidence/freshness/confidence.
+1	docs/ARCHITECTURE.md	- ссылки на исходные observations там, где они существуют.
+1	docs/ARCHITECTURE.md	- считать bridgePortIndex равным ifIndex.
+1	docs/ARCHITECTURE.md	5. при ошибке batch откатывается целиком; migrations, применённые до данного запуска, не затрагиваются.
+1	docs/DATABASE.md	- возвращает normalized `StpObservation`, после чего topology layer выполняет projection/analysis in-memory.
+1	docs/DATABASE.md	- существующий `ON DELETE CASCADE` по `observation_id` сохраняет raw-retention semantics без отдельной cleanup logic.
+1	docs/DECISIONS.md	- замена секрета выполняется только через слой `ISecretProtector`.
+1	docs/DECISIONS.md	- каждый candidate сохраняет объяснимый набор evidence.
+1	docs/DECISIONS.md	- неполные или ошибочные строки LLDP не должны превращаться в вымышленные факты топологии.
+1	docs/DECISIONS.md	- неудачный будущий poll не удаляет предыдущие наблюдения или факты топологии.
+1	docs/DECISIONS.md	- один и тот же collector должен использоваться discovery, polling и simulator.
+1	docs/DECISIONS.md	- передаёт provider в WPF `MainWindow`.
+1	docs/DECISIONS.md	- при необходимости x86 будет выпускаться как отдельная конфигурация, а не через AnyCPU.
+1	docs/DECISIONS.md	- привязать возможность расшифровки к учётной записи, под которой работает NetLoom.
+1	docs/DECISIONS.md	- связывание локального и удалённого интерфейсов выполняется отдельным topology resolver на основе совокупности evidence.
+1	docs/DECISIONS.md	- совпадение IP ↔ MAC ↔ FDB port увеличивает объём evidence, но не доказывает прямой физический кабель.
+1	docs/DECISIONS.md	- создание/обновление Device будет выполняться последующим слоем на основании observations и identity claims.
+1	docs/DECISIONS.md	- сохранение и reconciliation inventory будут выполняться отдельным слоем.
+1	docs/DECISIONS.md	- удаление observation каскадно удаляет его нормализованные LLDP rows, но не означает автоматическое удаление существующего PhysicalLink.
+1	docs/PROJECT_STATE.md	- включён PRAGMA foreign_keys = ON.
+1	docs/PROJECT_STATE.md	- до documentation closure `git diff --check` clean, worktree clean, `HEAD == origin/main == cc36fc0f71499a216413ac56f1862cdd1935b664`.
+1	docs/PROJECT_STATE.md	- добавлен unit regression `UiStringResourceIntegrityTests` для dropped-capital corruption.
+1	docs/PROJECT_STATE.md	- никакого access-port guessing и никакого PhysicalLink из FDB/ARP.
+1	docs/PROJECT_STATE.md	- одновременно исправлены обнаруженные повреждённые русские operator-facing values в `UiStrings.resx`.
+1	docs/PROJECT_STATE.md	- повторная инициализация базы без повторного применения миграций.
+1	docs/PROJECT_STATE.md	- полный regression suite и linux-x64 Engine проходят.
+1	docs/PROJECT_STATE.md	- полный regression suite и linux-x64 publish проходят.
+1	docs/PROJECT_STATE.md	- проверены legacy net48 и linux-x64 Engine.
+2	docs/PROJECT_STATE.md	- проверены полный regression suite и linux-x64 Engine.
+1	docs/PROJECT_STATE.md	- сборка проходит без предупреждений компилятора.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- более старое evidence не уменьшает LastSeenUtc.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- в JSON snapshot.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- два concurrent Initialize на clean DB завершаются успешно с 11 migration records.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- легче ИИ анализировать фактическую схему.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- независимый Health cadence: `schedule --kinds health --interval-seconds N`.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- неоднозначное port mapping не разрешается угадыванием.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- объяснение причины формирования candidate.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- основной backend не переписывается на Go; возможен отдельный будущий distributed `NetLoom.Probe`.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- при целевом размере до нескольких сотен устройств потеря производительности несущественна.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- работу разработчика и ИИ.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	- явно подтверждённой пользователем очистки.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	4. добавить tests.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	4. записать результат.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	а не выдуманный Port.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	а не превращаться в ещё одну универсальную NMS.
+3	docs/ПРИЛОЖЕНИЕ К ТЗ.md	а не:
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	в Application layer.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	в формате GUID:
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	выполняется корректно.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	где:
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	должна иметь один `link_key`.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	если изменился значимый функциональный этап.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	если не завершён корректный Interface Collector и BridgePortResolver, нельзя начинать визуализацию RSTP на карте.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	если они относятся к задаче.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	и проекты:
+2	docs/ПРИЛОЖЕНИЕ К ТЗ.md	и:
+2	docs/ПРИЛОЖЕНИЕ К ТЗ.md	или:
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	использовать:
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	как большие рамки.
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	не отображается как:
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	результат:
+1	docs/ПРИЛОЖЕНИЕ К ТЗ.md	создаётся ровно одна связь.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- будущий service/IPC split должен сохранять provider boundary и не переносить topology business logic в WPF.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- возможные vendor MIB.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- временной недоступности.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- вручную.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- выбранные интерфейсные counters.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- для устройства.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- документация обновлена при изменении архитектуры.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- другие доступные идентификаторы.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- другой тип идентификатора.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- журнал сетевых событий.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- запускать агрессивное сканирование без явного разрешения оператора.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- исходные raw значения.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- какие сведения являются подтверждёнными, а какие построены только на косвенных признаках.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- комментарий.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- либо отдельной политикой retention.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- линии — DrawingVisual или общий drawing layer.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- линий.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- лишние generated files.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- неизвестных соединительных устройств.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- неожиданного значения enum.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- новая migration не требуется; Migration012 остаётся последней.
+3	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- новых migrations нет.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- номера интерфейсов.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- остановка Scheduler не удаляет последнее известное topology/observation state.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- отображение Zabbix trigger state.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- перемещать рабочую область.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- повреждения данных.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- полноценный NMS.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- пользовательская группа.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- пользовательские настройки.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- пользовательский WPF интерфейс поиска реализуется после стабилизации backend contract.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- пользовательский простой символ.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- пользовательский тип.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- пользовательских объектов.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- пользовательскую заметку.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- после появления реального Engine polling linux-x64 acceptance включает фактический запуск Engine внутри Linux environment, а не только publish.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- постоянная Device→Location assignment должна использовать внутренний DeviceId, а не IP или presentation key.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- разрешённые TCP checks.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- рамки объектов.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- расписание.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- ручное добавление.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- ручным описанием.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- скрытие.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- сохранение координат.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- существует ли кольцо, в котором все известные порты находятся Forwarding.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- указать объект размещения.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- устройств без доступного SNMP.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	- шкаф.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	10. никакого credential guessing.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	11. все пользовательские тексты русские.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	12. все комментарии собственного кода русские.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	4. если сосед неизвестен — поместить устройство в область «Новые устройства».
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	4. показать причину изменения.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	5. только затем менять UI.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	6. ручной элемент не удаляется Discovery.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	а не утверждать наличие аварии.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	а не:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	алгоритм должен корректно работать с несколькими циклами.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	без подтверждения с B.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	без указания конкретного пути.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	если изменения можно проверить последовательно.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	если фактических доказательств этого нет.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	и перечень:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	и присвоить связи уровень достоверности.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	и убедиться, что STP state назначается Interface 17.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	и:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	или конкретные команды тестов проекта.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	или любую другую связь.
+4	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	или:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	лучше неправильного:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	может быть профилем Discovery.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	не готовые объекты NetworkNode, а сохранённые raw responses.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	не должно приводить к статусу:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	не означает:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	но не должна автоматически объявлять причинно-следственную связь без доказательств.
+2	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	ожидается:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	означает:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	получает:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	получается корректный список:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	после чего исправлять алгоритм.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	при обязательном сохранении исходного raw значения.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	с достоверностью.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	с отображением времени последнего опроса.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	с полями:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	система достоверно собирает факты.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	устройство отображается соответствующим образом.
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	чем:
+1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	является корректным результатом.
+1	README.md	- русскоязычный интерфейс.
+1	src/NetLoom.Protocols.Snmp/Lldp/LldpCollector.cs	// его можно повторно обработать новым парсером.
+1	src/NetLoom.Topology/Correlation/MacCorrelationResolver.cs	// а не сосед.
+1	src/NetLoom.Topology/Resolution/TopologyResolver.cs	// не создаёт кандидата физической связи.

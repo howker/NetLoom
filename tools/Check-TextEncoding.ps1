@@ -1,6 +1,7 @@
 ﻿param(
     [string]$Root = (Split-Path -Parent $PSScriptRoot),
-    [switch]$ShowSuspects
+    [switch]$ShowSuspects,
+    [string]$SuspectAllowlistPath = (Join-Path $PSScriptRoot "TextIntegrity-DroppedCapital-Allowlist.tsv")
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,6 +30,12 @@ $issues =
 
 $suspects =
     New-Object System.Collections.Generic.List[string]
+
+$suspectFingerprintCounts =
+    @{}
+
+$reviewedSuspectCounts =
+    @{}
 
 $rootPath =
     [IO.Path]::GetFullPath($Root)
@@ -105,6 +112,52 @@ function Test-LowercaseCyrillicStart
     return [regex]::IsMatch(
         $Value,
         "^\s*" + $lowerCyr)
+}
+
+function Get-SuspectFingerprint
+{
+    param(
+        [string]$RelativePath,
+        [string]$LineText
+    )
+
+    $normalizedPath =
+        $RelativePath.Replace(
+            "\",
+            "/")
+
+    return $normalizedPath +
+        "`t" +
+        $LineText.Trim()
+}
+
+function Add-SuspectFingerprint
+{
+    param(
+        [hashtable]$Counts,
+        [string]$Fingerprint
+    )
+
+    if ($Counts.ContainsKey($Fingerprint))
+    {
+        $Counts[$Fingerprint] =
+            [int]$Counts[$Fingerprint] + 1
+    }
+    else
+    {
+        $Counts[$Fingerprint] = 1
+    }
+}
+
+function Format-SuspectFingerprint
+{
+    param(
+        [string]$Fingerprint
+    )
+
+    return $Fingerprint.Replace(
+        "`t",
+        " :: ")
 }
 
 foreach ($file in $files)
@@ -249,13 +302,177 @@ foreach ($file in $files)
 
         if ($isSuspect)
         {
+            $trimmedLine =
+                $line.Trim()
+
             $suspects.Add(
                 "SUSPECT_DROPPED_CAPITAL: " +
                 $relative +
                 ":" +
                 ($i + 1) +
                 ": " +
-                $line.Trim())
+                $trimmedLine)
+
+            $fingerprint =
+                Get-SuspectFingerprint `
+                    -RelativePath $relative `
+                    -LineText $trimmedLine
+
+            Add-SuspectFingerprint `
+                -Counts $suspectFingerprintCounts `
+                -Fingerprint $fingerprint
+        }
+    }
+}
+
+$allowlistLoaded =
+    $false
+
+if (-not (Test-Path -LiteralPath $SuspectAllowlistPath))
+{
+    $issues.Add(
+        "MISSING_SUSPECT_ALLOWLIST: " +
+        $SuspectAllowlistPath)
+}
+else
+{
+    $allowlistBytes =
+        [IO.File]::ReadAllBytes(
+            $SuspectAllowlistPath)
+
+    try
+    {
+        $allowlistText =
+            $utf8Strict.GetString(
+                $allowlistBytes)
+
+        if ($allowlistText.Length -gt 0 -and
+            $allowlistText[0] -eq [char]0xFEFF)
+        {
+            $allowlistText =
+                $allowlistText.Substring(1)
+        }
+
+        $allowlistLoaded =
+            $true
+
+        $allowlistLines =
+            $allowlistText -split "`r?`n"
+
+        for ($i = 0; $i -lt $allowlistLines.Length; $i++)
+        {
+            $allowlistLine =
+                $allowlistLines[$i]
+
+            if ([string]::IsNullOrWhiteSpace($allowlistLine))
+            {
+                continue
+            }
+
+            if ($allowlistLine.TrimStart().StartsWith("#"))
+            {
+                continue
+            }
+
+            if ($allowlistLine -notmatch `
+                "^(?<Count>[1-9][0-9]*)`t(?<Path>[^`t]+)`t(?<Text>.+)$")
+            {
+                $issues.Add(
+                    "INVALID_SUSPECT_ALLOWLIST_LINE: " +
+                    ($i + 1) +
+                    ": " +
+                    $allowlistLine)
+
+                continue
+            }
+
+            $reviewedCount =
+                [int]$matches["Count"]
+
+            $reviewedPath =
+                $matches["Path"].Replace(
+                    "\",
+                    "/")
+
+            $reviewedText =
+                $matches["Text"].Trim()
+
+            $fingerprint =
+                $reviewedPath +
+                "`t" +
+                $reviewedText
+
+            if ($reviewedSuspectCounts.ContainsKey($fingerprint))
+            {
+                $issues.Add(
+                    "DUPLICATE_SUSPECT_ALLOWLIST_ENTRY: " +
+                    ($i + 1) +
+                    ": " +
+                    (Format-SuspectFingerprint `
+                        -Fingerprint $fingerprint))
+
+                continue
+            }
+
+            $reviewedSuspectCounts[$fingerprint] =
+                $reviewedCount
+        }
+    }
+    catch
+    {
+        $issues.Add(
+            "INVALID_SUSPECT_ALLOWLIST_UTF8: " +
+            $SuspectAllowlistPath +
+            ": " +
+            $_.Exception.Message)
+    }
+}
+
+if ($allowlistLoaded)
+{
+    foreach ($fingerprint in $suspectFingerprintCounts.Keys)
+    {
+        $currentCount =
+            [int]$suspectFingerprintCounts[$fingerprint]
+
+        if (-not $reviewedSuspectCounts.ContainsKey($fingerprint))
+        {
+            $issues.Add(
+                "UNREVIEWED_SUSPECT_DROPPED_CAPITAL: " +
+                $currentCount +
+                "x " +
+                (Format-SuspectFingerprint `
+                    -Fingerprint $fingerprint))
+
+            continue
+        }
+
+        $reviewedCount =
+            [int]$reviewedSuspectCounts[$fingerprint]
+
+        if ($currentCount -ne $reviewedCount)
+        {
+            $issues.Add(
+                "SUSPECT_DROPPED_CAPITAL_COUNT_MISMATCH: current=" +
+                $currentCount +
+                " reviewed=" +
+                $reviewedCount +
+                " :: " +
+                (Format-SuspectFingerprint `
+                    -Fingerprint $fingerprint))
+        }
+    }
+
+    foreach ($fingerprint in $reviewedSuspectCounts.Keys)
+    {
+        if (-not $suspectFingerprintCounts.ContainsKey($fingerprint))
+        {
+            $issues.Add(
+                "STALE_SUSPECT_ALLOWLIST_ENTRY: reviewed=" +
+                [int]$reviewedSuspectCounts[$fingerprint] +
+                " :: " +
+                (Format-SuspectFingerprint `
+                    -Fingerprint $fingerprint))
         }
     }
 }
@@ -280,10 +497,24 @@ if ($issues.Count -gt 0)
     exit 1
 }
 
+$reviewedSuspectLineCount =
+    0
+
+foreach ($reviewedCount in $reviewedSuspectCounts.Values)
+{
+    $reviewedSuspectLineCount +=
+        [int]$reviewedCount
+}
+
 Write-Host "OK: all checked text is valid UTF-8"
 Write-Host "OK: no replacement characters"
 Write-Host "OK: no question-mark corruption"
 Write-Host "OK: all PowerShell scripts use UTF-8 BOM"
 Write-Host "OK: WPF .resx <value> starts passed text-integrity policy"
-Write-Host ("INFO: suspect dropped-capital lines: " + $suspects.Count)
+Write-Host (
+    "OK: suspect dropped-capital fingerprints match reviewed allowlist: " +
+    $reviewedSuspectLineCount +
+    " lines / " +
+    $reviewedSuspectCounts.Count +
+    " fingerprints")
 exit 0
