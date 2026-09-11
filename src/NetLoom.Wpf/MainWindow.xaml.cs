@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,6 +14,7 @@ using System.Windows.Threading;
 using NetLoom.Application.Alerts;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.TopologyMap;
+using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
@@ -25,14 +28,11 @@ public partial class MainWindow : Window
     private const int LookupCandidateLimit = 100;
     private const string CurrentStpInstanceId = "cist";
 
-    private readonly IMapSnapshotProvider
-        _mapSnapshotProvider;
+    private readonly ITopologyRefreshSnapshotProvider
+        _topologyRefreshSnapshotProvider;
 
     private readonly MacIpLookupSearchService
         _lookupSearchService;
-
-    private readonly ITopologyAlertSnapshotProvider
-        _alertSnapshotProvider;
 
     private readonly TopologyAlertTransitionTracker
         _alertTransitionTracker;
@@ -40,26 +40,34 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer
         _refreshTimer;
 
+    private readonly CancellationTokenSource
+        _lifetimeCancellation =
+            new CancellationTokenSource();
+
     private readonly Dictionary<Guid, Border>
         _nodeBordersByDeviceId =
             new Dictionary<Guid, Border>();
 
     private Guid? _highlightedDeviceId;
 
+    private bool _refreshInFlight;
+
+    private MapSnapshot _lastMapSnapshot;
+
     public MainWindow()
         : this(
-            new EmptyMapSnapshotProvider(),
-            new EmptyMacIpLookupReader(),
-            new EmptyTopologyAlertSnapshotProvider())
+            new EmptyTopologyRefreshSnapshotProvider(),
+            new EmptyMacIpLookupReader())
     {
     }
 
     public MainWindow(
         IMapSnapshotProvider mapSnapshotProvider)
         : this(
-            mapSnapshotProvider,
-            new EmptyMacIpLookupReader(),
-            new EmptyTopologyAlertSnapshotProvider())
+            new LegacyTopologyRefreshSnapshotProvider(
+                mapSnapshotProvider,
+                new EmptyTopologyAlertSnapshotProvider()),
+            new EmptyMacIpLookupReader())
     {
     }
 
@@ -67,9 +75,10 @@ public partial class MainWindow : Window
         IMapSnapshotProvider mapSnapshotProvider,
         IMacIpLookupReader lookupReader)
         : this(
-            mapSnapshotProvider,
-            lookupReader,
-            new EmptyTopologyAlertSnapshotProvider())
+            new LegacyTopologyRefreshSnapshotProvider(
+                mapSnapshotProvider,
+                new EmptyTopologyAlertSnapshotProvider()),
+            lookupReader)
     {
     }
 
@@ -77,24 +86,30 @@ public partial class MainWindow : Window
         IMapSnapshotProvider mapSnapshotProvider,
         IMacIpLookupReader lookupReader,
         ITopologyAlertSnapshotProvider alertSnapshotProvider)
+        : this(
+            new LegacyTopologyRefreshSnapshotProvider(
+                mapSnapshotProvider,
+                alertSnapshotProvider),
+            lookupReader)
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader)
     {
         InitializeComponent();
 
-        _mapSnapshotProvider =
-            mapSnapshotProvider ??
+        _topologyRefreshSnapshotProvider =
+            topologyRefreshSnapshotProvider ??
             throw new ArgumentNullException(
-                nameof(mapSnapshotProvider));
+                nameof(topologyRefreshSnapshotProvider));
 
         _lookupSearchService =
             new MacIpLookupSearchService(
                 lookupReader ??
                 throw new ArgumentNullException(
                     nameof(lookupReader)));
-
-        _alertSnapshotProvider =
-            alertSnapshotProvider ??
-            throw new ArgumentNullException(
-                nameof(alertSnapshotProvider));
 
         _alertTransitionTracker =
             new TopologyAlertTransitionTracker();
@@ -145,16 +160,20 @@ public partial class MainWindow : Window
         AlertList.ItemsSource =
             new AlertRow[0];
 
-        ShowMap(EmptySnapshot());
+        _lastMapSnapshot =
+            EmptySnapshot();
+
+        ShowMap(
+            _lastMapSnapshot);
     }
 
-    private void OnWindowLoaded(
+    private async void OnWindowLoaded(
         object sender,
         RoutedEventArgs e)
     {
-        RefreshMap();
-        RefreshAlerts();
         _refreshTimer.Start();
+
+        await RefreshTopologyAsync();
     }
 
     private void OnWindowClosed(
@@ -162,52 +181,68 @@ public partial class MainWindow : Window
         EventArgs e)
     {
         _refreshTimer.Stop();
+        _lifetimeCancellation.Cancel();
     }
 
-    private void OnRefreshTimerTick(
+    private async void OnRefreshTimerTick(
         object sender,
         EventArgs e)
     {
-        RefreshMap();
-        RefreshAlerts();
+        await RefreshTopologyAsync();
     }
 
-    private void RefreshMap()
+    private async Task RefreshTopologyAsync()
     {
+        if (_refreshInFlight ||
+            _lifetimeCancellation.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _refreshInFlight = true;
+
         try
         {
+            var cancellationToken =
+                _lifetimeCancellation.Token;
+
+            var refresh =
+                await Task.Run(
+                    () =>
+                        _topologyRefreshSnapshotProvider
+                            .GetSnapshot(
+                                CurrentStpInstanceId),
+                    cancellationToken);
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            ApplyTopologyRefresh(
+                refresh);
+        }
+        catch (OperationCanceledException)
+            when (_lifetimeCancellation
+                .IsCancellationRequested)
+        {
+        }
+        catch (Exception error)
+        {
+            if (_lifetimeCancellation
+                .IsCancellationRequested)
+            {
+                return;
+            }
+
+            Trace.TraceError(
+                error.ToString());
+
+            _lastMapSnapshot =
+                EmptySnapshot();
+
             ShowMap(
-                _mapSnapshotProvider.GetSnapshot());
-        }
-        catch (Exception error)
-        {
-            Trace.TraceError(
-                error.ToString());
-
-            ShowMap(EmptySnapshot());
-        }
-    }
-
-    private void RefreshAlerts()
-    {
-        try
-        {
-            var snapshot =
-                _alertSnapshotProvider.GetSnapshot(
-                    CurrentStpInstanceId);
-
-            var transition =
-                _alertTransitionTracker.Observe(
-                    snapshot);
-
-            ShowAlerts(
-                snapshot,
-                transition);
-        }
-        catch (Exception error)
-        {
-            Trace.TraceError(
-                error.ToString());
+                _lastMapSnapshot);
 
             AlertStatusText.Text =
                 UiText.Get(
@@ -219,6 +254,45 @@ public partial class MainWindow : Window
             AlertList.ItemsSource =
                 new AlertRow[0];
         }
+        finally
+        {
+            _refreshInFlight = false;
+        }
+    }
+
+    private void ApplyTopologyRefresh(
+        TopologyRefreshSnapshot refresh)
+    {
+        if (refresh == null)
+        {
+            throw new ArgumentNullException(
+                nameof(refresh));
+        }
+
+        _lastMapSnapshot =
+            refresh.MapSnapshot;
+
+        ShowMap(
+            refresh.MapSnapshot);
+
+        var transition =
+            _alertTransitionTracker.Observe(
+                refresh.AlertSnapshot);
+
+        ShowAlerts(
+            refresh.AlertSnapshot,
+            transition);
+    }
+
+    private void RedrawCurrentMap()
+    {
+        if (_lastMapSnapshot == null)
+        {
+            return;
+        }
+
+        ShowMap(
+            _lastMapSnapshot);
     }
 
     private static string AlertSeverityText(
@@ -696,7 +770,7 @@ public partial class MainWindow : Window
                 UiText.Get("LookupSearchFailed");
         }
 
-        RefreshMap();
+        RedrawCurrentMap();
     }
 
     private void OnLookupSelectionChanged(
@@ -726,12 +800,12 @@ public partial class MainWindow : Window
             _highlightedDeviceId =
                 candidate.DeviceId.Value;
 
-            RefreshMap();
+            RedrawCurrentMap();
         }
         else
         {
             _highlightedDeviceId = null;
-            RefreshMap();
+            RedrawCurrentMap();
         }
     }
 
@@ -1098,6 +1172,55 @@ public partial class MainWindow : Window
         }
 
         public string Summary { get; }
+    }
+
+    private sealed class LegacyTopologyRefreshSnapshotProvider :
+        ITopologyRefreshSnapshotProvider
+    {
+        private readonly IMapSnapshotProvider
+            _mapSnapshotProvider;
+
+        private readonly ITopologyAlertSnapshotProvider
+            _alertSnapshotProvider;
+
+        public LegacyTopologyRefreshSnapshotProvider(
+            IMapSnapshotProvider mapSnapshotProvider,
+            ITopologyAlertSnapshotProvider alertSnapshotProvider)
+        {
+            _mapSnapshotProvider =
+                mapSnapshotProvider ??
+                throw new ArgumentNullException(
+                    nameof(mapSnapshotProvider));
+
+            _alertSnapshotProvider =
+                alertSnapshotProvider ??
+                throw new ArgumentNullException(
+                    nameof(alertSnapshotProvider));
+        }
+
+        public TopologyRefreshSnapshot GetSnapshot(
+            string stpInstanceId)
+        {
+            return new TopologyRefreshSnapshot(
+                _mapSnapshotProvider.GetSnapshot(),
+                _alertSnapshotProvider.GetSnapshot(
+                    stpInstanceId));
+        }
+    }
+
+    private sealed class EmptyTopologyRefreshSnapshotProvider :
+        ITopologyRefreshSnapshotProvider
+    {
+        public TopologyRefreshSnapshot GetSnapshot(
+            string stpInstanceId)
+        {
+            return new TopologyRefreshSnapshot(
+                EmptySnapshot(),
+                new TopologyAlertSnapshot(
+                    DateTime.UtcNow,
+                    stpInstanceId,
+                    new TopologyAlert[0]));
+        }
     }
 
     private sealed class EmptyTopologyAlertSnapshotProvider :

@@ -6,8 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Domain.Topology;
+using NetLoom.Persistence.Sqlite.Locations;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Topology;
+using NetLoom.Persistence.Sqlite.Stp;
+using NetLoom.Topology.Alerts;
+using NetLoom.Topology.Map;
+using NetLoom.Topology.Refresh;
 
 namespace NetLoom.Tests.Integration
 {
@@ -138,6 +143,69 @@ namespace NetLoom.Tests.Integration
                     "The interface committed after the reader snapshot " +
                     "must remain outside that same read-set.");
             }
+        }
+
+        [TestMethod]
+        public void
+            RefreshProviderUsesOneReadSetWithoutAdditionalSqliteReads()
+        {
+            var setupFactory =
+                new SqliteConnectionFactory(
+                    _databasePath);
+
+            new DatabaseInitializer(
+                setupFactory)
+                .Initialize();
+
+            var openedConnections =
+                0;
+
+            var countingFactory =
+                new SqliteConnectionFactory(
+                    _databasePath,
+                    () =>
+                        Interlocked.Increment(
+                            ref openedConnections));
+
+            var topologyRepository =
+                new SqliteMaterializedTopologyRepository(
+                    countingFactory);
+
+            var mapProvider =
+                new MaterializedMapSnapshotProvider(
+                    topologyRepository,
+                    new SqliteLocationRepository(
+                        countingFactory),
+                    new MaterializedTopologyMapProjector());
+
+            var alertProvider =
+                new MaterializedTopologyAlertSnapshotProvider(
+                    topologyRepository,
+                    new SqliteStpObservationStore(
+                        countingFactory));
+
+            var refreshProvider =
+                new MaterializedTopologyRefreshSnapshotProvider(
+                    new SqliteMaterializedTopologyReadSetReader(
+                        countingFactory),
+                    mapProvider,
+                    alertProvider);
+
+            var refresh =
+                refreshProvider.GetSnapshot(
+                    "cist");
+
+            Assert.IsNotNull(
+                refresh.MapSnapshot);
+
+            Assert.IsNotNull(
+                refresh.AlertSnapshot);
+
+            Assert.AreEqual(
+                1,
+                openedConnections,
+                "Desktop refresh must capture one SQLite read-set " +
+                "and compute map and alerts without additional reads.");
         }
 
         private static void DeleteIfExists(
