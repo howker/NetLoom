@@ -13,6 +13,7 @@
 - [x] Подключить реальный backend pipeline к MapSnapshot и WPF, чтобы карта показывала живую сеть.
 - [x] NetLoom.Simulator: replay сохранённых raw SNMP varbind snapshots через настоящие parsers.
 - [x] Monitoring Runtime.
+- [x] Post-Sprint 31 hardening — live polling materializes explicit stable DeviceId and IF-MIB interface identity into materialized topology without inventing PhysicalLink.
 - [x] Scheduler.
 - [x] Sprint 20 — metric/time-series storage boundary + Health snapshot model.
 - [x] Sprint 21 — SNMP Health monitoring via sysUpTime.

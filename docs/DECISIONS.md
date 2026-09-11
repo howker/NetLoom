@@ -794,3 +794,21 @@ Analyzer pure/read-only; no SQLite persistence, no Migration012, no UI write pat
 **CIST.** Текущий WPF surface запрашивает explicit `"cist"`. CIST не смешивается с будущими MSTP instances; дальнейший multi-instance UI должен передавать InstanceId явно.
 
 **Persistence.** Alert snapshot, transition state, history, delivery, acknowledgement и silence не materialize'ятся. Существующая `Migration012ObservationDeviceBindings` переиспользуется для STP binding; `Migration013` не вводится.
+
+## ADR-062 — monitoring materializes only explicit stable device/interface identity
+
+**Статус:** принято.
+
+**Решение.** После успешного monitoring step `MonitoringRuntime` может refresh'ить materialized Device только если caller уже передал explicit stable `MonitoringPollRequest.DeviceId`. Interface step дополнительно может materialize automatic `DeviceInterface` по exact `(DeviceId, ifIndex)`.
+
+**Identity boundary.** `source_address`, management IP и protocol-local identifiers не становятся DeviceId. Успешный unbound poll остаётся evidence/current monitoring result и не создаёт guessed Device.
+
+**Observation boundary.** ADR-026 сохраняется: наличие raw/normalized Observation само по себе не создаёт topology identity. Side effect materialization разрешён только из explicit stable identity, известной orchestration layer.
+
+**Interface semantics.** Повторный poll того же `(DeviceId, ifIndex)` обязан переиспользовать stable `InterfaceId`; lifecycle timestamps обновляются монотонно. Automatic materialization не заменяет manual Interface. IF-MIB admin/oper result остаётся current monitoring snapshot и не превращается этим решением в time-series persistence.
+
+**Physical topology boundary.** Monitoring materialization не создаёт `PhysicalLink`. LLDP/CDP/FDB/ARP/STP observations и IF-MIB interface presence не являются достаточным основанием для выдумывания cable adjacency; существующий resolver/lifecycle boundary сохраняется.
+
+**Failure semantics.** Ошибка collector до получения успешного результата не запускает materialization этого step; failed poll не является доказательством удаления ранее известного Device/Interface.
+
+**Persistence.** Используются существующие `devices` и `interfaces`; новая SQLite migration не требуется. `Migration012` остаётся последней.

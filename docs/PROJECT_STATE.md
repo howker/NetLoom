@@ -881,3 +881,35 @@ Sprint 31A + 31B закрывают backlog parent «Минимальные aler
 Commit `a695955` (`Harden WPF resource text integrity audit`) отправлен в `origin/main`; на момент закрытия `HEAD == origin/main`, worktree clean.
 
 Следующий продуктовый этап определяется актуальными `docs/BACKLOG.md` и `FRICTION_LOG.md`; отдельный новый P0 feature сейчас не назначен.
+
+## Post-Sprint 31 — acceptance and live monitoring topology materialization
+
+Commit `cc36fc0` (`Materialize polled devices into topology`) подключил production materialization к `MonitoringRuntime` через `IMonitoringTopologyMaterializer` и существующий `SqliteMaterializedTopologyRepository`.
+
+Подтверждённые semantics:
+- успешные LLDP/CDP/FDB/ARP/STP steps при explicit `MonitoringPollRequest.DeviceId` refresh'ят materialized Device;
+- успешный Health step при explicit `DeviceId` refresh'ит Device;
+- успешный Interface step materializes automatic `DeviceInterface` по exact `(DeviceId, ifIndex)`;
+- `source_address` не используется как DeviceId и unbound poll не создаёт guessed identity;
+- repeated Interface poll сохраняет stable `InterfaceId`, earliest `FirstSeenUtc` и продвигает `LastSeenUtc`;
+- manual Device/Interface не перезаписываются automatic materialization;
+- polling не создаёт `PhysicalLink`;
+- IF-MIB admin/oper status остаётся current monitoring snapshot, а materialization фиксирует stable topology identity/lifecycle.
+
+SQLite schema не изменена; `Migration012` остаётся последней.
+
+### Acceptance 2026-09-11
+
+На рабочем `main` подтверждено:
+- Sprint 31B manual WPF/SQLite transitions: `FirstAppearance`, `Unchanged` suppression, `Changed`, `Changed` suppression, `Resolved`, `Resolved` suppression;
+- live SNMP v2c Interface poll materialized ровно два automatic interfaces для explicit DeviceId;
+- второй идентичный poll не создал дубликаты, сохранил оба `InterfaceId` и `FirstSeenUtc`, продвинул `LastSeenUtc`;
+- polling не создал `PhysicalLink`;
+- targeted Sprint 31 unit tests: 6/6;
+- targeted integration tests: 7/7;
+- full regression: Unit 177/177, Integration 51/51, Snapshots 7/7, всего 235/235;
+- `NetLoom.Desktop` build: 0 warnings, 0 errors;
+- text-integrity audit: PASS;
+- до documentation closure `git diff --check` clean, worktree clean, `HEAD == origin/main == cc36fc0f71499a216413ac56f1862cdd1935b664`.
+
+Acceptance не потребовал изменений production-кода.

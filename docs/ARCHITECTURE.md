@@ -701,3 +701,22 @@ Semantics v1:
 `AlertKey` детерминирован и вычисляется из kind + explicit InstanceId + stable region/cycle membership. Он предназначен для current-state identity/dedupe, но Sprint 31A не хранит history, acknowledgement, silence или notification delivery state.
 
 Sprint 31A pure/read-only и schema-free. WPF/operator surface и repeat/transition suppression остаются Sprint 31B.
+
+## Post-Sprint 31 — monitoring materialization boundary
+
+`MonitoringRuntime` может обновлять materialized Device/Interface только при наличии explicit stable `MonitoringPollRequest.DeviceId`.
+
+Current boundary:
+- successful LLDP/CDP/FDB/ARP/STP observation с explicit DeviceId refresh'ит соответствующий materialized Device;
+- successful Health poll с explicit DeviceId refresh'ит Device;
+- successful Interface poll refresh'ит Device и materializes automatic `DeviceInterface` по exact `(DeviceId, ifIndex)`;
+- `source_address` остаётся metadata наблюдения и никогда не становится DeviceId;
+- poll без stable DeviceId не создаёт guessed materialized identity;
+- repeated Interface poll переиспользует stable `InterfaceId`, сохраняет earliest `FirstSeenUtc` и продвигает `LastSeenUtc`;
+- automatic materialization не заменяет manual Device/Interface;
+- polling не создаёт `PhysicalLink`; link identity по-прежнему принадлежит topology resolution/lifecycle boundary;
+- IF-MIB admin/oper snapshot остаётся current monitoring result и не становится high-frequency history в topology/configuration SQLite.
+
+Это не отменяет Observation boundary: raw/normalized observation само по себе не является Device identity. Materialization разрешена только потому, что caller уже передал explicit stable DeviceId.
+
+Новая SQLite migration не требуется; `Migration012` остаётся последней.
