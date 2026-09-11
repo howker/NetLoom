@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Observations.Stp;
 using NetLoom.Application.Topology;
 using NetLoom.Contracts.Alerts;
+using NetLoom.Domain.Locations;
 using NetLoom.Domain.Observations;
 using NetLoom.Domain.Observations.Stp;
 using NetLoom.Domain.Topology;
@@ -78,6 +79,51 @@ namespace NetLoom.Tests.Unit
                 repository.PhysicalLinksWereRead);
 
             Assert.IsTrue(
+                repository.InterfacesWereRead);
+        }
+
+        [TestMethod]
+        public void
+            ReadSetPathDoesNotReadRepositories()
+        {
+            var repository =
+                new ReadOnlyTopologyRepository(
+                    new PhysicalLink[0],
+                    new DeviceInterface[0]);
+
+            var reader =
+                new FixedLatestStpReader(
+                    new BoundStpObservation[0]);
+
+            var readSet =
+                new MaterializedTopologyReadSet(
+                    new TopologyDevice[0],
+                    new DeviceInterface[0],
+                    new PhysicalLink[0],
+                    new PhysicalLinkEvidence[0],
+                    new Location[0],
+                    new BoundStpObservation[0]);
+
+            var snapshot =
+                new MaterializedTopologyAlertSnapshotProvider(
+                    repository,
+                    reader,
+                    () => Now)
+                    .GetSnapshot(
+                        "cist",
+                        readSet);
+
+            Assert.AreEqual(
+                0,
+                snapshot.Alerts.Count);
+
+            Assert.IsFalse(
+                reader.WasRead);
+
+            Assert.IsFalse(
+                repository.PhysicalLinksWereRead);
+
+            Assert.IsFalse(
                 repository.InterfacesWereRead);
         }
 

@@ -48,13 +48,7 @@ namespace NetLoom.Topology.Map
 
         public MapSnapshot GetSnapshot()
         {
-            var now = _utcNow();
-
-            if (now.Kind != DateTimeKind.Utc)
-            {
-                throw new InvalidOperationException(
-                    "Map snapshot clock must return UTC.");
-            }
+            var now = GetUtcNow();
 
             return _projector.Project(
                 _topologyRepository.GetDevices(),
@@ -63,6 +57,39 @@ namespace NetLoom.Topology.Map
                 _topologyRepository.GetPhysicalLinkEvidence(),
                 _locationRepository.GetAll(),
                 now);
+        }
+
+        public MapSnapshot GetSnapshot(
+            MaterializedTopologyReadSet readSet)
+        {
+            if (readSet == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(readSet));
+            }
+
+            var now = GetUtcNow();
+
+            return _projector.Project(
+                readSet.Devices,
+                readSet.Interfaces,
+                readSet.PhysicalLinks,
+                readSet.PhysicalLinkEvidence,
+                readSet.Locations,
+                now);
+        }
+
+        private DateTime GetUtcNow()
+        {
+            var now = _utcNow();
+
+            if (now.Kind != DateTimeKind.Utc)
+            {
+                throw new InvalidOperationException(
+                    "Map snapshot clock must return UTC.");
+            }
+
+            return now;
         }
     }
 }

@@ -45,17 +45,53 @@ namespace NetLoom.Topology.Alerts
         public TopologyAlertSnapshot GetSnapshot(
             string instanceId)
         {
-            if (string.IsNullOrWhiteSpace(
-                instanceId))
+            var normalizedInstanceId =
+                NormalizeInstanceId(
+                    instanceId);
+
+            return Evaluate(
+                normalizedInstanceId,
+                _topologyRepository
+                    .GetPhysicalLinks()
+                    .ToArray(),
+                _topologyRepository
+                    .GetInterfaces()
+                    .ToArray(),
+                _stpObservationReader
+                    .GetLatest(
+                        normalizedInstanceId));
+        }
+
+        public TopologyAlertSnapshot GetSnapshot(
+            string instanceId,
+            MaterializedTopologyReadSet readSet)
+        {
+            if (readSet == null)
             {
-                throw new ArgumentException(
-                    "STP instance id is required.",
-                    nameof(instanceId));
+                throw new ArgumentNullException(
+                    nameof(readSet));
             }
 
             var normalizedInstanceId =
-                instanceId.Trim();
+                NormalizeInstanceId(
+                    instanceId);
 
+            return Evaluate(
+                normalizedInstanceId,
+                readSet.PhysicalLinks,
+                readSet.Interfaces,
+                readSet.LatestStp);
+        }
+
+        private TopologyAlertSnapshot Evaluate(
+            string normalizedInstanceId,
+            System.Collections.Generic.IEnumerable<
+                NetLoom.Domain.Topology.PhysicalLink> linkSource,
+            System.Collections.Generic.IEnumerable<
+                NetLoom.Domain.Topology.DeviceInterface> interfaceSource,
+            System.Collections.Generic.IEnumerable<
+                BoundStpObservation> stpSource)
+        {
             var now =
                 _utcNow();
 
@@ -66,22 +102,16 @@ namespace NetLoom.Topology.Alerts
             }
 
             var links =
-                _topologyRepository
-                    .GetPhysicalLinks()
-                    .ToArray();
+                linkSource.ToArray();
 
             var interfaces =
-                _topologyRepository
-                    .GetInterfaces()
-                    .ToArray();
+                interfaceSource.ToArray();
 
             var projector =
                 new StpTreeProjector();
 
             var stpSnapshots =
-                _stpObservationReader
-                    .GetLatest(
-                        normalizedInstanceId)
+                stpSource
                     .Select(
                         item =>
                             projector.Project(
@@ -122,5 +152,20 @@ namespace NetLoom.Topology.Alerts
                     forwarding,
                     rings);
         }
+
+        private static string NormalizeInstanceId(
+            string instanceId)
+        {
+            if (string.IsNullOrWhiteSpace(
+                instanceId))
+            {
+                throw new ArgumentException(
+                    "STP instance id is required.",
+                    nameof(instanceId));
+            }
+
+            return instanceId.Trim();
+        }
+
     }
 }
