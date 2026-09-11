@@ -196,7 +196,10 @@ LIMIT 1;";
                 instanceId.Trim();
 
             var selected =
-                new List<LatestObservationId>();
+                new List<LatestObservationBuilder>();
+
+            var selectedByDevice =
+                new Dictionary<Guid, LatestObservationBuilder>();
 
             using (var connection =
                 _connectionFactory.OpenConnection())
@@ -206,18 +209,40 @@ LIMIT 1;";
                 command.CommandText = @"
 SELECT
     b.device_id,
-    s.observation_id
+    s.observation_id,
+    o.source_address,
+    o.captured_utc,
+    s.protocol_specification,
+    s.designated_root,
+    s.root_cost,
+    s.root_bridge_port_index,
+    s.root_if_index,
+    p.bridge_port_index,
+    p.if_index,
+    p.priority,
+    p.state,
+    p.enabled,
+    p.path_cost,
+    p.designated_root,
+    p.designated_cost,
+    p.designated_bridge,
+    p.designated_port,
+    p.forward_transitions
 FROM observation_device_bindings b
 JOIN observations o
     ON o.observation_id = b.observation_id
 JOIN stp_observations s
     ON s.observation_id = o.observation_id
+LEFT JOIN stp_port_states p
+    ON p.observation_id = s.observation_id
+   AND p.instance_id = s.instance_id
 WHERE o.observation_kind = @kind
   AND s.instance_id = @instanceId
 ORDER BY
     b.device_id,
     o.captured_utc DESC,
-    s.observation_id DESC;";
+    s.observation_id DESC,
+    p.bridge_port_index;";
 
                 command.Parameters.AddWithValue(
                     "@kind",
@@ -226,9 +251,6 @@ ORDER BY
                 command.Parameters.AddWithValue(
                     "@instanceId",
                     normalizedInstanceId);
-
-                var seenDevices =
-                    new HashSet<Guid>();
 
                 using (var reader =
                     command.ExecuteReader())
@@ -239,17 +261,91 @@ ORDER BY
                             Guid.Parse(
                                 reader.GetString(0));
 
-                        if (!seenDevices.Add(
-                            deviceId))
+                        var observationId =
+                            Guid.Parse(
+                                reader.GetString(1));
+
+                        LatestObservationBuilder builder;
+
+                        if (!selectedByDevice.TryGetValue(
+                            deviceId,
+                            out builder))
+                        {
+                            builder =
+                                new LatestObservationBuilder(
+                                    deviceId,
+                                    observationId,
+                                    reader.GetString(2),
+                                    DateTime.Parse(
+                                        reader.GetString(3),
+                                        CultureInfo.InvariantCulture,
+                                        DateTimeStyles.RoundtripKind),
+                                    NullableInt(
+                                        reader,
+                                        4),
+                                    NullableString(
+                                        reader,
+                                        5),
+                                    NullableLong(
+                                        reader,
+                                        6),
+                                    NullableInt(
+                                        reader,
+                                        7),
+                                    NullableInt(
+                                        reader,
+                                        8));
+
+                            selectedByDevice.Add(
+                                deviceId,
+                                builder);
+
+                            selected.Add(
+                                builder);
+                        }
+
+                        if (builder.ObservationId !=
+                            observationId)
                         {
                             continue;
                         }
 
-                        selected.Add(
-                            new LatestObservationId(
-                                deviceId,
-                                Guid.Parse(
-                                    reader.GetString(1))));
+                        if (!reader.IsDBNull(9))
+                        {
+                            builder.Ports.Add(
+                                new StpPortState(
+                                    reader.GetInt32(9),
+                                    NullableInt(
+                                        reader,
+                                        10),
+                                    NullableInt(
+                                        reader,
+                                        11),
+                                    NullableInt(
+                                        reader,
+                                        12),
+                                    NullableInt(
+                                        reader,
+                                        13),
+                                    NullableLong(
+                                        reader,
+                                        14),
+                                    NullableString(
+                                        reader,
+                                        15),
+                                    NullableLong(
+                                        reader,
+                                        16),
+                                    NullableString(
+                                        reader,
+                                        17),
+                                    NullableString(
+                                        reader,
+                                        18),
+                                    NullableLong(
+                                        reader,
+                                        19)));
+                        }
                     }
                 }
             }
@@ -260,119 +356,29 @@ ORDER BY
             foreach (var item in selected)
             {
                 var observation =
-                    Get(
+                    new Observation(
                         item.ObservationId,
-                        normalizedInstanceId);
-
-                if (observation == null)
-                {
-                    continue;
-                }
+                        ObservationKind.Stp,
+                        item.SourceAddress,
+                        item.CapturedUtc);
 
                 result.Add(
                     new BoundStpObservation(
                         item.DeviceId,
-                        observation));
+                        new StpObservation(
+                            observation,
+                            normalizedInstanceId,
+                            item.ProtocolSpecification,
+                            item.DesignatedRoot,
+                            item.RootCost,
+                            item.RootBridgePortIndex,
+                            item.RootIfIndex,
+                            item.Ports)));
             }
 
             return result;
         }
 
-        private StpObservation Get(
-            Guid observationId,
-            string instanceId)
-        {
-            using (var connection =
-                _connectionFactory.OpenConnection())
-            {
-                Observation observation;
-
-                using (var command =
-                    connection.CreateCommand())
-                {
-                    command.CommandText = @"
-SELECT
-    source_address,
-    captured_utc
-FROM observations
-WHERE observation_id = @id
-  AND observation_kind = @kind;";
-
-                    command.Parameters.AddWithValue(
-                        "@id",
-                        observationId.ToString("D"));
-
-                    command.Parameters.AddWithValue(
-                        "@kind",
-                        ObservationKind.Stp.ToString());
-
-                    using (var reader =
-                        command.ExecuteReader())
-                    {
-                        if (!reader.Read())
-                        {
-                            return null;
-                        }
-
-                        observation =
-                            new Observation(
-                                observationId,
-                                ObservationKind.Stp,
-                                reader.GetString(0),
-                                DateTime.Parse(
-                                    reader.GetString(1),
-                                    CultureInfo.InvariantCulture,
-                                    DateTimeStyles.RoundtripKind));
-                    }
-                }
-
-                using (var command =
-                    connection.CreateCommand())
-                {
-                    command.CommandText = @"
-SELECT
-    protocol_specification,
-    designated_root,
-    root_cost,
-    root_bridge_port_index,
-    root_if_index
-FROM stp_observations
-WHERE observation_id = @id
-  AND instance_id = @instanceId
-LIMIT 1;";
-
-                    command.Parameters.AddWithValue(
-                        "@id",
-                        observationId.ToString("D"));
-
-                    command.Parameters.AddWithValue(
-                        "@instanceId",
-                        instanceId);
-
-                    using (var reader =
-                        command.ExecuteReader())
-                    {
-                        if (!reader.Read())
-                        {
-                            return null;
-                        }
-
-                        return new StpObservation(
-                            observation,
-                            instanceId,
-                            NullableInt(reader, 0),
-                            NullableString(reader, 1),
-                            NullableLong(reader, 2),
-                            NullableInt(reader, 3),
-                            NullableInt(reader, 4),
-                            LoadPorts(
-                                connection,
-                                observationId,
-                                instanceId));
-                    }
-                }
-            }
-        }
 
         private static void DeleteExisting(
             System.Data.SQLite.SQLiteConnection connection,
@@ -681,19 +687,50 @@ ORDER BY bridge_port_index;";
         }
 
 
-        private sealed class LatestObservationId
+        private sealed class LatestObservationBuilder
         {
-            public LatestObservationId(
+            public LatestObservationBuilder(
                 Guid deviceId,
-                Guid observationId)
+                Guid observationId,
+                string sourceAddress,
+                DateTime capturedUtc,
+                int? protocolSpecification,
+                string designatedRoot,
+                long? rootCost,
+                int? rootBridgePortIndex,
+                int? rootIfIndex)
             {
                 DeviceId = deviceId;
                 ObservationId = observationId;
+                SourceAddress = sourceAddress;
+                CapturedUtc = capturedUtc;
+                ProtocolSpecification = protocolSpecification;
+                DesignatedRoot = designatedRoot;
+                RootCost = rootCost;
+                RootBridgePortIndex = rootBridgePortIndex;
+                RootIfIndex = rootIfIndex;
+                Ports = new List<StpPortState>();
             }
 
             public Guid DeviceId { get; }
 
             public Guid ObservationId { get; }
+
+            public string SourceAddress { get; }
+
+            public DateTime CapturedUtc { get; }
+
+            public int? ProtocolSpecification { get; }
+
+            public string DesignatedRoot { get; }
+
+            public long? RootCost { get; }
+
+            public int? RootBridgePortIndex { get; }
+
+            public int? RootIfIndex { get; }
+
+            public List<StpPortState> Ports { get; }
         }
     }
 }

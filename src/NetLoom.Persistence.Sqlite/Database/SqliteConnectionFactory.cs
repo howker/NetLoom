@@ -7,8 +7,18 @@ namespace NetLoom.Persistence.Sqlite.Database
     public sealed class SqliteConnectionFactory
     {
         private readonly string _databasePath;
+        private readonly Action _connectionOpened;
 
         public SqliteConnectionFactory(string databasePath)
+            : this(
+                databasePath,
+                null)
+        {
+        }
+
+        internal SqliteConnectionFactory(
+            string databasePath,
+            Action connectionOpened)
         {
             if (string.IsNullOrWhiteSpace(databasePath))
             {
@@ -16,6 +26,7 @@ namespace NetLoom.Persistence.Sqlite.Database
             }
 
             _databasePath = Path.GetFullPath(databasePath);
+            _connectionOpened = connectionOpened;
         }
 
         public string DatabasePath
@@ -47,6 +58,7 @@ namespace NetLoom.Persistence.Sqlite.Database
                     builder.ConnectionString);
 
             connection.Open();
+            _connectionOpened?.Invoke();
 
             using (var command = connection.CreateCommand())
             {
