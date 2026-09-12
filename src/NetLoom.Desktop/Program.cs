@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Locations;
 using NetLoom.Persistence.Sqlite.Lookup;
@@ -14,56 +16,111 @@ namespace NetLoom.Desktop
     internal static class Program
     {
         [STAThread]
-        private static void Main(
+        private static int Main(
             string[] args)
         {
-            var databasePath =
-                DesktopDatabasePathResolver.Resolve(
-                    args);
+            HostLogManager hostLog = null;
+            HostLogTraceListener traceListener = null;
 
-            var connectionFactory =
-                new SqliteConnectionFactory(
-                    databasePath);
+            try
+            {
+                hostLog =
+                    HostLogManager.Create(
+                        "desktop");
 
-            new DatabaseInitializer(
-                connectionFactory)
-                .Initialize();
+                hostLog.Info(
+                    "HOST_STARTED");
 
-            var topologyRepository =
-                new SqliteMaterializedTopologyRepository(
-                    connectionFactory);
+                traceListener =
+                    new HostLogTraceListener(
+                        hostLog);
 
-            var stpStore =
-                new SqliteStpObservationStore(
-                    connectionFactory);
+                Trace.Listeners.Add(
+                    traceListener);
 
-            var mapProvider =
-                new MaterializedMapSnapshotProvider(
-                    topologyRepository,
-                    new SqliteLocationRepository(
-                        connectionFactory),
-                    new MaterializedTopologyMapProjector());
+                var databasePath =
+                    DesktopDatabasePathResolver.Resolve(
+                        args);
 
-            var alertProvider =
-                new MaterializedTopologyAlertSnapshotProvider(
-                    topologyRepository,
-                    stpStore);
+                var connectionFactory =
+                    new SqliteConnectionFactory(
+                        databasePath);
 
-            var refreshProvider =
-                new MaterializedTopologyRefreshSnapshotProvider(
-                    new SqliteMaterializedTopologyReadSetReader(
-                        connectionFactory),
-                    mapProvider,
-                    alertProvider);
+                new DatabaseInitializer(
+                    connectionFactory)
+                    .Initialize();
 
-            var application =
-                new System.Windows.Application();
+                var topologyRepository =
+                    new SqliteMaterializedTopologyRepository(
+                        connectionFactory);
 
-            application.Run(
-                new MainWindow(
-                    refreshProvider,
-                    new SqliteMacIpLookupReader(
-                        connectionFactory)));
+                var stpStore =
+                    new SqliteStpObservationStore(
+                        connectionFactory);
+
+                var mapProvider =
+                    new MaterializedMapSnapshotProvider(
+                        topologyRepository,
+                        new SqliteLocationRepository(
+                            connectionFactory),
+                        new MaterializedTopologyMapProjector());
+
+                var alertProvider =
+                    new MaterializedTopologyAlertSnapshotProvider(
+                        topologyRepository,
+                        stpStore);
+
+                var refreshProvider =
+                    new MaterializedTopologyRefreshSnapshotProvider(
+                        new SqliteMaterializedTopologyReadSetReader(
+                            connectionFactory),
+                        mapProvider,
+                        alertProvider);
+
+                var application =
+                    new System.Windows.Application();
+
+                var exitCode =
+                    application.Run(
+                        new MainWindow(
+                            refreshProvider,
+                            new SqliteMacIpLookupReader(
+                                connectionFactory)));
+
+                hostLog.Info(
+                    "HOST_STOPPED exitCode=" +
+                    exitCode);
+
+                return exitCode;
+            }
+            catch (Exception exception)
+            {
+                if (hostLog != null)
+                {
+                    hostLog.Error(
+                        exception,
+                        "HOST_FATAL");
+
+                    hostLog.Flush();
+                }
+
+                return 2;
+            }
+            finally
+            {
+                if (traceListener != null)
+                {
+                    Trace.Listeners.Remove(
+                        traceListener);
+
+                    traceListener.Dispose();
+                }
+
+                if (hostLog != null)
+                {
+                    hostLog.Dispose();
+                }
+            }
         }
     }
 }

@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NetLoom.Application\NetLoom.Application.csproj" />
+    <ProjectReference Include="..\NetLoom.HostLogging\NetLoom.HostLogging.csproj" />
     <ProjectReference Include="..\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
     <ProjectReference Include="..\NetLoom.Topology\NetLoom.Topology.csproj" />
     <ProjectReference Include="..\NetLoom.Wpf\NetLoom.Wpf.csproj" />
