@@ -100,28 +100,28 @@
 - [x] Clarify/rename fundamental cycle-basis primitive before exposing user-facing named rings.
 ## P0 - Desktop operational reliability before the next product feature
 
-- [ ] Sprint 32A - coherent non-blocking Desktop refresh with last-known-good semantics.
-  - [ ] Capture one `MaterializedTopologyReadSet` per refresh on one SQLite connection and one read transaction.
-  - [ ] The read transaction contains only persistence reads and closes before projection, analysis, transition tracking, or UI work.
-  - [ ] `MaterializedTopologyReadSet` contains Devices, Interfaces, PhysicalLinks, PhysicalLinkEvidence, Locations, and LatestStp.
-  - [ ] Map and topology alerts are computed from the same captured read-set.
-  - [ ] At most one periodic refresh is in flight; timer ticks are skipped while it is running.
-  - [ ] SQLite reads and pure projection/analysis never block the WPF Dispatcher thread.
-  - [ ] `TopologyAlertTransitionTracker.Observe()` remains Dispatcher-owned and runs only for a successfully completed whole refresh result.
-  - [ ] Failed, cancelled, or invalidated refresh work does not mutate transition state.
-  - [ ] After the first successful refresh, a later failure keeps the last-known-good map and alerts visible.
-  - [ ] The UI shows stale/error state and the time of the last successful refresh; a later successful refresh clears stale state.
-  - [ ] A failure before the first successful refresh is distinct from a healthy empty-topology state.
-  - [ ] Window close stops scheduling, cancels or invalidates refresh/lookup work in flight, and prevents post-close UI apply.
-  - [ ] Normal cancellation during window close is not reported as a refresh failure.
-  - [ ] `SqliteStpObservationStore.GetLatest()` no longer performs N+1 connections/queries.
-  - [ ] A concurrent writer commit between read phases cannot produce a mixed topology snapshot or a false alert transition.
-  - [ ] The consistency integration test uses a deterministic synchronization seam and is demonstrated RED on the old multi-connection path before the fix.
-  - [ ] Lookup search runs off the Dispatcher thread.
-  - [ ] Lookup is single-flight: an older request cannot overwrite a newer result.
-  - [ ] Window close cancels or invalidates lookup work in flight and prevents post-close lookup apply.
-  - [ ] Lookup under SQLite contention does not freeze the Dispatcher.
-  - [ ] Manual contention acceptance confirms that the Desktop remains responsive while a SQLite writer holds a lock.
+- [x] Sprint 32A - coherent non-blocking Desktop refresh with last-known-good semantics.
+  - [x] Capture one `MaterializedTopologyReadSet` per refresh on one SQLite connection and one read transaction.
+  - [x] The read transaction contains only persistence reads and closes before projection, analysis, transition tracking, or UI work.
+  - [x] `MaterializedTopologyReadSet` contains Devices, Interfaces, PhysicalLinks, PhysicalLinkEvidence, Locations, and LatestStp.
+  - [x] Map and topology alerts are computed from the same captured read-set.
+  - [x] At most one periodic refresh is in flight; timer ticks are skipped while it is running.
+  - [x] SQLite reads and pure projection/analysis never block the WPF Dispatcher thread.
+  - [x] `TopologyAlertTransitionTracker.Observe()` remains Dispatcher-owned and runs only for a successfully completed whole refresh result.
+  - [x] Failed, cancelled, or invalidated refresh work does not mutate transition state.
+  - [x] After the first successful refresh, a later failure keeps the last-known-good map and alerts visible.
+  - [x] The UI shows stale/error state and the time of the last successful refresh; a later successful refresh clears stale state.
+  - [x] A failure before the first successful refresh is distinct from a healthy empty-topology state.
+  - [x] Window close stops scheduling, cancels or invalidates refresh/lookup work in flight, and prevents post-close UI apply.
+  - [x] Normal cancellation during window close is not reported as a refresh failure.
+  - [x] `SqliteStpObservationStore.GetLatest()` no longer performs N+1 connections/queries.
+  - [x] A concurrent writer commit between read phases cannot produce a mixed topology snapshot or a false alert transition.
+  - [x] The consistency integration test uses a deterministic synchronization seam and is demonstrated RED on the old multi-connection path before the fix.
+  - [x] Lookup search runs off the Dispatcher thread.
+  - [x] Lookup is single-flight: an older request cannot overwrite a newer result.
+  - [x] Window close cancels or invalidates lookup work in flight and prevents post-close lookup apply.
+  - [x] Lookup under SQLite contention does not freeze the Dispatcher.
+  - [x] Manual contention acceptance confirms that the Desktop remains responsive while a SQLite writer holds a lock.
 
 - [ ] Sprint 32B - persistent host logging for Desktop and Engine.
   - [ ] Use one logging mechanism for both hosts.

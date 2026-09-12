@@ -913,12 +913,34 @@ SQLite schema не изменена; `Migration012` остаётся после�
 - до documentation closure `git diff --check` clean, worktree clean, `HEAD == origin/main == cc36fc0f71499a216413ac56f1862cdd1935b664`.
 
 Acceptance не потребовал изменений production-кода.
-## Sprint 32A planned - coherent non-blocking Desktop refresh
+## Sprint 32A — coherent non-blocking Desktop refresh
 
-Sprint 32A is the next P0 before any new product feature. Repository review confirmed three coupled operational risks in the current Desktop path: synchronous SQLite/read-analysis work on the WPF Dispatcher, multi-connection reads that can mix committed states inside one refresh, and failure handling that can replace active map/alert state with empty UI. Lookup search has the same Dispatcher-blocking risk.
+Sprint 32A is complete.
 
-The frozen execution model is READ -> COMPUTE -> APPLY. READ captures one `MaterializedTopologyReadSet` on one SQLite connection and one read transaction, then closes the transaction. COMPUTE performs pure projection and topology/ring analysis in memory. APPLY returns to the Dispatcher for lifecycle checks, `TopologyAlertTransitionTracker.Observe()`, last-known-good state, and UI updates. Only one periodic refresh and one lookup may be active at a time.
+Implemented:
+- one `MaterializedTopologyReadSet` per refresh from one SQLite connection and one read transaction;
+- the read transaction closes before projection, topology/ring analysis, transition tracking, or UI apply;
+- map and topology alerts are computed from the same captured read-set;
+- `SqliteStpObservationStore.GetLatest()` no longer performs N+1 connections;
+- periodic refresh uses background READ -> COMPUTE and Dispatcher APPLY with single-flight coordination;
+- `TopologyAlertTransitionTracker.Observe()` remains Dispatcher-owned and runs only after a successful whole refresh;
+- failed, cancelled, invalidated, or post-close refresh work cannot mutate transition state or apply UI;
+- last-known-good map/alerts remain visible on refresh failure, with distinct first-load failure and stale/recovery states;
+- lookup runs off the Dispatcher, is serialized/single-flight, rejects stale completion, and is invalidated on close;
+- production `NetLoom.Desktop` composition uses `MaterializedTopologyRefreshSnapshotProvider` with `SqliteMaterializedTopologyReadSetReader`; WPF remains free of direct Persistence/Topology references.
 
-The first implementation artifact is a deterministic RED integration test that forces a writer commit between parts of the old multi-connection read path. The fix must prove one coherent SQLite snapshot per refresh. `SqliteStpObservationStore.GetLatest()` N+1 removal, last-known-good/first-load/stale semantics, cancellation on window close, and non-blocking single-flight lookup are part of the same Sprint 32A acceptance.
+Deterministic proof:
+- the old multi-connection mixed-read path was demonstrated RED with a synchronization seam;
+- the coherent read-set path and composite refresh provider are GREEN and use one SQLite connection/read-set per refresh;
+- lifecycle, last-known-good, lookup serialization, transition, and STP regressions are covered by automated tests.
 
-Detailed acceptance criteria live in `docs/BACKLOG.md`; tests are the behavioral proof. No new product feature starts before Sprint 32A closes.
+Acceptance 2026-09-12:
+- full regression before the final Desktop composition wiring: Unit 191/191, Integration 55/55, Snapshots 7/7, total 253/253;
+- after production wiring, `NetLoom.Desktop` forced build completed with 0 warnings and 0 errors;
+- after production wiring, `Sprint32ACoherentReadSetTests` passed 2/2;
+- text-integrity audit passed with the reviewed dropped-capital allowlist at 172 lines / 161 fingerprints;
+- `git diff --check` passed;
+- production wiring commit `0c22d4d` (`Wire desktop to coherent topology refresh`) is pushed with `HEAD == origin/main`;
+- manual SQLite contention used a real `BEGIN IMMEDIATE` writer transaction for 25 seconds against the two-device database; while the writer lock was held, the Desktop remained responsive, lookup remained responsive, and the map stayed visible; after lock release, normal refresh recovered.
+
+Sprint 32A is closed. The next actionable P0 is Sprint 32B — persistent host logging for Desktop and Engine.
