@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Threading;
 using NetLoom.Application.Monitoring;
 using NetLoom.Application.Observations;
+using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Observations;
 
@@ -20,50 +21,94 @@ namespace NetLoom.Engine
         private static int Main(
             string[] args)
         {
+            HostLogManager hostLog = null;
+
             try
             {
-                var options =
-                    EngineCommandLine.Parse(
-                        args);
+                hostLog =
+                    HostLogManager.Create(
+                        "engine");
 
-                if (options.Command ==
-                    "runtime-smoke")
-                {
-                    if (!EngineRuntimeSmoke.Run())
-                    {
-                        Console.Error.WriteLine(
-                            "ERROR: RUNTIME_SMOKE_FAILED");
+                hostLog.Info(
+                    "HOST_STARTED");
 
-                        return 4;
-                    }
-
-                    Console.WriteLine(
-                        "SUCCESS: MONITORING_RUNTIME_SMOKE");
-
-                    return 0;
-                }
-
-                if (options.Command ==
-                    "schedule")
-                {
-                    return RunScheduled(
-                        options);
-                }
-
-                return PollOnce(options);
+                return Run(
+                    args,
+                    hostLog);
             }
             catch (Exception exception)
             {
+                if (hostLog != null)
+                {
+                    hostLog.Error(
+                        exception,
+                        "HOST_FATAL");
+
+                    hostLog.Flush();
+                }
+
                 Console.Error.WriteLine(
                     "ERROR: " +
                     exception.Message);
 
                 return 2;
             }
+            finally
+            {
+                if (hostLog != null)
+                {
+                    hostLog.Dispose();
+                }
+            }
+        }
+
+        private static int Run(
+            string[] args,
+            HostLogManager hostLog)
+        {
+            var options =
+                EngineCommandLine.Parse(
+                    args);
+
+            if (options.Command ==
+                "runtime-smoke")
+            {
+                if (!EngineRuntimeSmoke.Run())
+                {
+                    hostLog.Error(
+                        "RUNTIME_SMOKE_FAILED");
+
+                    Console.Error.WriteLine(
+                        "ERROR: RUNTIME_SMOKE_FAILED");
+
+                    return 4;
+                }
+
+                hostLog.Info(
+                    "MONITORING_RUNTIME_SMOKE_SUCCESS");
+
+                Console.WriteLine(
+                    "SUCCESS: MONITORING_RUNTIME_SMOKE");
+
+                return 0;
+            }
+
+            if (options.Command ==
+                "schedule")
+            {
+                return RunScheduled(
+                    options,
+                    hostLog);
+            }
+
+            return PollOnce(
+                options,
+                hostLog);
         }
 
         private static int PollOnce(
-            EngineCommandLine options)
+            EngineCommandLine options,
+            HostLogManager hostLog)
         {
             var runtime =
                 CreateRuntime(
@@ -75,18 +120,26 @@ namespace NetLoom.Engine
                         options));
 
             WritePollResult(
-                result);
+                result,
+                hostLog);
 
             RunObservationRetention(
-                options);
+                options,
+                hostLog);
 
             if (!result.AnySucceeded)
             {
+                hostLog.Error(
+                    "ALL_POLL_STEPS_FAILED");
+
                 Console.Error.WriteLine(
                     "ERROR: ALL_POLL_STEPS_FAILED");
 
                 return 3;
             }
+
+            hostLog.Info(
+                "POLL_ONCE_COMPLETED");
 
             Console.WriteLine(
                 "SUCCESS: POLL_ONCE_COMPLETED");
@@ -95,7 +148,8 @@ namespace NetLoom.Engine
         }
 
         private static int RunScheduled(
-            EngineCommandLine options)
+            EngineCommandLine options,
+            HostLogManager hostLog)
         {
             var runtime =
                 CreateRuntime(
@@ -124,6 +178,10 @@ namespace NetLoom.Engine
 
                 try
                 {
+                    hostLog.Info(
+                        "SCHEDULER_STARTED intervalSeconds=" +
+                        options.IntervalSeconds);
+
                     Console.WriteLine(
                         "SCHEDULER: started intervalSeconds=" +
                         options.IntervalSeconds);
@@ -137,11 +195,17 @@ namespace NetLoom.Engine
                             pollResult =>
                             {
                                 WritePollResult(
-                                    pollResult);
+                                    pollResult,
+                                    hostLog);
 
                                 RunObservationRetention(
-                                    options);
+                                    options,
+                                    hostLog);
                             });
+
+                    hostLog.Info(
+                        "SCHEDULER_STOPPED completedCycles=" +
+                        result.CompletedCycles);
 
                     Console.WriteLine(
                         "SCHEDULER: stopped cycles=" +
@@ -158,7 +222,8 @@ namespace NetLoom.Engine
         }
 
         private static void RunObservationRetention(
-            EngineCommandLine options)
+            EngineCommandLine options,
+            HostLogManager hostLog)
         {
             try
             {
@@ -182,6 +247,10 @@ namespace NetLoom.Engine
 
                 if (deleted > 0)
                 {
+                    hostLog.Info(
+                        "RETENTION_DELETED observations=" +
+                        deleted);
+
                     Console.WriteLine(
                         "RETENTION: deletedObservations=" +
                         deleted);
@@ -189,6 +258,10 @@ namespace NetLoom.Engine
             }
             catch (Exception exception)
             {
+                hostLog.Error(
+                    exception,
+                    "RETENTION_FAILED");
+
                 Console.Error.WriteLine(
                     "RETENTION: FAIL " +
                     exception.GetType().Name +
@@ -228,7 +301,8 @@ namespace NetLoom.Engine
         }
 
         private static void WritePollResult(
-            MonitoringPollResult result)
+            MonitoringPollResult result,
+            HostLogManager hostLog)
         {
             foreach (var step in result.Steps)
             {
@@ -241,6 +315,15 @@ namespace NetLoom.Engine
                 }
                 else
                 {
+                    hostLog.Error(
+                        "POLL_STEP_FAILED kind=" +
+                        step.Kind +
+                        " errorType=" +
+                        (string.IsNullOrWhiteSpace(
+                            step.ErrorType)
+                            ? "Unknown"
+                            : step.ErrorType));
+
                     Console.WriteLine(
                         "STEP: " +
                         step.Kind +
@@ -272,11 +355,21 @@ namespace NetLoom.Engine
                 }
             }
 
+            var failed =
+                result.Steps.Count -
+                succeeded;
+
+            hostLog.Info(
+                "POLL_COMPLETED success=" +
+                succeeded +
+                " failed=" +
+                failed);
+
             Console.WriteLine(
                 "POLL: success=" +
                 succeeded +
                 " failed=" +
-                (result.Steps.Count - succeeded));
+                failed);
         }
 
         private static void WriteInterface(
