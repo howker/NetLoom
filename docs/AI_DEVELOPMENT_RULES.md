@@ -1,4 +1,4 @@
-﻿# AI_DEVELOPMENT_RULES
+# AI_DEVELOPMENT_RULES
 
 ## Роль ИИ
 
@@ -39,6 +39,66 @@
 - какие файлы изменены;
 - какая проверка выполнена;
 - что осталось.
+
+## Пакетный рабочий процесс и минимизация итераций
+
+Этот раздел фиксирует основной рабочий процесс для задач, границы которых уже понятны. Его цель — не ослабить проверки, а выполнить их за один управляемый проход без лишних циклов «команда → вывод → следующая команда».
+
+- По умолчанию после подтверждения scope ИИ должен собирать связанные технические действия в один пакет: preflight → применение изменения → build → targeted tests → нужный regression → integrity gates → boundary check → review artifact → stage → commit → push → postflight.
+- Один пакет всё равно должен соответствовать правилу «одна задача — один логический набор изменений». Нельзя объединять в один commit независимые feature/fix/docs задачи только ради уменьшения числа запусков.
+- Если изменение подготовлено ИИ как готовый artifact и его SHA256 совпадает, дополнительное подтверждение между применением, проверками, commit и push не требуется, если все gates зелёные и фактический changed-file set совпадает с ожидаемым.
+- Пакет обязан остановиться до commit при реальной ошибке, несовпадении SHA256, неожиданном изменённом файле, failed test/build/integrity gate, неожиданном exit code или расхождении `HEAD`/`origin/main`.
+- Неожиданные изменения нельзя молча включать в commit. Если build/tooling изменил, например, `.sln` или другой файл вне ожидаемой границы, пакет должен остановиться или явно восстановить только доказанно постороннее изменение из `HEAD` и затем повторно проверить boundary.
+- Перед автоматическим commit preflight должен подтвердить как минимум: текущую ветку, `HEAD == origin/main` и чистый worktree, если задача не начинается с заранее согласованного dirty state.
+- После push postflight должен подтвердить `HEAD == origin/main` и чистый worktree.
+- При закрытии Sprint или крупного hardening-шага пакет должен включать полный regression, если стоимость его запуска разумна и такой regression является принятой project gate.
+- Для небольшого промежуточного шага допустимы targeted tests вместо полного regression, но Sprint closure не должен опираться только на targeted tests.
+- Если последовательность команд длинная, содержит много quoting/non-ASCII, несколько `try/finally` или ожидает non-zero exit codes, ИИ должен предпочитать готовый `.ps1` artifact/ZIP с SHA256 вместо большого блока для ручной вставки в интерактивный PowerShell.
+- Большие автоматизированные runner-скрипты должны быть совместимы с Windows PowerShell 5.1.
+
+## Правила build/test после artifact-изменений
+
+- Перед применением source archive обязательно проверять SHA256 самого архива.
+- Если ИИ публикует per-file SHA256 для содержимого архива, пакет должен проверять и их до commit.
+- После распаковки архива, который меняет source/project files, использовать forced build через `dotnet build --no-incremental`, потому что `Expand-Archive` может сохранять timestamps и сделать incremental build недостоверным.
+- После успешного forced build tests предпочтительно запускать с `--no-build`, чтобы тестировались именно проверенные binaries.
+- Для docs-only изменения build не нужен, если документы не участвуют в генерации/компиляции; обязательными остаются text-integrity, `git diff --check`, boundary review и status checks.
+- Перед Desktop build нужно проверять/останавливать только действительно оставшийся `NetLoom.Desktop` process, если он блокирует output DLL. Lock от живого Desktop не является code regression.
+- Временные environment overrides для acceptance (`NETLOOM_LOG_*`, SNMP test values и т. п.) всегда восстанавливаются через `finally`.
+- Для security acceptance использовать только synthetic canary values. Реальные production secrets/addresses запрещены.
+
+## PowerShell 5.1: ожидаемые non-zero exit codes
+
+- При `$ErrorActionPreference = "Stop"` нельзя полагаться на прямой вызов native process через `&`/`dotnet run`, если stderr и non-zero exit code являются ожидаемой частью acceptance: PowerShell 5.1 может превратить stderr в terminating `NativeCommandError` до проверки `$LASTEXITCODE`.
+- Для ожидаемых exit codes, например Engine `2` для invalid command или `3` для all-poll-failed acceptance, использовать `Start-Process -PassThru -Wait` с `-RedirectStandardOutput` и `-RedirectStandardError`.
+- После завершения process проверять `ExitCode` явно и отдельно анализировать captured stdout/stderr.
+- Unexpected non-zero exit code остаётся blocking failure.
+
+## Короткий вывод и review artifacts
+
+- Успешный пакет должен писать в терминал только короткие строки `OK:`/`SUCCESS:` и итоговые идентификаторы (`HEAD`, путь к details/report при необходимости).
+- Полный build/test output, длинный diff и diagnostic details не нужно печатать в терминал при штатном проходе.
+- Большие логи сохраняются в `%TEMP%\NetLoom-...` или в заведомо ignored project artifact directory так, чтобы сами логи не загрязняли worktree.
+- При ошибке пакет выводит краткий `FAIL`, путь к подробному log artifact и ограниченный tail, достаточный для диагностики.
+- Полный diff для больших изменений сохраняется в отдельный файл. Если нужен review со стороны ИИ, пользователь передаёт этот файл, а не копирует огромный diff в терминал/chat.
+- Если все изменённые файлы являются подготовленными ИИ artifacts с совпавшими SHA256, changed-file boundary точен, automated gates прошли, а полный diff сохранён как review artifact, допускается автоматический commit/push без дополнительного round-trip только ради печати diff.
+- Для ручных или неизвестных изменений, несовпавших hashes или неожиданной границы файлов автоматический commit запрещён до review.
+- После успешного пакетного прохода пользователю достаточно прислать `SUCCESS`, `HEAD` и, при необходимости, путь к report; полный зелёный build/test log пересылать не требуется.
+
+## Обновление Markdown-документации через готовые файлы
+
+Этот workflow используется по умолчанию для `docs/*.md`, особенно если в файле есть Cyrillic/non-ASCII.
+
+- ИИ получает актуальную версию документа из репозитория или от пользователя и строит обновлённый файл именно от неё.
+- Для русского/non-ASCII Markdown ИИ отдаёт полный готовый `.md` файл и SHA256; пользователь скачивает и заменяет файл целиком.
+- Если обновляются несколько Markdown-файлов, ИИ отдаёт каждый готовым отдельным файлом с отдельным SHA256.
+- Не использовать PowerShell here-string или длинные search/replace patch scripts для русского/non-ASCII Markdown, если можно отдать готовый файл.
+- Apply runner должен: найти скачанные файлы → проверить их SHA256 → проверить preflight → заменить целевые файлы → повторно проверить destination SHA256 → запустить text-integrity → `git diff --check` → проверить точный changed-file set → сохранить полный diff в файл → stage → staged boundary/check → commit → push → postflight.
+- Если docs package проходит все проверки и hashes совпадают, commit/push выполняются в том же проходе без дополнительной остановки.
+- При любой проблеме с docs patching нужно вернуться к полному replacement-file workflow, а не пытаться чинить повреждённый Markdown дополнительными консольными патчами.
+- Docs-only commit не должен захватывать source/project files.
+- Перед Sprint closure документация обновляется только после технического acceptance. `BACKLOG.md` закрывает checklist, `PROJECT_STATE.md` фиксирует короткий подтверждённый результат и следующий gate.
+- Если следующий шаг является architecture decision, durable rationale фиксируется в `DECISIONS.md`, а не раздувает `PROJECT_STATE.md`.
 
 ## Кодировка, локализация, зависимости и backlog
 
