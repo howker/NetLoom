@@ -28,8 +28,8 @@ public partial class MainWindow : Window
     private const int LookupCandidateLimit = 100;
     private const string CurrentStpInstanceId = "cist";
 
-    private readonly ITopologyRefreshSnapshotProvider
-        _topologyRefreshSnapshotProvider;
+    private readonly TopologyRefreshCoordinator
+        _topologyRefreshCoordinator;
 
     private readonly MacIpLookupSearchService
         _lookupSearchService;
@@ -55,8 +55,6 @@ public partial class MainWindow : Window
             new Dictionary<Guid, Border>();
 
     private Guid? _highlightedDeviceId;
-
-    private bool _refreshInFlight;
 
     private MapSnapshot _lastMapSnapshot;
 
@@ -106,10 +104,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        _topologyRefreshSnapshotProvider =
-            topologyRefreshSnapshotProvider ??
-            throw new ArgumentNullException(
-                nameof(topologyRefreshSnapshotProvider));
+        _topologyRefreshCoordinator =
+            new TopologyRefreshCoordinator(
+                topologyRefreshSnapshotProvider ??
+                throw new ArgumentNullException(
+                    nameof(topologyRefreshSnapshotProvider)));
 
         _lookupSearchService =
             new MacIpLookupSearchService(
@@ -194,6 +193,7 @@ public partial class MainWindow : Window
     {
         _refreshTimer.Stop();
 
+        _topologyRefreshCoordinator.Close();
         _lookupRequestTracker.Close();
         _lifetimeCancellation.Cancel();
     }
@@ -207,34 +207,27 @@ public partial class MainWindow : Window
 
     private async Task RefreshTopologyAsync()
     {
-        if (_refreshInFlight ||
-            _lifetimeCancellation.IsCancellationRequested)
-        {
-            return;
-        }
-
-        _refreshInFlight = true;
-
         try
         {
             var cancellationToken =
                 _lifetimeCancellation.Token;
 
             var refresh =
-                await Task.Run(
-                    () =>
-                        _topologyRefreshSnapshotProvider
-                            .GetSnapshot(
-                                CurrentStpInstanceId),
-                    cancellationToken);
+                await _topologyRefreshCoordinator
+                    .RefreshAsync(
+                        CurrentStpInstanceId,
+                        cancellationToken);
 
-            if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken
+                    .IsCancellationRequested ||
+                refresh.Kind !=
+                    TopologyRefreshExecutionKind.Succeeded)
             {
                 return;
             }
 
             ApplyTopologyRefresh(
-                refresh);
+                refresh.Snapshot);
         }
         catch (OperationCanceledException)
             when (_lifetimeCancellation
@@ -255,10 +248,6 @@ public partial class MainWindow : Window
             ShowRefreshFailure(
                 _refreshStateTracker
                     .ObserveFailure());
-        }
-        finally
-        {
-            _refreshInFlight = false;
         }
     }
 
