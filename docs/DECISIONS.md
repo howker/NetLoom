@@ -860,3 +860,100 @@ Host diagnostics are a separate concern:
 - localization-integrity checks for operator-facing `.cs`/XAML code can target the presentation boundary while allowing explicit technical/logging exceptions;
 - WPF remains free of direct Persistence/Topology dependencies;
 - future presentation technologies can localize independently while reusing the same transport-neutral contracts.
+
+## ADR-064 — production runtime baseline is separate from legacy compatibility targets
+
+**Status:** Accepted.
+
+### Decision
+
+NetLoom no longer has one OS/runtime baseline for every executable.
+
+`NetLoom.Engine` is a modern backend and production releases use a supported modern .NET LTS selected during release/deployment readiness. The current development target may temporarily remain on an older supported runtime; runtime migration is not scheduled as an isolated product feature when there is no production installation.
+
+`NetLoom.Wpf`/`NetLoom.Desktop` remain the legacy client boundary on .NET Framework 4.8 where Windows 8.1 workstation compatibility is required.
+
+Portable shared projects remain compatible with the legacy client while that client is supported.
+
+Windows Server 2012 R2, when a real site requires it, is treated as an explicitly tested legacy compatibility target rather than the modern production baseline of the whole product.
+
+The developer workstation OS is not a product platform requirement.
+
+### Consequences
+
+- modern Engine/API dependencies are evaluated against their own runtime/OS target rather than Windows 8.1/net48;
+- legacy compatibility cannot veto a dependency used only by a modern host;
+- first production delivery includes an explicit supported-LTS/runtime and OS compatibility gate;
+- self-contained delivery removes the requirement to install the .NET runtime separately but does not remove native/OS prerequisites.
+
+## ADR-065 — NetLoom.Engine is the canonical backend host
+
+**Status:** Accepted.
+
+### Decision
+
+`NetLoom.Engine` is the single canonical backend composition root.
+
+Console execution, Windows Service hosting and future Linux daemon/systemd hosting are deployment modes of the same Engine composition.
+
+`NetLoom.Service` (`net48`) is legacy/deprecated. No new monitoring, scheduling, topology, incident or notification capability is added to it. It may be removed after confirming that no real deployment depends on it.
+
+### Consequences
+
+- there is one backend behavior/composition to test;
+- Windows Service support does not require a second .NET Framework backend;
+- service hosting concerns remain outside Domain/Application;
+- legacy WPF compatibility does not imply legacy backend compatibility.
+
+## ADR-066 — multiple presentation clients share presentation-neutral backend semantics
+
+**Status:** Accepted.
+
+### Decision
+
+NetLoom may have multiple presentation clients. The current WPF/Desktop client is not frozen by this decision, and a future Web client is not declared primary before real operational/deployment evidence exists.
+
+Domain/Application/Contracts expose structured queries, commands, enums, reason codes, identifiers, counts and evidence. Presentation clients own rendering and interaction.
+
+If remote/browser access is required, an explicit API boundary is implemented and accepted before the Web client. A Web client must not access SQLite repositories directly.
+
+### Consequences
+
+- WPF can continue to evolve where it provides value;
+- future Web work does not move domain logic into the browser;
+- UI lifecycle decisions are driven by stand/deployment friction rather than roadmap preference;
+- backend behavior stays reusable across local and remote clients.
+
+## ADR-067 — localization remains owned by each presentation client
+
+**Status:** Accepted.
+
+### Decision
+
+ADR-063 remains the rule for the current Desktop client: `NetLoom.Wpf` owns its operator-facing localization resources and `NetLoom.Desktop` owns startup culture selection.
+
+The arrival of another presentation client does not create a shared global UI-string assembly by default. Each client owns its presentation resources. Shared layers expose semantic data, not localized operator sentences.
+
+### Consequences
+
+- `NetLoom.Contracts` does not become a localization container;
+- a future Web client may use a different localization mechanism without coupling WPF resources to it;
+- presentation duplication is extracted only after real shared semantics are demonstrated, not speculatively.
+
+## ADR-068 — NetLoom remains a network observability and diagnostics product
+
+**Status:** Accepted.
+
+### Decision
+
+NetLoom observes, models and diagnoses the industrial Ethernet network.
+
+It is not a SCADA, process historian, Modbus/OPC UA process-data acquisition system, PLC logic diagnostics environment, generic Industrial IoT platform or general-purpose NMS.
+
+External integrations may publish **network-state** events or diagnostics to SCADA/NMS systems. They do not make process measurements part of the NetLoom topology `Device` domain.
+
+### Consequences
+
+- topology `Device` is not generalized into “anything on the plant”;
+- process tags/measurements/history do not enter the topology/configuration database;
+- product scope remains centered on topology, reachability, redundancy, degradation and network incident explanation.

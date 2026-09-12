@@ -22,14 +22,17 @@ WPF Map
 
 ## Проекты
 
-- NetLoom.Domain — доменная модель.
-- NetLoom.Application — сценарии использования.
-- NetLoom.Contracts — DTO и команды.
-- NetLoom.Protocols.Snmp — SNMP, LLDP, CDP, FDB, ARP, STP collectors.
-- NetLoom.Topology — identity, link, ring и STP resolver.
-- NetLoom.Persistence.Sqlite — SQLite, миграции, репозитории.
-- NetLoom.Service — фоновый мониторинг.
-- NetLoom.Wpf — русскоязычный интерфейс.
+- `NetLoom.Domain` — domain model.
+- `NetLoom.Application` — use-case and repository/query boundaries.
+- `NetLoom.Contracts` — transport-neutral DTO/contracts.
+- `NetLoom.Protocols.Snmp` — SNMP, LLDP, CDP, FDB, ARP, STP collectors.
+- `NetLoom.Topology` — identity, link, ring, safety and STP analysis.
+- `NetLoom.Persistence.Sqlite` — operational SQLite, migrations, repositories.
+- `NetLoom.HostLogging` — shared persistent host logging.
+- `NetLoom.Engine` — canonical modern backend host.
+- `NetLoom.Desktop` — Windows composition root for the current WPF client.
+- `NetLoom.Wpf` — current Windows presentation client.
+- `NetLoom.Service` — legacy/deprecated net48 host artifact; no new backend capability is added here.
 
 ## Ключевые ограничения
 
@@ -40,18 +43,83 @@ WPF Map
 - Мониторинг может быть полностью остановлен.
 - UI не должен владеть domain state.
 
-## Cross-platform baseline — Sprint 7.5
+## Product boundary
 
-Эта секция имеет приоритет над прежними Windows-only формулировками.
+NetLoom is a network observability/topology/diagnostics product for industrial Ethernet.
 
-- Portable core: `NetLoom.Domain`, `NetLoom.Application`, `NetLoom.Contracts`, `NetLoom.Topology` → `netstandard2.0`.
-- Adapters: `NetLoom.Protocols.Snmp`, `NetLoom.Persistence.Sqlite` → `net48;net8.0`.
-- `NetLoom.Service` и `NetLoom.Wpf` остаются `net48` для legacy Windows deployment и совместимости с Windows 8.1.
-- `NetLoom.Engine` — modern Windows/Linux backend; сейчас `net8.0` под SDK 8.0.424, целевой production runtime — .NET 10 LTS после отдельного обновления toolchain.
-- DPAPI — только Windows-реализация `ISecretProtector`; Linux secret protector добавляется отдельно.
-- UI ↔ backend определяется transport-neutral contracts. Named Pipes — только возможный локальный Windows transport. Сетевой transport для Linux/remote будет выбран отдельным ADR.
-- WPF после service split не пишет SQLite напрямую.
-- Основной backend остаётся C#/.NET. Go допускается только как возможный будущий `NetLoom.Probe`.
+It does not become a SCADA, process historian, Modbus/OPC UA process-data acquisition system, PLC programming environment, generic Industrial IoT platform, or general-purpose NMS.
+
+External SCADA/NMS integration may consume **network-state** events and diagnostics, but process measurements do not enter the topology `Device` domain.
+
+## Backend hosting boundary
+
+`NetLoom.Engine` is the canonical backend composition root.
+
+Windows Service, console and future Linux daemon modes are hosting modes of the same backend composition, not separate business implementations.
+
+`NetLoom.Service` is legacy/deprecated and receives no new backend functionality. Removal is allowed only after confirming that no real deployment depends on it.
+
+## Presentation clients boundary
+
+Multiple presentation clients are allowed:
+
+```text
+Application/query/command semantics
+              |
+      +-------+-------+
+      |               |
+ local provider    future HTTP API
+      |               |
+ WPF/Desktop      Web/remote clients
+```
+
+No presentation client owns domain logic.
+
+The current WPF client is not declared frozen, and a future Web client is not declared primary before real stand/deployment evidence exists.
+
+ADR-063 remains valid for WPF localization. A future client owns its own presentation resources; shared layers expose semantic codes/data rather than localized sentences.
+
+## UI reconciliation direction
+
+Full visual-tree rebuild on every refresh is a current scalability/usability limitation.
+
+The next UI foundation candidate after stand acceptance is stable visual reconciliation keyed by `DeviceId` and `PhysicalLinkId`:
+
+`Added / Removed / Changed / Unchanged`.
+
+Selection, zoom/pan, pinned/manual layout and unchanged visual identity should survive refresh.
+
+Animation is layered **after** this foundation. Presentation design tokens must cover colors, typography, spacing and geometry. Motion modes should support `Normal`, `Reduced` and `Off`.
+
+## Roadmap boundaries — not committed scope
+
+The following directions are architectural map, not a promise of immediate implementation:
+
+- bounded interface-degradation detection using counter deltas plus `ifCounterDiscontinuityTime`; bounded evaluator state may live in the operational SQLite and is not time-series history;
+- durable `AlertCondition -> Incident -> Outbox -> NotificationDelivery` before reliable outbound delivery is promised;
+- configured notification routing through adapters rather than hard-coded transport priority;
+- production configuration separated from secrets and host overrides;
+- runtime LTS migration combined with first production deployment readiness;
+- HTTP API security boundary before a Web UI;
+- evidence-oriented failure localization with structural blast radius kept separate from observed outage scope;
+- future industrial protection analyzers must not infer `Unprotected` merely from missing STP evidence;
+- future `SiteId`/`ProbeId` semantics are reserved for distributed reachability analysis.
+
+
+## Runtime/platform baseline
+
+This section supersedes the old single Windows/.NET Framework baseline.
+
+- Portable core: `NetLoom.Domain`, `NetLoom.Application`, `NetLoom.Contracts`, `NetLoom.Topology` remain `netstandard2.0` while the legacy net48 Desktop is supported.
+- `NetLoom.Protocols.Snmp` and `NetLoom.Persistence.Sqlite` may multi-target where both legacy and modern consumers require it.
+- `NetLoom.Wpf`/`NetLoom.Desktop` are the legacy Windows client boundary on .NET Framework 4.8.
+- `NetLoom.Engine` is the canonical backend host. Its current development target may remain .NET 8 temporarily, but the first production delivery must use a supported modern .NET LTS selected during release/deployment readiness.
+- Windows 8.1 compatibility belongs to the legacy Desktop, not to the Engine.
+- Windows Server 2012 R2, if required by a real site, is a separately tested legacy compatibility target rather than the product-wide modern production baseline.
+- Development-machine OS is not a production requirement.
+- DPAPI is a Windows `ISecretProtector` implementation, not a cross-platform secret-storage architecture.
+- UI/backend interaction is defined by transport-neutral Application/Contracts boundaries. Named Pipes are optional implementation detail, not an architectural requirement.
+- Main backend remains C#/.NET. A future distributed probe is a separate deployment component, not a rewrite of the Engine.
 
 ## Topology resolution boundary
 

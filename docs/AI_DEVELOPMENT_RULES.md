@@ -82,6 +82,22 @@
 - После любого сбоя runner-а на native-process boundary нельзя автоматически считать product step неуспешным. Сначала проверяются фактические `HEAD`, `origin/main`, index/worktree и, при необходимости, SHA256 staged blobs.
 - Continuation package после runner/tooling failure должен продолжать с фактически подтверждённого состояния и не применять source changes повторно, если их hashes и gates уже подтверждены.
 
+## Evidence-first completion and proportional automation
+
+Этот раздел имеет приоритет при выборе способа проверки и автоматизации.
+
+- `Проверено` означает проверку на фактическом repository artifact, полученном от пользователя/репозитория. Проверка только на файле, который ИИ сам сгенерировал, не доказывает состояние репозитория.
+- Перед переводом backlog item в `[x]` использовать machine-checkable evidence там, где оно практически возможно. Формулировка checklist сама по себе не является доказательством.
+- Проверка должна соответствовать структуре артефакта. Для XML/ResX/YAML/JSON нельзя делать вывод только по `grep` строки, если совпадение может находиться в comment/example/schema text. Для `.resx` resource keys проверяются по фактическим `<data name="...">` nodes.
+- Для воспроизводимого дефекта добавляется RED→GREEN regression/acceptance evidence whenever practical. Docs-only/architecture/operational work может иметь другой тип acceptance и не обязано искусственно создавать unit test.
+- Перед product Sprint сформулировать одним предложением, что изменится для оператора у экрана. Если содержательного operator outcome нет, задача может быть infrastructure/chore, но не должна маскироваться под product feature.
+- Одноразовая безопасная операция, которая обычно выполняется вручную менее чем примерно за 5 минут и состоит из небольшого числа понятных команд, по умолчанию не получает отдельный temporary runner.
+- Temporary runner оправдан, если он существенно снижает риск destructive/high-error manual work, повторяет много одинаковых действий или обеспечивает сложную воспроизводимую acceptance. Такой runner не коммитится в репозиторий, если не является durable project tooling.
+- После двух подряд ошибок одного automation approach на одной задаче не создавать третью почти идентичную recovery-версию. Сначала упростить способ выполнения и проверить ошибочное предположение.
+- После tooling failure сначала установить фактическое состояние `HEAD`/`origin`, index/worktree и hashes. Уже прошедшие дорогие gates не повторяются без изменения source bytes.
+- Roadmap описывает направление, а не обязательство. В `BACKLOG.md` committed work должен быть явно отделён от next candidates и long-term roadmap.
+- `FRICTION_LOG.md` имеет приоритет над speculative feature planning после realistic stand acceptance.
+
 ## Короткий вывод и review artifacts
 
 - Успешный пакет должен писать в терминал только короткие строки `OK:`/`SUCCESS:` и итоговые идентификаторы (`HEAD`, путь к details/report при необходимости).
