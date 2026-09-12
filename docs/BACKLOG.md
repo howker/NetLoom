@@ -77,11 +77,11 @@
 
 ## Потом, когда собственный NetLoom реально используется
 
-- [ ] Английская локаль UI.
+- [x] English neutral/fallback Desktop resources (Sprint 32C).
 - [ ] Перевод документации и сайта.
-- [ ] Web UI.
+- [ ] Web UI — roadmap only after HTTP API/security boundary and real deployment need.
 - [ ] Multi-user / roles.
-- [ ] REST API для внешних клиентов.
+- [ ] HTTP/REST API — roadmap; implement before Web/remote client access.
 - [ ] Installer / auto-update.
 - [ ] Licensing / editions.
 - [ ] Billing / merchant of record.
@@ -133,5 +133,34 @@
 
 - [x] Architecture gate before Sprint 32C - localization ownership fixed by ADR-063: WPF owns Desktop UI resources; Desktop owns startup culture selection; backend contracts remain localization-neutral.
 - [x] Sprint 32C - localization foundation: English neutral resources, Russian satellite resources, explicit culture selection, pluralization, removal of the Topology text leak, `.cs` localization-integrity guard, and template-resource cleanup.
-- [ ] After 32A-32C, run a realistic 3-5 device SNMP/snmpsim stand acceptance and add only real operational observations to `FRICTION_LOG.md`.
-- [ ] Choose the next product feature only after stand acceptance and `FRICTION_LOG.md` review; do not start topology snapshots / time-machine work automatically.
+- [x] Sprint 32C post-closure correction — declared English neutral resources with `NeutralResourcesLanguage("en")` and added regression evidence. Structured XML inspection confirms `Name1`, `Icon1`, and `Bitmap1` are not actual `<data>` resource entries; their text appears only in the standard ResX schema comment and is not a cleanup defect.
+- [ ] After the 32C correction, run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
+- [ ] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
+
+## Execution map after Sprint 32C
+
+Only the three unchecked items immediately above are committed work.
+
+### Next candidates — choose after stand, not commitments
+
+Preferred order only if stand friction does not reveal a more important problem:
+
+- [ ] Incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`; preserve selection, zoom/pan, pinned layout and unchanged visual identity across refresh.
+- [ ] UI design tokens covering colors, typography, spacing and geometry; Light/Dark themes.
+- [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
+- [ ] Interface degradation detection using errors/discards/`ifLastChange` with `ifCounterDiscontinuityTime` and correct counter-wrap/reset semantics.
+- [ ] Durable incident lifecycle + persistent outbox.
+- [ ] First outbound notification adapter chosen from a real deployment need; transport priority is configuration, not architecture.
+
+### Roadmap — direction, not scheduled backlog commitment
+
+- Production configuration boundary and protected secrets for installed deployments.
+- Runtime LTS migration together with first production release/deployment readiness.
+- Offline/self-contained packaging, service install, upgrade/migration, WAL-safe backup/restore, manifests and diagnostics.
+- HTTP API with localhost-by-default remote security boundary.
+- Web client only after the API boundary is accepted and a real use case exists.
+- Probable failure-boundary localization with structural blast radius kept separate from observed outage scope.
+- Additional industrial protection protocols without false `Unprotected` conclusions from missing STP evidence.
+- Future Site/Probe identity if distributed monitoring becomes necessary.
+
+The roadmap does not supersede the priority rule: recurring real friction beats speculative product work.

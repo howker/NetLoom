@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Resources;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Wpf.Localization;
 
 namespace NetLoom.Tests.Unit
 {
@@ -35,6 +37,60 @@ namespace NetLoom.Tests.Unit
                     "[\\u0400-\\u04FF]" +
                     "(?:[^\"\\\\]|\\\\.)*\"",
                     RegexOptions.Compiled);
+
+        [TestMethod]
+        public void
+            NeutralResourceLanguageIsEnglishAndTemplateExampleNamesAreNotResourceKeys()
+        {
+            var attribute =
+                typeof(UiText)
+                    .Assembly
+                    .GetCustomAttributes(
+                        typeof(NeutralResourcesLanguageAttribute),
+                        false)
+                    .OfType<NeutralResourcesLanguageAttribute>()
+                    .SingleOrDefault();
+
+            Assert.IsNotNull(
+                attribute,
+                "NetLoom.Wpf must declare NeutralResourcesLanguage.");
+
+            Assert.AreEqual(
+                "en",
+                attribute.CultureName);
+
+            var templateExampleNames =
+                new[]
+                {
+                    "Name1",
+                    "Icon1",
+                    "Bitmap1"
+                };
+
+            foreach (var fileName in
+                new[]
+                {
+                    "UiStrings.resx",
+                    "UiStrings.ru.resx"
+                })
+            {
+                var resources =
+                    LoadResources(
+                        fileName);
+
+                foreach (var name in
+                    templateExampleNames)
+                {
+                    Assert.IsFalse(
+                        resources.ContainsKey(
+                            name),
+                        fileName +
+                        " contains template resource data key " +
+                        name +
+                        ". ResX schema comments do not count as data.");
+                }
+            }
+        }
 
         [TestMethod]
         public void
