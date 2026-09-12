@@ -48,6 +48,7 @@
 - Один пакет всё равно должен соответствовать правилу «одна задача — один логический набор изменений». Нельзя объединять в один commit независимые feature/fix/docs задачи только ради уменьшения числа запусков.
 - Если изменение подготовлено ИИ как готовый artifact и его SHA256 совпадает, дополнительное подтверждение между применением, проверками, commit и push не требуется, если все gates зелёные и фактический changed-file set совпадает с ожидаемым.
 - Пакет обязан остановиться до commit при реальной ошибке, несовпадении SHA256, неожиданном изменённом файле, failed test/build/integrity gate, неожиданном exit code или расхождении `HEAD`/`origin/main`.
+- Ошибка самого runner/tooling не приравнивается автоматически к ошибке продукта: continuation сначала восстанавливает фактическое состояние через `HEAD`/`origin/main`, staged/unstaged boundary и hashes, а уже затем решает, что нужно повторять. Уже прошедшие дорогие build/test gates не запускаются заново без причины, если source bytes не изменились.
 - Неожиданные изменения нельзя молча включать в commit. Если build/tooling изменил, например, `.sln` или другой файл вне ожидаемой границы, пакет должен остановиться или явно восстановить только доказанно постороннее изменение из `HEAD` и затем повторно проверить boundary.
 - Перед автоматическим commit preflight должен подтвердить как минимум: текущую ветку, `HEAD == origin/main` и чистый worktree, если задача не начинается с заранее согласованного dirty state.
 - После push postflight должен подтвердить `HEAD == origin/main` и чистый worktree.
@@ -67,12 +68,19 @@
 - Временные environment overrides для acceptance (`NETLOOM_LOG_*`, SNMP test values и т. п.) всегда восстанавливаются через `finally`.
 - Для security acceptance использовать только synthetic canary values. Реальные production secrets/addresses запрещены.
 
-## PowerShell 5.1: ожидаемые non-zero exit codes
+## PowerShell 5.1: native processes, stderr и quoting
 
-- При `$ErrorActionPreference = "Stop"` нельзя полагаться на прямой вызов native process через `&`/`dotnet run`, если stderr и non-zero exit code являются ожидаемой частью acceptance: PowerShell 5.1 может превратить stderr в terminating `NativeCommandError` до проверки `$LASTEXITCODE`.
-- Для ожидаемых exit codes, например Engine `2` для invalid command или `3` для all-poll-failed acceptance, использовать `Start-Process -PassThru -Wait` с `-RedirectStandardOutput` и `-RedirectStandardError`.
-- После завершения process проверять `ExitCode` явно и отдельно анализировать captured stdout/stderr.
-- Unexpected non-zero exit code остаётся blocking failure.
+- При `$ErrorActionPreference = "Stop"` нельзя полагаться на прямой вызов native process через `&`, `dotnet`, `git` и аналогичные команды, если stderr или non-zero exit code являются ожидаемой частью workflow: Windows PowerShell 5.1 может превратить обычный stderr в terminating `NativeCommandError` до проверки `$LASTEXITCODE`.
+- Это относится не только к ожидаемым ошибочным exit codes. Успешные `git fetch`/`git push` также могут писать progress/status в stderr и поэтому не должны вызываться напрямую внутри автоматизированного runner с `$ErrorActionPreference = "Stop"`.
+- Для native process, чей stdout/stderr нужно контролировать, использовать `Start-Process -PassThru -Wait` с `-RedirectStandardOutput` и `-RedirectStandardError`, затем проверять `ExitCode` явно.
+- Для ожидаемых exit codes, например Engine `2` для invalid command или `3` для all-poll-failed acceptance, non-zero code считается штатным только при точном совпадении с ожидаемым значением. Любой другой non-zero code является blocking failure.
+- В Windows PowerShell 5.1 `Start-Process -ArgumentList` нельзя считать надёжным способом передать один аргумент, содержащий пробелы, кавычки или другие чувствительные к quoting символы: массив может быть собран обратно в command line с потерей границ аргумента.
+- Поэтому через `Start-Process -ArgumentList` разрешены только простые token-like аргументы без пробелов/сложного quoting либо комбинации, для которых границы аргументов однозначно доказаны.
+- Для multi-word commit message использовать file-based interface Git: записать сообщение во временный UTF-8 файл и выполнить `git commit -F <path>`. Не передавать multi-word message через `Start-Process -ArgumentList`.
+- Если native tool поддерживает response file, input file или другой file-based parameter, для сложных аргументов предпочитать этот механизм ручному escaping.
+- Временные control files для Git допускается размещать внутри `.git` с простым путём без пробелов или в `%TEMP%`; runner обязан удалять их в `finally`.
+- После любого сбоя runner-а на native-process boundary нельзя автоматически считать product step неуспешным. Сначала проверяются фактические `HEAD`, `origin/main`, index/worktree и, при необходимости, SHA256 staged blobs.
+- Continuation package после runner/tooling failure должен продолжать с фактически подтверждённого состояния и не применять source changes повторно, если их hashes и gates уже подтверждены.
 
 ## Короткий вывод и review artifacts
 
