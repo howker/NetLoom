@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\src\NetLoom.Domain\NetLoom.Domain.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Topology\NetLoom.Topology.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Protocols.Snmp\NetLoom.Protocols.Snmp.csproj" />
+    <ProjectReference Include="..\..\src\NetLoom.HostLogging\NetLoom.HostLogging.csproj" />
   </ItemGroup>
 
 </Project>

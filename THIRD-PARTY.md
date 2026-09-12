@@ -7,6 +7,7 @@
 | Lextm.SharpSnmpLib | 12.5.7 | MIT/X11 | SNMP transport |
 | System.Data.SQLite | 2.0.4 | Public Domain | SQLite ADO.NET provider |
 | SourceGear.sqlite3 | 3.53.4 | SQLite Public Domain | Native SQLite builds |
+| NLog | 6.2.0 | BSD-3-Clause | Shared persistent host logging for Desktop and Engine |
 
 ## Policy
 
