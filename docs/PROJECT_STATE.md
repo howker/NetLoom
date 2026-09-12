@@ -984,4 +984,18 @@ Acceptance 2026-09-12:
 - `git diff --check` passed;
 - acceptance completed with `HEAD == origin/main == 1ba268ee5071fcd4a35767bb3966d116893dad6d` and a clean worktree.
 
-Sprint 32B is closed. The next actionable P0 is the architecture gate before Sprint 32C: decide the final owner of localization resources and record it in `DECISIONS.md`.
+Sprint 32B is closed.
+
+## Architecture gate before Sprint 32C — localization ownership
+
+The gate is complete and recorded as ADR-063.
+
+Decision:
+- `NetLoom.Wpf` owns operator-facing localization resources for the Windows Desktop client;
+- `UiStrings.resx` is the English neutral/fallback resource and `UiStrings.ru.resx` is the Russian satellite resource;
+- `NetLoom.Desktop` owns explicit startup culture selection before WPF construction, but does not own UI strings;
+- Domain/Application/Contracts/Topology/Persistence/Protocols remain localization-neutral and expose structured semantics rather than pre-localized operator text;
+- pluralization and operator-facing formatting stay in the WPF presentation/localization layer;
+- future presentation clients own their own localization resources instead of putting shared UI strings into `NetLoom.Contracts`.
+
+The next actionable P0 is Sprint 32C — localization foundation.

@@ -812,3 +812,51 @@ Analyzer pure/read-only; no SQLite persistence, no Migration012, no UI write pat
 **Failure semantics.** Ошибка collector до получения успешного результата не запускает materialization этого step; failed poll не является доказательством удаления ранее известного Device/Interface.
 
 **Persistence.** Используются существующие `devices` и `interfaces`; новая SQLite migration не требуется. `Migration012` остаётся последней.
+
+## ADR-063 — WPF owns Desktop UI localization resources
+
+**Status:** Accepted.
+
+### Context
+
+The existing architecture already keeps WPF as presentation rather than domain-state owner (ADR-013), keeps topology/map contracts transport-neutral (ADR-035), and uses `NetLoom.Desktop` as the Windows composition root (ADR-040).
+
+Sprint 32C needs a durable localization boundary before introducing English neutral resources, Russian satellite resources, explicit culture selection, pluralization rules, localization-integrity checks, and removal of user-facing text that currently leaks from non-presentation layers.
+
+### Decision
+
+`NetLoom.Wpf` is the owner of operator-facing localization resources for the current Windows Desktop client.
+
+Resource ownership rules:
+- `NetLoom.Wpf` owns the Desktop UI string catalog;
+- `UiStrings.resx` is the English neutral/fallback resource;
+- `UiStrings.ru.resx` is the Russian satellite resource;
+- additional Desktop UI locales, if added later, are satellite resources owned by `NetLoom.Wpf`;
+- XAML templates and WPF code-behind must consume the same WPF-owned resource catalog rather than introduce parallel string stores.
+
+Culture-selection ownership is separate from resource ownership:
+- `NetLoom.Desktop` owns explicit startup culture selection because it is the composition root;
+- the selected culture is applied before WPF resources/windows are created;
+- `NetLoom.Desktop` does not become the owner of UI string resources.
+
+Backend boundaries remain localization-neutral:
+- `NetLoom.Domain`, `NetLoom.Application`, `NetLoom.Contracts`, `NetLoom.Topology`, persistence, and protocol projects do not own Desktop operator-facing localized strings;
+- cross-layer contracts expose structured data, enums, identifiers, reason codes, and evidence instead of pre-localized UI sentences;
+- any existing Topology/Application text intended for operator presentation must be replaced by structured semantics and localized in WPF;
+- pluralization and user-facing formatting belong to the WPF presentation/localization layer, not to topology analysis.
+
+Future clients do not share a global UI-string assembly by default:
+- a future Web UI or another presentation client owns its own presentation resources;
+- `NetLoom.Contracts` remains transport-neutral and does not become a localization resource container.
+
+Host diagnostics are a separate concern:
+- Engine/Desktop persistent logs and CLI diagnostics are not part of the WPF UI localization catalog;
+- changing diagnostic/log language requires a separate explicit decision if needed.
+
+### Consequences
+
+- Sprint 32C can add English neutral and Russian satellite resources without introducing a dependency from backend layers to WPF;
+- removal of the Topology text leak means converting presentation text at the source boundary into structured semantics, not moving Topology resources into another backend project;
+- localization-integrity checks for operator-facing `.cs`/XAML code can target the presentation boundary while allowing explicit technical/logging exceptions;
+- WPF remains free of direct Persistence/Topology dependencies;
+- future presentation technologies can localize independently while reusing the same transport-neutral contracts.
