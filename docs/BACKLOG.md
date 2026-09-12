@@ -123,13 +123,13 @@
   - [x] Lookup under SQLite contention does not freeze the Dispatcher.
   - [x] Manual contention acceptance confirms that the Desktop remains responsive while a SQLite writer holds a lock.
 
-- [ ] Sprint 32B - persistent host logging for Desktop and Engine.
-  - [ ] Use one logging mechanism for both hosts.
-  - [ ] Persist Desktop refresh/search failures instead of relying on debugger-only `Trace` output.
-  - [ ] Persist Engine polling/retention/materialization failures instead of relying on console-only output.
-  - [ ] Default Windows logs to `%ProgramData%\NetLoom\logs`.
-  - [ ] Define portable Linux log-path semantics for the `net8.0` Engine host.
-  - [ ] Make log level and rotation configurable.
+- [x] Sprint 32B - persistent host logging for Desktop and Engine.
+  - [x] Use one logging mechanism for both hosts.
+  - [x] Persist Desktop refresh/search failures instead of relying on debugger-only `Trace` output.
+  - [x] Persist Engine polling/retention/materialization failures instead of relying on console-only output.
+  - [x] Default Windows logs to `%ProgramData%\NetLoom\logs`.
+  - [x] Define portable Linux log-path semantics for the `net8.0` Engine host.
+  - [x] Make log level and rotation configurable.
 
 - [ ] Architecture gate before Sprint 32C - decide the final owner of localization resources and record it in `DECISIONS.md`.
 - [ ] Sprint 32C - localization foundation: English neutral resources, Russian satellite resources, explicit culture selection, pluralization, removal of the Topology text leak, `.cs` localization-integrity guard, and template-resource cleanup.

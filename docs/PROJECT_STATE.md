@@ -943,4 +943,45 @@ Acceptance 2026-09-12:
 - production wiring commit `0c22d4d` (`Wire desktop to coherent topology refresh`) is pushed with `HEAD == origin/main`;
 - manual SQLite contention used a real `BEGIN IMMEDIATE` writer transaction for 25 seconds against the two-device database; while the writer lock was held, the Desktop remained responsive, lookup remained responsive, and the map stayed visible; after lock release, normal refresh recovered.
 
-Sprint 32A is closed. The next actionable P0 is Sprint 32B — persistent host logging for Desktop and Engine.
+Sprint 32A is closed.
+
+## Sprint 32B — persistent host logging for Desktop and Engine
+
+Sprint 32B is complete.
+
+Implemented:
+- shared `NetLoom.HostLogging` host-logging layer for Desktop and Engine using NLog 6.2.0;
+- separate persistent host files `desktop.log` and `engine.log`;
+- Windows default log directory `%ProgramData%\NetLoom\logs`;
+- portable Engine log directory semantics: `$XDG_STATE_HOME/netloom/logs`, falling back to `$HOME/.local/state/netloom/logs`;
+- environment overrides `NETLOOM_LOG_DIRECTORY`, `NETLOOM_LOG_LEVEL`, `NETLOOM_LOG_MAX_BYTES`, and `NETLOOM_LOG_MAX_ARCHIVES`;
+- size-based rotation with bounded archive count;
+- Desktop startup failures are persisted as `HOST_FATAL`;
+- Desktop installs `HostLogTraceListener` at the composition root so existing WPF refresh/search `Trace` failures are persisted without adding a logging dependency to WPF;
+- Engine persists host startup/fatal events, runtime-smoke result, scheduler lifecycle, per-poll summary, failed poll-step type, all-steps-failed state, and retention failures;
+- failed Engine poll-step logging intentionally persists `ErrorType` without persisting `MonitoringPollStepResult.ErrorMessage`, reducing the chance of protocol/credential text entering the persistent log;
+- polling/materialization failures that surface as failed monitoring steps are therefore persisted through the Engine host boundary;
+- `THIRD-PARTY.md` records the NLog dependency/license;
+- no SQLite schema change; `Migration012` remains the latest migration.
+
+Commits:
+- `bdb7f7f` — `Add shared persistent host logging foundation`;
+- `1bd7d8a` — `Wire Engine to persistent host logging`;
+- `1ba268e` — `Wire Desktop to persistent host logging`.
+
+Acceptance 2026-09-12:
+- forced Unit, Integration, Snapshot, Engine, and Desktop builds passed;
+- Unit tests: 197/197;
+- Integration tests: 55/55;
+- Snapshot tests: 7/7;
+- total automated regression: 259/259;
+- Desktop invalid-startup acceptance created `desktop.log` and persisted `HOST_STARTED`, `HOST_FATAL`, and the startup exception;
+- `NETLOOM_LOG_LEVEL=Error` suppressed `HOST_STARTED` while retaining `HOST_FATAL`;
+- rotation acceptance with `NETLOOM_LOG_MAX_BYTES=512` and `NETLOOM_LOG_MAX_ARCHIVES=2` produced exactly two bounded archives;
+- a failed SNMP poll persisted `POLL_STEP_FAILED` and `ALL_POLL_STEPS_FAILED`;
+- a dedicated SNMP-community canary was absent from the persistent failed-poll log;
+- text-integrity audit passed;
+- `git diff --check` passed;
+- acceptance completed with `HEAD == origin/main == 1ba268ee5071fcd4a35767bb3966d116893dad6d` and a clean worktree.
+
+Sprint 32B is closed. The next actionable P0 is the architecture gate before Sprint 32C: decide the final owner of localization resources and record it in `DECISIONS.md`.
