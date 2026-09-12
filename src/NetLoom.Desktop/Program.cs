@@ -6,6 +6,7 @@ using NetLoom.Persistence.Sqlite.Stp;
 using NetLoom.Persistence.Sqlite.Topology;
 using NetLoom.Topology.Alerts;
 using NetLoom.Topology.Map;
+using NetLoom.Topology.Refresh;
 using NetLoom.Wpf;
 
 namespace NetLoom.Desktop
@@ -36,7 +37,7 @@ namespace NetLoom.Desktop
                 new SqliteStpObservationStore(
                     connectionFactory);
 
-            var provider =
+            var mapProvider =
                 new MaterializedMapSnapshotProvider(
                     topologyRepository,
                     new SqliteLocationRepository(
@@ -48,15 +49,21 @@ namespace NetLoom.Desktop
                     topologyRepository,
                     stpStore);
 
+            var refreshProvider =
+                new MaterializedTopologyRefreshSnapshotProvider(
+                    new SqliteMaterializedTopologyReadSetReader(
+                        connectionFactory),
+                    mapProvider,
+                    alertProvider);
+
             var application =
                 new System.Windows.Application();
 
             application.Run(
                 new MainWindow(
-                    provider,
+                    refreshProvider,
                     new SqliteMacIpLookupReader(
-                        connectionFactory),
-                    alertProvider));
+                        connectionFactory)));
         }
     }
 }
