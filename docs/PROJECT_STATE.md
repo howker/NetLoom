@@ -998,4 +998,40 @@ Decision:
 - pluralization and operator-facing formatting stay in the WPF presentation/localization layer;
 - future presentation clients own their own localization resources instead of putting shared UI strings into `NetLoom.Contracts`.
 
-The next actionable P0 is Sprint 32C — localization foundation.
+Sprint 32C is complete.
+
+## Sprint 32C — localization foundation
+
+Implemented:
+- `NetLoom.Wpf` now owns the Desktop localization catalog in accordance with ADR-063;
+- `UiStrings.resx` is the English neutral/fallback resource;
+- `UiStrings.ru.resx` is the Russian satellite resource with key/placeholder parity checks;
+- `NetLoom.Desktop` owns explicit startup culture selection before WPF construction;
+- default Desktop UI culture is `ru-RU`;
+- explicit `en-US` selection is supported;
+- unsupported culture selection is rejected rather than silently selecting an undefined locale;
+- plural-aware UI formatting is implemented for supported English/Russian count presentations;
+- the Topology presentation-text leak was removed so backend topology projection no longer owns the localized unknown-device label;
+- operator-facing unknown-device text is localized in WPF;
+- WPF template `App.xaml` / `App.xaml.cs` ownership was removed from the library boundary, with Desktop remaining the application composition root;
+- localization integrity coverage now checks resource parity/placeholders and blocks Cyrillic string literals in the guarded WPF/Topology C# presentation boundary while allowing comments;
+- backend contracts remain localization-neutral.
+
+Acceptance 2026-09-12:
+- forced Unit build passed;
+- localization tests: 8/8;
+- forced Integration, Snapshot, and Desktop builds passed;
+- full Unit tests: 203/203;
+- full Integration tests: 55/55;
+- full Snapshot tests: 7/7;
+- total automated regression: 265/265;
+- Russian satellite assembly was produced and verified;
+- culture selection acceptance passed for default `ru-RU`, explicit `en-US`, and unsupported-culture rejection;
+- text-integrity plus C# localization guard passed;
+- `git diff --check` passed;
+- exact implementation boundary was verified as 16/16 paths, including three new files and two intended deletions;
+- full staged diff was saved as a review artifact before commit;
+- implementation commit `cf6613e` is pushed with `HEAD == origin/main == cf6613ed8d064d0d4ce6e9d91c1b652b5d191140`;
+- postflight worktree is clean.
+
+Sprint 32C is closed. The next required step is the planned realistic 3–5 device SNMP/snmpsim stand acceptance, followed by review of `FRICTION_LOG.md` before choosing the next product feature.

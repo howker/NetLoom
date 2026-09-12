@@ -132,6 +132,6 @@
   - [x] Make log level and rotation configurable.
 
 - [x] Architecture gate before Sprint 32C - localization ownership fixed by ADR-063: WPF owns Desktop UI resources; Desktop owns startup culture selection; backend contracts remain localization-neutral.
-- [ ] Sprint 32C - localization foundation: English neutral resources, Russian satellite resources, explicit culture selection, pluralization, removal of the Topology text leak, `.cs` localization-integrity guard, and template-resource cleanup.
+- [x] Sprint 32C - localization foundation: English neutral resources, Russian satellite resources, explicit culture selection, pluralization, removal of the Topology text leak, `.cs` localization-integrity guard, and template-resource cleanup.
 - [ ] After 32A-32C, run a realistic 3-5 device SNMP/snmpsim stand acceptance and add only real operational observations to `FRICTION_LOG.md`.
 - [ ] Choose the next product feature only after stand acceptance and `FRICTION_LOG.md` review; do not start topology snapshots / time-machine work automatically.
