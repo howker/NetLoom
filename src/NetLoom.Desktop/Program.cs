@@ -31,6 +31,13 @@ namespace NetLoom.Desktop
                 hostLog.Info(
                     "HOST_STARTED");
 
+                var uiCulture =
+                    DesktopUiCultureSelector.Apply();
+
+                hostLog.Info(
+                    "UI_CULTURE name=" +
+                    uiCulture.Name);
+
                 traceListener =
                     new HostLogTraceListener(
                         hostLog);

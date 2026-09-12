@@ -82,8 +82,17 @@ $rxParagraph =
 
 $allowedWpfResxLowercaseNames =
     @(
-        "EvidenceCount"
+        "EvidenceCountOne",
+        "EvidenceCountFew",
+        "EvidenceCountMany",
+        "EvidenceCountOther"
     )
+
+$localizedCsLiteralRegex =
+    [regex](
+        '"(?:[^"\\]|\\.)*' +
+        '[\u0400-\u04FF]' +
+        '(?:[^"\\]|\\.)*"')
 
 function Get-RepositoryRelativePath
 {
@@ -217,6 +226,48 @@ foreach ($file in $files)
 
     $relativeNormalized =
         $relative.Replace("\", "/")
+
+    $isLocalizationNeutralCs =
+        $file.Extension.ToLowerInvariant() -eq ".cs" -and
+        ($relativeNormalized.StartsWith(
+            "src/NetLoom.Wpf/",
+            [StringComparison]::OrdinalIgnoreCase) -or
+         $relativeNormalized.StartsWith(
+            "src/NetLoom.Topology/",
+            [StringComparison]::OrdinalIgnoreCase))
+
+    if ($isLocalizationNeutralCs)
+    {
+        $csLines =
+            $text -split "`r?`n"
+
+        for ($csLineIndex = 0;
+             $csLineIndex -lt $csLines.Length;
+             $csLineIndex++)
+        {
+            $csLine =
+                $csLines[$csLineIndex]
+
+            if ($csLine.TrimStart().StartsWith(
+                    "//",
+                    [StringComparison]::Ordinal))
+            {
+                continue
+            }
+
+            if ($localizedCsLiteralRegex.IsMatch(
+                    $csLine))
+            {
+                $issues.Add(
+                    "LOCALIZED_CS_LITERAL: " +
+                    $relative +
+                    ":" +
+                    ($csLineIndex + 1) +
+                    ": " +
+                    $csLine.Trim())
+            }
+        }
+    }
 
     $isWpfResx =
         $file.Extension.ToLowerInvariant() -eq ".resx" -and
@@ -511,6 +562,7 @@ Write-Host "OK: no replacement characters"
 Write-Host "OK: no question-mark corruption"
 Write-Host "OK: all PowerShell scripts use UTF-8 BOM"
 Write-Host "OK: WPF .resx <value> starts passed text-integrity policy"
+Write-Host "OK: WPF/Topology C# files contain no localized Cyrillic string literals"
 Write-Host (
     "OK: suspect dropped-capital fingerprints match reviewed allowlist: " +
     $reviewedSuspectLineCount +

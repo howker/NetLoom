@@ -582,9 +582,15 @@ public partial class MainWindow : Window
         MapStatusText.Text =
             UiText.Format(
                 "MapSummary",
-                snapshot.Nodes.Count,
-                snapshot.Links.Count,
-                snapshot.Locations.Count);
+                UiText.FormatCount(
+                    "MapNodeCount",
+                    snapshot.Nodes.Count),
+                UiText.FormatCount(
+                    "MapLinkCount",
+                    snapshot.Links.Count),
+                UiText.FormatCount(
+                    "MapLocationCount",
+                    snapshot.Locations.Count));
 
         BringHighlightedDeviceIntoView();
     }
@@ -633,7 +639,7 @@ public partial class MainWindow : Window
                     " • " +
                     FreshnessText(link.Freshness) +
                     " • " +
-                    UiText.Format(
+                    UiText.FormatCount(
                         "EvidenceCount",
                         link.Evidence.Count),
 
@@ -655,6 +661,24 @@ public partial class MainWindow : Window
         MapCanvas.Children.Add(label);
     }
 
+    private static string DisplayNodeLabel(
+        MapNode node)
+    {
+        if (node == null)
+        {
+            throw new ArgumentNullException(
+                nameof(node));
+        }
+
+        return string.Equals(
+                node.Label,
+                node.Key,
+                StringComparison.Ordinal)
+            ? UiText.Get(
+                "NodeUnknownLabel")
+            : node.Label;
+    }
+
     private void DrawNode(
         MapNode node,
         IReadOnlyDictionary<Guid, MapLocation> locations)
@@ -662,7 +686,9 @@ public partial class MainWindow : Window
         var title =
             new TextBlock
             {
-                Text = node.Label,
+                Text =
+                    DisplayNodeLabel(
+                        node),
                 FontWeight =
                     FontWeights.SemiBold,
                 TextTrimming =
@@ -926,7 +952,7 @@ public partial class MainWindow : Window
             rows.Length == 0
                 ? UiText.Get(
                     "LookupNoResults")
-                : UiText.Format(
+                : UiText.FormatCount(
                     "LookupResultCount",
                     rows.Length,
                     result.NormalizedQuery);

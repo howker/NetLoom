@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -140,7 +140,8 @@ namespace NetLoom.Topology.Map
                     new MapNode(
                         claims[index].Key,
                         BuildLabel(
-                            claims[index].Claim),
+                            claims[index].Claim) ??
+                        claims[index].Key,
                         BuildSecondaryText(
                             claims[index].Claim),
                         60.0 + (column * 240.0),
@@ -297,7 +298,7 @@ namespace NetLoom.Topology.Map
                 return endpoint.ManagementAddress.Trim();
             }
 
-            return "еизвестное устройство";
+            return null;
         }
 
         private static string BuildSecondaryText(

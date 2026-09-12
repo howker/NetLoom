@@ -118,76 +118,76 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="WindowTitle" xml:space="preserve">
-    <value>NetLoom — physical topology</value>
+    <value>NetLoom — физическая топология</value>
   </data>
   <data name="MapTitle" xml:space="preserve">
-    <value>Physical topology</value>
+    <value>Физическая топология</value>
   </data>
   <data name="MapNotLoaded" xml:space="preserve">
-    <value>The map has not been loaded yet.</value>
+    <value>Карта пока не загружена.</value>
   </data>
   <data name="MapSummary" xml:space="preserve">
     <value>{0}   {1}   {2}</value>
   </data>
   <data name="ConfidenceHigh" xml:space="preserve">
-    <value>High confidence</value>
+    <value>Высокая уверенность</value>
   </data>
   <data name="ConfidenceMedium" xml:space="preserve">
-    <value>Medium confidence</value>
+    <value>Средняя уверенность</value>
   </data>
   <data name="ConfidenceLow" xml:space="preserve">
-    <value>Low confidence</value>
+    <value>Низкая уверенность</value>
   </data>
   <data name="FreshnessFresh" xml:space="preserve">
-    <value>Fresh</value>
+    <value>Актуально</value>
   </data>
   <data name="FreshnessAging" xml:space="preserve">
-    <value>Aging</value>
+    <value>Старевает</value>
   </data>
   <data name="FreshnessStale" xml:space="preserve">
-    <value>Stale</value>
+    <value>Устарело</value>
   </data>
 <data name="LocationUnassigned" xml:space="preserve">
-    <value>Location: unassigned</value>
+    <value>Расположение: не назначено</value>
   </data>
   <data name="LocationUnknown" xml:space="preserve">
-    <value>Location: unknown</value>
+    <value>Расположение: неизвестно</value>
   </data>
   <data name="LocationNamed" xml:space="preserve">
-    <value>Location: {0}</value>
+    <value>Расположение: {0}</value>
   </data>
   <data name="NodeOriginManual" xml:space="preserve">
-    <value>Manual</value>
+    <value>Ручной</value>
   </data>
   <data name="NodeOriginAutomatic" xml:space="preserve">
-    <value>Automatic</value>
+    <value>Автоматический</value>
   </data>
   <data name="NodeOriginImported" xml:space="preserve">
-    <value>Imported</value>
+    <value>Импортированный</value>
   </data>
   <data name="MonitoringNone" xml:space="preserve">
-    <value>Not monitored</value>
+    <value>Не контролируется</value>
   </data>
   <data name="CategoryMediaConverter" xml:space="preserve">
-    <value>Media converter</value>
+    <value>Медиаконвертор</value>
   </data>
   <data name="CategoryUnmanagedSwitch" xml:space="preserve">
-    <value>Unmanaged switch</value>
+    <value>Неуправляемый коммутатор</value>
   </data>
   <data name="CategoryOpticalConverter" xml:space="preserve">
-    <value>Optical converter</value>
+    <value>Оптический преобразователь</value>
   </data>
   <data name="CategoryPassiveNetworkEquipment" xml:space="preserve">
-    <value>Passive network device</value>
+    <value>Пассивное сетевое устройство</value>
   </data>
   <data name="LookupCandidateSummary" xml:space="preserve">
     <value>{0} • {1} • {2}</value>
   </data>
   <data name="LookupDetailArpObserved" xml:space="preserve">
-    <value>ARP observed: {0:G}</value>
+    <value>ARP наблюдался: {0:G}</value>
   </data>
   <data name="LookupDetailArpSource" xml:space="preserve">
-    <value>ARP observation source: {0}</value>
+    <value>Источник ARP-наблюдения: {0}</value>
   </data>
   <data name="LookupDetailBridgePort" xml:space="preserve">
     <value>bridgePort: {0}</value>
@@ -196,10 +196,10 @@
     <value>DeviceId: {0}</value>
   </data>
   <data name="LookupDetailFdbObserved" xml:space="preserve">
-    <value>FDB observed: {0:G}</value>
+    <value>FDB наблюдался: {0:G}</value>
   </data>
   <data name="LookupDetailFdbSource" xml:space="preserve">
-    <value>FDB observation source: {0}</value>
+    <value>Источник FDB-наблюдения: {0}</value>
   </data>
   <data name="LookupDetailIfIndex" xml:space="preserve">
     <value>ifIndex: {0}</value>
@@ -214,189 +214,189 @@
     <value>MAC: {0}</value>
   </data>
   <data name="LookupDetailStatus" xml:space="preserve">
-    <value>Status: {0}</value>
+    <value>Состояние: {0}</value>
   </data>
   <data name="LookupInterfaceShort" xml:space="preserve">
     <value>ifIndex {0}</value>
   </data>
   <data name="LookupInterfaceUnavailable" xml:space="preserve">
-    <value>Interface not resolved</value>
+    <value>Интерфейс не определён</value>
   </data>
   <data name="LookupInvalidQuery" xml:space="preserve">
-    <value>Enter a valid MAC or IP address.</value>
+    <value>Введите корректный MAC- или IP-адрес.</value>
   </data>
   <data name="LookupNoResults" xml:space="preserve">
-    <value>No matches found.</value>
+    <value>Совпадений не найдено.</value>
   </data>
   <data name="LookupQueryLabel" xml:space="preserve">
-    <value>MAC or IP address</value>
+    <value>MAC- или IP-адрес</value>
   </data>
   <data name="LookupReady" xml:space="preserve">
-    <value>Enter a MAC or IP address.</value>
+    <value>Введите MAC- или IP-адрес.</value>
   </data>
   <data name="LookupResolvedInterfaceCaveat" xml:space="preserve">
-    <value>An exact switch/interface was found for this observation; this is not automatic proof of the final access port.</value>
+    <value>Найден точный switch/interface для этого наблюдения; это не является автоматическим доказательством конечного access-порта.</value>
   </data>
 <data name="LookupResultsLabel" xml:space="preserve">
-    <value>Candidates</value>
+    <value>Кандидаты</value>
   </data>
   <data name="LookupSearchAction" xml:space="preserve">
-    <value>Search</value>
+    <value>Найти</value>
   </data>
   <data name="LookupSearchFailed" xml:space="preserve">
-    <value>Search failed. Details were written to the log.</value>
+    <value>Не удалось выполнить поиск. Подробности записаны в журнал.</value>
   </data>
   <data name="LookupSelectCandidate" xml:space="preserve">
-    <value>Select a candidate to view details.</value>
+    <value>Выберите кандидата, чтобы увидеть подробности.</value>
   </data>
   <data name="LookupStatusBridgePortAmbiguous" xml:space="preserve">
-    <value>bridgePort resolves ambiguously</value>
+    <value>bridgePort разрешается неоднозначно</value>
   </data>
   <data name="LookupStatusBridgePortUnresolved" xml:space="preserve">
-    <value>bridgePort is unresolved</value>
+    <value>bridgePort не разрешён</value>
   </data>
   <data name="LookupStatusFdbNotObserved" xml:space="preserve">
-    <value>FDB observation not found</value>
+    <value>FDB-наблюдение не найдено</value>
   </data>
   <data name="LookupStatusInterfaceNotMaterialized" xml:space="preserve">
-    <value>Interface is not materialized yet</value>
+    <value>Интерфейс ещё не материализован</value>
   </data>
   <data name="LookupStatusObservationUnbound" xml:space="preserve">
-    <value>Observation is not bound to a device</value>
+    <value>Наблюдение не связано с устройством</value>
   </data>
   <data name="LookupStatusResolvedInterface" xml:space="preserve">
-    <value>Device and interface resolved exactly</value>
+    <value>Устройство и интерфейс разрешены точно</value>
   </data>
   <data name="LookupTitle" xml:space="preserve">
-    <value>MAC/IP lookup</value>
+    <value>Поиск MAC/IP</value>
   </data>
   <data name="AlertTitle" xml:space="preserve">
-    <value>Current alerts</value>
+    <value>Текущие предупреждения</value>
   </data>
   <data name="AlertNone" xml:space="preserve">
-    <value>There are no active topology/ring alerts.</value>
+    <value>Активных предупреждений топологии/колец нет.</value>
   </data>
   <data name="AlertSummary" xml:space="preserve">
-    <value>Critical: {0}   Warnings: {1}</value>
+    <value>Критических: {0}   Предупреждений: {1}</value>
   </data>
   <data name="AlertRefreshFailed" xml:space="preserve">
-    <value>Alert refresh failed. Details were written to the log.</value>
+    <value>Не удалось обновить предупреждения. Подробности записаны в журнал.</value>
   </data>
   <data name="AlertSeverityCritical" xml:space="preserve">
-    <value>Critical</value>
+    <value>Критическое</value>
   </data>
   <data name="AlertSeverityWarning" xml:space="preserve">
-    <value>Warning</value>
+    <value>Предупреждение</value>
   </data>
   <data name="AlertKindForwardingCycle" xml:space="preserve">
-    <value>Forwarding cycle</value>
+    <value>Цикл пересылки</value>
   </data>
   <data name="AlertKindRingProtectionDegraded" xml:space="preserve">
-    <value>Ring protection degraded</value>
+    <value>Защита кольца деградировала</value>
   </data>
   <data name="AlertReasonConfirmedForwardingCycle" xml:space="preserve">
-    <value>Confirmed forwarding cycle</value>
+    <value>Подтверждён цикл пересылки</value>
   </data>
   <data name="AlertReasonDisabledRingLink" xml:space="preserve">
-    <value>A ring link is disabled</value>
+    <value>В кольце отключена связь</value>
   </data>
   <data name="AlertReasonMultipleBlockingRingLinks" xml:space="preserve">
-    <value>Multiple ring links are blocking</value>
+    <value>В кольце заблокировано несколько связей</value>
   </data>
   <data name="AlertRowHeader" xml:space="preserve">
     <value>{0} — {1}</value>
   </data>
   <data name="AlertInstance" xml:space="preserve">
-    <value>STP instance: {0}</value>
+    <value>Экземпляр STP: {0}</value>
   </data>
   <data name="AlertRegions" xml:space="preserve">
-    <value>Region: {0}</value>
+    <value>Регион: {0}</value>
   </data>
   <data name="AlertLinks" xml:space="preserve">
     <value>PhysicalLinkId: {0}</value>
   </data>
   <data name="AlertReasons" xml:space="preserve">
-    <value>Reasons: {0}</value>
+    <value>Причины: {0}</value>
   </data>
   <data name="AlertTransitionFirstAppearance" xml:space="preserve">
-    <value>New alerts appeared.</value>
+    <value>Появились новые предупреждения.</value>
   </data>
   <data name="AlertTransitionChanged" xml:space="preserve">
-    <value>The alert set changed.</value>
+    <value>Набор предупреждений изменился.</value>
   </data>
   <data name="AlertTransitionResolved" xml:space="preserve">
-    <value>Alerts resolved.</value>
+    <value>Предупреждения разрешены.</value>
   </data>
   <data name="TopologyRefreshInitialFailed" xml:space="preserve">
-    <value>The first topology refresh failed. No data is available yet. Details were written to the log.</value>
+    <value>Не удалось выполнить первое обновление топологии. Данных пока нет. Подробности записаны в журнал.</value>
   </data>
   <data name="MapRefreshStale" xml:space="preserve">
-    <value>Showing the last successful map from {0:G}. The new refresh failed.</value>
+    <value>Показана последняя успешная карта от {0:G}. Новое обновление не удалось.</value>
   </data>
   <data name="AlertRefreshStale" xml:space="preserve">
-    <value>Showing the last successful alerts from {0:G}. The new refresh failed.</value>
+    <value>Показаны последние успешные предупреждения от {0:G}. Новое обновление не удалось.</value>
   </data>
   <data name="MapNodeCountOne" xml:space="preserve">
-    <value>{0} node</value>
+    <value>{0} узел</value>
   </data>
   <data name="MapNodeCountFew" xml:space="preserve">
-    <value>{0} nodes</value>
+    <value>{0} узла</value>
   </data>
   <data name="MapNodeCountMany" xml:space="preserve">
-    <value>{0} nodes</value>
+    <value>{0} узлов</value>
   </data>
   <data name="MapNodeCountOther" xml:space="preserve">
-    <value>{0} nodes</value>
+    <value>{0} узла</value>
   </data>
   <data name="MapLinkCountOne" xml:space="preserve">
-    <value>{0} link</value>
+    <value>{0} связь</value>
   </data>
   <data name="MapLinkCountFew" xml:space="preserve">
-    <value>{0} links</value>
+    <value>{0} связи</value>
   </data>
   <data name="MapLinkCountMany" xml:space="preserve">
-    <value>{0} links</value>
+    <value>{0} связей</value>
   </data>
   <data name="MapLinkCountOther" xml:space="preserve">
-    <value>{0} links</value>
+    <value>{0} связи</value>
   </data>
   <data name="MapLocationCountOne" xml:space="preserve">
-    <value>{0} location</value>
+    <value>{0} расположение</value>
   </data>
   <data name="MapLocationCountFew" xml:space="preserve">
-    <value>{0} locations</value>
+    <value>{0} расположения</value>
   </data>
   <data name="MapLocationCountMany" xml:space="preserve">
-    <value>{0} locations</value>
+    <value>{0} расположений</value>
   </data>
   <data name="MapLocationCountOther" xml:space="preserve">
-    <value>{0} locations</value>
+    <value>{0} расположения</value>
   </data>
   <data name="EvidenceCountOne" xml:space="preserve">
-    <value>{0} evidence item</value>
+    <value>подтверждение: {0}</value>
   </data>
   <data name="EvidenceCountFew" xml:space="preserve">
-    <value>{0} evidence items</value>
+    <value>подтверждения: {0}</value>
   </data>
   <data name="EvidenceCountMany" xml:space="preserve">
-    <value>{0} evidence items</value>
+    <value>подтверждений: {0}</value>
   </data>
   <data name="EvidenceCountOther" xml:space="preserve">
-    <value>{0} evidence items</value>
+    <value>подтверждения: {0}</value>
   </data>
   <data name="LookupResultCountOne" xml:space="preserve">
-    <value>Found {0} candidate. Query: {1}</value>
+    <value>Найден {0} кандидат. Запрос: {1}</value>
   </data>
   <data name="LookupResultCountFew" xml:space="preserve">
-    <value>Found {0} candidates. Query: {1}</value>
+    <value>Найдено {0} кандидата. Запрос: {1}</value>
   </data>
   <data name="LookupResultCountMany" xml:space="preserve">
-    <value>Found {0} candidates. Query: {1}</value>
+    <value>Найдено {0} кандидатов. Запрос: {1}</value>
   </data>
   <data name="LookupResultCountOther" xml:space="preserve">
-    <value>Found {0} candidates. Query: {1}</value>
+    <value>Найдено {0} кандидата. Запрос: {1}</value>
   </data>
   <data name="NodeUnknownLabel" xml:space="preserve">
-    <value>Unknown device</value>
+    <value>Неизвестное устройство</value>
   </data>
 </root>
