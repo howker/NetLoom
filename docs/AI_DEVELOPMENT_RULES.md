@@ -46,7 +46,7 @@
 
 - По умолчанию после подтверждения scope ИИ должен собирать связанные технические действия в один пакет: preflight → применение изменения → build → targeted tests → нужный regression → integrity gates → boundary check → review artifact → stage → commit → push → postflight.
 - Один пакет всё равно должен соответствовать правилу «одна задача — один логический набор изменений». Нельзя объединять в один commit независимые feature/fix/docs задачи только ради уменьшения числа запусков.
-- Если изменение подготовлено ИИ как готовый artifact и его SHA256 совпадает, дополнительное подтверждение между применением, проверками, commit и push не требуется, если все gates зелёные и фактический changed-file set совпадает с ожидаемым.
+- Если изменение подготовлено ИИ как готовый artifact и его SHA256 совпадает, дополнительное подтверждение между применением, проверками, commit и push не требуется только если зелёные именно repository-native gates, фактические worktree/index/commit boundaries совпадают с ожидаемыми, а post-commit proof подтверждает содержимое созданного commit.
 - Пакет обязан остановиться до commit при реальной ошибке, несовпадении SHA256, неожиданном изменённом файле, failed test/build/integrity gate, неожиданном exit code или расхождении `HEAD`/`origin/main`.
 - Ошибка самого runner/tooling не приравнивается автоматически к ошибке продукта: continuation сначала восстанавливает фактическое состояние через `HEAD`/`origin/main`, staged/unstaged boundary и hashes, а уже затем решает, что нужно повторять. Уже прошедшие дорогие build/test gates не запускаются заново без причины, если source bytes не изменились.
 - Неожиданные изменения нельзя молча включать в commit. Если build/tooling изменил, например, `.sln` или другой файл вне ожидаемой границы, пакет должен остановиться или явно восстановить только доказанно постороннее изменение из `HEAD` и затем повторно проверить boundary.
@@ -98,6 +98,25 @@
 - Roadmap описывает направление, а не обязательство. В `BACKLOG.md` committed work должен быть явно отделён от next candidates и long-term roadmap.
 - `FRICTION_LOG.md` имеет приоритет над speculative feature planning после realistic stand acceptance.
 
+## Доказательство состояния репозитория и дисциплина blocking gates
+
+Этот раздел зафиксирован после разбора ошибок canonical-doc consolidation и имеет приоритет над более ранними упрощёнными формулировками package workflow.
+
+- Зелёная проверка файла или ZIP, созданного ИИ вне репозитория, не доказывает прохождение repository-native gate. После применения artifact обязательны проверки из самого репозитория, включая `tools/Check-TextEncoding.ps1`, если он применим к изменённым файлам.
+- Для автоматического commit/push changed-file boundary проверяется на трёх разных уровнях: worktree, index и фактический commit. Успешная проверка `git diff --name-only` до commit не доказывает состав созданного commit.
+- После commit до push обязательно проверить фактический состав нового commit через `git diff-tree --no-commit-id --name-only -r HEAD` или эквивалент и сопоставить его с ожидаемым набором путей.
+- Для файлов, для которых ИИ публикует exact content, доказательная цепочка должна быть: package SHA256 → destination SHA256 → Git index blob → blob в HEAD tree. Для Git допускается использовать `git hash-object`, `git ls-files -s` и `git ls-tree`.
+- Для docs commit `git show --check HEAD` является обязательным post-commit pre-push gate и не заменяется предыдущим `git diff --check`.
+- Любой blocking gate с non-zero exit code прекращает текущий логический проход до stage/commit. Нельзя продолжать последующими командами и затем считать весь проход валидным.
+- Если пользователь вставляет многострочный блок интерактивно и часть блока была пропущена, повреждена или выполнение уже завершилось `throw`, последующие команды не считаются продолжением валидированного runner-а. Сначала восстанавливается фактическое состояние репозитория; для длинного workflow используется файл `.ps1`.
+- Строка `SUCCESS` является только кратким отчётом. Доказательством completion служат проверяемые факты: новый `HEAD`, ожидаемый состав commit, нужные HEAD tree blobs, зелёные blocking gates, `HEAD == origin/main` и чистый worktree.
+- Количество файлов в package и количество файлов, изменённых commit'ом, являются разными величинами. Неизменённые canonical files могут входить в package и должны проверяться по HEAD tree, но не должны искусственно попадать в commit.
+- Нельзя возвращать устаревший или нежелательный текст в документацию только ради совпадения integrity allowlist/baseline. `STALE_*_ALLOWLIST_ENTRY` означает, что нужно проверить намеренность удаления и при подтверждённом улучшении уменьшить/обновить allowlist как reviewable repository change. Baseline не подгоняется под новый вывод и не повышается автоматически.
+- Новый `UNREVIEWED_*` suspect является blocking signal до review. Если это false positive, предпочтительно безопасно изменить формулировку без изменения смысла либо отдельно улучшить detector/allowlist; нельзя просто игнорировать non-zero gate.
+- Массовое удаление trailing whitespace, нормализация line endings или перекодировка запрещены как способ исправить несколько конкретных строк, если это создаёт большой несвязанный diff. Для точечного дефекта меняются только доказанно затронутые строки; full-file replacement допустим только как заранее подготовленный canonical artifact с reviewable diff.
+- Для non-ASCII Git paths не разбирать quoted output `git ls-files` как filesystem path. При необходимости человекочитаемого вывода использовать `git -c core.quotePath=false ...`; ещё лучше — брать пути из manifest/actual filesystem и отдельно проверять, что они tracked.
+- Перед публикацией сложного PowerShell runner желательно выполнить Windows PowerShell 5.1 parser preflight без запуска бизнес-действий. Parser success не заменяет runtime acceptance, но ловит повреждённый script artifact до передачи пользователю.
+
 ## Короткий вывод и review artifacts
 
 - Успешный пакет должен писать в терминал только короткие строки `OK:`/`SUCCESS:` и итоговые идентификаторы (`HEAD`, путь к details/report при необходимости).
@@ -117,7 +136,7 @@
 - Для русского/non-ASCII Markdown ИИ отдаёт полный готовый `.md` файл и SHA256; пользователь скачивает и заменяет файл целиком.
 - Если обновляются несколько Markdown-файлов, ИИ отдаёт каждый готовым отдельным файлом с отдельным SHA256.
 - Не использовать PowerShell here-string или длинные search/replace patch scripts для русского/non-ASCII Markdown, если можно отдать готовый файл.
-- Apply runner должен: найти скачанные файлы → проверить их SHA256 → проверить preflight → заменить целевые файлы → повторно проверить destination SHA256 → запустить text-integrity → `git diff --check` → проверить точный changed-file set → сохранить полный diff в файл → stage → staged boundary/check → commit → push → postflight.
+- Apply runner должен: найти скачанные файлы → проверить их SHA256 → проверить preflight → заменить целевые файлы → повторно проверить destination SHA256 → запустить repository-native text-integrity → `git diff --check` → проверить точный worktree changed-file set → сохранить полный diff в файл → stage → staged boundary/check → проверить index blobs → commit → проверить фактический commit changed-file set и HEAD tree blobs → `git show --check HEAD` → push → postflight.
 - Если docs package проходит все проверки и hashes совпадают, commit/push выполняются в том же проходе без дополнительной остановки.
 - При любой проблеме с docs patching нужно вернуться к полному replacement-file workflow, а не пытаться чинить повреждённый Markdown дополнительными консольными патчами.
 - Docs-only commit не должен захватывать source/project files.
@@ -181,7 +200,7 @@ $OutputEncoding = $utf8
 - Детектор `SUSPECT_DROPPED_CAPITAL` нельзя превращать в gate по произвольно взятому текущему числу.
 - Перед введением baseline необходимо один раз запустить детектор с детализацией, проверить его scope и false positives и зафиксировать reviewed baseline в репозитории.
 - После появления reviewed baseline новый suspect count выше baseline должен завершать проверку с `FAIL` и non-zero exit code.
-- Baseline не повышается автоматически. Его увеличение допускается только отдельным осознанным изменением с объяснением в diff/commit; нормальное направление baseline — только вниз.
+- Baseline не повышается автоматически. Его увеличение допускается только отдельным осознанным изменением с объяснением в diff/commit; нормальное направление baseline — только вниз. Если легитимное редактирование удалило ранее reviewed suspect, stale allowlist/baseline нужно уменьшить или обновить, а не возвращать старую формулировку в документацию ради зелёного gate.
 - Желательно хранить baseline отдельным versioned файлом в `tools/`, чтобы изменение порога было видно в code review.
 - Добавление нового integrity check считается завершённым только после доказательства, что тест/скрипт способен краснеть на известном плохом fixture или контролируемой регрессии.
 - Успешный `git diff --check` не заменяет text-integrity gate: эти проверки ловят разные классы проблем.
