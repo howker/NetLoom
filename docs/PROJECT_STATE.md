@@ -52,7 +52,7 @@ Sprint 32C localization foundation, post-closure neutral-resource correction, ma
 - проверка диапазона TCP-портов;
 - integration-тесты, подтверждающие отсутствие plaintext-секрета в SQLite.
 
-## Известные ограничения
+## Исторические ограничения после Sprint 2
 
 - SNMP transport ещё не реализован;
 - discovery ещё не реализован;
@@ -62,7 +62,7 @@ Sprint 32C localization foundation, post-closure neutral-resource correction, ma
 - текущая сборка x64;
 - DPAPI CurrentUser требует отдельного решения для сервисной учётной записи при переходе к Windows Service.
 
-## Следующий шаг
+## Исторический следующий шаг после Sprint 2
 
 Sprint 3: SNMP transport.
 
