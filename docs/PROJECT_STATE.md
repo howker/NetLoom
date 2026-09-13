@@ -6,9 +6,11 @@
 
 ## Текущее состояние
 
-Sprint 0, Sprint 1 и Sprint 2 завершены.
+Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation и AI development verification hardening завершены.
 
-Следующий этап: Sprint 3 — SNMP transport.
+Текущий обязательный следующий этап: реалистичный 3–5 device SNMP/snmpsim stand с реальным использованием WPF, затем review только наблюдаемого `FRICTION_LOG.md` и выбор ровно одного следующего product Sprint.
+
+До review stand friction новый product Sprint не назначается.
 
 ## Основа проекта
 
