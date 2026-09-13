@@ -97,12 +97,12 @@ The following directions are architectural map, not a promise of immediate imple
 
 - bounded interface-degradation detection using counter deltas plus `ifCounterDiscontinuityTime`; bounded evaluator state may live in the operational SQLite and is not time-series history;
 - durable `AlertCondition -> Incident -> Outbox -> NotificationDelivery` before reliable outbound delivery is promised;
-- configured notification routing through adapters rather than hard-coded transport priority;
+- configured notification routing by event/kind/severity through adapters (SNMP Trap/Inform, Syslog, SMTP and optional SMS/GSM) rather than hard-coded transport priority; Trap is not acknowledged delivery, while Inform may be used when acknowledgement semantics are required;
 - production configuration separated from secrets and host overrides;
 - runtime LTS migration combined with first production deployment readiness;
 - HTTP API security boundary before a Web UI;
 - evidence-oriented failure localization with structural blast radius kept separate from observed outage scope;
-- future industrial protection analyzers must not infer `Unprotected` merely from missing STP evidence;
+- future industrial protection analyzers must not infer `Unprotected` merely from missing STP evidence; unsupported or insufficient protection evidence remains `Unresolved` / `UnsupportedProtectionEvidence`;
 - future `SiteId`/`ProbeId` semantics are reserved for distributed reachability analysis.
 
 

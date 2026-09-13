@@ -134,12 +134,13 @@
 - [x] Architecture gate before Sprint 32C - localization ownership fixed by ADR-063: WPF owns Desktop UI resources; Desktop owns startup culture selection; backend contracts remain localization-neutral.
 - [x] Sprint 32C - localization foundation: English neutral resources, Russian satellite resources, explicit culture selection, pluralization, removal of the Topology text leak, `.cs` localization-integrity guard, and template-resource cleanup.
 - [x] Sprint 32C post-closure correction — declared English neutral resources with `NeutralResourcesLanguage("en")` and added regression evidence. Structured XML inspection confirms `Name1`, `Icon1`, and `Bitmap1` are not actual `<data>` resource entries; their text appears only in the standard ResX schema comment and is not a cleanup defect.
-- [ ] After the 32C correction, run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
+- [x] Master-plan documentation alignment — product boundary, platform/runtime split, canonical Engine host, multi-client presentation boundary, client-owned localization, friction-driven prioritization and long-term roadmap are recorded in the canonical documentation.
+- [ ] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [ ] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
 ## Execution map after Sprint 32C
 
-Only the three unchecked items immediately above are committed work.
+Only the two unchecked items immediately above are committed work.
 
 ### Next candidates — choose after stand, not commitments
 
@@ -150,7 +151,7 @@ Preferred order only if stand friction does not reveal a more important problem:
 - [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
 - [ ] Interface degradation detection using errors/discards/`ifLastChange` with `ifCounterDiscontinuityTime` and correct counter-wrap/reset semantics.
 - [ ] Durable incident lifecycle + persistent outbox.
-- [ ] First outbound notification adapter chosen from a real deployment need; transport priority is configuration, not architecture.
+- [ ] First outbound notification adapter chosen from a real deployment need; routing by event/kind/severity is configuration, not architecture, and Trap is not treated as acknowledged delivery.
 
 ### Roadmap — direction, not scheduled backlog commitment
 
@@ -160,7 +161,7 @@ Preferred order only if stand friction does not reveal a more important problem:
 - HTTP API with localhost-by-default remote security boundary.
 - Web client only after the API boundary is accepted and a real use case exists.
 - Probable failure-boundary localization with structural blast radius kept separate from observed outage scope.
-- Additional industrial protection protocols without false `Unprotected` conclusions from missing STP evidence.
+- Additional industrial protection protocols without false `Unprotected` conclusions from missing STP evidence; unsupported/insufficient evidence remains `Unresolved` / `UnsupportedProtectionEvidence`.
 - Future Site/Probe identity if distributed monitoring becomes necessary.
 
 The roadmap does not supersede the priority rule: recurring real friction beats speculative product work.

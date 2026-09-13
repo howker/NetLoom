@@ -1037,27 +1037,26 @@ Acceptance 2026-09-12:
 Sprint 32C is closed. The next required step is the planned realistic 3–5 device SNMP/snmpsim stand acceptance, followed by review of `FRICTION_LOG.md` before choosing the next product feature.
 
 
-## Current committed sequence after architecture review
+## Current execution gate after architecture review
 
-Planning review after Sprint 32C narrowed execution to a small committed sequence instead of treating the long architecture roadmap as a multi-year obligation.
+The architecture/master-plan review is recorded in the canonical documentation.
 
 Confirmed current facts:
 - Sprint 32C implementation and documentation are closed;
-- AI runner/workflow hardening is pushed at `1114f7f0272f11e49492280e5c73b9f7e409319b`;
-- structured XML inspection of the current `UiStrings.resx` and `UiStrings.ru.resx` shows 94 actual `<data>` entries in each and **no** `Name1`, `Icon1`, or `Bitmap1` data entries;
-- those names occur only inside the standard ResX schema documentation comment, so grep-by-token would be a false-positive acceptance check;
-- `NetLoom.Wpf/AssemblyInfo.cs` currently has no `NeutralResourcesLanguage` declaration, so this is the real Sprint 32C post-closure correction.
+- the post-closure neutral-resource correction is complete;
+- structured XML inspection of `UiStrings.resx` and `UiStrings.ru.resx` found no `Name1`, `Icon1`, or `Bitmap1` `<data>` entries; those names exist only in the standard ResX schema documentation comment;
+- `NetLoom.Wpf` declares `[assembly: NeutralResourcesLanguage("en")]`;
+- product scope is network observability/topology/diagnostics, not process-data acquisition or a generic NMS;
+- the long architecture roadmap is direction, not an automatic Sprint sequence.
 
 Committed next steps:
-1. Sprint 32C post-closure correction: add `NeutralResourcesLanguage("en")` and regression evidence; do not edit standard ResX schema comments as if they were product resources.
-2. Run the realistic 3–5 device SNMP/snmpsim stand with the WPF client as a working session.
-3. Record only real operational observations in `FRICTION_LOG.md`, review them, and choose exactly one next product Sprint.
+1. Run the realistic 3–5 device SNMP/snmpsim stand with the WPF client as a normal working session.
+2. Record only observed operational friction in `FRICTION_LOG.md`.
+3. Review that friction and choose exactly one next product Sprint.
 
-The default next candidate, only if stand friction does not reveal a more important problem, is incremental WPF map reconciliation. It is treated as a current usability/scalability correction first and as the foundation for themes/animation second.
+Default next candidate, only if stand friction does not reveal a more important problem: incremental WPF map reconciliation that preserves selection, zoom/pan, pinned/manual layout and unchanged visual identity.
 
-The longer directions (degradation detection, durable incidents/outbox, outbound notification, deployment/runtime LTS migration, HTTP API/Web, failure localization, additional industrial protection, Site/Probe) are roadmap, not committed Sprint sequence.
-
-Product boundary: NetLoom remains a network observability/topology/diagnostics product. It does not become a SCADA, process historian, Modbus/OPC UA process-data acquisition system, PLC diagnostics suite, generic Industrial IoT platform, or universal NMS.
+Longer directions — interface degradation, durable incidents/outbox, outbound notification, production configuration, runtime/deployment readiness, HTTP API/Web, probable failure-boundary localization, additional industrial protection and Site/Probe — remain roadmap.
 
 ## Sprint 32C post-closure correction
 
@@ -1080,5 +1079,5 @@ Acceptance requirement for this correction:
 - forced Desktop build passes;
 - text-integrity and `git diff --check` pass.
 
-After this correction, the next committed step is the realistic 3–5 device SNMP/snmpsim stand acceptance followed by `FRICTION_LOG.md` review.
+The master-plan documentation alignment is also recorded. The next committed step is the realistic 3–5 device SNMP/snmpsim stand acceptance followed by `FRICTION_LOG.md` review.
 
