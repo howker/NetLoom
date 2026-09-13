@@ -635,13 +635,7 @@ public partial class MainWindow : Window
             new TextBlock
             {
                 Text =
-                    ConfidenceText(link.Confidence) +
-                    " • " +
-                    FreshnessText(link.Freshness) +
-                    " • " +
-                    UiText.FormatCount(
-                        "EvidenceCount",
-                        link.Evidence.Count),
+                    BuildLinkLabel(link),
 
                 Background =
                     SystemColors.WindowBrush,
@@ -659,6 +653,34 @@ public partial class MainWindow : Window
             ((y1 + y2) / 2.0) - 12.0);
 
         MapCanvas.Children.Add(label);
+    }
+
+    private static string BuildLinkLabel(
+        MapLink link)
+    {
+        var status =
+            ConfidenceText(link.Confidence) +
+            " • " +
+            FreshnessText(link.Freshness) +
+            " • " +
+            UiText.FormatCount(
+                "EvidenceCount",
+                link.Evidence.Count);
+
+        if (string.IsNullOrWhiteSpace(
+                link.SourcePortLabel) &&
+            string.IsNullOrWhiteSpace(
+                link.TargetPortLabel))
+        {
+            return status;
+        }
+
+        return
+            (link.SourcePortLabel ?? "?") +
+            " ↔ " +
+            (link.TargetPortLabel ?? "?") +
+            " • " +
+            status;
     }
 
     private static string DisplayNodeLabel(

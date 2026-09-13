@@ -127,6 +127,7 @@ SELECT
     location_id, custom_name, category,
     discovery_origin, monitoring_capability,
     vendor_override, model_override, notes,
+    discovered_name, lldp_chassis_id,
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc
 FROM devices
@@ -162,17 +163,23 @@ ORDER BY id;";
                                 StringNullable(
                                     reader,
                                     8),
-                                reader.GetInt32(9) != 0,
-                                reader.GetInt32(10) != 0,
+                                reader.GetInt32(11) != 0,
+                                reader.GetInt32(12) != 0,
                                 DateNullable(
                                     reader,
-                                    11),
+                                    13),
                                 DateNullable(
                                     reader,
-                                    12),
+                                    14),
                                 DateNullable(
                                     reader,
-                                    13)));
+                                    15),
+                                StringNullable(
+                                    reader,
+                                    9),
+                                StringNullable(
+                                    reader,
+                                    10)));
                     }
                 }
             }
@@ -201,7 +208,8 @@ SELECT
     mac_address, admin_status, oper_status,
     speed_bps, media_type_auto, media_type_override,
     is_manual, is_hidden,
-    first_seen_utc, last_seen_utc
+    first_seen_utc, last_seen_utc,
+    lldp_port_id, lldp_port_description
 FROM interfaces
 ORDER BY id;";
 
@@ -256,7 +264,13 @@ ORDER BY id;";
                                     15),
                                 DateNullable(
                                     reader,
-                                    16)));
+                                    16),
+                                StringNullable(
+                                    reader,
+                                    17),
+                                StringNullable(
+                                    reader,
+                                    18)));
                     }
                 }
             }

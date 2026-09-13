@@ -40,6 +40,10 @@ namespace NetLoom.Tests.Unit
                     0,
                     20));
 
+            Assert.AreEqual(
+                1,
+                transport.GetRequests);
+
             Assert.AreEqual(2, transport.Roots.Count);
 
             Assert.AreEqual(
@@ -65,6 +69,17 @@ namespace NetLoom.Tests.Unit
                 "192.0.2.50",
                 result.Observation.SourceAddress);
 
+            Assert.IsNotNull(
+                result.LocalSystem);
+
+            Assert.AreEqual(
+                "00:AA:BB:CC:DD:EE",
+                result.LocalSystem.ChassisId);
+
+            Assert.AreEqual(
+                "core-switch",
+                result.LocalSystem.SystemName);
+
             Assert.AreEqual(
                 1,
                 result.Neighbors.Count);
@@ -80,10 +95,25 @@ namespace NetLoom.Tests.Unit
             public List<string> Roots { get; } =
                 new List<string>();
 
+            public int GetRequests { get; private set; }
+
             public IReadOnlyList<SnmpVariable> Get(
                 SnmpGetRequest request)
             {
-                return new SnmpVariable[0];
+                GetRequests++;
+
+                return new[]
+                {
+                    V(
+                        "1.0.8802.1.1.2.1.3.1.0",
+                        "4"),
+                    V(
+                        "1.0.8802.1.1.2.1.3.2.0",
+                        "00:AA:BB:CC:DD:EE"),
+                    V(
+                        "1.0.8802.1.1.2.1.3.3.0",
+                        "core-switch")
+                };
             }
 
             public IReadOnlyList<SnmpVariable> Walk(

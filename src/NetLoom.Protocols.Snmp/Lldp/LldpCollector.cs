@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NetLoom.Application.Observations;
 using NetLoom.Application.Observations.Lldp;
@@ -11,6 +11,13 @@ namespace NetLoom.Protocols.Snmp.Lldp
     public sealed class LldpCollector
         : ILldpCollector
     {
+        private static readonly string[] LocalSystemOids =
+        {
+            "1.0.8802.1.1.2.1.3.1.0",
+            "1.0.8802.1.1.2.1.3.2.0",
+            "1.0.8802.1.1.2.1.3.3.0"
+        };
+
         private const string LocalPortEntry =
             "1.0.8802.1.1.2.1.3.7.1";
 
@@ -51,6 +58,17 @@ namespace NetLoom.Protocols.Snmp.Lldp
 
             var variables =
                 new List<SnmpVariable>();
+
+            variables.AddRange(
+                _transport.Get(
+                    new SnmpGetRequest(
+                        request.Address,
+                        request.Port,
+                        request.Version,
+                        request.Credentials,
+                        LocalSystemOids,
+                        request.TimeoutMilliseconds,
+                        request.RetryCount)));
 
             variables.AddRange(
                 Walk(request, LocalPortEntry));

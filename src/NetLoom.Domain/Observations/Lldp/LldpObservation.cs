@@ -8,7 +8,8 @@ namespace NetLoom.Domain.Observations.Lldp
     {
         public LldpObservation(
             Observation observation,
-            IEnumerable<LldpRemoteNeighbor> neighbors)
+            IEnumerable<LldpRemoteNeighbor> neighbors,
+            LldpLocalSystem localSystem = null)
         {
             Observation = observation ??
                 throw new ArgumentNullException(nameof(observation));
@@ -26,10 +27,13 @@ namespace NetLoom.Domain.Observations.Lldp
             }
 
             Neighbors = neighbors.ToArray();
+            LocalSystem = localSystem;
         }
 
         public Observation Observation { get; }
 
         public IReadOnlyList<LldpRemoteNeighbor> Neighbors { get; }
+
+        public LldpLocalSystem LocalSystem { get; }
     }
 }

@@ -22,6 +22,16 @@ namespace NetLoom.Tests.Unit
                 new[]
                 {
                     V(
+                        "1.0.8802.1.1.2.1.3.1.0",
+                        "4"),
+                    V(
+                        "1.0.8802.1.1.2.1.3.2.0",
+                        "00:AA:BB:CC:DD:EE"),
+                    V(
+                        "1.0.8802.1.1.2.1.3.3.0",
+                        "core-switch"),
+
+                    V(
                         "1.0.8802.1.1.2.1.3.7.1.2.17",
                         "5"),
                     V(
@@ -61,6 +71,17 @@ namespace NetLoom.Tests.Unit
             var parsed =
                 new LldpObservationParser()
                     .Parse(raw);
+
+            Assert.IsNotNull(
+                parsed.LocalSystem);
+
+            Assert.AreEqual(
+                "00:AA:BB:CC:DD:EE",
+                parsed.LocalSystem.ChassisId);
+
+            Assert.AreEqual(
+                "core-switch",
+                parsed.LocalSystem.SystemName);
 
             Assert.AreEqual(
                 2,

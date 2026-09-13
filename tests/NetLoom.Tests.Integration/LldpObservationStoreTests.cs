@@ -88,13 +88,27 @@ namespace NetLoom.Tests.Integration
                             "bridge",
                             "bridge",
                             localPort)
-                    }));
+                    },
+                    new LldpLocalSystem(
+                        4,
+                        "00:AA:BB:CC:DD:EE",
+                        "core-switch")));
 
             var loaded =
                 lldpStore.Get(
                     observation.Id);
 
             Assert.IsNotNull(loaded);
+            Assert.IsNotNull(loaded.LocalSystem);
+
+            Assert.AreEqual(
+                "00:AA:BB:CC:DD:EE",
+                loaded.LocalSystem.ChassisId);
+
+            Assert.AreEqual(
+                "core-switch",
+                loaded.LocalSystem.SystemName);
+
             Assert.AreEqual(
                 1,
                 loaded.Neighbors.Count);

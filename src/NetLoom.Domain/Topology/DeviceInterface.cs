@@ -21,7 +21,9 @@ namespace NetLoom.Domain.Topology
             bool isManual,
             bool isHidden,
             DateTime? firstSeenUtc,
-            DateTime? lastSeenUtc)
+            DateTime? lastSeenUtc,
+            string lldpPortId = null,
+            string lldpPortDescription = null)
         {
             if (id == Guid.Empty)
             {
@@ -80,6 +82,9 @@ namespace NetLoom.Domain.Topology
             IsHidden = isHidden;
             FirstSeenUtc = firstSeenUtc;
             LastSeenUtc = lastSeenUtc;
+            LldpPortId = Normalize(lldpPortId);
+            LldpPortDescription =
+                Normalize(lldpPortDescription);
         }
 
         public Guid Id { get; }
@@ -115,6 +120,10 @@ namespace NetLoom.Domain.Topology
         public DateTime? FirstSeenUtc { get; }
 
         public DateTime? LastSeenUtc { get; }
+
+        public string LldpPortId { get; }
+
+        public string LldpPortDescription { get; }
 
         private static string Normalize(string value)
         {

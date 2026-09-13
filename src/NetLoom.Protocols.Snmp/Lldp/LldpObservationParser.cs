@@ -12,6 +12,15 @@ namespace NetLoom.Protocols.Snmp.Lldp
     public sealed class LldpObservationParser
         : ILldpObservationParser
     {
+        private const string LocChassisIdSubtype =
+            "1.0.8802.1.1.2.1.3.1.0";
+
+        private const string LocChassisId =
+            "1.0.8802.1.1.2.1.3.2.0";
+
+        private const string LocSysName =
+            "1.0.8802.1.1.2.1.3.3.0";
+
         private const string LocPortIdSubtype =
             "1.0.8802.1.1.2.1.3.7.1.2";
 
@@ -56,6 +65,10 @@ namespace NetLoom.Protocols.Snmp.Lldp
                 throw new ArgumentNullException(
                     nameof(snmpObservation));
             }
+
+            var localSystem =
+                ParseLocalSystem(
+                    snmpObservation.Variables);
 
             var localPorts =
                 ParseLocalPorts(
@@ -156,7 +169,59 @@ namespace NetLoom.Protocols.Snmp.Lldp
 
             return new LldpObservation(
                 snmpObservation.Observation,
-                neighbors);
+                neighbors,
+                localSystem);
+        }
+
+        private static LldpLocalSystem ParseLocalSystem(
+            IReadOnlyList<SnmpVariable> variables)
+        {
+            int? chassisIdSubtype = null;
+            string chassisId = null;
+            string systemName = null;
+
+            foreach (var variable in variables)
+            {
+                var oid =
+                    string.IsNullOrWhiteSpace(variable.Oid)
+                        ? string.Empty
+                        : variable.Oid.TrimStart('.');
+
+                if (string.Equals(
+                    oid,
+                    LocChassisIdSubtype,
+                    StringComparison.Ordinal))
+                {
+                    chassisIdSubtype =
+                        ParseInt(variable.DisplayValue);
+                }
+                else if (string.Equals(
+                    oid,
+                    LocChassisId,
+                    StringComparison.Ordinal))
+                {
+                    chassisId = variable.DisplayValue;
+                }
+                else if (string.Equals(
+                    oid,
+                    LocSysName,
+                    StringComparison.Ordinal))
+                {
+                    systemName = variable.DisplayValue;
+                }
+            }
+
+            if (!chassisIdSubtype.HasValue &&
+                string.IsNullOrWhiteSpace(chassisId) &&
+                string.IsNullOrWhiteSpace(systemName))
+            {
+                return null;
+            }
+
+            return new LldpLocalSystem(
+                chassisIdSubtype,
+                chassisId,
+                systemName);
         }
 
         private static Dictionary<int, LldpLocalPort>

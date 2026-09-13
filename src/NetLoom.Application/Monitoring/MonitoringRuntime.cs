@@ -8,6 +8,7 @@ using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
 using NetLoom.Application.Observations.Lldp;
 using NetLoom.Application.Observations.Stp;
+using NetLoom.Domain.Observations.Lldp;
 
 namespace NetLoom.Application.Monitoring
 {
@@ -168,9 +169,9 @@ namespace NetLoom.Application.Monitoring
 
                         if (lldp != null)
                         {
-                            MaterializeDevice(
+                            MaterializeLldp(
                                 request.DeviceId,
-                                lldp.Observation.CapturedUtc);
+                                lldp);
                         }
 
                         break;
@@ -400,6 +401,22 @@ namespace NetLoom.Application.Monitoring
             _observationDeviceBindingStore.Bind(
                 observationId.Value,
                 deviceId.Value);
+        }
+
+        private void MaterializeLldp(
+            Guid? deviceId,
+            LldpObservation observation)
+        {
+            if (_topologyMaterializer == null ||
+                !deviceId.HasValue ||
+                observation == null)
+            {
+                return;
+            }
+
+            _topologyMaterializer.MaterializeLldp(
+                deviceId.Value,
+                observation);
         }
 
         private void MaterializeDevice(

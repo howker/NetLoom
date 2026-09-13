@@ -50,6 +50,32 @@ WHERE observation_id = @observationId;";
                     delete.ExecuteNonQuery();
                 }
 
+                using (var deleteLocal =
+                    connection.CreateCommand())
+                {
+                    deleteLocal.Transaction = transaction;
+
+                    deleteLocal.CommandText = @"
+DELETE FROM lldp_local_system
+WHERE observation_id = @observationId;";
+
+                    deleteLocal.Parameters.AddWithValue(
+                        "@observationId",
+                        lldpObservation.Observation.Id
+                            .ToString("D"));
+
+                    deleteLocal.ExecuteNonQuery();
+                }
+
+                if (lldpObservation.LocalSystem != null)
+                {
+                    InsertLocalSystem(
+                        connection,
+                        transaction,
+                        lldpObservation.Observation.Id,
+                        lldpObservation.LocalSystem);
+                }
+
                 foreach (var neighbor in
                     lldpObservation.Neighbors)
                 {
@@ -117,6 +143,11 @@ WHERE observation_id = @id
                     }
                 }
 
+                var localSystem =
+                    LoadLocalSystem(
+                        connection,
+                        observationId);
+
                 var neighbors =
                     LoadNeighbors(
                         connection,
@@ -124,7 +155,90 @@ WHERE observation_id = @id
 
                 return new LldpObservation(
                     observation,
-                    neighbors);
+                    neighbors,
+                    localSystem);
+            }
+        }
+
+        private static void InsertLocalSystem(
+            System.Data.SQLite.SQLiteConnection connection,
+            System.Data.SQLite.SQLiteTransaction transaction,
+            Guid observationId,
+            LldpLocalSystem localSystem)
+        {
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+
+                command.CommandText = @"
+INSERT INTO lldp_local_system
+(
+    observation_id,
+    chassis_id_subtype,
+    chassis_id,
+    system_name
+)
+VALUES
+(
+    @observationId,
+    @chassisIdSubtype,
+    @chassisId,
+    @systemName
+);";
+
+                command.Parameters.AddWithValue(
+                    "@observationId",
+                    observationId.ToString("D"));
+
+                AddNullable(
+                    command,
+                    "@chassisIdSubtype",
+                    localSystem.ChassisIdSubtype);
+
+                AddNullable(
+                    command,
+                    "@chassisId",
+                    localSystem.ChassisId);
+
+                AddNullable(
+                    command,
+                    "@systemName",
+                    localSystem.SystemName);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static LldpLocalSystem LoadLocalSystem(
+            System.Data.SQLite.SQLiteConnection connection,
+            Guid observationId)
+        {
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    chassis_id_subtype,
+    chassis_id,
+    system_name
+FROM lldp_local_system
+WHERE observation_id = @id;";
+
+                command.Parameters.AddWithValue(
+                    "@id",
+                    observationId.ToString("D"));
+
+                using (var reader =
+                    command.ExecuteReader())
+                {
+                    return reader.Read()
+                        ? new LldpLocalSystem(
+                            NullableInt(reader, 0),
+                            NullableString(reader, 1),
+                            NullableString(reader, 2))
+                        : null;
+                }
             }
         }
 

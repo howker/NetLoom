@@ -1,4 +1,5 @@
 using System;
+using NetLoom.Domain.Observations.Lldp;
 
 namespace NetLoom.Application.Monitoring
 {
@@ -12,5 +13,9 @@ namespace NetLoom.Application.Monitoring
             Guid deviceId,
             int ifIndex,
             DateTime observedUtc);
+
+        void MaterializeLldp(
+            Guid deviceId,
+            LldpObservation observation);
     }
 }

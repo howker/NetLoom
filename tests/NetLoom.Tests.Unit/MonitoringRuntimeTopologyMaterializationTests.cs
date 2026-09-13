@@ -72,8 +72,12 @@ namespace NetLoom.Tests.Unit
                 result.AllSucceeded);
 
             Assert.AreEqual(
-                1,
+                0,
                 materializer.DeviceCalls);
+
+            Assert.AreEqual(
+                1,
+                materializer.LldpCalls);
 
             Assert.AreEqual(
                 DeviceId,
@@ -128,6 +132,10 @@ namespace NetLoom.Tests.Unit
             Assert.AreEqual(
                 0,
                 materializer.InterfaceCalls);
+
+            Assert.AreEqual(
+                0,
+                materializer.LldpCalls);
         }
 
         private static MonitoringPollRequest Request(
@@ -214,6 +222,12 @@ namespace NetLoom.Tests.Unit
                 private set;
             }
 
+            public int LldpCalls
+            {
+                get;
+                private set;
+            }
+
             public Guid LastDeviceId
             {
                 get;
@@ -233,6 +247,16 @@ namespace NetLoom.Tests.Unit
                 DeviceCalls++;
                 LastDeviceId = deviceId;
                 LastObservedUtc = observedUtc;
+            }
+
+            public void MaterializeLldp(
+                Guid deviceId,
+                LldpObservation observation)
+            {
+                LldpCalls++;
+                LastDeviceId = deviceId;
+                LastObservedUtc =
+                    observation.Observation.CapturedUtc;
             }
 
             public void MaterializeInterface(

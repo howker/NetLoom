@@ -76,8 +76,7 @@ namespace NetLoom.Topology.Map
                             !device.IsArchived)
                     .OrderBy(
                         device =>
-                            device.CustomName ??
-                            string.Empty,
+                            DisplayName(device),
                         StringComparer.OrdinalIgnoreCase)
                     .ThenBy(device => device.Id)
                     .ToArray();
@@ -143,10 +142,8 @@ namespace NetLoom.Topology.Map
                 mapNodes.Add(
                     new MapNode(
                         key,
-                        string.IsNullOrWhiteSpace(
-                            device.CustomName)
-                            ? key
-                            : device.CustomName,
+                        DisplayName(device) ??
+                            key,
                         BuildSecondaryText(device),
                         60.0 +
                             ((index % columns) * 240.0),
@@ -291,6 +288,27 @@ namespace NetLoom.Topology.Map
             }
         }
 
+        private static string DisplayName(
+            TopologyDevice device)
+        {
+            if (!string.IsNullOrWhiteSpace(
+                device.CustomName))
+            {
+                return device.CustomName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(
+                device.DiscoveredName))
+            {
+                return device.DiscoveredName;
+            }
+
+            return string.IsNullOrWhiteSpace(
+                device.LldpChassisId)
+                ? null
+                : device.LldpChassisId;
+        }
+
         private static string BuildSecondaryText(
             TopologyDevice device)
         {
@@ -302,9 +320,20 @@ namespace NetLoom.Topology.Map
 
             if (string.IsNullOrWhiteSpace(vendor))
             {
-                return string.IsNullOrWhiteSpace(model)
-                    ? null
-                    : model;
+                if (!string.IsNullOrWhiteSpace(model))
+                {
+                    return model;
+                }
+
+                return
+                    !string.IsNullOrWhiteSpace(
+                        device.LldpChassisId) &&
+                    !string.Equals(
+                        DisplayName(device),
+                        device.LldpChassisId,
+                        StringComparison.OrdinalIgnoreCase)
+                        ? device.LldpChassisId
+                        : null;
             }
 
             if (string.IsNullOrWhiteSpace(model))
@@ -344,6 +373,18 @@ namespace NetLoom.Topology.Map
                     networkInterface.IfName))
             {
                 return networkInterface.IfName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(
+                    networkInterface.LldpPortId))
+            {
+                return networkInterface.LldpPortId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(
+                    networkInterface.LldpPortDescription))
+            {
+                return networkInterface.LldpPortDescription;
             }
 
             return networkInterface.IfIndex.HasValue

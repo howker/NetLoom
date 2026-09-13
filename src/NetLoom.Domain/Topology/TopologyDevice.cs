@@ -18,7 +18,9 @@ namespace NetLoom.Domain.Topology
             bool isArchived,
             DateTime? firstSeenUtc,
             DateTime? lastSeenUtc,
-            DateTime? lastResolvedUtc)
+            DateTime? lastResolvedUtc,
+            string discoveredName = null,
+            string lldpChassisId = null)
         {
             if (id == Guid.Empty)
             {
@@ -54,6 +56,8 @@ namespace NetLoom.Domain.Topology
             FirstSeenUtc = firstSeenUtc;
             LastSeenUtc = lastSeenUtc;
             LastResolvedUtc = lastResolvedUtc;
+            DiscoveredName = Normalize(discoveredName);
+            LldpChassisId = Normalize(lldpChassisId);
         }
 
         public Guid Id { get; }
@@ -83,6 +87,10 @@ namespace NetLoom.Domain.Topology
         public DateTime? LastSeenUtc { get; }
 
         public DateTime? LastResolvedUtc { get; }
+
+        public string DiscoveredName { get; }
+
+        public string LldpChassisId { get; }
 
         private static string Normalize(string value)
         {
