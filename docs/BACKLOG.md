@@ -135,18 +135,19 @@
 - [x] Sprint 32C - localization foundation: English neutral resources, Russian satellite resources, explicit culture selection, pluralization, removal of the Topology text leak, `.cs` localization-integrity guard, and template-resource cleanup.
 - [x] Sprint 32C post-closure correction — declared English neutral resources with `NeutralResourcesLanguage("en")` and added regression evidence. Structured XML inspection confirms `Name1`, `Icon1`, and `Bitmap1` are not actual `<data>` resource entries; their text appears only in the standard ResX schema comment and is not a cleanup defect.
 - [x] Master-plan documentation alignment — product boundary, platform/runtime split, canonical Engine host, multi-client presentation boundary, client-owned localization, friction-driven prioritization and long-term roadmap are recorded in the canonical documentation.
-- [ ] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
-- [ ] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
+- [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
+- [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 32C
+## Execution map after realistic stand acceptance
 
-Only the two unchecked items immediately above are committed work.
+The stand gate and friction review are complete. Exactly one next product Sprint is committed.
 
-### Next candidates — choose after stand, not commitments
+### Committed next product Sprint
 
-Preferred order only if stand friction does not reveal a more important problem:
+- [ ] Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`; preserve selection, zoom/pan, pinned/manual layout and unchanged visual identity across refresh.
 
-- [ ] Incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`; preserve selection, zoom/pan, pinned layout and unchanged visual identity across refresh.
+### Next candidates — not commitments
+
 - [ ] UI design tokens covering colors, typography, spacing and geometry; Light/Dark themes.
 - [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
 - [ ] Interface degradation detection using errors/discards/`ifLastChange` with `ifCounterDiscontinuityTime` and correct counter-wrap/reset semantics.

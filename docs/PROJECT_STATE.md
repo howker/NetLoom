@@ -6,11 +6,11 @@
 
 ## Текущее состояние
 
-Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation и AI development verification hardening завершены.
+Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance and LLDP topology baseline closure are complete.
 
-Текущий обязательный следующий этап: реалистичный 3–5 device SNMP/snmpsim stand с реальным использованием WPF, затем review только наблюдаемого `FRICTION_LOG.md` и выбор ровно одного следующего product Sprint.
+The realistic stand gate and `FRICTION_LOG.md` review are complete. Exactly one next product Sprint is committed: Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`, preserving selection, zoom/pan, pinned/manual layout and unchanged visual identity across refresh.
 
-До review stand friction новый product Sprint не назначается.
+The observed link-label readability issue is recorded in `FRICTION_LOG.md`; it has one observation and does not yet override the selected Sprint.
 
 ## Основа проекта
 
@@ -1036,27 +1036,21 @@ Acceptance 2026-09-12:
 - implementation commit `cf6613e` is pushed with `HEAD == origin/main == cf6613ed8d064d0d4ce6e9d91c1b652b5d191140`;
 - postflight worktree is clean.
 
-Sprint 32C is closed. The next required step is the planned realistic 3–5 device SNMP/snmpsim stand acceptance, followed by review of `FRICTION_LOG.md` before choosing the next product feature.
+Sprint 32C is closed. The planned realistic stand gate and subsequent `FRICTION_LOG.md` review have now been completed; see the current execution gate and stand-acceptance section below.
 
 
-## Current execution gate after architecture review
+## Current execution gate after architecture review — completed
 
 The architecture/master-plan review is recorded in the canonical documentation.
 
 Confirmed current facts:
 - Sprint 32C implementation and documentation are closed;
 - the post-closure neutral-resource correction is complete;
-- structured XML inspection of `UiStrings.resx` and `UiStrings.ru.resx` found no `Name1`, `Icon1`, or `Bitmap1` `<data>` entries; those names exist only in the standard ResX schema documentation comment;
-- `NetLoom.Wpf` declares `[assembly: NeutralResourcesLanguage("en")]`;
-- product scope is network observability/topology/diagnostics, not process-data acquisition or a generic NMS;
-- the long architecture roadmap is direction, not an automatic Sprint sequence.
-
-Committed next steps:
-1. Run the realistic 3–5 device SNMP/snmpsim stand with the WPF client as a normal working session.
-2. Record only observed operational friction in `FRICTION_LOG.md`.
-3. Review that friction and choose exactly one next product Sprint.
-
-Default next candidate, only if stand friction does not reveal a more important problem: incremental WPF map reconciliation that preserves selection, zoom/pan, pinned/manual layout and unchanged visual identity.
+- the realistic 3–5 device stand gate is complete;
+- observed operational friction has been recorded and reviewed;
+- exactly one next product Sprint is committed: Sprint 33A — incremental WPF map reconciliation;
+- product scope remains network observability/topology/diagnostics, not process-data acquisition or a generic NMS;
+- the long architecture roadmap remains direction, not an automatic Sprint sequence.
 
 Longer directions — interface degradation, durable incidents/outbox, outbound notification, production configuration, runtime/deployment readiness, HTTP API/Web, probable failure-boundary localization, additional industrial protection and Site/Probe — remain roadmap.
 
@@ -1081,5 +1075,28 @@ Acceptance requirement for this correction:
 - forced Desktop build passes;
 - text-integrity and `git diff --check` pass.
 
-The master-plan documentation alignment is also recorded. The next committed step is the realistic 3–5 device SNMP/snmpsim stand acceptance followed by `FRICTION_LOG.md` review.
+The master-plan documentation alignment is also recorded. The realistic stand gate that followed this correction has now been completed; its result is recorded below.
+
+## Realistic stand acceptance and LLDP topology baseline closure — 2026-09-13
+
+The post-Sprint 32C realistic stand gate is complete.
+
+Confirmed:
+- the LLDP topology baseline implementation passed a forced solution build with 0 warnings and 0 errors;
+- the full Unit, Integration and Snapshot regression passed without rebuilding the already-verified binaries;
+- repository text-integrity and `git diff --check` passed;
+- the realistic backend stand produced four named devices (`stand-sw-01` through `stand-sw-04`) and two confirmed LLDP physical links;
+- operator acceptance in the WPF client showed the same four named devices, two links, and LLDP port labels;
+- exact staged/index/commit boundary proof covered 23 implementation paths;
+- implementation commit `18df16fc2d2dfdf7230a3ecfeac910b46a8f9c63` (`Implement LLDP topology baseline`) is pushed with `HEAD == origin/main` and a clean worktree;
+- `Migration013LldpTopologyIdentity` is now the latest schema migration.
+
+Observed friction:
+- long LLDP link annotation text can be partially obscured by a neighboring node card; this is recorded in `FRICTION_LOG.md`;
+- this is currently a single observation, so it is not promoted ahead of the selected next Sprint.
+
+Next committed product Sprint:
+- Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`, preserving selection, zoom/pan, pinned/manual layout and unchanged visual identity across refresh.
+
+No other product feature is committed at this point.
 
