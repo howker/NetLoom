@@ -53,6 +53,7 @@ SELECT
     discard_rate_per_minute,
     reason_codes
 FROM interface_degradation_outbox
+WHERE delivered_utc IS NULL
 ORDER BY
     captured_utc,
     event_key
@@ -128,6 +129,81 @@ LIMIT @maxCount;";
                 }
 
                 return result;
+            }
+        }
+
+        public bool MarkDelivered(
+            string eventKey,
+            DateTime deliveredUtc)
+        {
+            if (string.IsNullOrWhiteSpace(
+                eventKey))
+            {
+                throw new ArgumentException(
+                    "EVENT_KEY_REQUIRED",
+                    nameof(eventKey));
+            }
+
+            if (deliveredUtc.Kind !=
+                DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "Interface degradation delivery timestamp must be UTC.",
+                    nameof(deliveredUtc));
+            }
+
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.CommandText = @"
+UPDATE interface_degradation_outbox
+SET delivered_utc = @deliveredUtc
+WHERE event_key = @eventKey
+  AND delivered_utc IS NULL;";
+
+                command.Parameters.AddWithValue(
+                    "@eventKey",
+                    eventKey);
+
+                command.Parameters.AddWithValue(
+                    "@deliveredUtc",
+                    FormatUtc(
+                        deliveredUtc));
+
+                var affected =
+                    command.ExecuteNonQuery();
+
+                if (affected == 1)
+                {
+                    return true;
+                }
+
+                using (var probe =
+                    connection.CreateCommand())
+                {
+                    probe.CommandText = @"
+SELECT delivered_utc
+FROM interface_degradation_outbox
+WHERE event_key = @eventKey;";
+
+                    probe.Parameters.AddWithValue(
+                        "@eventKey",
+                        eventKey);
+
+                    var existing =
+                        probe.ExecuteScalar();
+
+                    if (existing == null ||
+                        existing == DBNull.Value)
+                    {
+                        throw new InvalidOperationException(
+                            "Interface degradation outbox event does not exist.");
+                    }
+
+                    return false;
+                }
             }
         }
 

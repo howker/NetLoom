@@ -52,6 +52,12 @@
              Link="Shared\Sprint34EOutboxContractTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint34EInterfaceDegradationOutboxTests.cs"
              Link="Shared\Sprint34EInterfaceDegradationOutboxTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint34FInterfaceDegradationDeliveryTests.cs"
+             Link="Shared\Sprint34FInterfaceDegradationDeliveryTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34FInterfaceDegradationDeliveryTests.cs"
+             Link="Shared\Sprint34FInterfaceDegradationDeliveryIntegrationTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34FDeliveryContractTests.cs"
+             Link="Shared\Sprint34FDeliveryContractTests.cs" />
   </ItemGroup>
 
 </Project>

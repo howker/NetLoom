@@ -7,5 +7,9 @@ namespace NetLoom.Application.Monitoring.Interfaces
         IReadOnlyList<InterfaceDegradationOutboxEvent>
             ReadPending(
                 int maxCount);
+
+        bool MarkDelivered(
+            string eventKey,
+            System.DateTime deliveredUtc);
     }
 }

@@ -128,6 +128,10 @@ namespace NetLoom.Engine
                 options,
                 hostLog);
 
+            RunInterfaceDegradationDelivery(
+                options,
+                hostLog);
+
             if (!result.AnySucceeded)
             {
                 hostLog.Error(
@@ -202,6 +206,10 @@ namespace NetLoom.Engine
                                 RunObservationRetention(
                                     options,
                                     hostLog);
+
+                                RunInterfaceDegradationDelivery(
+                                    options,
+                                    hostLog);
                             });
 
                     hostLog.Info(
@@ -219,6 +227,32 @@ namespace NetLoom.Engine
                     Console.CancelKeyPress -=
                         handler;
                 }
+            }
+        }
+
+        private static void RunInterfaceDegradationDelivery(
+            EngineCommandLine options,
+            HostLogManager hostLog)
+        {
+            try
+            {
+                var databasePath =
+                    EngineDatabasePathResolver.Resolve(
+                        options.DatabasePath);
+
+                EngineInterfaceDegradationDelivery.Drain(
+                    databasePath,
+                    hostLog);
+            }
+            catch (Exception exception)
+            {
+                hostLog.Error(
+                    exception,
+                    "INTERFACE_DEGRADATION_DELIVERY_CONFIGURATION_FAILED");
+
+                Console.Error.WriteLine(
+                    "INTERFACE-DEGRADATION-DELIVERY: CONFIG FAIL " +
+                    exception.Message);
             }
         }
 
