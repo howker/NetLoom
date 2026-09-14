@@ -14,7 +14,8 @@ namespace NetLoom.Contracts.TopologyMap
             string targetPortLabel,
             MapConfidence confidence,
             MapFreshness freshness,
-            IEnumerable<MapEvidenceItem> evidence)
+            IEnumerable<MapEvidenceItem> evidence,
+            Guid? physicalLinkId = null)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -50,6 +51,7 @@ namespace NetLoom.Contracts.TopologyMap
             Confidence = confidence;
             Freshness = freshness;
             Evidence = evidence.ToArray();
+            PhysicalLinkId = physicalLinkId;
         }
 
         public string Key { get; }
@@ -67,5 +69,7 @@ namespace NetLoom.Contracts.TopologyMap
         public MapFreshness Freshness { get; }
 
         public IReadOnlyList<MapEvidenceItem> Evidence { get; }
+
+        public Guid? PhysicalLinkId { get; }
     }
 }

@@ -253,6 +253,61 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
+        public void MaterializedMapKeepsStablePhysicalLinkIdSeparateFromPresentationKey()
+        {
+            var factory =
+                new ManualTopologyFactory();
+
+            var first =
+                factory.CreateDevice(
+                    Guid.NewGuid(),
+                    null,
+                    "First",
+                    DeviceCategory.Unknown,
+                    null);
+
+            var second =
+                factory.CreateDevice(
+                    Guid.NewGuid(),
+                    null,
+                    "Second",
+                    DeviceCategory.Unknown,
+                    null);
+
+            var link =
+                factory.CreateLink(
+                    Guid.NewGuid(),
+                    first.Id,
+                    null,
+                    second.Id,
+                    null,
+                    "Fiber",
+                    null,
+                    Now);
+
+            var snapshot =
+                new MaterializedTopologyMapProjector()
+                    .Project(
+                        new[] { first, second },
+                        new DeviceInterface[0],
+                        new[] { link },
+                        new Location[0],
+                        Now);
+
+            Assert.AreEqual(
+                1,
+                snapshot.Links.Count);
+
+            Assert.IsFalse(
+                snapshot.Links[0].Key.Contains(
+                    link.Id.ToString("D")));
+
+            Assert.AreEqual(
+                link.Id,
+                snapshot.Links[0].PhysicalLinkId);
+        }
+
+        [TestMethod]
         public void LocationOverlayPreservesManualMetadata()
         {
             var locationId =

@@ -54,6 +54,16 @@ public partial class MainWindow : Window
         _nodeBordersByDeviceId =
             new Dictionary<Guid, Border>();
 
+    private readonly Dictionary<string, MapNodeVisual>
+        _nodeVisualsByIdentity =
+            new Dictionary<string, MapNodeVisual>(
+                StringComparer.Ordinal);
+
+    private readonly Dictionary<string, MapLinkVisual>
+        _linkVisualsByIdentity =
+            new Dictionary<string, MapLinkVisual>(
+                StringComparer.Ordinal);
+
     private Guid? _highlightedDeviceId;
 
     private MapSnapshot _lastMapSnapshot;
@@ -547,17 +557,6 @@ public partial class MainWindow : Window
             throw new ArgumentNullException(nameof(snapshot));
         }
 
-        MapCanvas.Children.Clear();
-        _nodeBordersByDeviceId.Clear();
-
-        if (snapshot.Nodes.Count == 0)
-        {
-            MapStatusText.Text =
-                UiText.Get("MapNotLoaded");
-
-            return;
-        }
-
         var nodes =
             snapshot.Nodes.ToDictionary(
                 node => node.Key,
@@ -567,16 +566,20 @@ public partial class MainWindow : Window
             snapshot.Locations.ToDictionary(
                 location => location.Id);
 
-        foreach (var link in snapshot.Links)
-        {
-            DrawLink(link, nodes);
-        }
+        ReconcileNodes(
+            snapshot.Nodes,
+            locations);
 
-        foreach (var node in snapshot.Nodes)
+        ReconcileLinks(
+            snapshot.Links,
+            nodes);
+
+        if (snapshot.Nodes.Count == 0)
         {
-            DrawNode(
-                node,
-                locations);
+            MapStatusText.Text =
+                UiText.Get("MapNotLoaded");
+
+            return;
         }
 
         MapStatusText.Text =
@@ -591,68 +594,442 @@ public partial class MainWindow : Window
                 UiText.FormatCount(
                     "MapLocationCount",
                     snapshot.Locations.Count));
-
-        BringHighlightedDeviceIntoView();
     }
 
-    private void DrawLink(
-        MapLink link,
-        IReadOnlyDictionary<string, MapNode> nodes)
+    private void ReconcileNodes(
+        IReadOnlyList<MapNode> nodes,
+        IReadOnlyDictionary<Guid, MapLocation> locations)
     {
-        MapNode source;
-        MapNode target;
+        var desiredIdentities =
+            new HashSet<string>(
+                StringComparer.Ordinal);
 
-        if (!nodes.TryGetValue(
-                link.SourceNodeKey,
-                out source) ||
-            !nodes.TryGetValue(
-                link.TargetNodeKey,
-                out target))
+        foreach (var node in nodes)
         {
-            return;
+            var identity =
+                NodeIdentity(node);
+
+            if (!desiredIdentities.Add(identity))
+            {
+                throw new InvalidOperationException(
+                    "Map snapshot contains duplicate stable node identity.");
+            }
+
+            MapNodeVisual visual;
+
+            if (!_nodeVisualsByIdentity.TryGetValue(
+                    identity,
+                    out visual))
+            {
+                visual =
+                    CreateNodeVisual();
+
+                _nodeVisualsByIdentity.Add(
+                    identity,
+                    visual);
+
+                Canvas.SetLeft(
+                    visual.Border,
+                    node.X);
+
+                Canvas.SetTop(
+                    visual.Border,
+                    node.Y);
+
+                Panel.SetZIndex(
+                    visual.Border,
+                    2);
+
+                MapCanvas.Children.Add(
+                    visual.Border);
+            }
+            else
+            {
+                if (double.IsNaN(
+                    Canvas.GetLeft(
+                        visual.Border)))
+                {
+                    Canvas.SetLeft(
+                        visual.Border,
+                        node.X);
+                }
+
+                if (double.IsNaN(
+                    Canvas.GetTop(
+                        visual.Border)))
+                {
+                    Canvas.SetTop(
+                        visual.Border,
+                        node.Y);
+                }
+            }
+
+            UpdateNodeVisual(
+                visual,
+                node,
+                locations);
         }
 
-        var x1 = source.X + (NodeWidth / 2.0);
-        var y1 = source.Y + (NodeHeight / 2.0);
-        var x2 = target.X + (NodeWidth / 2.0);
-        var y2 = target.Y + (NodeHeight / 2.0);
+        foreach (var identity in
+            _nodeVisualsByIdentity.Keys
+                .Where(
+                    key =>
+                        !desiredIdentities.Contains(
+                            key))
+                .ToArray())
+        {
+            var visual =
+                _nodeVisualsByIdentity[
+                    identity];
 
-        var line =
+            MapCanvas.Children.Remove(
+                visual.Border);
+
+            _nodeVisualsByIdentity.Remove(
+                identity);
+        }
+
+        _nodeBordersByDeviceId.Clear();
+
+        foreach (var node in nodes)
+        {
+            if (!node.DeviceId.HasValue)
+            {
+                continue;
+            }
+
+            MapNodeVisual visual;
+
+            if (_nodeVisualsByIdentity.TryGetValue(
+                NodeIdentity(node),
+                out visual))
+            {
+                _nodeBordersByDeviceId[
+                    node.DeviceId.Value] =
+                    visual.Border;
+            }
+        }
+    }
+
+    private void ReconcileLinks(
+        IReadOnlyList<MapLink> links,
+        IReadOnlyDictionary<string, MapNode> nodes)
+    {
+        var desiredIdentities =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+        foreach (var link in links)
+        {
+            MapNode source;
+            MapNode target;
+
+            if (!nodes.TryGetValue(
+                    link.SourceNodeKey,
+                    out source) ||
+                !nodes.TryGetValue(
+                    link.TargetNodeKey,
+                    out target))
+            {
+                continue;
+            }
+
+            MapNodeVisual sourceVisual;
+            MapNodeVisual targetVisual;
+
+            if (!_nodeVisualsByIdentity.TryGetValue(
+                    NodeIdentity(source),
+                    out sourceVisual) ||
+                !_nodeVisualsByIdentity.TryGetValue(
+                    NodeIdentity(target),
+                    out targetVisual))
+            {
+                continue;
+            }
+
+            var identity =
+                LinkIdentity(link);
+
+            if (!desiredIdentities.Add(identity))
+            {
+                throw new InvalidOperationException(
+                    "Map snapshot contains duplicate stable link identity.");
+            }
+
+            MapLinkVisual visual;
+
+            if (!_linkVisualsByIdentity.TryGetValue(
+                    identity,
+                    out visual))
+            {
+                visual =
+                    CreateLinkVisual();
+
+                _linkVisualsByIdentity.Add(
+                    identity,
+                    visual);
+
+                Panel.SetZIndex(
+                    visual.Line,
+                    0);
+
+                Panel.SetZIndex(
+                    visual.Label,
+                    1);
+
+                MapCanvas.Children.Add(
+                    visual.Line);
+
+                MapCanvas.Children.Add(
+                    visual.Label);
+            }
+
+            UpdateLinkVisual(
+                visual,
+                link,
+                sourceVisual,
+                targetVisual);
+        }
+
+        foreach (var identity in
+            _linkVisualsByIdentity.Keys
+                .Where(
+                    key =>
+                        !desiredIdentities.Contains(
+                            key))
+                .ToArray())
+        {
+            var visual =
+                _linkVisualsByIdentity[
+                    identity];
+
+            MapCanvas.Children.Remove(
+                visual.Line);
+
+            MapCanvas.Children.Remove(
+                visual.Label);
+
+            _linkVisualsByIdentity.Remove(
+                identity);
+        }
+    }
+
+    private static string NodeIdentity(
+        MapNode node)
+    {
+        if (node.DeviceId.HasValue)
+        {
+            return
+                "device:" +
+                node.DeviceId.Value.ToString("D");
+        }
+
+        return
+            "key:" +
+            node.Key;
+    }
+
+    private static string LinkIdentity(
+        MapLink link)
+    {
+        if (link.PhysicalLinkId.HasValue)
+        {
+            return
+                "physical-link:" +
+                link.PhysicalLinkId.Value.ToString("D");
+        }
+
+        return
+            "key:" +
+            link.Key;
+    }
+
+    private static MapNodeVisual
+        CreateNodeVisual()
+    {
+        var title =
+            new TextBlock
+            {
+                FontWeight =
+                    FontWeights.SemiBold,
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
+            };
+
+        var secondary =
+            new TextBlock
+            {
+                Margin =
+                    new Thickness(0, 5, 0, 0),
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
+            };
+
+        var topologyMetadata =
+            new TextBlock
+            {
+                Margin =
+                    new Thickness(0, 4, 0, 0),
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
+            };
+
+        var locationText =
+            new TextBlock
+            {
+                Margin =
+                    new Thickness(0, 4, 0, 0),
+                TextTrimming =
+                    TextTrimming.CharacterEllipsis
+            };
+
+        var content =
+            new StackPanel();
+
+        content.Children.Add(title);
+        content.Children.Add(secondary);
+        content.Children.Add(topologyMetadata);
+        content.Children.Add(locationText);
+
+        var border =
+            new Border
+            {
+                Width = NodeWidth,
+                Height = NodeHeight,
+                Padding = new Thickness(10),
+                Background =
+                    SystemColors.WindowBrush,
+                Child = content
+            };
+
+        return new MapNodeVisual(
+            border,
+            title,
+            secondary,
+            topologyMetadata,
+            locationText);
+    }
+
+    private void UpdateNodeVisual(
+        MapNodeVisual visual,
+        MapNode node,
+        IReadOnlyDictionary<Guid, MapLocation> locations)
+    {
+        visual.Title.Text =
+            DisplayNodeLabel(
+                node);
+
+        visual.Secondary.Text =
+            string.IsNullOrWhiteSpace(
+                node.SecondaryText)
+                ? string.Empty
+                : node.SecondaryText;
+
+        visual.TopologyMetadata.Text =
+            BuildTopologyMetadata(node);
+
+        visual.Location.Text =
+            BuildLocationText(
+                node,
+                locations);
+
+        var isHighlighted =
+            node.DeviceId.HasValue &&
+            _highlightedDeviceId.HasValue &&
+            node.DeviceId.Value ==
+            _highlightedDeviceId.Value;
+
+        visual.Border.BorderThickness =
+            isHighlighted
+                ? new Thickness(3)
+                : new Thickness(1);
+
+        visual.Border.BorderBrush =
+            isHighlighted
+                ? SystemColors.HighlightBrush
+                : SystemColors.ControlDarkBrush;
+    }
+
+    private static MapLinkVisual
+        CreateLinkVisual()
+    {
+        return new MapLinkVisual(
             new Line
             {
-                X1 = x1,
-                Y1 = y1,
-                X2 = x2,
-                Y2 = y2,
                 Stroke =
                     SystemColors.ControlDarkBrush,
                 StrokeThickness = 2.0
-            };
-
-        MapCanvas.Children.Add(line);
-
-        var label =
+            },
             new TextBlock
             {
-                Text =
-                    BuildLinkLabel(link),
-
                 Background =
                     SystemColors.WindowBrush,
-
                 Padding =
                     new Thickness(4, 2, 4, 2)
-            };
+            });
+    }
+
+    private static void UpdateLinkVisual(
+        MapLinkVisual visual,
+        MapLink link,
+        MapNodeVisual source,
+        MapNodeVisual target)
+    {
+        var x1 =
+            NodeLeft(source) +
+            (NodeWidth / 2.0);
+
+        var y1 =
+            NodeTop(source) +
+            (NodeHeight / 2.0);
+
+        var x2 =
+            NodeLeft(target) +
+            (NodeWidth / 2.0);
+
+        var y2 =
+            NodeTop(target) +
+            (NodeHeight / 2.0);
+
+        visual.Line.X1 = x1;
+        visual.Line.Y1 = y1;
+        visual.Line.X2 = x2;
+        visual.Line.Y2 = y2;
+
+        visual.Label.Text =
+            BuildLinkLabel(link);
 
         Canvas.SetLeft(
-            label,
+            visual.Label,
             ((x1 + x2) / 2.0) - 45.0);
 
         Canvas.SetTop(
-            label,
+            visual.Label,
             ((y1 + y2) / 2.0) - 12.0);
+    }
 
-        MapCanvas.Children.Add(label);
+    private static double NodeLeft(
+        MapNodeVisual visual)
+    {
+        var value =
+            Canvas.GetLeft(
+                visual.Border);
+
+        return double.IsNaN(value)
+            ? 0.0
+            : value;
+    }
+
+    private static double NodeTop(
+        MapNodeVisual visual)
+    {
+        var value =
+            Canvas.GetTop(
+                visual.Border);
+
+        return double.IsNaN(value)
+            ? 0.0
+            : value;
     }
 
     private static string BuildLinkLabel(
@@ -699,112 +1076,6 @@ public partial class MainWindow : Window
             ? UiText.Get(
                 "NodeUnknownLabel")
             : node.Label;
-    }
-
-    private void DrawNode(
-        MapNode node,
-        IReadOnlyDictionary<Guid, MapLocation> locations)
-    {
-        var title =
-            new TextBlock
-            {
-                Text =
-                    DisplayNodeLabel(
-                        node),
-                FontWeight =
-                    FontWeights.SemiBold,
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
-            };
-
-        var secondary =
-            new TextBlock
-            {
-                Text =
-                    string.IsNullOrWhiteSpace(
-                        node.SecondaryText)
-                        ? string.Empty
-                        : node.SecondaryText,
-
-                Margin =
-                    new Thickness(0, 5, 0, 0),
-
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
-            };
-
-        var topologyMetadata =
-            new TextBlock
-            {
-                Text =
-                    BuildTopologyMetadata(node),
-
-                Margin =
-                    new Thickness(0, 4, 0, 0),
-
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
-            };
-
-        var locationText =
-            new TextBlock
-            {
-                Text =
-                    BuildLocationText(
-                        node,
-                        locations),
-
-                Margin =
-                    new Thickness(0, 4, 0, 0),
-
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
-            };
-
-        var content =
-            new StackPanel();
-
-        content.Children.Add(title);
-        content.Children.Add(secondary);
-        content.Children.Add(topologyMetadata);
-        content.Children.Add(locationText);
-
-        var isHighlighted =
-            node.DeviceId.HasValue &&
-            _highlightedDeviceId.HasValue &&
-            node.DeviceId.Value ==
-            _highlightedDeviceId.Value;
-
-        var border =
-            new Border
-            {
-                Width = NodeWidth,
-                Height = NodeHeight,
-                Padding = new Thickness(10),
-                BorderThickness =
-                    isHighlighted
-                        ? new Thickness(3)
-                        : new Thickness(1),
-                BorderBrush =
-                    isHighlighted
-                        ? SystemColors.HighlightBrush
-                        : SystemColors.ControlDarkBrush,
-                Background =
-                    SystemColors.WindowBrush,
-                Child = content
-            };
-
-        if (node.DeviceId.HasValue)
-        {
-            _nodeBordersByDeviceId[
-                node.DeviceId.Value] =
-                border;
-        }
-
-        Canvas.SetLeft(border, node.X);
-        Canvas.SetTop(border, node.Y);
-
-        MapCanvas.Children.Add(border);
     }
 
     private async void OnLookupSearchClick(
@@ -1008,6 +1279,7 @@ public partial class MainWindow : Window
                 candidate.DeviceId.Value;
 
             RedrawCurrentMap();
+            BringHighlightedDeviceIntoView();
         }
         else
         {
@@ -1349,6 +1621,48 @@ public partial class MainWindow : Window
                 return UiText.Get(
                     "FreshnessStale");
         }
+    }
+
+    private sealed class MapNodeVisual
+    {
+        public MapNodeVisual(
+            Border border,
+            TextBlock title,
+            TextBlock secondary,
+            TextBlock topologyMetadata,
+            TextBlock location)
+        {
+            Border = border;
+            Title = title;
+            Secondary = secondary;
+            TopologyMetadata = topologyMetadata;
+            Location = location;
+        }
+
+        public Border Border { get; }
+
+        public TextBlock Title { get; }
+
+        public TextBlock Secondary { get; }
+
+        public TextBlock TopologyMetadata { get; }
+
+        public TextBlock Location { get; }
+    }
+
+    private sealed class MapLinkVisual
+    {
+        public MapLinkVisual(
+            Line line,
+            TextBlock label)
+        {
+            Line = line;
+            Label = label;
+        }
+
+        public Line Line { get; }
+
+        public TextBlock Label { get; }
     }
 
     private sealed class LookupCandidateRow

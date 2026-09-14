@@ -217,7 +217,8 @@ namespace NetLoom.Topology.Map
                             link.Strength),
                         MapFreshnessFor(
                             link.Freshness),
-                        evidence));
+                        evidence,
+                        link.Id));
             }
 
             var mapLocations =
