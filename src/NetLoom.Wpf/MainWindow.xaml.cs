@@ -969,7 +969,7 @@ public partial class MainWindow : Window
             });
     }
 
-    private static void UpdateLinkVisual(
+    private void UpdateLinkVisual(
         MapLinkVisual visual,
         MapLink link,
         MapNodeVisual source,
@@ -999,13 +999,195 @@ public partial class MainWindow : Window
         visual.Label.Text =
             BuildLinkLabel(link);
 
-        Canvas.SetLeft(
+        PlaceLinkLabel(
             visual.Label,
-            ((x1 + x2) / 2.0) - 45.0);
+            x1,
+            y1,
+            x2,
+            y2);
+    }
+
+    private void PlaceLinkLabel(
+        TextBlock label,
+        double x1,
+        double y1,
+        double x2,
+        double y2)
+    {
+        label.Measure(
+            new Size(
+                double.PositiveInfinity,
+                double.PositiveInfinity));
+
+        var labelWidth =
+            label.DesiredSize.Width;
+
+        var labelHeight =
+            label.DesiredSize.Height;
+
+        var centerX =
+            (x1 + x2) / 2.0;
+
+        var centerY =
+            (y1 + y2) / 2.0;
+
+        var deltaX =
+            x2 - x1;
+
+        var deltaY =
+            y2 - y1;
+
+        var length =
+            Math.Sqrt(
+                (deltaX * deltaX) +
+                (deltaY * deltaY));
+
+        var normalX = 0.0;
+        var normalY = -1.0;
+
+        if (length > 0.001)
+        {
+            normalX =
+                deltaY / length;
+
+            normalY =
+                -deltaX / length;
+
+            if (normalY > 0.0 ||
+                (Math.Abs(normalY) <= 0.001 &&
+                 normalX < 0.0))
+            {
+                normalX = -normalX;
+                normalY = -normalY;
+            }
+        }
+
+        var obstacles =
+            _nodeVisualsByIdentity.Values
+                .Select(NodeBounds)
+                .ToArray();
+
+        const double placementStep = 24.0;
+        const double collisionMargin = 8.0;
+        const int maxPlacementSteps = 40;
+
+        for (var step = 0;
+             step <= maxPlacementSteps;
+             step++)
+        {
+            if (step == 0)
+            {
+                if (TryPlaceLinkLabel(
+                    label,
+                    centerX,
+                    centerY,
+                    labelWidth,
+                    labelHeight,
+                    obstacles,
+                    collisionMargin))
+                {
+                    return;
+                }
+
+                continue;
+            }
+
+            var offset =
+                placementStep * step;
+
+            if (TryPlaceLinkLabel(
+                label,
+                centerX + (normalX * offset),
+                centerY + (normalY * offset),
+                labelWidth,
+                labelHeight,
+                obstacles,
+                collisionMargin))
+            {
+                return;
+            }
+
+            if (TryPlaceLinkLabel(
+                label,
+                centerX - (normalX * offset),
+                centerY - (normalY * offset),
+                labelWidth,
+                labelHeight,
+                obstacles,
+                collisionMargin))
+            {
+                return;
+            }
+        }
+
+        Canvas.SetLeft(
+            label,
+            centerX - (labelWidth / 2.0));
 
         Canvas.SetTop(
-            visual.Label,
-            ((y1 + y2) / 2.0) - 12.0);
+            label,
+            centerY - (labelHeight / 2.0));
+    }
+
+    private static bool TryPlaceLinkLabel(
+        TextBlock label,
+        double centerX,
+        double centerY,
+        double labelWidth,
+        double labelHeight,
+        IReadOnlyList<Rect> obstacles,
+        double collisionMargin)
+    {
+        var left =
+            centerX -
+            (labelWidth / 2.0);
+
+        var top =
+            centerY -
+            (labelHeight / 2.0);
+
+        var labelBounds =
+            new Rect(
+                left,
+                top,
+                labelWidth,
+                labelHeight);
+
+        foreach (var obstacle in obstacles)
+        {
+            var collisionBounds =
+                obstacle;
+
+            collisionBounds.Inflate(
+                collisionMargin,
+                collisionMargin);
+
+            if (collisionBounds.IntersectsWith(
+                labelBounds))
+            {
+                return false;
+            }
+        }
+
+        Canvas.SetLeft(
+            label,
+            left);
+
+        Canvas.SetTop(
+            label,
+            top);
+
+        return true;
+    }
+
+    private static Rect NodeBounds(
+        MapNodeVisual visual)
+    {
+        return new Rect(
+            NodeLeft(visual),
+            NodeTop(visual),
+            NodeWidth,
+            NodeHeight);
     }
 
     private static double NodeLeft(
