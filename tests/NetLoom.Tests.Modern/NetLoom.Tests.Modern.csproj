@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\NetLoom.Domain\NetLoom.Domain.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Topology\NetLoom.Topology.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Protocols.Snmp\NetLoom.Protocols.Snmp.csproj" />
+    <ProjectReference Include="..\..\src\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +30,12 @@
              Link="Shared\TopologyRefreshStateTrackerTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\Sprint34AInterfaceCounterDeltaTests.cs"
              Link="Shared\Sprint34AInterfaceCounterDeltaTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34BInterfaceCounterBaselineContractTests.cs"
+             Link="Shared\Sprint34BInterfaceCounterBaselineContractTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34BInterfaceCounterBaselineStoreTests.cs"
+             Link="Shared\Sprint34BInterfaceCounterBaselineStoreTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint34BMonitoringRuntimeTests.cs"
+             Link="Shared\Sprint34BMonitoringRuntimeTests.cs" />
   </ItemGroup>
 
 </Project>

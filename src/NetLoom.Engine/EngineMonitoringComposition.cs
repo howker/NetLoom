@@ -6,6 +6,7 @@ using NetLoom.Persistence.Sqlite.Cdp;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Fdb;
 using NetLoom.Persistence.Sqlite.Lldp;
+using NetLoom.Persistence.Sqlite.Monitoring;
 using NetLoom.Persistence.Sqlite.Observations;
 using NetLoom.Persistence.Sqlite.Stp;
 using NetLoom.Persistence.Sqlite.Topology;
@@ -95,7 +96,10 @@ namespace NetLoom.Engine
                         connectionFactory),
                 topologyMaterializer:
                     new MonitoringTopologyMaterializer(
-                        topologyRepository));
+                        topologyRepository),
+                interfaceCounterBaselineStore:
+                    new SqliteInterfaceCounterBaselineStore(
+                        connectionFactory));
         }
     }
 }

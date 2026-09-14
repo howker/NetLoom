@@ -25,6 +25,10 @@ namespace NetLoom.Application.Monitoring
             _observationDeviceBindingStore;
         private readonly IMonitoringTopologyMaterializer
             _topologyMaterializer;
+        private readonly IInterfaceCounterBaselineStore
+            _interfaceCounterBaselineStore;
+        private readonly InterfaceCounterDeltaEvaluator
+            _interfaceCounterDeltaEvaluator;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -74,7 +78,11 @@ namespace NetLoom.Application.Monitoring
             IObservationDeviceBindingStore
                 observationDeviceBindingStore = null,
             IMonitoringTopologyMaterializer
-                topologyMaterializer = null)
+                topologyMaterializer = null,
+            IInterfaceCounterBaselineStore
+                interfaceCounterBaselineStore = null,
+            InterfaceCounterDeltaEvaluator
+                interfaceCounterDeltaEvaluator = null)
         {
             _lldpCollector =
                 lldpCollector ??
@@ -106,6 +114,13 @@ namespace NetLoom.Application.Monitoring
 
             _topologyMaterializer =
                 topologyMaterializer;
+
+            _interfaceCounterBaselineStore =
+                interfaceCounterBaselineStore;
+
+            _interfaceCounterDeltaEvaluator =
+                interfaceCounterDeltaEvaluator ??
+                new InterfaceCounterDeltaEvaluator();
 
             _utcNow =
                 utcNow ??
@@ -358,13 +373,18 @@ namespace NetLoom.Application.Monitoring
                             }
                         }
 
+                        var counterEvaluations =
+                            EvaluateInterfaceCounters(
+                                interfaces);
+
                         return new MonitoringPollStepResult(
                             kind,
                             true,
                             null,
                             null,
                             null,
-                            interfaces);
+                            interfaces,
+                            counterEvaluations);
 
                     default:
                         throw new ArgumentOutOfRangeException(
@@ -385,6 +405,48 @@ namespace NetLoom.Application.Monitoring
                     exception.GetType().Name,
                     exception.Message);
             }
+        }
+
+        private IReadOnlyList<InterfaceCounterEvaluation>
+            EvaluateInterfaceCounters(
+                IReadOnlyList<InterfaceMonitoringSnapshot> snapshots)
+        {
+            if (_interfaceCounterBaselineStore == null ||
+                snapshots == null ||
+                snapshots.Count == 0)
+            {
+                return Array.Empty<InterfaceCounterEvaluation>();
+            }
+
+            var evaluations =
+                new List<InterfaceCounterEvaluation>();
+
+            foreach (var snapshot in snapshots)
+            {
+                if (snapshot == null ||
+                    !snapshot.DeviceId.HasValue)
+                {
+                    continue;
+                }
+
+                var previous =
+                    _interfaceCounterBaselineStore
+                        .ReplaceAndGetPrevious(
+                            snapshot);
+
+                var delta =
+                    _interfaceCounterDeltaEvaluator
+                        .Evaluate(
+                            previous,
+                            snapshot);
+
+                evaluations.Add(
+                    new InterfaceCounterEvaluation(
+                        snapshot,
+                        delta));
+            }
+
+            return evaluations;
         }
 
         private void BindObservation(

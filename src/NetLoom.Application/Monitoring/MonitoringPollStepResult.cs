@@ -45,6 +45,25 @@ namespace NetLoom.Application.Monitoring
             string errorMessage,
             HealthSnapshot healthSnapshot,
             IReadOnlyList<InterfaceMonitoringSnapshot> interfaceSnapshots)
+            : this(
+                kind,
+                succeeded,
+                errorType,
+                errorMessage,
+                healthSnapshot,
+                interfaceSnapshots,
+                null)
+        {
+        }
+
+        public MonitoringPollStepResult(
+            MonitoringPollKind kind,
+            bool succeeded,
+            string errorType,
+            string errorMessage,
+            HealthSnapshot healthSnapshot,
+            IReadOnlyList<InterfaceMonitoringSnapshot> interfaceSnapshots,
+            IReadOnlyList<InterfaceCounterEvaluation> interfaceCounterEvaluations)
         {
             if (succeeded &&
                 (!string.IsNullOrWhiteSpace(errorType) ||
@@ -69,6 +88,14 @@ namespace NetLoom.Application.Monitoring
                     "Failed poll step cannot contain Interface snapshots.");
             }
 
+            if (!succeeded &&
+                interfaceCounterEvaluations != null &&
+                interfaceCounterEvaluations.Count > 0)
+            {
+                throw new ArgumentException(
+                    "Failed poll step cannot contain Interface counter evaluations.");
+            }
+
             Kind = kind;
             Succeeded = succeeded;
             ErrorType = Normalize(errorType);
@@ -77,6 +104,10 @@ namespace NetLoom.Application.Monitoring
             InterfaceSnapshots =
                 interfaceSnapshots ??
                 Array.Empty<InterfaceMonitoringSnapshot>();
+
+            InterfaceCounterEvaluations =
+                interfaceCounterEvaluations ??
+                Array.Empty<InterfaceCounterEvaluation>();
         }
 
         public MonitoringPollKind Kind { get; }
@@ -91,6 +122,9 @@ namespace NetLoom.Application.Monitoring
 
         public IReadOnlyList<InterfaceMonitoringSnapshot>
             InterfaceSnapshots { get; }
+
+        public IReadOnlyList<InterfaceCounterEvaluation>
+            InterfaceCounterEvaluations { get; }
 
         private static string Normalize(
             string value)
