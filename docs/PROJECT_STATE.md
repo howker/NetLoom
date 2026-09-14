@@ -1352,3 +1352,49 @@ Next committed product Sprint:
 - external adapters and delivery acknowledgement/retry policy remain separate later steps.
 
 No other product feature is committed at this point.
+
+## Sprint 34E closure — 2026-09-14
+
+Sprint 34E — durable interface-degradation event outbox — is complete.
+
+Implementation:
+- `InterfaceDegradationTransitionEvaluator` now owns pure `Indeterminate` / `Unchanged` / `FirstAppearance` / `Changed` / `Resolved` evaluation independently of persistence;
+- `IInterfaceDegradationTransitionProcessor` is the runtime boundary used to observe a classified interface state;
+- the existing 34D tracker remains compatible while SQLite composition uses `SqliteInterfaceDegradationTransitionProcessor`;
+- the SQLite processor performs determinate previous-state load, transition evaluation, state advancement, and meaningful outbox enqueue inside one `SqliteImmediateWrite` transaction;
+- `Indeterminate` reads previous determinate state without advancing it and never enqueues an event;
+- initial `Healthy` and repeated equivalent `Degraded` remain `Unchanged` and never enqueue an event;
+- `FirstAppearance`, `Changed`, and `Resolved` each enqueue exactly one immutable `InterfaceDegradationOutboxEvent`;
+- `InterfaceDegradationOutboxEvent` captures stable `DeviceId` + `ifIndex`, UTC capture time, transition kind, previous/current status and evidence fingerprints, current error/discard rates, normalized reasons, and a deterministic immutable event key;
+- deterministic event keys are validated when rows are read and serve as the SQLite primary key/idempotency boundary;
+- `SqliteInterfaceDegradationEventOutbox.ReadPending(maxCount)` returns pending events in stable capture-time/event-key order;
+- `Migration016InterfaceDegradationOutbox` creates `interface_degradation_outbox` and is now the latest schema migration;
+- a synthetic SQLite trigger test proves that an outbox insert failure rolls back both the determinate-state update and the event insert; retrying the same observation after removing the trigger correctly produces the original transition and exactly one event;
+- Engine composition wires the transactional SQLite processor so the runtime cannot advance durable transition state through a separate non-atomic persistence path.
+
+Verification:
+- the durable outbox contract was demonstrated RED 1/1 on the pre-Sprint 34E base;
+- forced solution build passed;
+- targeted GREEN passed: Integration 6/6 and modern `net8.0` 6/6;
+- full regression passed: modern `net8.0` 59/59, legacy Unit 236/236, Integration 75/75, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered eighteen Sprint 34E files;
+- schema-count expectations were advanced together with migration 016;
+- implementation commit `a92ee3bbfe7b0bda0405bd97417f299391a6e3b4` (`Add durable interface degradation outbox`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Scope deliberately still deferred:
+- no external notification adapter sends an outbox event yet;
+- no event acknowledgement/removal/delivered marker is applied by an external delivery result;
+- no retry/backoff, escalation, or dead-letter policy;
+- no multi-adapter routing or fan-out;
+- no credential/secrets mechanism was invented before a real adapter is selected.
+
+Next committed product Sprint:
+- Sprint 34F — first outbound interface-degradation delivery path;
+- begin with a read-only audit of the 34E outbox API, Engine hosting/lifecycle boundaries, existing configuration/secrets conventions, and real deployment constraints;
+- choose exactly one real outbound adapter only after that evidence is available;
+- define delivery acknowledgement so a pending event is never deleted or marked delivered before confirmed adapter success;
+- preserve pending events across restart and delivery failure;
+- keep routing sophistication, multi-adapter fan-out, escalation, and dead-letter policy as later work.
+
+No other product feature is committed at this point.

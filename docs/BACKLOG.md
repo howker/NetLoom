@@ -139,9 +139,9 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 34D
+## Execution map after Sprint 34E
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A, Sprint 34B, Sprint 34C, and Sprint 34D are complete. The recurring LLDP link-label readability problem remains resolved. NetLoom now has trustworthy interface-counter collection, restart-safe raw baselines, portable degradation classification, and durable restart-safe degradation transition/repeat-suppression semantics. Durable delivery is still intentionally separate.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A, Sprint 34B, Sprint 34C, Sprint 34D, and Sprint 34E are complete. The recurring LLDP link-label readability problem remains resolved. NetLoom now has trustworthy interface-counter collection, restart-safe raw baselines, portable degradation classification, durable transition/repeat-suppression semantics, and a crash-safe durable event outbox. External delivery remains intentionally separate.
 
 ### Completed
 
@@ -150,16 +150,17 @@ The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction revie
 - [x] Sprint 34A — interface counter delta foundation. Collect `ifInErrors`, `ifOutErrors`, `ifInDiscards`, `ifOutDiscards`, and `ifCounterDiscontinuityTime`; carry the raw nullable values in `InterfaceMonitoringSnapshot`; compute portable interval deltas with explicit `NoBaseline`, `Valid`, and `Discontinuity` results; treat Counter32 decrease as wrap only while the discontinuity marker is stable; never invent a delta when the baseline or discontinuity marker is unavailable. The audited Sprint scope did not add `ifLastChange`, persistence, degradation thresholds, incidents, or outbound delivery.
 - [x] Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation. Persist the latest raw counter snapshot by stable `DeviceId` + `ifIndex`, atomically return/replace the previous sample, reject non-newer samples, restore the baseline after Engine restart, and run the existing 34A evaluator against the restored raw sample. A discontinuity interval remains non-degrading and its current sample becomes the next durable baseline.
 - [x] Sprint 34C — current-state interface degradation classification. Classify restart-safe counter evaluations as `Indeterminate`, `Healthy`, or `Degraded`; normalize enabled error/discard counter sums to rates per minute; require explicit finite positive thresholds; treat threshold equality as degraded; preserve incomplete-evidence semantics; and guarantee that `NoBaseline` and `Discontinuity` never become degradation. Engine classification is opt-in through `--interface-error-rate-per-minute` and/or `--interface-discard-rate-per-minute`. Interface oper/admin state and `ifLastChange` are not mixed into this counter-degradation classifier.
-- [x] Sprint 34D — durable interface-degradation transition state and repeat suppression. Persist only determinate `Healthy` / `Degraded` state by stable `DeviceId` + `ifIndex`; classify `FirstAppearance`, `Unchanged`, `Changed`, `Resolved`, and `Indeterminate`; keep `Indeterminate` from replacing durable state; compare degraded evidence by canonical reason fingerprint rather than volatile rates; and suppress unchanged degradation across Engine restart. `Migration015InterfaceDegradationStates` is the current schema migration.
+- [x] Sprint 34D — durable interface-degradation transition state and repeat suppression. Persist only determinate `Healthy` / `Degraded` state by stable `DeviceId` + `ifIndex`; classify `FirstAppearance`, `Unchanged`, `Changed`, `Resolved`, and `Indeterminate`; keep `Indeterminate` from replacing durable state; compare degraded evidence by canonical reason fingerprint rather than volatile rates; and suppress unchanged degradation across Engine restart.
+- [x] Sprint 34E — durable interface-degradation event outbox. Extract pure transition evaluation behind a processor boundary; atomically advance determinate degradation state and enqueue immutable delivery-ready events for `FirstAppearance`, `Changed`, and `Resolved`; keep `Unchanged` and `Indeterminate` out of the outbox; use deterministic event keys for idempotency; and prove rollback of both state and event when outbox insertion fails. `Migration016InterfaceDegradationOutbox` is the current schema migration.
 
 ### Committed next product Sprint
 
-- [ ] Sprint 34E — durable interface-degradation event outbox. Audit current transition/runtime and SQLite transaction boundaries, then persist delivery-ready events only for meaningful `FirstAppearance`, `Changed`, and `Resolved` transitions. The transition-state update and outbox enqueue must have an atomic crash-safe boundary so a restart cannot lose a real transition after state has advanced. `Unchanged` and `Indeterminate` must not enqueue delivery events. Keep the external notification adapter and delivery acknowledgement/retry policy as later separate work.
+- [ ] Sprint 34F — first outbound interface-degradation delivery path. Start with a read-only audit of the 34E outbox API, Engine hosting/lifecycle boundaries, configuration/secrets conventions, and actual deployment constraints before choosing the concrete adapter. Deliver pending outbox events through exactly one real adapter, with explicit success/failure acknowledgement semantics that never delete or mark an event delivered before confirmed success. Keep routing sophistication, multi-adapter fan-out, escalation, and dead-letter policy out of the first delivery slice.
 
 ### Next candidates — not commitments
 
-- [ ] First outbound notification adapter chosen from a real deployment need; routing by event/kind/severity is configuration, not architecture, and Trap is not treated as acknowledged delivery.
-- [ ] Delivery acknowledgement/retry/dead-letter policy after the first real adapter defines operational requirements.
+- [ ] Retry/backoff and dead-letter policy based on the failure modes observed with the first real adapter.
+- [ ] Routing by event/kind/severity as configuration rather than architecture.
 - [ ] UI design tokens covering colors, typography, spacing and geometry; Light/Dark themes.
 - [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
 
