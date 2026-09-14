@@ -33,6 +33,8 @@ namespace NetLoom.Application.Monitoring
             _interfaceDegradationClassifier;
         private readonly InterfaceDegradationPolicy
             _interfaceDegradationPolicy;
+        private readonly InterfaceDegradationTransitionTracker
+            _interfaceDegradationTransitionTracker;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -90,7 +92,9 @@ namespace NetLoom.Application.Monitoring
             InterfaceDegradationClassifier
                 interfaceDegradationClassifier = null,
             InterfaceDegradationPolicy
-                interfaceDegradationPolicy = null)
+                interfaceDegradationPolicy = null,
+            InterfaceDegradationTransitionTracker
+                interfaceDegradationTransitionTracker = null)
         {
             _lldpCollector =
                 lldpCollector ??
@@ -138,6 +142,9 @@ namespace NetLoom.Application.Monitoring
                     ? null
                     : interfaceDegradationClassifier ??
                         new InterfaceDegradationClassifier();
+
+            _interfaceDegradationTransitionTracker =
+                interfaceDegradationTransitionTracker;
 
             _utcNow =
                 utcNow ??
@@ -398,6 +405,10 @@ namespace NetLoom.Application.Monitoring
                             ClassifyInterfaceDegradation(
                                 counterEvaluations);
 
+                        var degradationTransitions =
+                            TrackInterfaceDegradation(
+                                degradationClassifications);
+
                         return new MonitoringPollStepResult(
                             kind,
                             true,
@@ -406,7 +417,8 @@ namespace NetLoom.Application.Monitoring
                             null,
                             interfaces,
                             counterEvaluations,
-                            degradationClassifications);
+                            degradationClassifications,
+                            degradationTransitions);
 
                     default:
                         throw new ArgumentOutOfRangeException(
@@ -501,6 +513,37 @@ namespace NetLoom.Application.Monitoring
             }
 
             return classifications;
+        }
+
+        private IReadOnlyList<InterfaceDegradationTransition>
+            TrackInterfaceDegradation(
+                IReadOnlyList<InterfaceDegradationClassification>
+                    classifications)
+        {
+            if (_interfaceDegradationTransitionTracker == null ||
+                classifications == null ||
+                classifications.Count == 0)
+            {
+                return Array.Empty<InterfaceDegradationTransition>();
+            }
+
+            var transitions =
+                new List<InterfaceDegradationTransition>();
+
+            foreach (var classification in classifications)
+            {
+                if (classification == null)
+                {
+                    continue;
+                }
+
+                transitions.Add(
+                    _interfaceDegradationTransitionTracker
+                        .Observe(
+                            classification));
+            }
+
+            return transitions;
         }
 
         private void BindObservation(

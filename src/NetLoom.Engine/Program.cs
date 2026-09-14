@@ -374,6 +374,16 @@ namespace NetLoom.Engine
                     WriteInterfaceDegradation(
                         classification);
                 }
+
+                foreach (var transition in
+                    step.InterfaceDegradationTransitions)
+                {
+                    if (transition.HasStateChange)
+                    {
+                        WriteInterfaceDegradationTransition(
+                            transition);
+                    }
+                }
             }
 
             var succeeded = 0;
@@ -450,6 +460,31 @@ namespace NetLoom.Engine
                         classification.Reasons)) +
                 " deviceId=" +
                 classification.DeviceId.ToString("D"));
+        }
+
+        private static void
+            WriteInterfaceDegradationTransition(
+                InterfaceDegradationTransition transition)
+        {
+            Console.WriteLine(
+                "INTERFACE-DEGRADATION-TRANSITION: ifIndex=" +
+                transition.Classification.IfIndex +
+                " kind=" +
+                transition.Kind +
+                " previous=" +
+                (transition.PreviousState == null
+                    ? "none"
+                    : transition.PreviousState.Status.ToString()) +
+                " current=" +
+                transition.Classification.Status +
+                " reasons=" +
+                (transition.Classification.Reasons.Count == 0
+                    ? "none"
+                    : string.Join(
+                        ",",
+                        transition.Classification.Reasons)) +
+                " deviceId=" +
+                transition.Classification.DeviceId.ToString("D"));
         }
 
         private static string FormatRate(

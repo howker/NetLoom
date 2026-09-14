@@ -40,6 +40,14 @@
              Link="Shared\Sprint34CInterfaceDegradationTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\Sprint34CMonitoringRuntimeTests.cs"
              Link="Shared\Sprint34CMonitoringRuntimeTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34DDurableTransitionContractTests.cs"
+             Link="Shared\Sprint34DDurableTransitionContractTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34DInterfaceDegradationStateStoreTests.cs"
+             Link="Shared\Sprint34DInterfaceDegradationStateStoreTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint34DInterfaceDegradationTransitionTests.cs"
+             Link="Shared\Sprint34DInterfaceDegradationTransitionTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint34DMonitoringRuntimeTests.cs"
+             Link="Shared\Sprint34DMonitoringRuntimeTests.cs" />
   </ItemGroup>
 
 </Project>

@@ -104,7 +104,11 @@ namespace NetLoom.Engine
                     new SqliteInterfaceCounterBaselineStore(
                         connectionFactory),
                 interfaceDegradationPolicy:
-                    interfaceDegradationPolicy);
+                    interfaceDegradationPolicy,
+                interfaceDegradationTransitionTracker:
+                    new InterfaceDegradationTransitionTracker(
+                        new SqliteInterfaceDegradationStateStore(
+                            connectionFactory)));
         }
     }
 }
