@@ -36,6 +36,10 @@
              Link="Shared\Sprint34BInterfaceCounterBaselineStoreTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\Sprint34BMonitoringRuntimeTests.cs"
              Link="Shared\Sprint34BMonitoringRuntimeTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint34CInterfaceDegradationTests.cs"
+             Link="Shared\Sprint34CInterfaceDegradationTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint34CMonitoringRuntimeTests.cs"
+             Link="Shared\Sprint34CMonitoringRuntimeTests.cs" />
   </ItemGroup>
 
 </Project>

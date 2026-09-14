@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Threading;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
@@ -278,7 +279,30 @@ namespace NetLoom.Engine
                     options.DatabasePath);
 
             return EngineMonitoringComposition.Create(
-                databasePath);
+                databasePath,
+                CreateInterfaceDegradationPolicy(
+                    options));
+        }
+
+        private static InterfaceDegradationPolicy
+            CreateInterfaceDegradationPolicy(
+                EngineCommandLine options)
+        {
+            if (!options
+                    .InterfaceErrorRatePerMinuteThreshold
+                    .HasValue &&
+                !options
+                    .InterfaceDiscardRatePerMinuteThreshold
+                    .HasValue)
+            {
+                return null;
+            }
+
+            return new InterfaceDegradationPolicy(
+                options
+                    .InterfaceErrorRatePerMinuteThreshold,
+                options
+                    .InterfaceDiscardRatePerMinuteThreshold);
         }
 
         private static MonitoringPollRequest CreateRequest(
@@ -343,6 +367,13 @@ namespace NetLoom.Engine
                     WriteInterface(
                         snapshot);
                 }
+
+                foreach (var classification in
+                    step.InterfaceDegradationClassifications)
+                {
+                    WriteInterfaceDegradation(
+                        classification);
+                }
             }
 
             var succeeded = 0;
@@ -395,6 +426,40 @@ namespace NetLoom.Engine
                     : "unknown") +
                 " deviceId=" +
                 device);
+        }
+
+        private static void WriteInterfaceDegradation(
+            InterfaceDegradationClassification classification)
+        {
+            Console.WriteLine(
+                "INTERFACE-DEGRADATION: ifIndex=" +
+                classification.IfIndex +
+                " status=" +
+                classification.Status +
+                " errorRatePerMinute=" +
+                FormatRate(
+                    classification.ErrorRatePerMinute) +
+                " discardRatePerMinute=" +
+                FormatRate(
+                    classification.DiscardRatePerMinute) +
+                " reasons=" +
+                (classification.Reasons.Count == 0
+                    ? "none"
+                    : string.Join(
+                        ",",
+                        classification.Reasons)) +
+                " deviceId=" +
+                classification.DeviceId.ToString("D"));
+        }
+
+        private static string FormatRate(
+            double? value)
+        {
+            return value.HasValue
+                ? value.Value.ToString(
+                    "0.###",
+                    CultureInfo.InvariantCulture)
+                : "unknown";
         }
 
         private static void WriteHealth(

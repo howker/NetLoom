@@ -1,5 +1,6 @@
 using System;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations;
 using NetLoom.Persistence.Sqlite.Arp;
 using NetLoom.Persistence.Sqlite.Cdp;
@@ -25,7 +26,9 @@ namespace NetLoom.Engine
     internal static class EngineMonitoringComposition
     {
         public static MonitoringRuntime Create(
-            string databasePath)
+            string databasePath,
+            InterfaceDegradationPolicy
+                interfaceDegradationPolicy = null)
         {
             if (string.IsNullOrWhiteSpace(databasePath))
             {
@@ -99,7 +102,9 @@ namespace NetLoom.Engine
                         topologyRepository),
                 interfaceCounterBaselineStore:
                     new SqliteInterfaceCounterBaselineStore(
-                        connectionFactory));
+                        connectionFactory),
+                interfaceDegradationPolicy:
+                    interfaceDegradationPolicy);
         }
     }
 }

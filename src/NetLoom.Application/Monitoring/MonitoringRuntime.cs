@@ -29,6 +29,10 @@ namespace NetLoom.Application.Monitoring
             _interfaceCounterBaselineStore;
         private readonly InterfaceCounterDeltaEvaluator
             _interfaceCounterDeltaEvaluator;
+        private readonly InterfaceDegradationClassifier
+            _interfaceDegradationClassifier;
+        private readonly InterfaceDegradationPolicy
+            _interfaceDegradationPolicy;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -82,7 +86,11 @@ namespace NetLoom.Application.Monitoring
             IInterfaceCounterBaselineStore
                 interfaceCounterBaselineStore = null,
             InterfaceCounterDeltaEvaluator
-                interfaceCounterDeltaEvaluator = null)
+                interfaceCounterDeltaEvaluator = null,
+            InterfaceDegradationClassifier
+                interfaceDegradationClassifier = null,
+            InterfaceDegradationPolicy
+                interfaceDegradationPolicy = null)
         {
             _lldpCollector =
                 lldpCollector ??
@@ -121,6 +129,15 @@ namespace NetLoom.Application.Monitoring
             _interfaceCounterDeltaEvaluator =
                 interfaceCounterDeltaEvaluator ??
                 new InterfaceCounterDeltaEvaluator();
+
+            _interfaceDegradationPolicy =
+                interfaceDegradationPolicy;
+
+            _interfaceDegradationClassifier =
+                interfaceDegradationPolicy == null
+                    ? null
+                    : interfaceDegradationClassifier ??
+                        new InterfaceDegradationClassifier();
 
             _utcNow =
                 utcNow ??
@@ -377,6 +394,10 @@ namespace NetLoom.Application.Monitoring
                             EvaluateInterfaceCounters(
                                 interfaces);
 
+                        var degradationClassifications =
+                            ClassifyInterfaceDegradation(
+                                counterEvaluations);
+
                         return new MonitoringPollStepResult(
                             kind,
                             true,
@@ -384,7 +405,8 @@ namespace NetLoom.Application.Monitoring
                             null,
                             null,
                             interfaces,
-                            counterEvaluations);
+                            counterEvaluations,
+                            degradationClassifications);
 
                     default:
                         throw new ArgumentOutOfRangeException(
@@ -447,6 +469,38 @@ namespace NetLoom.Application.Monitoring
             }
 
             return evaluations;
+        }
+
+        private IReadOnlyList<InterfaceDegradationClassification>
+            ClassifyInterfaceDegradation(
+                IReadOnlyList<InterfaceCounterEvaluation> evaluations)
+        {
+            if (_interfaceDegradationPolicy == null ||
+                _interfaceDegradationClassifier == null ||
+                evaluations == null ||
+                evaluations.Count == 0)
+            {
+                return Array.Empty<InterfaceDegradationClassification>();
+            }
+
+            var classifications =
+                new List<InterfaceDegradationClassification>();
+
+            foreach (var evaluation in evaluations)
+            {
+                if (evaluation == null)
+                {
+                    continue;
+                }
+
+                classifications.Add(
+                    _interfaceDegradationClassifier
+                        .Classify(
+                            evaluation,
+                            _interfaceDegradationPolicy));
+            }
+
+            return classifications;
         }
 
         private void BindObservation(

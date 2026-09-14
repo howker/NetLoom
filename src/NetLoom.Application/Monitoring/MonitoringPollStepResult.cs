@@ -64,6 +64,27 @@ namespace NetLoom.Application.Monitoring
             HealthSnapshot healthSnapshot,
             IReadOnlyList<InterfaceMonitoringSnapshot> interfaceSnapshots,
             IReadOnlyList<InterfaceCounterEvaluation> interfaceCounterEvaluations)
+            : this(
+                kind,
+                succeeded,
+                errorType,
+                errorMessage,
+                healthSnapshot,
+                interfaceSnapshots,
+                interfaceCounterEvaluations,
+                null)
+        {
+        }
+
+        public MonitoringPollStepResult(
+            MonitoringPollKind kind,
+            bool succeeded,
+            string errorType,
+            string errorMessage,
+            HealthSnapshot healthSnapshot,
+            IReadOnlyList<InterfaceMonitoringSnapshot> interfaceSnapshots,
+            IReadOnlyList<InterfaceCounterEvaluation> interfaceCounterEvaluations,
+            IReadOnlyList<InterfaceDegradationClassification> interfaceDegradationClassifications)
         {
             if (succeeded &&
                 (!string.IsNullOrWhiteSpace(errorType) ||
@@ -96,6 +117,14 @@ namespace NetLoom.Application.Monitoring
                     "Failed poll step cannot contain Interface counter evaluations.");
             }
 
+            if (!succeeded &&
+                interfaceDegradationClassifications != null &&
+                interfaceDegradationClassifications.Count > 0)
+            {
+                throw new ArgumentException(
+                    "Failed poll step cannot contain Interface degradation classifications.");
+            }
+
             Kind = kind;
             Succeeded = succeeded;
             ErrorType = Normalize(errorType);
@@ -108,6 +137,10 @@ namespace NetLoom.Application.Monitoring
             InterfaceCounterEvaluations =
                 interfaceCounterEvaluations ??
                 Array.Empty<InterfaceCounterEvaluation>();
+
+            InterfaceDegradationClassifications =
+                interfaceDegradationClassifications ??
+                Array.Empty<InterfaceDegradationClassification>();
         }
 
         public MonitoringPollKind Kind { get; }
@@ -125,6 +158,9 @@ namespace NetLoom.Application.Monitoring
 
         public IReadOnlyList<InterfaceCounterEvaluation>
             InterfaceCounterEvaluations { get; }
+
+        public IReadOnlyList<InterfaceDegradationClassification>
+            InterfaceDegradationClassifications { get; }
 
         private static string Normalize(
             string value)

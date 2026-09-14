@@ -34,6 +34,18 @@ namespace NetLoom.Engine
 
         public int IntervalSeconds { get; private set; }
 
+        public double? InterfaceErrorRatePerMinuteThreshold
+        {
+            get;
+            private set;
+        }
+
+        public double? InterfaceDiscardRatePerMinuteThreshold
+        {
+            get;
+            private set;
+        }
+
         public IReadOnlyList<MonitoringPollKind> Kinds { get; private set; }
 
         public static EngineCommandLine Parse(
@@ -134,6 +146,18 @@ namespace NetLoom.Engine
                     1,
                     int.MaxValue,
                     "INVALID_INTERVAL_SECONDS"),
+                InterfaceErrorRatePerMinuteThreshold =
+                    ParseOptionalPositiveDouble(
+                        Get(
+                            values,
+                            "interface-error-rate-per-minute"),
+                        "INVALID_INTERFACE_ERROR_RATE_PER_MINUTE"),
+                InterfaceDiscardRatePerMinuteThreshold =
+                    ParseOptionalPositiveDouble(
+                        Get(
+                            values,
+                            "interface-discard-rate-per-minute"),
+                        "INVALID_INTERFACE_DISCARD_RATE_PER_MINUTE"),
                 Kinds = ParseKinds(
                     Get(values, "kinds"))
             };
@@ -186,7 +210,9 @@ namespace NetLoom.Engine
                         "retries",
                         "max-repetitions",
                         "kinds",
-                        "interval-seconds"
+                        "interval-seconds",
+                        "interface-error-rate-per-minute",
+                        "interface-discard-rate-per-minute"
                     },
                     StringComparer.OrdinalIgnoreCase);
 
@@ -293,6 +319,32 @@ namespace NetLoom.Engine
                     out parsed) ||
                 parsed < minimum ||
                 parsed > maximum)
+            {
+                throw Invalid(errorCode);
+            }
+
+            return parsed;
+        }
+
+        private static double? ParseOptionalPositiveDouble(
+            string value,
+            string errorCode)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            double parsed;
+
+            if (!double.TryParse(
+                    value,
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out parsed) ||
+                double.IsNaN(parsed) ||
+                double.IsInfinity(parsed) ||
+                parsed <= 0.0)
             {
                 throw Invalid(errorCode);
             }
