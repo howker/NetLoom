@@ -87,7 +87,7 @@ namespace NetLoom.Persistence.Sqlite.Monitoring
             }
         }
 
-        private static InterfaceDegradationState Load(
+        internal static InterfaceDegradationState Load(
             SQLiteConnection connection,
             Guid deviceId,
             int ifIndex)
@@ -135,7 +135,7 @@ WHERE
             }
         }
 
-        private static void Save(
+        internal static void Save(
             SQLiteConnection connection,
             InterfaceDegradationState current)
         {

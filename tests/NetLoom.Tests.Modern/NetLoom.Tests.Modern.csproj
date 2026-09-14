@@ -48,6 +48,10 @@
              Link="Shared\Sprint34DInterfaceDegradationTransitionTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\Sprint34DMonitoringRuntimeTests.cs"
              Link="Shared\Sprint34DMonitoringRuntimeTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34EOutboxContractTests.cs"
+             Link="Shared\Sprint34EOutboxContractTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34EInterfaceDegradationOutboxTests.cs"
+             Link="Shared\Sprint34EInterfaceDegradationOutboxTests.cs" />
   </ItemGroup>
 
 </Project>

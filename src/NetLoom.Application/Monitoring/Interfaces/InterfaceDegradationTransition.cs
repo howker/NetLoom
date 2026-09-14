@@ -7,6 +7,7 @@ namespace NetLoom.Application.Monitoring.Interfaces
         internal InterfaceDegradationTransition(
             InterfaceDegradationClassification classification,
             InterfaceDegradationState previousState,
+            InterfaceDegradationState currentState,
             InterfaceDegradationTransitionKind kind)
         {
             Classification =
@@ -17,6 +18,9 @@ namespace NetLoom.Application.Monitoring.Interfaces
             PreviousState =
                 previousState;
 
+            CurrentState =
+                currentState;
+
             Kind = kind;
         }
 
@@ -25,6 +29,9 @@ namespace NetLoom.Application.Monitoring.Interfaces
 
         public InterfaceDegradationState
             PreviousState { get; }
+
+        public InterfaceDegradationState
+            CurrentState { get; }
 
         public InterfaceDegradationTransitionKind
             Kind { get; }

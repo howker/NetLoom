@@ -33,8 +33,8 @@ namespace NetLoom.Application.Monitoring
             _interfaceDegradationClassifier;
         private readonly InterfaceDegradationPolicy
             _interfaceDegradationPolicy;
-        private readonly InterfaceDegradationTransitionTracker
-            _interfaceDegradationTransitionTracker;
+        private readonly IInterfaceDegradationTransitionProcessor
+            _interfaceDegradationTransitionProcessor;
         private readonly Func<DateTime> _utcNow;
 
         public MonitoringRuntime(
@@ -94,7 +94,9 @@ namespace NetLoom.Application.Monitoring
             InterfaceDegradationPolicy
                 interfaceDegradationPolicy = null,
             InterfaceDegradationTransitionTracker
-                interfaceDegradationTransitionTracker = null)
+                interfaceDegradationTransitionTracker = null,
+            IInterfaceDegradationTransitionProcessor
+                interfaceDegradationTransitionProcessor = null)
         {
             _lldpCollector =
                 lldpCollector ??
@@ -143,7 +145,8 @@ namespace NetLoom.Application.Monitoring
                     : interfaceDegradationClassifier ??
                         new InterfaceDegradationClassifier();
 
-            _interfaceDegradationTransitionTracker =
+            _interfaceDegradationTransitionProcessor =
+                interfaceDegradationTransitionProcessor ??
                 interfaceDegradationTransitionTracker;
 
             _utcNow =
@@ -520,7 +523,7 @@ namespace NetLoom.Application.Monitoring
                 IReadOnlyList<InterfaceDegradationClassification>
                     classifications)
         {
-            if (_interfaceDegradationTransitionTracker == null ||
+            if (_interfaceDegradationTransitionProcessor == null ||
                 classifications == null ||
                 classifications.Count == 0)
             {
@@ -538,7 +541,7 @@ namespace NetLoom.Application.Monitoring
                 }
 
                 transitions.Add(
-                    _interfaceDegradationTransitionTracker
+                    _interfaceDegradationTransitionProcessor
                         .Observe(
                             classification));
             }

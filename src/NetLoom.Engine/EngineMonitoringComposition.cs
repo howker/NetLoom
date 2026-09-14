@@ -105,10 +105,9 @@ namespace NetLoom.Engine
                         connectionFactory),
                 interfaceDegradationPolicy:
                     interfaceDegradationPolicy,
-                interfaceDegradationTransitionTracker:
-                    new InterfaceDegradationTransitionTracker(
-                        new SqliteInterfaceDegradationStateStore(
-                            connectionFactory)));
+                interfaceDegradationTransitionProcessor:
+                    new SqliteInterfaceDegradationTransitionProcessor(
+                        connectionFactory));
         }
     }
 }

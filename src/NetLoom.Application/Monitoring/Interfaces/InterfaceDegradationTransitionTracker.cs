@@ -2,10 +2,14 @@ using System;
 
 namespace NetLoom.Application.Monitoring.Interfaces
 {
-    public sealed class InterfaceDegradationTransitionTracker
+    public sealed class InterfaceDegradationTransitionTracker :
+        IInterfaceDegradationTransitionProcessor
     {
         private readonly IInterfaceDegradationStateStore
             _stateStore;
+
+        private readonly InterfaceDegradationTransitionEvaluator
+            _evaluator;
 
         public InterfaceDegradationTransitionTracker(
             IInterfaceDegradationStateStore stateStore)
@@ -14,6 +18,9 @@ namespace NetLoom.Application.Monitoring.Interfaces
                 stateStore ??
                 throw new ArgumentNullException(
                     nameof(stateStore));
+
+            _evaluator =
+                new InterfaceDegradationTransitionEvaluator();
         }
 
         public InterfaceDegradationTransition Observe(
@@ -33,11 +40,9 @@ namespace NetLoom.Application.Monitoring.Interfaces
                         classification.DeviceId,
                         classification.IfIndex);
 
-                return new InterfaceDegradationTransition(
+                return _evaluator.Evaluate(
                     classification,
-                    previous,
-                    InterfaceDegradationTransitionKind
-                        .Indeterminate);
+                    previous);
             }
 
             var current =
@@ -50,73 +55,9 @@ namespace NetLoom.Application.Monitoring.Interfaces
                     .ReplaceAndGetPrevious(
                         current);
 
-            var kind =
-                ClassifyTransition(
-                    previousState,
-                    current);
-
-            return new InterfaceDegradationTransition(
+            return _evaluator.Evaluate(
                 classification,
-                previousState,
-                kind);
-        }
-
-        private static InterfaceDegradationTransitionKind
-            ClassifyTransition(
-                InterfaceDegradationState previous,
-                InterfaceDegradationState current)
-        {
-            if (previous == null)
-            {
-                return current.Status ==
-                    InterfaceDegradationStatus.Degraded
-                    ? InterfaceDegradationTransitionKind
-                        .FirstAppearance
-                    : InterfaceDegradationTransitionKind
-                        .Unchanged;
-            }
-
-            if (previous.Status == current.Status)
-            {
-                if (current.Status ==
-                        InterfaceDegradationStatus.Degraded &&
-                    !string.Equals(
-                        previous.EvidenceFingerprint,
-                        current.EvidenceFingerprint,
-                        StringComparison.Ordinal))
-                {
-                    return
-                        InterfaceDegradationTransitionKind
-                            .Changed;
-                }
-
-                return
-                    InterfaceDegradationTransitionKind
-                        .Unchanged;
-            }
-
-            if (previous.Status ==
-                    InterfaceDegradationStatus.Degraded &&
-                current.Status ==
-                    InterfaceDegradationStatus.Healthy)
-            {
-                return
-                    InterfaceDegradationTransitionKind
-                        .Resolved;
-            }
-
-            if (previous.Status ==
-                    InterfaceDegradationStatus.Healthy &&
-                current.Status ==
-                    InterfaceDegradationStatus.Degraded)
-            {
-                return
-                    InterfaceDegradationTransitionKind
-                        .FirstAppearance;
-            }
-
-            throw new InvalidOperationException(
-                "Unsupported interface degradation state transition.");
+                previousState);
         }
     }
 }

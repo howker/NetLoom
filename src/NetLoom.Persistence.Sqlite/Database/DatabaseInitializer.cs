@@ -31,7 +31,8 @@ namespace NetLoom.Persistence.Sqlite.Database
                     new Migration012ObservationDeviceBindings(),
                     new Migration013LldpTopologyIdentity(),
                     new Migration014InterfaceCounterBaselines(),
-                    new Migration015InterfaceDegradationStates()
+                    new Migration015InterfaceDegradationStates(),
+                    new Migration016InterfaceDegradationOutbox()
                 });
         }
 
