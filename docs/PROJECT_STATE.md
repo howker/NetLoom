@@ -1302,3 +1302,53 @@ Next committed product Sprint:
 - keep persistent outbox/delivery semantics and external notification adapters as separate later work.
 
 No other product feature is committed at this point.
+
+## Sprint 34D closure — 2026-09-14
+
+Sprint 34D — durable interface-degradation transition state and repeat suppression — is complete.
+
+Implementation:
+- `IInterfaceDegradationStateStore` defines the persistence-neutral current-state boundary for interface degradation transitions;
+- `InterfaceDegradationState` stores only determinate `Healthy` or `Degraded` state for stable `DeviceId` + `ifIndex`, UTC capture time, and a canonical degraded-evidence fingerprint;
+- `Indeterminate` is explicitly not a durable state and therefore cannot erase the last determinate state;
+- degraded evidence fingerprints are derived from canonical classification reasons rather than volatile numeric rates, so ordinary rate movement does not create false `Changed` transitions;
+- `InterfaceDegradationTransitionTracker` produces `Unchanged`, `FirstAppearance`, `Changed`, `Resolved`, or `Indeterminate`;
+- a first observed `Healthy` state is `Unchanged`, not an artificial recovery;
+- `Healthy -> Degraded` is `FirstAppearance`;
+- repeated equivalent `Degraded` is `Unchanged`, including after Engine restart;
+- `Degraded` with changed canonical evidence is `Changed`;
+- `Degraded -> Healthy` is `Resolved`;
+- `Degraded -> Indeterminate -> equivalent Degraded` preserves the durable degraded state and returns to `Unchanged`, rather than creating a false resolution or appearance;
+- `SqliteInterfaceDegradationStateStore` persists the latest determinate state by `DeviceId` + `ifIndex`, rejects non-newer timestamps, and uses the existing immediate-write boundary for atomic previous-state read/replacement;
+- `Migration015InterfaceDegradationStates` creates the durable state table and is now the latest schema migration;
+- `MonitoringRuntime` exposes interface degradation transitions alongside classifications;
+- Engine composition wires the SQLite degradation-state store into the monitoring runtime;
+- Engine emits `INTERFACE-DEGRADATION-TRANSITION` output only when `HasStateChange` is true, so `Unchanged` and `Indeterminate` do not create repeated transition output;
+- Sprint 34D does not add a persistent delivery queue or any external notification adapter.
+
+Verification:
+- the durable transition contract was demonstrated RED 1/1 on the pre-Sprint 34D base;
+- forced solution build passed;
+- targeted GREEN passed: Integration 6/6, legacy Unit 6/6, modern `net8.0` 12/12;
+- full regression passed: modern `net8.0` 53/53, legacy Unit 236/236, Integration 69/69, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered nineteen Sprint 34D files;
+- schema-count expectations were advanced together with migration 015, including the SQLite concurrency regression, avoiding the stale-count failure previously encountered in Sprint 34B;
+- implementation commit `24ed7d421006899bb5b32edee496a1b2c323529e` (`Add durable interface degradation transitions`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Scope deliberately still deferred:
+- no persistent delivery/outbox row is created for a transition;
+- no crash-safe atomic boundary yet couples transition-state advancement with durable event enqueue;
+- no external notification adapter, acknowledgement, retry, escalation, or dead-letter semantics;
+- no attempt to convert `Indeterminate` into a recovery signal;
+- no hard-down interface failure model is collapsed into counter degradation.
+
+Next committed product Sprint:
+- Sprint 34E — durable interface-degradation event outbox;
+- begin with a read-only audit of the 34D state-transition persistence path, existing SQLite transaction helpers, and any existing alert/event delivery abstractions;
+- persist only meaningful `FirstAppearance`, `Changed`, and `Resolved` events;
+- require an atomic crash-safe boundary between advancing durable transition state and enqueueing the corresponding outbox event so a restart cannot silently lose a real transition;
+- `Unchanged` and `Indeterminate` remain non-delivery states;
+- external adapters and delivery acknowledgement/retry policy remain separate later steps.
+
+No other product feature is committed at this point.
