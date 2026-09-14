@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -42,6 +42,42 @@ namespace NetLoom.Protocols.Snmp.Interfaces
                     CultureInfo.InvariantCulture,
                     out parsed) &&
                 parsed > 0)
+            {
+                return parsed;
+            }
+
+            return null;
+        }
+
+        public static uint? ParseCounter32(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            uint parsed;
+
+            if (uint.TryParse(
+                value.Trim(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out parsed))
+            {
+                return parsed;
+            }
+
+            var match =
+                ParenthesizedValue.Match(
+                    value);
+
+            if (match.Success &&
+                uint.TryParse(
+                    match.Groups[1].Value,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out parsed))
             {
                 return parsed;
             }

@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\src\NetLoom.Contracts\NetLoom.Contracts.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Domain\NetLoom.Domain.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Topology\NetLoom.Topology.csproj" />
+    <ProjectReference Include="..\..\src\NetLoom.Protocols.Snmp\NetLoom.Protocols.Snmp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +27,8 @@
              Link="Shared\TopologyRefreshCoordinatorTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\TopologyRefreshStateTrackerTests.cs"
              Link="Shared\TopologyRefreshStateTrackerTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint34AInterfaceCounterDeltaTests.cs"
+             Link="Shared\Sprint34AInterfaceCounterDeltaTests.cs" />
   </ItemGroup>
 
 </Project>
