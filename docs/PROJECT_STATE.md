@@ -6,11 +6,11 @@
 
 ## Текущее состояние
 
-Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance, LLDP topology baseline closure, the modern `net8.0` test foundation, and Sprint 33A incremental WPF map reconciliation are complete.
+Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance, LLDP topology baseline closure, the modern `net8.0` test foundation, Sprint 33A incremental WPF map reconciliation, and Sprint 33B collision-safe topology link-label placement are complete.
 
-Sprint 33A is committed and pushed as `b5b546394361104e72ba73f84dab23538528d558`. Portable/core regression now has a real `net8.0` execution lane in addition to the legacy `net48` WPF test lane.
+Sprint 33B is committed and pushed as `b7e6a8013055fff0cf9c58666d6b922fceabc717`. Portable/core regression continues to run on the modern `net8.0` lane while WPF-specific presentation regressions run on legacy `net48`.
 
-The LLDP link-label readability issue was observed again during Sprint 33A operator acceptance. It is now recurring friction and therefore takes priority over speculative product work. Exactly one next product Sprint is committed: Sprint 33B — topology link-label readability and collision-safe placement.
+The recurring LLDP link-label readability friction that promoted Sprint 33B is resolved on the realistic stand. No other recurring friction is currently recorded. Exactly one next product Sprint is committed: Sprint 34A — interface degradation detection foundation.
 
 ## Основа проекта
 
@@ -1039,9 +1039,9 @@ Acceptance 2026-09-12:
 Sprint 32C is closed. The planned realistic stand gate and subsequent `FRICTION_LOG.md` review have now been completed; see the current execution gate and stand-acceptance section below.
 
 
-## Current execution gate after Sprint 33A — completed
+## Current execution gate after Sprint 33B — completed
 
-The architecture/master-plan review, realistic stand gate, modern test foundation, and Sprint 33A are complete.
+The architecture/master-plan review, realistic stand gate, modern test foundation, Sprint 33A, and Sprint 33B are complete.
 
 Confirmed current facts:
 - Sprint 32C implementation and documentation are closed;
@@ -1049,12 +1049,14 @@ Confirmed current facts:
 - the realistic 3–5 device stand gate is complete;
 - the modern `net8.0` portable/core test lane is established alongside legacy `net48` WPF-specific tests;
 - Sprint 33A incremental WPF map reconciliation is implemented, operator-accepted, committed and pushed;
-- the LLDP link-label readability problem has now been observed twice and is recurring friction;
-- exactly one next product Sprint is committed: Sprint 33B — topology link-label readability and collision-safe placement;
+- Sprint 33B collision-safe topology link-label placement is implemented, operator-accepted, committed and pushed;
+- the repeated LLDP link-label readability problem is resolved on the realistic stand and is no longer the active friction priority;
+- no other recurring real-use friction is currently recorded;
+- exactly one next product Sprint is committed: Sprint 34A — interface degradation detection foundation;
 - product scope remains network observability/topology/diagnostics, not process-data acquisition or a generic NMS;
 - the long architecture roadmap remains direction, not an automatic Sprint sequence.
 
-Longer directions — interface degradation, durable incidents/outbox, outbound notification, production configuration, runtime/deployment readiness, HTTP API/Web, probable failure-boundary localization, additional industrial protection and Site/Probe — remain roadmap.
+Longer directions — UI design tokens/themes, semantic animations, durable incidents/outbox, outbound notification, production configuration, runtime/deployment readiness, HTTP API/Web, probable failure-boundary localization, additional industrial protection and Site/Probe — remain roadmap/candidates unless separately committed.
 
 ## Sprint 32C post-closure correction
 
@@ -1139,5 +1141,39 @@ Repeated operational friction:
 
 Next committed product Sprint:
 - Sprint 33B — topology link-label readability and collision-safe placement. The implementation scope must be based on an audit of current WPF link-label geometry and should improve readability without changing topology identity or semantics.
+
+No other product feature is committed at this point.
+
+## Sprint 33B closure — 2026-09-14
+
+Sprint 33B — topology link-label readability and collision-safe placement — is complete.
+
+Implementation:
+- the WPF link-label renderer no longer relies on a fixed midpoint offset for long physical-link annotations;
+- the retained link-label `TextBlock` is measured before placement;
+- placement candidates are evaluated around the link and rejected when the measured label rectangle intersects node-card rectangles;
+- collision checks cover all current node cards, not only the two link endpoints;
+- the Sprint 33A retained link visual identity is preserved across refresh;
+- topology contracts, physical-link identity, projection semantics and backend persistence were not changed by Sprint 33B.
+
+Verification and acceptance:
+- two WPF link-label collision regressions were demonstrated RED as 2/2 failures against the old midpoint placement before the production change;
+- forced solution build passed;
+- targeted Sprint 33B GREEN passed 2/2;
+- full regression passed: modern `net8.0` 17/17, legacy Unit 210/210, Integration 59/59, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index boundary proof covered two Sprint 33B files;
+- operator acceptance used `artifacts/realistic-stand/operator-baseline.db`;
+- the realistic topology remained four named devices and two LLDP physical links across multiple refresh cycles;
+- both long LLDP annotations were fully readable and no longer obscured by node cards in the accepted stand layout;
+- implementation commit `b7e6a8013055fff0cf9c58666d6b922fceabc717` (`Improve topology link label placement`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Friction review after Sprint 33B:
+- the recurring link-label readability item is resolved and should be reopened only if it is observed again in real use;
+- no other recurring friction currently outranks the product plan.
+
+Next committed product Sprint:
+- Sprint 34A — interface degradation detection foundation using interface errors/discards and `ifLastChange`, with `ifCounterDiscontinuityTime` and correct counter wrap/reset/discontinuity semantics;
+- Sprint 34A is detection/current-state work only. Durable incident persistence and outbound notifications remain separate later steps.
 
 No other product feature is committed at this point.
