@@ -6,19 +6,19 @@
 
 ## Текущее состояние
 
-Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance and LLDP topology baseline closure are complete.
+Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance, LLDP topology baseline closure, the modern `net8.0` test foundation, and Sprint 33A incremental WPF map reconciliation are complete.
 
-The realistic stand gate and `FRICTION_LOG.md` review are complete. Exactly one next product Sprint is committed: Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`, preserving selection, zoom/pan, pinned/manual layout and unchanged visual identity across refresh.
+Sprint 33A is committed and pushed as `b5b546394361104e72ba73f84dab23538528d558`. Portable/core regression now has a real `net8.0` execution lane in addition to the legacy `net48` WPF test lane.
 
-The observed link-label readability issue is recorded in `FRICTION_LOG.md`; it has one observation and does not yet override the selected Sprint.
+The LLDP link-label readability issue was observed again during Sprint 33A operator acceptance. It is now recurring friction and therefore takes priority over speculative product work. Exactly one next product Sprint is committed: Sprint 33B — topology link-label readability and collision-safe placement.
 
 ## Основа проекта
 
-- решение из 13 проектов;
+- решение из 14 проектов;
 - платформенная база: shared core netstandard2.0; legacy Service/WPF net48; modern Engine net8.0 сейчас с целевым .NET 10 LTS;
 - архитектура сборки x64;
 - WPF-каркас;
-- базовая тестовая инфраструктура MSTest;
+- MSTest infrastructure with legacy `net48` and modern `net8.0` execution lanes;
 - SQLite через System.Data.SQLite;
 - native SQLite через SourceGear.sqlite3;
 - миграции схемы с таблицей schema_migrations;
@@ -1039,16 +1039,18 @@ Acceptance 2026-09-12:
 Sprint 32C is closed. The planned realistic stand gate and subsequent `FRICTION_LOG.md` review have now been completed; see the current execution gate and stand-acceptance section below.
 
 
-## Current execution gate after architecture review — completed
+## Current execution gate after Sprint 33A — completed
 
-The architecture/master-plan review is recorded in the canonical documentation.
+The architecture/master-plan review, realistic stand gate, modern test foundation, and Sprint 33A are complete.
 
 Confirmed current facts:
 - Sprint 32C implementation and documentation are closed;
 - the post-closure neutral-resource correction is complete;
 - the realistic 3–5 device stand gate is complete;
-- observed operational friction has been recorded and reviewed;
-- exactly one next product Sprint is committed: Sprint 33A — incremental WPF map reconciliation;
+- the modern `net8.0` portable/core test lane is established alongside legacy `net48` WPF-specific tests;
+- Sprint 33A incremental WPF map reconciliation is implemented, operator-accepted, committed and pushed;
+- the LLDP link-label readability problem has now been observed twice and is recurring friction;
+- exactly one next product Sprint is committed: Sprint 33B — topology link-label readability and collision-safe placement;
 - product scope remains network observability/topology/diagnostics, not process-data acquisition or a generic NMS;
 - the long architecture roadmap remains direction, not an automatic Sprint sequence.
 
@@ -1091,12 +1093,51 @@ Confirmed:
 - implementation commit `18df16fc2d2dfdf7230a3ecfeac910b46a8f9c63` (`Implement LLDP topology baseline`) is pushed with `HEAD == origin/main` and a clean worktree;
 - `Migration013LldpTopologyIdentity` is now the latest schema migration.
 
-Observed friction:
-- long LLDP link annotation text can be partially obscured by a neighboring node card; this is recorded in `FRICTION_LOG.md`;
-- this is currently a single observation, so it is not promoted ahead of the selected next Sprint.
+Observed friction at this gate:
+- long LLDP link annotation text could be partially obscured by a neighboring node card; this was recorded in `FRICTION_LOG.md`;
+- at that time it was a single observation, so Sprint 33A remained the selected next Sprint.
+
+Sprint selected by this gate:
+- Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`.
+
+Sprint 33A has since been completed; its closure and the repeated-friction decision are recorded below.
+## Modern test foundation and Sprint 33A closure — 2026-09-14
+
+The dual-runtime test foundation and Sprint 33A are complete.
+
+Modern test foundation:
+- commit `ad6af4c2fbc2dc639ffb484b281df89be0bd0fce` added `tests/NetLoom.Tests.Modern/NetLoom.Tests.Modern.csproj`;
+- the project targets `net8.0` and reuses compatible existing test sources rather than duplicating test logic;
+- the foundation acceptance executed 16/16 modern tests, 204/204 legacy Unit tests, 59/59 Integration tests, and 7/7 Snapshot tests;
+- WPF-specific tests remain in the legacy `net48` lane because the WPF client itself is still `net48`.
+
+Sprint 33A implementation:
+- `MapLink` now carries an optional stable `PhysicalLinkId` distinct from its presentation key;
+- `MaterializedTopologyMapProjector` propagates the materialized physical-link identity into the map contract;
+- WPF map apply is incremental instead of clearing and recreating the complete `MapCanvas`;
+- retained device visuals are reconciled by stable `DeviceId`, with legacy presentation-key fallback where stable device identity is unavailable;
+- retained physical-link visuals are reconciled by stable `PhysicalLinkId`, with map-link-key fallback for legacy/non-materialized snapshots;
+- unchanged node/link visual objects are reused and updated in place; removed topology entities remove only their own visuals;
+- retained node Canvas positions are preserved across refresh instead of being overwritten by newly projected coordinates;
+- existing lookup highlight state remains applied to retained node visuals; passive periodic refresh no longer forces highlighted-device `BringIntoView()` navigation;
+- Sprint 33A does not claim new zoom or pin UX: those controls/state are not currently exposed by the WPF client. The reconciliation boundary is structured so future client-owned view state can be retained without another full-redraw design.
+
+Verification and acceptance:
+- the reconciliation tests were demonstrated RED as 3/3 failures against the old full-redraw path before production changes;
+- the legacy Unit test project explicitly enables WPF references for WPF-specific regression coverage;
+- forced solution build passed;
+- targeted GREEN passed: WPF reconciliation 3/3 and modern `net8.0` stable-physical-link identity 1/1;
+- full regression passed: modern `net8.0` 17/17, legacy Unit 208/208, Integration 59/59, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index boundary proof covered six Sprint 33A files;
+- operator acceptance used `artifacts/realistic-stand/operator-baseline.db` and kept the expected four devices and two LLDP links visible across multiple periodic refresh cycles;
+- implementation commit `b5b546394361104e72ba73f84dab23538528d558` (`Implement incremental WPF map reconciliation`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Repeated operational friction:
+- the same long LLDP link-label overlap/readability problem was observed again during Sprint 33A operator acceptance;
+- this is now a repeated real-use problem, so the backlog priority rule promotes it ahead of speculative candidates.
 
 Next committed product Sprint:
-- Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`, preserving selection, zoom/pan, pinned/manual layout and unchanged visual identity across refresh.
+- Sprint 33B — topology link-label readability and collision-safe placement. The implementation scope must be based on an audit of current WPF link-label geometry and should improve readability without changing topology identity or semantics.
 
 No other product feature is committed at this point.
-

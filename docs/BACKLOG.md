@@ -70,6 +70,7 @@
 - [x] Восстановлены повреждённые кодировкой-комментарии в ARP/FDB/correlation/resolver и добавлен UTF-8 audit.
 - [x] Расширить text-integrity audit на содержимое WPF `.resx` `<value>`, чтобы ловить повреждённые/съеденные начальные символы операторских строк.
 - [x] UI localization infrastructure.
+- [x] Dual-runtime test foundation: portable/core regression lane on `net8.0` alongside legacy WPF-specific `net48` tests.
 - [x] Реестр third-party лицензий.
 - [x] Friction log.
 - [ ] Проверка лицензии каждой новой зависимости до merge.
@@ -138,13 +139,17 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after realistic stand acceptance
+## Execution map after Sprint 33A
 
-The stand gate and friction review are complete. Exactly one next product Sprint is committed.
+The realistic stand gate, Sprint 33A, and the post-Sprint operator/friction review are complete. The repeated link-label readability issue now outranks speculative feature work under the backlog priority rule. Exactly one next product Sprint is committed.
+
+### Completed
+
+- [x] Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`; retained WPF visual identity and node Canvas position across refresh, with existing lookup highlight/viewport behavior preserved. Sprint 33A did not add new zoom/pin UX that the current client does not yet expose.
 
 ### Committed next product Sprint
 
-- [ ] Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`; preserve selection, zoom/pan, pinned/manual layout and unchanged visual identity across refresh.
+- [ ] Sprint 33B — topology link-label readability and collision-safe placement. Keep LLDP/physical-link annotations readable near node cards on the realistic stand without changing topology identity or semantics. Audit current label geometry before implementation.
 
 ### Next candidates — not commitments
 
