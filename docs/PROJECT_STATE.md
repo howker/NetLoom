@@ -1209,3 +1209,49 @@ Next committed product Sprint:
 - current-state degradation classification, durable incident lifecycle, and outbound delivery remain separate later steps.
 
 No other product feature is committed at this point.
+
+## Sprint 34B closure — 2026-09-14
+
+Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation — is complete.
+
+Implementation:
+- `IInterfaceCounterBaselineStore` defines a persistence-neutral boundary that returns the previous raw sample while replacing it with the current sample;
+- `SqliteInterfaceCounterBaselineStore` persists one raw baseline per stable `DeviceId` + `ifIndex`;
+- the durable row stores `CapturedUtc`, `ifInErrors`, `ifOutErrors`, `ifInDiscards`, `ifOutDiscards`, and `ifCounterDiscontinuityTime` ticks rather than a derived delta;
+- replacement executes under the existing SQLite immediate-write boundary so the previous-sample read and current-sample write are atomic with respect to competing writers;
+- a sample whose `CapturedUtc` is not strictly newer than the stored sample is rejected and cannot replace the durable baseline;
+- a new runtime instance can recover the persisted sample and feed it back into the existing Sprint 34A `InterfaceCounterDeltaEvaluator`;
+- the Interface poll result now exposes `InterfaceCounterEvaluation` values alongside raw interface snapshots when a stable `DeviceId` and baseline store are available;
+- the first durable sample evaluates as `NoBaseline`;
+- a changed discontinuity marker evaluates as `Discontinuity`, produces no synthetic error/discard delta, and the current sample becomes the next durable baseline;
+- the sample after that discontinuity can evaluate normally after restart when the marker remains stable;
+- interfaces without stable `DeviceId` are not assigned durable counter identity;
+- Engine composition wires the SQLite baseline store into `MonitoringRuntime`;
+- `Migration014InterfaceCounterBaselines` creates the durable baseline table and is now the latest schema migration.
+
+Verification:
+- a reflection contract test was demonstrated RED 1/1 on the pre-Sprint 34B base before implementation;
+- targeted persistence GREEN passed 4/4 on legacy `net48` and 4/4 on modern `net8.0`;
+- targeted runtime GREEN passed 2/2 on legacy and 2/2 on modern;
+- the first full Integration run exposed one stale migration-count regression in `Sprint26ASqliteConcurrencyTests`: the old test expected 13 schema migrations after migration 014 had correctly raised the total to 14;
+- recovery changed only that stale regression expectation and renamed its already-outdated method from an exact-count name to `ConcurrentInitializeOnCleanDatabaseAppliesAllMigrations`; product bytes were unchanged;
+- the already-green targeted, modern, and Unit evidence was preserved from the failed run rather than rerun without a source reason;
+- after the regression-test correction, a forced solution build passed, Integration passed 63/63, and Snapshot passed 7/7;
+- final regression evidence is modern `net8.0` 29/29, legacy Unit 218/218, Integration 63/63, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered fourteen files, including the corrected concurrency regression;
+- implementation/recovery commit `a63ec3e5ea7adf4fc88cdb2f10ee9f404310bb7a` (`Add durable interface counter baselines`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Scope deliberately still deferred:
+- no interface-degradation threshold or severity classification;
+- no `ifLastChange` collection was added by Sprint 34B;
+- no durable incident lifecycle, repeat/escalation policy, outbox, or outbound notification adapter;
+- no high-frequency metric/time-series data was moved into topology/configuration SQLite; the new table holds only the latest raw baseline per stable interface identity.
+
+Next committed product Sprint:
+- Sprint 34C — current-state interface degradation classification;
+- start with a read-only audit of the portable 34A/34B counter-evaluation path and existing configuration conventions, then define the smallest threshold/classification contract that can consume only `Valid` restart-safe intervals;
+- `NoBaseline` and `Discontinuity` remain explicitly non-degrading inputs;
+- durable incident lifecycle and outbound notification delivery remain separate later steps.
+
+No other product feature is committed at this point.
