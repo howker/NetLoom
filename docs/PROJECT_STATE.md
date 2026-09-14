@@ -1255,3 +1255,50 @@ Next committed product Sprint:
 - durable incident lifecycle and outbound notification delivery remain separate later steps.
 
 No other product feature is committed at this point.
+
+## Sprint 34C closure — 2026-09-14
+
+Sprint 34C — current-state interface degradation classification — is complete.
+
+Implementation:
+- `InterfaceDegradationStatus` defines explicit `Indeterminate`, `Healthy`, and `Degraded` states;
+- `InterfaceDegradationPolicy` requires at least one configured finite positive threshold and supports independent error-rate and discard-rate thresholds;
+- `InterfaceDegradationClassifier` consumes the restart-safe `InterfaceCounterEvaluation` produced by Sprints 34A/34B;
+- `NoBaseline` maps to `Indeterminate` with reason `NoBaseline`;
+- `Discontinuity` maps to `Indeterminate` with reason `CounterDiscontinuity`;
+- only `Valid` intervals are eligible for threshold classification;
+- enabled error and discard categories use the sum of inbound and outbound counter increments normalized to the actual interval as a per-minute rate;
+- a rate equal to or greater than its configured threshold is `Degraded`;
+- missing counters for an enabled category produce `IncompleteCounterData`; if no known enabled category is already degraded, classification is `Indeterminate`;
+- a known threshold breach remains `Degraded` even when another enabled category has incomplete evidence;
+- a disabled category does not prevent `Healthy` classification;
+- classifications retain stable `DeviceId`, `ifIndex`, UTC capture time, calculated rates, and normalized reasons;
+- `MonitoringRuntime` emits interface degradation classifications alongside raw interface snapshots and counter evaluations when a policy is configured;
+- Engine classification is opt-in through `--interface-error-rate-per-minute` and/or `--interface-discard-rate-per-minute`;
+- with neither option configured, no degradation policy is created and the existing interface polling path remains classification-free;
+- Engine console output exposes configured results as `INTERFACE-DEGRADATION` lines;
+- Sprint 34C intentionally does not mix `ifAdminStatus`, `ifOperStatus`, or a new `ifLastChange` signal into counter degradation. Hard-down/failure semantics remain a separate concern.
+
+Verification:
+- the Sprint 34C contract/classification suite was demonstrated RED as 10/10 legacy failures on the pre-Sprint base;
+- targeted GREEN passed 12/12 on legacy `net48` and 12/12 on modern `net8.0`;
+- forced solution build passed;
+- full regression passed: modern `net8.0` 41/41, legacy Unit 230/230, Integration 63/63, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered thirteen Sprint 34C files;
+- implementation commit `8c5d10aa82e0387bf111fafb0a5379df21bdf943` (`Add interface degradation classification`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Scope deliberately still deferred:
+- no durable previous-classification/current-state transition store;
+- no restart-safe first-appearance / changed / resolved suppression for interface degradation;
+- no durable incident lifecycle or repeat/escalation timer;
+- no persistent outbox and no outbound notification adapter;
+- no `ifLastChange` collection and no attempt to collapse oper-down failure semantics into counter-degradation semantics.
+
+Next committed product Sprint:
+- Sprint 34D — durable interface-degradation transition state and repeat suppression;
+- begin with a read-only audit of the existing `TopologyAlertTransitionTracker`, its restart behavior, and SQLite persistence/write conventions;
+- persist only the minimum stable interface classification state needed to distinguish first appearance, unchanged state, changed degradation evidence, and resolution across Engine restart;
+- keep persistent outbox/delivery semantics and external notification adapters as separate later work.
+
+No other product feature is committed at this point.

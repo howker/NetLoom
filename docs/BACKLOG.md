@@ -139,9 +139,9 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 34B
+## Execution map after Sprint 34C
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A, and Sprint 34B are complete. The recurring LLDP link-label readability problem remains resolved. NetLoom now has both trustworthy interface-counter delta semantics and a durable restart-safe raw baseline keyed by stable interface identity, without yet introducing degradation thresholds, incident lifecycle, or outbound delivery.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A, Sprint 34B, and Sprint 34C are complete. The recurring LLDP link-label readability problem remains resolved. NetLoom now has trustworthy interface-counter collection, restart-safe raw baselines, interval delta semantics, and portable current-state degradation classification. Durable degradation transition state, incident delivery, and outbound notification remain separate later layers.
 
 ### Completed
 
@@ -149,17 +149,18 @@ The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction revie
 - [x] Sprint 33B — topology link-label readability and collision-safe placement. WPF now measures retained link labels and chooses a node-card-safe placement around the link instead of relying on a fixed midpoint offset; topology identity and semantics remain unchanged.
 - [x] Sprint 34A — interface counter delta foundation. Collect `ifInErrors`, `ifOutErrors`, `ifInDiscards`, `ifOutDiscards`, and `ifCounterDiscontinuityTime`; carry the raw nullable values in `InterfaceMonitoringSnapshot`; compute portable interval deltas with explicit `NoBaseline`, `Valid`, and `Discontinuity` results; treat Counter32 decrease as wrap only while the discontinuity marker is stable; never invent a delta when the baseline or discontinuity marker is unavailable. The audited Sprint scope did not add `ifLastChange`, persistence, degradation thresholds, incidents, or outbound delivery.
 - [x] Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation. Persist the latest raw counter snapshot by stable `DeviceId` + `ifIndex`, atomically return/replace the previous sample, reject non-newer samples, restore the baseline after Engine restart, and run the existing 34A evaluator against the restored raw sample. A discontinuity interval remains non-degrading and its current sample becomes the next durable baseline. `Migration014InterfaceCounterBaselines` is the current schema migration.
+- [x] Sprint 34C — current-state interface degradation classification. Classify restart-safe counter evaluations as `Indeterminate`, `Healthy`, or `Degraded`; normalize enabled error/discard counter sums to rates per minute; require explicit finite positive thresholds; treat threshold equality as degraded; preserve incomplete-evidence semantics; and guarantee that `NoBaseline` and `Discontinuity` never become degradation. Engine classification is opt-in through `--interface-error-rate-per-minute` and/or `--interface-discard-rate-per-minute`. Interface oper/admin state and `ifLastChange` are not mixed into this counter-degradation classifier.
 
 ### Committed next product Sprint
 
-- [ ] Sprint 34C — current-state interface degradation classification. Audit and define the smallest portable classification boundary over valid restart-safe interface-counter intervals, including threshold/configuration semantics and any additional IF-MIB status evidence actually required. `NoBaseline` and `Discontinuity` must never be classified as degradation. Keep durable incident lifecycle and outbound delivery as later separate steps.
+- [ ] Sprint 34D — durable interface-degradation transition state and repeat suppression. Audit the existing in-memory topology transition tracker and SQLite write conventions, then persist the last classified state by stable `DeviceId` + `ifIndex` so restart does not turn an unchanged degraded interface into a fresh appearance. Define deterministic first-appearance / unchanged / changed / resolved semantics for `Healthy`, `Degraded`, and `Indeterminate` without yet adding an outbound adapter. Keep persistent delivery/outbox semantics as a later separate layer.
 
 ### Next candidates — not commitments
 
+- [ ] Persistent outbox for durable degradation/topology transition events after current-state transition semantics are proven.
+- [ ] First outbound notification adapter chosen from a real deployment need; routing by event/kind/severity is configuration, not architecture, and Trap is not treated as acknowledged delivery.
 - [ ] UI design tokens covering colors, typography, spacing and geometry; Light/Dark themes.
 - [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
-- [ ] Durable incident lifecycle + persistent outbox.
-- [ ] First outbound notification adapter chosen from a real deployment need; routing by event/kind/severity is configuration, not architecture, and Trap is not treated as acknowledged delivery.
 
 ### Roadmap — direction, not scheduled backlog commitment
 
