@@ -6,11 +6,11 @@
 
 ## Текущее состояние
 
-Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance, LLDP topology baseline closure, the modern `net8.0` test foundation, Sprint 33A incremental WPF map reconciliation, and Sprint 33B collision-safe topology link-label placement are complete.
+Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance, LLDP topology baseline closure, the modern `net8.0` test foundation, Sprint 33A incremental WPF map reconciliation, Sprint 33B collision-safe topology link-label placement, and Sprint 34A interface counter delta foundation are complete.
 
-Sprint 33B is committed and pushed as `b7e6a8013055fff0cf9c58666d6b922fceabc717`. Portable/core regression continues to run on the modern `net8.0` lane while WPF-specific presentation regressions run on legacy `net48`.
+Sprint 34A is committed and pushed as `05d1cd00eff04ed77f2befbfc59d1c3878f61e38`. Portable/core regression continues to run on the modern `net8.0` lane while legacy `net48` remains the WPF-specific and compatibility lane.
 
-The recurring LLDP link-label readability friction that promoted Sprint 33B is resolved on the realistic stand. No other recurring friction is currently recorded. Exactly one next product Sprint is committed: Sprint 34A — interface degradation detection foundation.
+The recurring LLDP link-label readability friction that promoted Sprint 33B remains resolved on the realistic stand. No other recurring friction is currently recorded. Exactly one next product Sprint is committed: Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation.
 
 ## Основа проекта
 
@@ -1039,24 +1039,26 @@ Acceptance 2026-09-12:
 Sprint 32C is closed. The planned realistic stand gate and subsequent `FRICTION_LOG.md` review have now been completed; see the current execution gate and stand-acceptance section below.
 
 
-## Current execution gate after Sprint 33B — completed
+## Current execution gate after Sprint 34A — completed
 
-The architecture/master-plan review, realistic stand gate, modern test foundation, Sprint 33A, and Sprint 33B are complete.
+The architecture/master-plan review, realistic stand gate, modern test foundation, Sprint 33A, Sprint 33B, and Sprint 34A are complete.
 
 Confirmed current facts:
 - Sprint 32C implementation and documentation are closed;
 - the post-closure neutral-resource correction is complete;
 - the realistic 3–5 device stand gate is complete;
-- the modern `net8.0` portable/core test lane is established alongside legacy `net48` WPF-specific tests;
+- the modern `net8.0` portable/core test lane is established alongside legacy `net48` compatibility/WPF-specific tests;
 - Sprint 33A incremental WPF map reconciliation is implemented, operator-accepted, committed and pushed;
 - Sprint 33B collision-safe topology link-label placement is implemented, operator-accepted, committed and pushed;
-- the repeated LLDP link-label readability problem is resolved on the realistic stand and is no longer the active friction priority;
+- Sprint 34A collects interface error/discard Counter32 values plus `ifCounterDiscontinuityTime` and provides portable wrap/discontinuity-safe interval delta evaluation;
+- Sprint 34A deliberately does not persist previous interface counter samples, classify degradation, create incidents, or deliver notifications;
+- the repeated LLDP link-label readability problem remains resolved and is no longer the active friction priority;
 - no other recurring real-use friction is currently recorded;
-- exactly one next product Sprint is committed: Sprint 34A — interface degradation detection foundation;
+- exactly one next product Sprint is committed: Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation;
 - product scope remains network observability/topology/diagnostics, not process-data acquisition or a generic NMS;
 - the long architecture roadmap remains direction, not an automatic Sprint sequence.
 
-Longer directions — UI design tokens/themes, semantic animations, durable incidents/outbox, outbound notification, production configuration, runtime/deployment readiness, HTTP API/Web, probable failure-boundary localization, additional industrial protection and Site/Probe — remain roadmap/candidates unless separately committed.
+Longer directions — current-state interface degradation classification, UI design tokens/themes, semantic animations, durable incidents/outbox, outbound notification, production configuration, runtime/deployment readiness, HTTP API/Web, probable failure-boundary localization, additional industrial protection and Site/Probe — remain roadmap/candidates unless separately committed.
 
 ## Sprint 32C post-closure correction
 
@@ -1172,8 +1174,38 @@ Friction review after Sprint 33B:
 - the recurring link-label readability item is resolved and should be reopened only if it is observed again in real use;
 - no other recurring friction currently outranks the product plan.
 
+Next product Sprint selected at Sprint 33B closure:
+- Sprint 34A — interface degradation detection foundation.
+
+Sprint 34A was later narrowed by source audit to the trustworthy interface-counter delta foundation recorded in the Sprint 34A closure below. In particular, the completed Sprint did not add `ifLastChange`, persistence, thresholds, incidents, or outbound delivery.
+
+## Sprint 34A closure — 2026-09-14
+
+Sprint 34A — interface counter delta foundation — is complete.
+
+Implementation:
+- `SnmpInterfaceStatusCollector` now walks `ifInErrors`, `ifOutErrors`, `ifInDiscards`, `ifOutDiscards`, and `ifCounterDiscontinuityTime` in addition to interface admin/oper status;
+- `InterfaceMonitoringSnapshot` carries nullable raw Counter32 values for interface errors/discards plus nullable `CounterDiscontinuityTimeTicks`, while preserving stable `DeviceId` + `ifIndex` identity and UTC capture-time validation;
+- the portable `InterfaceCounterDeltaEvaluator` reports explicit `NoBaseline`, `Valid`, or `Discontinuity` status;
+- the evaluator requires the same stable interface identity and a strictly newer current sample;
+- when the discontinuity marker is stable, a Counter32 decrease is interpreted with unsigned 32-bit wrap semantics;
+- when the discontinuity marker changes, the result is `Discontinuity` and no counter deltas are produced;
+- when either sample lacks the discontinuity marker, the result is `NoBaseline` and no delta is invented;
+- individual missing raw counters remain nullable in an otherwise valid interval result;
+- the completed scope did not add `ifLastChange`, persistence of previous samples, degradation thresholds/classification, incident lifecycle, or outbound notification delivery.
+
+Verification:
+- six Sprint 34A regression tests were demonstrated RED on both legacy `net48` and modern `net8.0` before production changes;
+- targeted GREEN passed 6/6 on legacy and 6/6 on modern;
+- forced solution build passed;
+- full regression passed: modern `net8.0` 23/23, legacy Unit 216/216, Integration 59/59, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered eight Sprint 34A files;
+- implementation commit `05d1cd00eff04ed77f2befbfc59d1c3878f61e38` is pushed with `HEAD == origin/main` and a clean worktree.
+
 Next committed product Sprint:
-- Sprint 34A — interface degradation detection foundation using interface errors/discards and `ifLastChange`, with `ifCounterDiscontinuityTime` and correct counter wrap/reset/discontinuity semantics;
-- Sprint 34A is detection/current-state work only. Durable incident persistence and outbound notifications remain separate later steps.
+- Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation;
+- persist the latest trustworthy raw counter snapshot by stable `DeviceId` + `ifIndex`, restore it after Engine restart, reject non-newer/mismatched samples, and advance baseline state without turning `NoBaseline` or `Discontinuity` into false degradation;
+- current-state degradation classification, durable incident lifecycle, and outbound delivery remain separate later steps.
 
 No other product feature is committed at this point.

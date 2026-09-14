@@ -139,21 +139,23 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 33B
+## Execution map after Sprint 34A
 
-The realistic stand gate, Sprint 33A, Sprint 33B, and the post-Sprint friction review are complete. The recurring LLDP link-label readability problem that promoted Sprint 33B has been resolved on the realistic stand. With no other recurring friction currently recorded, exactly one next product Sprint is committed from the product plan.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, and Sprint 34A are complete. The recurring LLDP link-label readability problem remains resolved, and Sprint 34A established the portable interface-counter delta foundation without introducing incident or delivery semantics.
 
 ### Completed
 
 - [x] Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`; retained WPF visual identity and node Canvas position across refresh, with existing lookup highlight/viewport behavior preserved. Sprint 33A did not add new zoom/pin UX that the current client does not yet expose.
 - [x] Sprint 33B — topology link-label readability and collision-safe placement. WPF now measures retained link labels and chooses a node-card-safe placement around the link instead of relying on a fixed midpoint offset; topology identity and semantics remain unchanged.
+- [x] Sprint 34A — interface counter delta foundation. Collect `ifInErrors`, `ifOutErrors`, `ifInDiscards`, `ifOutDiscards`, and `ifCounterDiscontinuityTime`; carry the raw nullable values in `InterfaceMonitoringSnapshot`; compute portable interval deltas with explicit `NoBaseline`, `Valid`, and `Discontinuity` results; treat Counter32 decrease as wrap only while the discontinuity marker is stable; never invent a delta when the baseline or discontinuity marker is unavailable. The audited Sprint scope did not add `ifLastChange`, persistence, degradation thresholds, incidents, or outbound delivery.
 
 ### Committed next product Sprint
 
-- [ ] Sprint 34A — interface degradation detection foundation. Detect meaningful interface degradation from errors/discards and `ifLastChange`, using `ifCounterDiscontinuityTime` plus correct wrap/reset/discontinuity semantics so counter resets are not reported as degradation. Keep this Sprint focused on trustworthy current-state detection; durable incident lifecycle and outbound delivery remain separate later steps.
+- [ ] Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation. Persist the latest trustworthy raw counter snapshot keyed by stable `DeviceId` + `ifIndex`, restore it after Engine restart, evaluate only against a strictly newer sample for the same stable interface identity, and advance the stored baseline without turning missing/discontinuous counters into false degradation. Keep degradation classification, durable incident lifecycle, and outbound delivery as separate later steps.
 
 ### Next candidates — not commitments
 
+- [ ] Current-state interface degradation classification from valid error/discard deltas plus interface status/`ifLastChange` evidence after restart-safe baseline semantics are established.
 - [ ] UI design tokens covering colors, typography, spacing and geometry; Light/Dark themes.
 - [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
 - [ ] Durable incident lifecycle + persistent outbox.
