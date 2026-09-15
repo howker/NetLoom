@@ -1495,3 +1495,52 @@ Next committed product Sprint:
 - do not invent dead-letter thresholds or escalation policy before operational evidence exists.
 
 No other product feature is committed at this point.
+
+## Sprint 34H closure — 2026-09-15
+
+Sprint 34H — operator-facing delivery state and SMTP acceptance — is complete.
+
+Implementation:
+- a read-only `IInterfaceDegradationDeliveryStatusReader` boundary separates operator inspection from the existing delivery write/acknowledgement contract;
+- `InterfaceDegradationDeliveryStatusKind` classifies durable outbox evidence as `Ready`, `Deferred`, or `Delivered`;
+- `InterfaceDegradationDeliveryStatus` carries immutable event identity plus failure count, last failure UTC, next eligible attempt UTC, and delivered UTC without exposing SMTP credentials;
+- `SqliteInterfaceDegradationEventOutbox.ReadStatus(maxCount, nowUtc)` reads recent durable delivery history and derives current operator state from the existing Sprint 34F/34G columns; Sprint 34H adds no database migration;
+- Engine command `delivery-status` accepts `--database` and optional `--limit`, does not require a polling address, and prints per-event state plus a ready/deferred/delivered summary;
+- `delivery-status` does not read or print `NETLOOM_SMTP_*` configuration;
+- Engine command `smtp-acceptance` takes no command-line credentials and sends a synthetic canary through the same `SmtpInterfaceDegradationDeliveryAdapter` and environment-variable configuration used by production delivery;
+- the acceptance canary is not inserted into the durable interface-degradation outbox;
+- successful SMTP acceptance returns a stable success marker; failure returns a stable error class marker without printing secret values;
+- a modern acceptance test uses a controlled loopback `TcpListener` SMTP relay and proves that the production adapter completes a real SMTP conversation;
+- the controlled-relay test validates the actual MIME behavior of `SmtpClient`: the UTF-8 message body is base64-encoded and must be decoded before asserting the event payload.
+
+Verification:
+- the operator delivery-status contract was demonstrated RED 1/1 on the pre-Sprint 34H base;
+- the first forced solution build passed;
+- targeted Integration passed 5/5;
+- the first targeted modern run reached the real controlled SMTP relay and passed 8/9, with the only failure caused by the test incorrectly searching for `EventKey` in the raw MIME/base64 body rather than decoding it;
+- recovery changed only the SMTP acceptance test assertion; Sprint 34H product bytes were unchanged;
+- the previous Integration 5/5 evidence and exact modern 8/9 MIME assertion failure were verified before recovery;
+- after the test correction, a forced solution build passed and targeted modern passed 9/9;
+- the explicit `smtp-acceptance` missing-configuration probe returned the expected failure code and secret-free diagnostic;
+- full regression passed: modern `net8.0` 84/84, legacy Unit 244/244, Integration 88/88, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered twelve Sprint 34H files;
+- implementation/recovery commit `0a8ee620eb28ca24232563f8c9119c5e3bc1a5c4` (`Add operator delivery status and SMTP acceptance`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Scope deliberately still deferred:
+- no real target SMTP relay has yet been exercised with the operator's actual deployment TLS/auth configuration;
+- no dead-letter terminal state, escalation threshold, or manual operator acknowledgement workflow;
+- no multi-adapter routing or fan-out;
+- no production secret store beyond environment variables;
+- no claim that SMTP relay acceptance means recipient delivery or human acknowledgement;
+- no schema change beyond `Migration018InterfaceDegradationDeliveryRetry`.
+
+Next committed validation Sprint:
+- Sprint 34I — real target-relay/operator acceptance and evidence review;
+- run `smtp-acceptance` using operator-supplied environment variables against the intended deployment relay without storing credentials in source, logs, or command-line history;
+- run `delivery-status` against a real working NetLoom database and capture ready/deferred/delivered evidence;
+- record observed TLS/auth compatibility, relay acceptance behavior, retry behavior, and diagnostics;
+- do not invent dead-letter/escalation thresholds or a new production secret mechanism before that evidence exists;
+- if acceptance is green, choose the next product Sprint from the observed evidence and the current `FRICTION_LOG.md`.
+
+No other product feature is committed at this point.
