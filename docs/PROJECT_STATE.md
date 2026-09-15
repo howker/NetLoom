@@ -1544,3 +1544,45 @@ Next committed validation Sprint:
 - if acceptance is green, choose the next product Sprint from the observed evidence and the current `FRICTION_LOG.md`.
 
 No other product feature is committed at this point.
+
+## Sprint 34I environment acceptance review — 2026-09-15
+
+Sprint 34I did not change product source or repository state. The planned real deployment acceptance gate was attempted and is currently blocked by missing deployment prerequisites.
+
+Observed evidence:
+- repository baseline was `f9b32137454ac1adf186721fc29d388e5ce48464` with `HEAD == origin/main` and a clean worktree;
+- target SMTP configuration is not present in the current environment, so real target-relay acceptance cannot be executed without inventing infrastructure values;
+- seven local database candidates were discovered:
+  - `C:\netloom\artifacts\netloom-demo.db`;
+  - `C:\netloom\artifacts\netloom-lldp.db`;
+  - `C:\netloom\artifacts\netloom-two-switch.db`;
+  - `C:\netloom\artifacts\realistic-stand\four-device.db`;
+  - `C:\netloom\artifacts\realistic-stand\one-device.db`;
+  - `C:\netloom\artifacts\realistic-stand\operator-baseline.db`;
+  - `%LOCALAPPDATA%\NetLoom\netloom.db`;
+- all seven databases predate `interface_degradation_outbox`, so none can provide real 34H `delivery-status` evidence without first being used or migrated by a current-schema workflow;
+- the environment audit itself was read-only and ended with `REPOSITORY_UNCHANGED=YES`;
+- the 34H controlled-loopback SMTP acceptance, targeted tests, and full regression remain the latest positive product evidence;
+- therefore Sprint 34I does not establish target-relay TLS/auth compatibility, recipient relay acceptance, production retry behavior, or real outbox state.
+
+Concrete operator friction discovered:
+- the first `delivery-status` attempt against the existing default database surfaced raw SQLite `no such table: interface_degradation_outbox` and exit code 2;
+- this is not evidence of corruption or a delivery regression: the selected database simply predates migration 016;
+- however, raw storage-engine output is not an acceptable operator diagnostic for an intentionally read-only inspection command.
+
+Decision:
+- do not fabricate SMTP host/port/account values and do not declare the real target-relay gate passed;
+- do not mutate or silently migrate an operator-selected database from the read-only `delivery-status` path;
+- do not introduce dead-letter/escalation policy from absent deployment evidence;
+- address the observed operator friction first.
+
+Next committed product Sprint:
+- Sprint 34J — stable legacy-schema diagnostics for `delivery-status`;
+- detect pre-outbox schema before the outbox query;
+- return a stable schema-compatibility diagnostic and dedicated nonzero exit code without raw SQLite SQL text;
+- preserve read-only database behavior;
+- prove a legacy database is unchanged by the diagnostic path;
+- prove a current-schema empty database still returns the normal zero-event delivery summary;
+- keep real target SMTP acceptance deferred until an actual deployment relay configuration exists.
+
+No dead-letter, escalation, routing, secret-store, or schema migration change is committed by this decision.
