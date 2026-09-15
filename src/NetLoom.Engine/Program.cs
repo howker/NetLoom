@@ -1,11 +1,13 @@
 using System;
 using System.Globalization;
+using System.IO;
 using System.Threading;
 using NetLoom.Application.Monitoring;
 using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
+using NetLoom.Persistence.Sqlite.Monitoring;
 using NetLoom.Persistence.Sqlite.Observations;
 
 namespace NetLoom.Engine
@@ -95,6 +97,20 @@ namespace NetLoom.Engine
             }
 
             if (options.Command ==
+                "smtp-acceptance")
+            {
+                return RunSmtpAcceptance(
+                    hostLog);
+            }
+
+            if (options.Command ==
+                "delivery-status")
+            {
+                return RunDeliveryStatus(
+                    options);
+            }
+
+            if (options.Command ==
                 "schedule")
             {
                 return RunScheduled(
@@ -105,6 +121,152 @@ namespace NetLoom.Engine
             return PollOnce(
                 options,
                 hostLog);
+        }
+
+        private static int RunSmtpAcceptance(
+            HostLogManager hostLog)
+        {
+            try
+            {
+                EngineInterfaceDegradationDelivery
+                    .SendAcceptanceProbe();
+
+                hostLog.Info(
+                    "SMTP_ACCEPTANCE_SUCCESS");
+
+                Console.WriteLine(
+                    "SUCCESS: SMTP_ACCEPTANCE");
+
+                return 0;
+            }
+            catch (Exception exception)
+            {
+                hostLog.Error(
+                    exception,
+                    "SMTP_ACCEPTANCE_FAILED type=" +
+                    exception.GetType().Name);
+
+                Console.Error.WriteLine(
+                    "ERROR: SMTP_ACCEPTANCE_FAILED type=" +
+                    exception.GetType().Name);
+
+                return 5;
+            }
+        }
+
+        private static int RunDeliveryStatus(
+            EngineCommandLine options)
+        {
+            var databasePath =
+                EngineDatabasePathResolver.Resolve(
+                    options.DatabasePath);
+
+            if (!File.Exists(
+                databasePath))
+            {
+                Console.Error.WriteLine(
+                    "ERROR: DELIVERY_STATUS_DATABASE_NOT_FOUND");
+
+                return 6;
+            }
+
+            var nowUtc =
+                DateTime.UtcNow;
+
+            var reader =
+                new SqliteInterfaceDegradationEventOutbox(
+                    new SqliteConnectionFactory(
+                        databasePath));
+
+            var statuses =
+                reader.ReadStatus(
+                    options.DeliveryStatusLimit,
+                    nowUtc);
+
+            var ready = 0;
+            var deferred = 0;
+            var delivered = 0;
+
+            foreach (var status in statuses)
+            {
+                switch (status.Kind)
+                {
+                    case InterfaceDegradationDeliveryStatusKind
+                        .Ready:
+                        ready++;
+                        break;
+
+                    case InterfaceDegradationDeliveryStatusKind
+                        .Deferred:
+                        deferred++;
+                        break;
+
+                    case InterfaceDegradationDeliveryStatusKind
+                        .Delivered:
+                        delivered++;
+                        break;
+                }
+
+                WriteDeliveryStatus(
+                    status);
+            }
+
+            Console.WriteLine(
+                "DELIVERY-STATUS-SUMMARY: total=" +
+                statuses.Count +
+                " ready=" +
+                ready +
+                " deferred=" +
+                deferred +
+                " delivered=" +
+                delivered +
+                " nowUtc=" +
+                nowUtc.ToString(
+                    "o",
+                    CultureInfo.InvariantCulture));
+
+            return 0;
+        }
+
+        private static void WriteDeliveryStatus(
+            InterfaceDegradationDeliveryStatus status)
+        {
+            Console.WriteLine(
+                "DELIVERY-STATUS: state=" +
+                status.Kind +
+                " failures=" +
+                status.FailureCount +
+                " capturedUtc=" +
+                status.Event.CapturedUtc.ToString(
+                    "o",
+                    CultureInfo.InvariantCulture) +
+                " lastFailureUtc=" +
+                FormatUtc(
+                    status.LastFailureUtc) +
+                " nextAttemptUtc=" +
+                FormatUtc(
+                    status.NextAttemptUtc) +
+                " deliveredUtc=" +
+                FormatUtc(
+                    status.DeliveredUtc) +
+                " transition=" +
+                status.Event.TransitionKind +
+                " ifIndex=" +
+                status.Event.IfIndex +
+                " deviceId=" +
+                status.Event.DeviceId.ToString("D") +
+                " eventKey=" +
+                status.Event.EventKey);
+        }
+
+        private static string FormatUtc(
+            DateTime? value)
+        {
+            return value.HasValue
+                ? value.Value.ToString(
+                    "o",
+                    CultureInfo.InvariantCulture)
+                : "none";
         }
 
         private static int PollOnce(

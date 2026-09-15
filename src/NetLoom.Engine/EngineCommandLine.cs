@@ -34,6 +34,8 @@ namespace NetLoom.Engine
 
         public int IntervalSeconds { get; private set; }
 
+        public int DeliveryStatusLimit { get; private set; }
+
         public double? InterfaceErrorRatePerMinuteThreshold
         {
             get;
@@ -74,6 +76,50 @@ namespace NetLoom.Engine
                 };
             }
 
+            if (command == "smtp-acceptance")
+            {
+                if (args.Length != 1)
+                {
+                    throw Invalid(
+                        "SMTP_ACCEPTANCE_TAKES_NO_ARGUMENTS");
+                }
+
+                return new EngineCommandLine
+                {
+                    Command = command
+                };
+            }
+
+            if (command == "delivery-status")
+            {
+                var deliveryValues =
+                    ParseOptions(
+                        args.Skip(1).ToArray(),
+                        new[]
+                        {
+                            "database",
+                            "limit"
+                        });
+
+                return new EngineCommandLine
+                {
+                    Command = command,
+                    DatabasePath =
+                        Get(
+                            deliveryValues,
+                            "database"),
+                    DeliveryStatusLimit =
+                        ParseInt(
+                            Get(
+                                deliveryValues,
+                                "limit"),
+                            50,
+                            1,
+                            1000,
+                            "INVALID_DELIVERY_STATUS_LIMIT")
+                };
+            }
+
             if (command != "poll-once" &&
                 command != "schedule")
             {
@@ -82,7 +128,22 @@ namespace NetLoom.Engine
 
             var values =
                 ParseOptions(
-                    args.Skip(1).ToArray());
+                    args.Skip(1).ToArray(),
+                    new[]
+                    {
+                        "address",
+                        "database",
+                        "device-id",
+                        "port",
+                        "version",
+                        "timeout-ms",
+                        "retries",
+                        "max-repetitions",
+                        "kinds",
+                        "interval-seconds",
+                        "interface-error-rate-per-minute",
+                        "interface-discard-rate-per-minute"
+                    });
 
             if (command == "poll-once" &&
                 Get(values, "interval-seconds") != null)
@@ -165,7 +226,8 @@ namespace NetLoom.Engine
 
         private static Dictionary<string, string>
             ParseOptions(
-                string[] args)
+                string[] args,
+                IEnumerable<string> allowedOptions)
         {
             var result =
                 new Dictionary<string, string>(
@@ -199,21 +261,7 @@ namespace NetLoom.Engine
 
             var allowed =
                 new HashSet<string>(
-                    new[]
-                    {
-                        "address",
-                        "database",
-                        "device-id",
-                        "port",
-                        "version",
-                        "timeout-ms",
-                        "retries",
-                        "max-repetitions",
-                        "kinds",
-                        "interval-seconds",
-                        "interface-error-rate-per-minute",
-                        "interface-discard-rate-per-minute"
-                    },
+                    allowedOptions,
                     StringComparer.OrdinalIgnoreCase);
 
             foreach (var key in result.Keys)

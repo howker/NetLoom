@@ -79,6 +79,38 @@ namespace NetLoom.Engine
             }
         }
 
+        public static void SendAcceptanceProbe()
+        {
+            var adapter =
+                CreateAdapter();
+
+            if (adapter == null)
+            {
+                throw new InvalidOperationException(
+                    "SMTP_DELIVERY_NOT_CONFIGURED");
+            }
+
+            adapter.Deliver(
+                new InterfaceDegradationOutboxEvent(
+                    new Guid(
+                        "00000000-0000-0000-0000-000000000034"),
+                    1,
+                    DateTime.UtcNow,
+                    InterfaceDegradationTransitionKind
+                        .FirstAppearance,
+                    null,
+                    string.Empty,
+                    InterfaceDegradationStatus.Degraded,
+                    "4",
+                    1.0,
+                    null,
+                    new[]
+                    {
+                        InterfaceDegradationReason
+                            .ErrorRateThresholdExceeded
+                    }));
+        }
+
         private static IInterfaceDegradationDeliveryAdapter
             CreateAdapter()
         {

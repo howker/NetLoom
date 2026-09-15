@@ -9,7 +9,8 @@ using NetLoom.Persistence.Sqlite.Database;
 namespace NetLoom.Persistence.Sqlite.Monitoring
 {
     public sealed class SqliteInterfaceDegradationEventOutbox :
-        IInterfaceDegradationEventOutbox
+        IInterfaceDegradationEventOutbox,
+        IInterfaceDegradationDeliveryStatusReader
     {
         private readonly SqliteConnectionFactory
             _connectionFactory;
@@ -21,6 +22,144 @@ namespace NetLoom.Persistence.Sqlite.Monitoring
                 connectionFactory ??
                 throw new ArgumentNullException(
                     nameof(connectionFactory));
+        }
+
+        public IReadOnlyList<InterfaceDegradationDeliveryStatus>
+            ReadStatus(
+                int maxCount,
+                DateTime nowUtc)
+        {
+            if (maxCount < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(maxCount));
+            }
+
+            if (nowUtc.Kind !=
+                DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "Interface degradation delivery status time must be UTC.",
+                    nameof(nowUtc));
+            }
+
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    event_key,
+    device_id,
+    if_index,
+    captured_utc,
+    transition_kind,
+    previous_status,
+    previous_evidence_fingerprint,
+    current_status,
+    current_evidence_fingerprint,
+    error_rate_per_minute,
+    discard_rate_per_minute,
+    reason_codes,
+    delivery_failure_count,
+    last_delivery_failure_utc,
+    next_delivery_attempt_utc,
+    delivered_utc
+FROM interface_degradation_outbox
+ORDER BY
+    captured_utc DESC,
+    event_key DESC
+LIMIT @maxCount;";
+
+                command.Parameters.AddWithValue(
+                    "@maxCount",
+                    maxCount);
+
+                var result =
+                    new List<InterfaceDegradationDeliveryStatus>();
+
+                using (var reader =
+                    command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var storedEventKey =
+                            reader.GetString(0);
+
+                        var item =
+                            new InterfaceDegradationOutboxEvent(
+                                Guid.Parse(
+                                    reader.GetString(1)),
+                                Convert.ToInt32(
+                                    reader.GetValue(2),
+                                    CultureInfo.InvariantCulture),
+                                ParseUtc(
+                                    reader.GetString(3)),
+                                (InterfaceDegradationTransitionKind)
+                                    Convert.ToInt32(
+                                        reader.GetValue(4),
+                                        CultureInfo.InvariantCulture),
+                                reader.IsDBNull(5)
+                                    ? (InterfaceDegradationStatus?)null
+                                    : (InterfaceDegradationStatus)
+                                        Convert.ToInt32(
+                                            reader.GetValue(5),
+                                            CultureInfo.InvariantCulture),
+                                reader.IsDBNull(6)
+                                    ? string.Empty
+                                    : reader.GetString(6),
+                                (InterfaceDegradationStatus)
+                                    Convert.ToInt32(
+                                        reader.GetValue(7),
+                                        CultureInfo.InvariantCulture),
+                                reader.GetString(8),
+                                reader.IsDBNull(9)
+                                    ? (double?)null
+                                    : Convert.ToDouble(
+                                        reader.GetValue(9),
+                                        CultureInfo.InvariantCulture),
+                                reader.IsDBNull(10)
+                                    ? (double?)null
+                                    : Convert.ToDouble(
+                                        reader.GetValue(10),
+                                        CultureInfo.InvariantCulture),
+                                ParseReasons(
+                                    reader.GetString(11)));
+
+                        if (!string.Equals(
+                            storedEventKey,
+                            item.EventKey,
+                            StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                "Stored interface degradation outbox event key does not match its immutable payload.");
+                        }
+
+                        result.Add(
+                            new InterfaceDegradationDeliveryStatus(
+                                item,
+                                Convert.ToInt32(
+                                    reader.GetValue(12),
+                                    CultureInfo.InvariantCulture),
+                                reader.IsDBNull(13)
+                                    ? (DateTime?)null
+                                    : ParseUtc(
+                                        reader.GetString(13)),
+                                reader.IsDBNull(14)
+                                    ? (DateTime?)null
+                                    : ParseUtc(
+                                        reader.GetString(14)),
+                                reader.IsDBNull(15)
+                                    ? (DateTime?)null
+                                    : ParseUtc(
+                                        reader.GetString(15)),
+                                nowUtc));
+                    }
+                }
+
+                return result;
+            }
         }
 
         public IReadOnlyList<InterfaceDegradationOutboxEvent>
