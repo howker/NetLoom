@@ -27,6 +27,38 @@ namespace NetLoom.Persistence.Sqlite.Monitoring
             ReadPending(
                 int maxCount)
         {
+            return ReadPendingInternal(
+                    maxCount,
+                    null)
+                .Select(
+                    delivery =>
+                        delivery.Event)
+                .ToArray();
+        }
+
+        public IReadOnlyList<InterfaceDegradationPendingDelivery>
+            ReadReady(
+                int maxCount,
+                DateTime eligibleUtc)
+        {
+            if (eligibleUtc.Kind !=
+                DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "Interface degradation delivery eligibility timestamp must be UTC.",
+                    nameof(eligibleUtc));
+            }
+
+            return ReadPendingInternal(
+                maxCount,
+                eligibleUtc);
+        }
+
+        private IReadOnlyList<InterfaceDegradationPendingDelivery>
+            ReadPendingInternal(
+                int maxCount,
+                DateTime? eligibleUtc)
+        {
             if (maxCount < 1)
             {
                 throw new ArgumentOutOfRangeException(
@@ -51,9 +83,20 @@ SELECT
     current_evidence_fingerprint,
     error_rate_per_minute,
     discard_rate_per_minute,
-    reason_codes
+    reason_codes,
+    delivery_failure_count,
+    last_delivery_failure_utc,
+    next_delivery_attempt_utc
 FROM interface_degradation_outbox
-WHERE delivered_utc IS NULL
+WHERE delivered_utc IS NULL" +
+                    (eligibleUtc.HasValue
+                        ? @"
+  AND (
+      next_delivery_attempt_utc IS NULL OR
+      next_delivery_attempt_utc <= @eligibleUtc
+  )"
+                        : string.Empty) +
+                    @"
 ORDER BY
     captured_utc,
     event_key
@@ -63,8 +106,16 @@ LIMIT @maxCount;";
                     "@maxCount",
                     maxCount);
 
+                if (eligibleUtc.HasValue)
+                {
+                    command.Parameters.AddWithValue(
+                        "@eligibleUtc",
+                        FormatUtc(
+                            eligibleUtc.Value));
+                }
+
                 var result =
-                    new List<InterfaceDegradationOutboxEvent>();
+                    new List<InterfaceDegradationPendingDelivery>();
 
                 using (var reader =
                     command.ExecuteReader())
@@ -124,11 +175,148 @@ LIMIT @maxCount;";
                         }
 
                         result.Add(
-                            item);
+                            new InterfaceDegradationPendingDelivery(
+                                item,
+                                Convert.ToInt32(
+                                    reader.GetValue(12),
+                                    CultureInfo.InvariantCulture),
+                                reader.IsDBNull(13)
+                                    ? (DateTime?)null
+                                    : ParseUtc(
+                                        reader.GetString(13)),
+                                reader.IsDBNull(14)
+                                    ? (DateTime?)null
+                                    : ParseUtc(
+                                        reader.GetString(14))));
                     }
                 }
 
                 return result;
+            }
+        }
+
+        public bool MarkDeliveryFailed(
+            string eventKey,
+            int expectedFailureCount,
+            DateTime failedUtc,
+            DateTime nextAttemptUtc)
+        {
+            if (string.IsNullOrWhiteSpace(
+                eventKey))
+            {
+                throw new ArgumentException(
+                    "EVENT_KEY_REQUIRED",
+                    nameof(eventKey));
+            }
+
+            if (expectedFailureCount < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(expectedFailureCount));
+            }
+
+            if (failedUtc.Kind !=
+                DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "Interface degradation delivery failure timestamp must be UTC.",
+                    nameof(failedUtc));
+            }
+
+            if (nextAttemptUtc.Kind !=
+                DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "Interface degradation next-attempt timestamp must be UTC.",
+                    nameof(nextAttemptUtc));
+            }
+
+            if (nextAttemptUtc <=
+                failedUtc)
+            {
+                throw new ArgumentException(
+                    "Interface degradation next attempt must be later than the delivery failure.",
+                    nameof(nextAttemptUtc));
+            }
+
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            {
+                return SqliteImmediateWrite.Execute(
+                    connection,
+                    () =>
+                    {
+                        using (var command =
+                            connection.CreateCommand())
+                        {
+                            command.CommandText = @"
+UPDATE interface_degradation_outbox
+SET
+    delivery_failure_count =
+        delivery_failure_count + 1,
+    last_delivery_failure_utc =
+        @failedUtc,
+    next_delivery_attempt_utc =
+        @nextAttemptUtc
+WHERE event_key = @eventKey
+  AND delivered_utc IS NULL
+  AND delivery_failure_count =
+        @expectedFailureCount;";
+
+                            command.Parameters.AddWithValue(
+                                "@eventKey",
+                                eventKey);
+
+                            command.Parameters.AddWithValue(
+                                "@expectedFailureCount",
+                                expectedFailureCount);
+
+                            command.Parameters.AddWithValue(
+                                "@failedUtc",
+                                FormatUtc(
+                                    failedUtc));
+
+                            command.Parameters.AddWithValue(
+                                "@nextAttemptUtc",
+                                FormatUtc(
+                                    nextAttemptUtc));
+
+                            var affected =
+                                command.ExecuteNonQuery();
+
+                            if (affected == 1)
+                            {
+                                return true;
+                            }
+                        }
+
+                        using (var probe =
+                            connection.CreateCommand())
+                        {
+                            probe.CommandText = @"
+SELECT
+    delivered_utc,
+    delivery_failure_count
+FROM interface_degradation_outbox
+WHERE event_key = @eventKey;";
+
+                            probe.Parameters.AddWithValue(
+                                "@eventKey",
+                                eventKey);
+
+                            using (var reader =
+                                probe.ExecuteReader())
+                            {
+                                if (!reader.Read())
+                                {
+                                    throw new InvalidOperationException(
+                                        "Interface degradation outbox event does not exist.");
+                                }
+
+                                return false;
+                            }
+                        }
+                    });
             }
         }
 

@@ -212,6 +212,43 @@ namespace NetLoom.Tests.Unit
                         _pending.Count));
             }
 
+            public IReadOnlyList<InterfaceDegradationPendingDelivery>
+                ReadReady(
+                    int maxCount,
+                    DateTime eligibleUtc)
+            {
+                var count =
+                    Math.Min(
+                        maxCount,
+                        _pending.Count);
+
+                var result =
+                    new List<InterfaceDegradationPendingDelivery>();
+
+                for (var index = 0;
+                     index < count;
+                     index++)
+                {
+                    result.Add(
+                        new InterfaceDegradationPendingDelivery(
+                            _pending[index],
+                            0,
+                            null,
+                            null));
+                }
+
+                return result;
+            }
+
+            public bool MarkDeliveryFailed(
+                string eventKey,
+                int expectedFailureCount,
+                DateTime failedUtc,
+                DateTime nextAttemptUtc)
+            {
+                return true;
+            }
+
             public bool MarkDelivered(
                 string eventKey,
                 DateTime deliveredUtc)

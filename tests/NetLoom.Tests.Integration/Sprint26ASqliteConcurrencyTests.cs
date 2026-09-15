@@ -548,13 +548,13 @@ namespace NetLoom.Tests.Integration
                         factory.OpenConnection())
                     {
                         Assert.AreEqual(
-                            17L,
+                            18L,
                             ScalarInt64(
                                 connection,
                                 "SELECT COUNT(*) FROM schema_migrations;"));
 
                         Assert.AreEqual(
-                            17L,
+                            18L,
                             ScalarInt64(
                                 connection,
                                 "SELECT COUNT(DISTINCT version) FROM schema_migrations;"));

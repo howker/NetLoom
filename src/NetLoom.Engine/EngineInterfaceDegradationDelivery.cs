@@ -11,6 +11,13 @@ namespace NetLoom.Engine
     {
         private const int BatchSize = 32;
 
+        private static readonly
+            InterfaceDegradationDeliveryRetryPolicy
+                RetryPolicy =
+                    new InterfaceDegradationDeliveryRetryPolicy(
+                        TimeSpan.FromMinutes(1),
+                        TimeSpan.FromHours(1));
+
         public static void Drain(
             string databasePath,
             HostLogManager hostLog)
@@ -37,7 +44,8 @@ namespace NetLoom.Engine
                 new InterfaceDegradationOutboxDispatcher(
                     new SqliteInterfaceDegradationEventOutbox(
                         factory),
-                    adapter);
+                    adapter,
+                    RetryPolicy);
 
             try
             {

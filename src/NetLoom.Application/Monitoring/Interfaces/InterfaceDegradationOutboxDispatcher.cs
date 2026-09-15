@@ -10,9 +10,25 @@ namespace NetLoom.Application.Monitoring.Interfaces
         private readonly IInterfaceDegradationDeliveryAdapter
             _adapter;
 
+        private readonly InterfaceDegradationDeliveryRetryPolicy
+            _retryPolicy;
+
         public InterfaceDegradationOutboxDispatcher(
             IInterfaceDegradationEventOutbox outbox,
             IInterfaceDegradationDeliveryAdapter adapter)
+            : this(
+                outbox,
+                adapter,
+                new InterfaceDegradationDeliveryRetryPolicy(
+                    TimeSpan.FromMinutes(1),
+                    TimeSpan.FromHours(1)))
+        {
+        }
+
+        public InterfaceDegradationOutboxDispatcher(
+            IInterfaceDegradationEventOutbox outbox,
+            IInterfaceDegradationDeliveryAdapter adapter,
+            InterfaceDegradationDeliveryRetryPolicy retryPolicy)
         {
             _outbox =
                 outbox ??
@@ -23,6 +39,11 @@ namespace NetLoom.Application.Monitoring.Interfaces
                 adapter ??
                 throw new ArgumentNullException(
                     nameof(adapter));
+
+            _retryPolicy =
+                retryPolicy ??
+                throw new ArgumentNullException(
+                    nameof(retryPolicy));
         }
 
         public int DispatchPending(
@@ -41,35 +62,78 @@ namespace NetLoom.Application.Monitoring.Interfaces
                     nameof(utcNow));
             }
 
+            var eligibleUtc =
+                ReadUtc(
+                    utcNow,
+                    "Interface degradation delivery eligibility time must be UTC.");
+
             var pending =
-                _outbox.ReadPending(
-                    maxCount);
+                _outbox.ReadReady(
+                    maxCount,
+                    eligibleUtc);
 
             var delivered = 0;
 
-            foreach (var item in pending)
+            foreach (var delivery in pending)
             {
-                _adapter.Deliver(
-                    item);
-
-                var deliveredUtc =
-                    utcNow();
-
-                if (deliveredUtc.Kind !=
-                    DateTimeKind.Utc)
+                try
                 {
-                    throw new InvalidOperationException(
-                        "Interface degradation delivery acknowledgement time must be UTC.");
+                    _adapter.Deliver(
+                        delivery.Event);
+                }
+                catch
+                {
+                    var failedUtc =
+                        ReadUtc(
+                            utcNow,
+                            "Interface degradation delivery failure time must be UTC.");
+
+                    var nextAttemptUtc =
+                        _retryPolicy.GetNextAttemptUtc(
+                            failedUtc,
+                            checked(
+                                delivery.FailureCount +
+                                1));
+
+                    _outbox.MarkDeliveryFailed(
+                        delivery.Event.EventKey,
+                        delivery.FailureCount,
+                        failedUtc,
+                        nextAttemptUtc);
+
+                    throw;
                 }
 
+                var deliveredUtc =
+                    ReadUtc(
+                        utcNow,
+                        "Interface degradation delivery acknowledgement time must be UTC.");
+
                 _outbox.MarkDelivered(
-                    item.EventKey,
+                    delivery.Event.EventKey,
                     deliveredUtc);
 
                 delivered++;
             }
 
             return delivered;
+        }
+
+        private static DateTime ReadUtc(
+            Func<DateTime> utcNow,
+            string errorMessage)
+        {
+            var value =
+                utcNow();
+
+            if (value.Kind !=
+                DateTimeKind.Utc)
+            {
+                throw new InvalidOperationException(
+                    errorMessage);
+            }
+
+            return value;
         }
     }
 }
