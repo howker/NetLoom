@@ -1398,3 +1398,52 @@ Next committed product Sprint:
 - keep routing sophistication, multi-adapter fan-out, escalation, and dead-letter policy as later work.
 
 No other product feature is committed at this point.
+
+## Sprint 34F closure — 2026-09-14
+
+Sprint 34F — first outbound interface-degradation delivery path — is complete.
+
+Implementation:
+- SMTP relay is the first concrete outbound adapter for durable interface-degradation events;
+- `IInterfaceDegradationDeliveryAdapter` keeps the Application delivery boundary transport-neutral;
+- `InterfaceDegradationOutboxDispatcher` reads pending durable events, invokes the adapter, and acknowledges an event only after adapter success;
+- `SqliteInterfaceDegradationEventOutbox.ReadPending(maxCount)` now returns only rows whose delivery acknowledgement is still absent;
+- `SqliteInterfaceDegradationEventOutbox.MarkDelivered(eventKey, deliveredUtc)` records an idempotent UTC acknowledgement for an existing event and never removes the immutable event row;
+- `Migration017InterfaceDegradationDelivery` adds durable `delivered_utc` acknowledgement state and the pending-order index, and is now the latest schema migration;
+- `SmtpInterfaceDegradationDeliveryAdapter` sends a UTF-8 text notification containing stable event identity, device/interface identity, transition, previous/current state, current rates, and normalized reasons;
+- SMTP configuration uses environment variables rather than command-line secrets: `NETLOOM_SMTP_HOST`, optional `NETLOOM_SMTP_PORT`, optional `NETLOOM_SMTP_ENABLE_SSL`, `NETLOOM_SMTP_FROM`, `NETLOOM_SMTP_TO`, optional `NETLOOM_SMTP_USERNAME`, and optional `NETLOOM_SMTP_PASSWORD`;
+- username/password must be configured together; absent SMTP configuration leaves the existing monitoring path unchanged and pending events remain durable;
+- Engine drains at most 32 pending interface-degradation events after `poll-once` and after each scheduled monitoring cycle when SMTP is configured;
+- adapter exceptions are logged and surfaced to stderr without acknowledging the event or stopping the monitoring loop;
+- semantics are deliberately at-least-once: if SMTP accepts a message but SQLite acknowledgement subsequently fails, the durable event remains pending and may be sent again after restart rather than being silently lost.
+
+Verification:
+- the delivery acknowledgement contract was demonstrated RED 1/1 on the pre-Sprint 34F base;
+- forced solution build passed;
+- targeted GREEN passed: Integration 4/4, legacy Unit 4/4, modern `net8.0` 8/8;
+- full modern regression passed 67/67 and legacy Unit passed 240/240 before the first full Integration run exposed one stale migration-count expectation in `DatabaseInitializationTests.InitializeCreatesSchemaAndIsIdempotent`;
+- recovery changed only that regression expectation from 16 to 17 migrations; Sprint 34F product bytes were unchanged;
+- the already-green targeted, modern, and Unit evidence was preserved rather than rerun without a source reason;
+- after the regression-test correction, a forced solution build passed, Integration passed 79/79, and Snapshot passed 7/7;
+- final regression evidence is modern `net8.0` 67/67, legacy Unit 240/240, Integration 79/79, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered fifteen files, including the corrected database-initialization regression;
+- implementation/recovery commit `14f1a87b961939f56d24844f2b5793571d2f6b63` (`Add SMTP interface degradation delivery`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Scope deliberately still deferred:
+- no persisted delivery attempt count, next-attempt time, or backoff schedule;
+- no dead-letter terminal state, escalation, or operator acknowledgement workflow;
+- no multi-adapter routing or fan-out;
+- no claim that SMTP acceptance means a human read the notification;
+- no production secrets vault/configuration boundary beyond the existing environment-variable convention;
+- no hard-down interface failure model is collapsed into counter degradation.
+
+Next committed product Sprint:
+- Sprint 34G — durable delivery retry scheduling and backoff;
+- begin with a read-only audit of the 34F SMTP failure/acknowledgement path and Engine polling cadence;
+- persist only the minimum attempt metadata required to compute restart-safe retry eligibility;
+- avoid retrying a failing relay on every monitoring poll while never deleting or acknowledging a failed event;
+- preserve at-least-once delivery semantics;
+- keep dead-letter disposition, escalation, routing, and multi-adapter fan-out as later policy.
+
+No other product feature is committed at this point.

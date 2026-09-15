@@ -139,9 +139,9 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 34E
+## Execution map after Sprint 34F
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A, Sprint 34B, Sprint 34C, Sprint 34D, and Sprint 34E are complete. The recurring LLDP link-label readability problem remains resolved. NetLoom now has trustworthy interface-counter collection, restart-safe raw baselines, portable degradation classification, durable transition/repeat-suppression semantics, and a crash-safe durable event outbox. External delivery remains intentionally separate.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A, Sprint 34B, Sprint 34C, Sprint 34D, Sprint 34E, and Sprint 34F are complete. The recurring LLDP link-label readability problem remains resolved. NetLoom now has a complete first vertical interface-degradation chain from counter collection through restart-safe classification, durable transition suppression, crash-safe outbox enqueue, and acknowledged SMTP relay delivery. Delivery retry scheduling and broader production packaging remain separate later layers.
 
 ### Completed
 
@@ -151,15 +151,17 @@ The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction revie
 - [x] Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation. Persist the latest raw counter snapshot by stable `DeviceId` + `ifIndex`, atomically return/replace the previous sample, reject non-newer samples, restore the baseline after Engine restart, and run the existing 34A evaluator against the restored raw sample. A discontinuity interval remains non-degrading and its current sample becomes the next durable baseline.
 - [x] Sprint 34C — current-state interface degradation classification. Classify restart-safe counter evaluations as `Indeterminate`, `Healthy`, or `Degraded`; normalize enabled error/discard counter sums to rates per minute; require explicit finite positive thresholds; treat threshold equality as degraded; preserve incomplete-evidence semantics; and guarantee that `NoBaseline` and `Discontinuity` never become degradation. Engine classification is opt-in through `--interface-error-rate-per-minute` and/or `--interface-discard-rate-per-minute`. Interface oper/admin state and `ifLastChange` are not mixed into this counter-degradation classifier.
 - [x] Sprint 34D — durable interface-degradation transition state and repeat suppression. Persist only determinate `Healthy` / `Degraded` state by stable `DeviceId` + `ifIndex`; classify `FirstAppearance`, `Unchanged`, `Changed`, `Resolved`, and `Indeterminate`; keep `Indeterminate` from replacing durable state; compare degraded evidence by canonical reason fingerprint rather than volatile rates; and suppress unchanged degradation across Engine restart.
-- [x] Sprint 34E — durable interface-degradation event outbox. Extract pure transition evaluation behind a processor boundary; atomically advance determinate degradation state and enqueue immutable delivery-ready events for `FirstAppearance`, `Changed`, and `Resolved`; keep `Unchanged` and `Indeterminate` out of the outbox; use deterministic event keys for idempotency; and prove rollback of both state and event when outbox insertion fails. `Migration016InterfaceDegradationOutbox` is the current schema migration.
+- [x] Sprint 34E — durable interface-degradation event outbox. Extract pure transition evaluation behind a processor boundary; atomically advance determinate degradation state and enqueue immutable delivery-ready events for `FirstAppearance`, `Changed`, and `Resolved`; keep `Unchanged` and `Indeterminate` out of the outbox; use deterministic event keys for idempotency; and prove rollback of both state and event when outbox insertion fails.
+- [x] Sprint 34F — first outbound interface-degradation delivery path. Use SMTP relay as the first real adapter; keep credentials in environment variables; mark an outbox event delivered only after adapter success; preserve pending events across delivery failure/restart; use at-least-once semantics when adapter success is followed by acknowledgement failure; and leave the monitoring loop alive on delivery failure. `Migration017InterfaceDegradationDelivery` is the current schema migration.
 
 ### Committed next product Sprint
 
-- [ ] Sprint 34F — first outbound interface-degradation delivery path. Start with a read-only audit of the 34E outbox API, Engine hosting/lifecycle boundaries, configuration/secrets conventions, and actual deployment constraints before choosing the concrete adapter. Deliver pending outbox events through exactly one real adapter, with explicit success/failure acknowledgement semantics that never delete or mark an event delivered before confirmed success. Keep routing sophistication, multi-adapter fan-out, escalation, and dead-letter policy out of the first delivery slice.
+- [ ] Sprint 34G — durable delivery retry scheduling and backoff. Audit the 34F SMTP failure boundary and Engine scheduling path, then persist the minimum attempt metadata needed to avoid retrying a failing relay on every poll while never dropping a pending event. Use deterministic bounded backoff from durable attempt state; successful delivery still acknowledges exactly once, while failures remain pending across restart. Keep dead-letter disposition, escalation, multi-adapter routing, and fan-out as later separate policy.
 
 ### Next candidates — not commitments
 
-- [ ] Retry/backoff and dead-letter policy based on the failure modes observed with the first real adapter.
+- [ ] Real relay/operator acceptance for SMTP configuration against the target deployment environment, including documented TLS/auth expectations and observable diagnostics.
+- [ ] Dead-letter/escalation policy only after retry/backoff behavior has real operational evidence.
 - [ ] Routing by event/kind/severity as configuration rather than architecture.
 - [ ] UI design tokens covering colors, typography, spacing and geometry; Light/Dark themes.
 - [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
