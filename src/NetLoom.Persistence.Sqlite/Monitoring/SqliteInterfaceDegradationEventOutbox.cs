@@ -44,7 +44,7 @@ namespace NetLoom.Persistence.Sqlite.Monitoring
             }
 
             using (var connection =
-                _connectionFactory.OpenConnection())
+                _connectionFactory.OpenReadOnlyConnection())
             using (var command =
                 connection.CreateCommand())
             {

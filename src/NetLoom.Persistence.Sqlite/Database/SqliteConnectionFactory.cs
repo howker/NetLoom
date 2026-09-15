@@ -34,6 +34,27 @@ namespace NetLoom.Persistence.Sqlite.Database
             get { return _databasePath; }
         }
 
+        public SQLiteConnection OpenReadOnlyConnection()
+        {
+            var builder =
+                new SQLiteConnectionStringBuilder
+                {
+                    DataSource = _databasePath,
+                    ReadOnly = true,
+                    FailIfMissing = true,
+                    BusyTimeout = 5000
+                };
+
+            var connection =
+                new SQLiteConnection(
+                    builder.ConnectionString);
+
+            connection.Open();
+            _connectionOpened?.Invoke();
+
+            return connection;
+        }
+
         public SQLiteConnection OpenConnection()
         {
             var directory = Path.GetDirectoryName(_databasePath);

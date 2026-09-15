@@ -68,6 +68,10 @@
              Link="Shared\Sprint34HDeliveryStatusContractTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint34HDeliveryStatusStoreTests.cs"
              Link="Shared\Sprint34HDeliveryStatusStoreTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34JDeliveryStatusSchemaContractTests.cs"
+             Link="Shared\Sprint34JDeliveryStatusSchemaContractTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint34JDeliveryStatusCompatibilityTests.cs"
+             Link="Shared\Sprint34JDeliveryStatusCompatibilityTests.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineCommandLine.cs"
              Link="Engine\EngineCommandLine.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\SmtpInterfaceDegradationDeliveryAdapter.cs"

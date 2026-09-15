@@ -170,13 +170,26 @@ namespace NetLoom.Engine
                 return 6;
             }
 
+            var connectionFactory =
+                new SqliteConnectionFactory(
+                    databasePath);
+
+            if (!new SqliteInterfaceDegradationDeliveryStatusSchemaProbe(
+                connectionFactory)
+                .IsCompatible())
+            {
+                Console.Error.WriteLine(
+                    "ERROR: DELIVERY_STATUS_SCHEMA_UNSUPPORTED");
+
+                return 7;
+            }
+
             var nowUtc =
                 DateTime.UtcNow;
 
             var reader =
                 new SqliteInterfaceDegradationEventOutbox(
-                    new SqliteConnectionFactory(
-                        databasePath));
+                    connectionFactory);
 
             var statuses =
                 reader.ReadStatus(
