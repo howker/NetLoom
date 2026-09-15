@@ -1447,3 +1447,51 @@ Next committed product Sprint:
 - keep dead-letter disposition, escalation, routing, and multi-adapter fan-out as later policy.
 
 No other product feature is committed at this point.
+
+## Sprint 34G closure — 2026-09-15
+
+Sprint 34G — durable delivery retry scheduling and backoff — is complete.
+
+Implementation:
+- `InterfaceDegradationPendingDelivery` carries the immutable outbox event together with durable retry state;
+- `IInterfaceDegradationEventOutbox` now separates administrative pending reads from delivery eligibility reads through `ReadReady(maxCount, eligibleUtc)`;
+- failed delivery state is persisted through `MarkDeliveryFailed(eventKey, expectedFailureCount, failedUtc, nextAttemptUtc)`;
+- `InterfaceDegradationDeliveryRetryPolicy` is a persistence-neutral pure Application policy rather than SQLite timing logic;
+- retry delay is deterministic exponential backoff: 1 minute after the first failure, then 2, 4, 8, 16, 32, and a 60-minute cap for subsequent failures;
+- `InterfaceDegradationOutboxDispatcher` asks the outbox only for events eligible at the current UTC time;
+- adapter failure is durably recorded before the exception returns to the existing Engine delivery-failure boundary;
+- the persisted failure count is used to calculate the next retry, so Engine restart cannot reset retry pressure;
+- a failed event remains pending while `ReadReady` suppresses it until `next_delivery_attempt_utc`;
+- successful retry retains Sprint 34F acknowledgement semantics: an event is marked delivered only after adapter success;
+- the delivery path remains at-least-once, including the existing case where adapter success is followed by acknowledgement persistence failure;
+- `Migration018InterfaceDegradationDeliveryRetry` adds `delivery_failure_count`, `last_delivery_failure_utc`, `next_delivery_attempt_utc`, and a delivery-readiness index, and is now the latest schema migration;
+- Engine uses the bounded 1-minute-to-60-minute retry policy without adding new credential or command-line configuration;
+- dead-letter disposition, escalation, routing, and multi-adapter fan-out remain outside this Sprint.
+
+Verification:
+- the durable retry contract was demonstrated RED 1/1 on the pre-Sprint 34G base;
+- forced solution build passed;
+- targeted GREEN passed: Integration 4/4, legacy Unit 4/4, modern `net8.0` 8/8;
+- full regression passed: modern `net8.0` 75/75, legacy Unit 244/244, Integration 83/83, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered fifteen Sprint 34G files;
+- both known migration-count regressions were advanced together with migration 018, avoiding the stale-count failures previously encountered in Sprints 34B and 34F;
+- implementation commit `e4b58a6e3b0382a955ea166313f6c2440c264546` (`Add durable delivery retry backoff`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Scope deliberately still deferred:
+- no operator-facing read-only view yet distinguishes immediately ready events from retry-deferred events;
+- no real-relay acceptance evidence is recorded yet for target SMTP TLS/auth behavior;
+- no dead-letter terminal state, escalation, or operator acknowledgement workflow;
+- no multi-adapter routing or fan-out;
+- no production secrets vault/configuration layer beyond environment variables;
+- no claim that SMTP acceptance means a human read the notification.
+
+Next committed product Sprint:
+- Sprint 34H — operator-facing delivery state and SMTP acceptance;
+- begin with a read-only audit of the Engine command/output surface and the 34G outbox query model;
+- expose delivery state without leaking SMTP credentials: at minimum ready versus retry-deferred pending events and the relevant retry timing/evidence needed for diagnosis;
+- add a repeatable acceptance path that uses user-supplied environment configuration against a real or controlled SMTP relay and produces evidence for successful acknowledgement and failed/deferred retry behavior;
+- preserve the current at-least-once contract and durable retry state;
+- do not invent dead-letter thresholds or escalation policy before operational evidence exists.
+
+No other product feature is committed at this point.
