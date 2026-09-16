@@ -1,0 +1,62 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <FontFamily x:Key="NetLoom.FontFamily.Ui">Segoe UI</FontFamily>
+    <FontFamily x:Key="NetLoom.FontFamily.Mono">Consolas</FontFamily>
+
+    <sys:Double x:Key="NetLoom.FontSize.Caption">11</sys:Double>
+    <sys:Double x:Key="NetLoom.FontSize.Body">12</sys:Double>
+    <sys:Double x:Key="NetLoom.FontSize.MapNodeTitle">13</sys:Double>
+    <sys:Double x:Key="NetLoom.FontSize.SectionTitle">16</sys:Double>
+    <sys:Double x:Key="NetLoom.FontSize.WindowTitle">20</sys:Double>
+
+    <sys:Double x:Key="NetLoom.Spacing.Xs">4</sys:Double>
+    <sys:Double x:Key="NetLoom.Spacing.Sm">8</sys:Double>
+    <sys:Double x:Key="NetLoom.Spacing.Md">12</sys:Double>
+    <sys:Double x:Key="NetLoom.Spacing.Lg">16</sys:Double>
+    <sys:Double x:Key="NetLoom.Spacing.Xl">24</sys:Double>
+
+    <Thickness x:Key="NetLoom.Thickness.PanelPadding">14</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ControlPadding">10,6</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ButtonPadding">14,6</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ListItemPadding">8,6</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNodePadding">10</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapLinkLabelPadding">4,2</Thickness>
+
+    <Thickness x:Key="NetLoom.Thickness.GapXsTop">0,4,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.GapSmTop">0,8,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.FieldLabel">0,12,0,4</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.SubsectionLabel">0,14,0,4</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.StatusTop">0,10,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.AlertTransition">0,4,0,8</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ListRow">0,2</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNodeMeta">0,4,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNodeSecondary">0,5,0,0</Thickness>
+
+    <Thickness x:Key="NetLoom.Thickness.BorderThin">1</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.BorderFocus">3</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.BorderBottom">0,0,0,1</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.BorderLeft">1,0,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.BorderTop">0,1,0,0</Thickness>
+
+    <CornerRadius x:Key="NetLoom.Radius.Control">4</CornerRadius>
+    <CornerRadius x:Key="NetLoom.Radius.Panel">6</CornerRadius>
+    <CornerRadius x:Key="NetLoom.Radius.MapNode">6</CornerRadius>
+
+    <sys:Double x:Key="NetLoom.Control.MinHeight">30</sys:Double>
+    <sys:Double x:Key="NetLoom.Window.Width">1100</sys:Double>
+    <sys:Double x:Key="NetLoom.Window.Height">700</sys:Double>
+    <sys:Double x:Key="NetLoom.Window.MinWidth">800</sys:Double>
+    <sys:Double x:Key="NetLoom.Window.MinHeight">500</sys:Double>
+    <sys:Double x:Key="NetLoom.Sidebar.Width">360</sys:Double>
+    <sys:Double x:Key="NetLoom.AlertPanel.Height">190</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.CanvasWidth">1600</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.CanvasHeight">1000</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeWidth">190</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeHeight">92</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">2</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkLabelPlacementStep">24</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkLabelCollisionMargin">8</sys:Double>
+</ResourceDictionary>

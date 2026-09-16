@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using NetLoom.Application.Alerts;
@@ -23,10 +22,13 @@ namespace NetLoom.Wpf;
 
 public partial class MainWindow : Window
 {
-    private const double NodeWidth = 190.0;
-    private const double NodeHeight = 92.0;
     private const int LookupCandidateLimit = 100;
     private const string CurrentStpInstanceId = "cist";
+
+    private readonly double _nodeWidth;
+    private readonly double _nodeHeight;
+    private readonly double _linkLabelPlacementStep;
+    private readonly double _linkLabelCollisionMargin;
 
     private readonly TopologyRefreshCoordinator
         _topologyRefreshCoordinator;
@@ -113,6 +115,22 @@ public partial class MainWindow : Window
         IMacIpLookupReader lookupReader)
     {
         InitializeComponent();
+
+        _nodeWidth =
+            GetDoubleResource(
+                "NetLoom.Map.NodeWidth");
+
+        _nodeHeight =
+            GetDoubleResource(
+                "NetLoom.Map.NodeHeight");
+
+        _linkLabelPlacementStep =
+            GetDoubleResource(
+                "NetLoom.Map.LinkLabelPlacementStep");
+
+        _linkLabelCollisionMargin =
+            GetDoubleResource(
+                "NetLoom.Map.LinkLabelCollisionMargin");
 
         _topologyRefreshCoordinator =
             new TopologyRefreshCoordinator(
@@ -542,6 +560,57 @@ public partial class MainWindow : Window
         }
     }
 
+    private double GetDoubleResource(
+        string key)
+    {
+        var value =
+            FindResource(key);
+
+        if (!(value is double))
+        {
+            throw new InvalidOperationException(
+                "WPF design resource is not a double: " +
+                key);
+        }
+
+        return (double)value;
+    }
+
+    private Thickness GetThicknessResource(
+        string key)
+    {
+        var value =
+            FindResource(key);
+
+        if (!(value is Thickness))
+        {
+            throw new InvalidOperationException(
+                "WPF design resource is not a Thickness: " +
+                key);
+        }
+
+        return (Thickness)value;
+    }
+
+    private Style GetStyleResource(
+        string key)
+    {
+        var value =
+            FindResource(key);
+
+        var style =
+            value as Style;
+
+        if (style == null)
+        {
+            throw new InvalidOperationException(
+                "WPF design resource is not a Style: " +
+                key);
+        }
+
+        return style;
+    }
+
     private static MapSnapshot EmptySnapshot()
     {
         return new MapSnapshot(
@@ -844,43 +913,39 @@ public partial class MainWindow : Window
             link.Key;
     }
 
-    private static MapNodeVisual
+    private MapNodeVisual
         CreateNodeVisual()
     {
         var title =
             new TextBlock
             {
-                FontWeight =
-                    FontWeights.SemiBold,
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeTitle")
             };
 
         var secondary =
             new TextBlock
             {
-                Margin =
-                    new Thickness(0, 5, 0, 0),
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeSecondary")
             };
 
         var topologyMetadata =
             new TextBlock
             {
-                Margin =
-                    new Thickness(0, 4, 0, 0),
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeMeta")
             };
 
         var locationText =
             new TextBlock
             {
-                Margin =
-                    new Thickness(0, 4, 0, 0),
-                TextTrimming =
-                    TextTrimming.CharacterEllipsis
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeMeta")
             };
 
         var content =
@@ -894,11 +959,9 @@ public partial class MainWindow : Window
         var border =
             new Border
             {
-                Width = NodeWidth,
-                Height = NodeHeight,
-                Padding = new Thickness(10),
-                Background =
-                    SystemColors.WindowBrush,
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeCard"),
                 Child = content
             };
 
@@ -939,33 +1002,41 @@ public partial class MainWindow : Window
             node.DeviceId.Value ==
             _highlightedDeviceId.Value;
 
-        visual.Border.BorderThickness =
-            isHighlighted
-                ? new Thickness(3)
-                : new Thickness(1);
+        if (isHighlighted)
+        {
+            visual.Border.BorderThickness =
+                GetThicknessResource(
+                    "NetLoom.Thickness.BorderFocus");
 
-        visual.Border.BorderBrush =
-            isHighlighted
-                ? SystemColors.HighlightBrush
-                : SystemColors.ControlDarkBrush;
+            visual.Border.SetResourceReference(
+                Border.BorderBrushProperty,
+                "NetLoom.Brush.Selection");
+        }
+        else
+        {
+            visual.Border.ClearValue(
+                Border.BorderThicknessProperty);
+
+            visual.Border.ClearValue(
+                Border.BorderBrushProperty);
+        }
     }
 
-    private static MapLinkVisual
+    private MapLinkVisual
         CreateLinkVisual()
     {
         return new MapLinkVisual(
             new Line
             {
-                Stroke =
-                    SystemColors.ControlDarkBrush,
-                StrokeThickness = 2.0
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapLink")
             },
             new TextBlock
             {
-                Background =
-                    SystemColors.WindowBrush,
-                Padding =
-                    new Thickness(4, 2, 4, 2)
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapLinkLabel")
             });
     }
 
@@ -977,19 +1048,19 @@ public partial class MainWindow : Window
     {
         var x1 =
             NodeLeft(source) +
-            (NodeWidth / 2.0);
+            (_nodeWidth / 2.0);
 
         var y1 =
             NodeTop(source) +
-            (NodeHeight / 2.0);
+            (_nodeHeight / 2.0);
 
         var x2 =
             NodeLeft(target) +
-            (NodeWidth / 2.0);
+            (_nodeWidth / 2.0);
 
         var y2 =
             NodeTop(target) +
-            (NodeHeight / 2.0);
+            (_nodeHeight / 2.0);
 
         visual.Line.X1 = x1;
         visual.Line.Y1 = y1;
@@ -1067,8 +1138,6 @@ public partial class MainWindow : Window
                 .Select(NodeBounds)
                 .ToArray();
 
-        const double placementStep = 24.0;
-        const double collisionMargin = 8.0;
         const int maxPlacementSteps = 40;
 
         for (var step = 0;
@@ -1084,7 +1153,7 @@ public partial class MainWindow : Window
                     labelWidth,
                     labelHeight,
                     obstacles,
-                    collisionMargin))
+                    _linkLabelCollisionMargin))
                 {
                     return;
                 }
@@ -1093,7 +1162,7 @@ public partial class MainWindow : Window
             }
 
             var offset =
-                placementStep * step;
+                _linkLabelPlacementStep * step;
 
             if (TryPlaceLinkLabel(
                 label,
@@ -1102,7 +1171,7 @@ public partial class MainWindow : Window
                 labelWidth,
                 labelHeight,
                 obstacles,
-                collisionMargin))
+                _linkLabelCollisionMargin))
             {
                 return;
             }
@@ -1114,7 +1183,7 @@ public partial class MainWindow : Window
                 labelWidth,
                 labelHeight,
                 obstacles,
-                collisionMargin))
+                _linkLabelCollisionMargin))
             {
                 return;
             }
@@ -1180,14 +1249,14 @@ public partial class MainWindow : Window
         return true;
     }
 
-    private static Rect NodeBounds(
+    private Rect NodeBounds(
         MapNodeVisual visual)
     {
         return new Rect(
             NodeLeft(visual),
             NodeTop(visual),
-            NodeWidth,
-            NodeHeight);
+            _nodeWidth,
+            _nodeHeight);
     }
 
     private static double NodeLeft(

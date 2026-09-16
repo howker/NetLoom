@@ -1,0 +1,30 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="NetLoom.Brush.Window" Color="#F3F6F9" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Surface" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="NetLoom.Brush.SurfaceMuted" Color="#F8FAFC" />
+    <SolidColorBrush x:Key="NetLoom.Brush.SurfaceHover" Color="#EEF3F8" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Canvas" Color="#EDF2F6" />
+
+    <SolidColorBrush x:Key="NetLoom.Brush.Border" Color="#CBD5DF" />
+    <SolidColorBrush x:Key="NetLoom.Brush.BorderStrong" Color="#8FA1B2" />
+
+    <SolidColorBrush x:Key="NetLoom.Brush.TextPrimary" Color="#17212B" />
+    <SolidColorBrush x:Key="NetLoom.Brush.TextSecondary" Color="#526170" />
+    <SolidColorBrush x:Key="NetLoom.Brush.TextDisabled" Color="#8A98A6" />
+
+    <SolidColorBrush x:Key="NetLoom.Brush.Accent" Color="#2F6FED" />
+    <SolidColorBrush x:Key="NetLoom.Brush.AccentHover" Color="#245FD0" />
+    <SolidColorBrush x:Key="NetLoom.Brush.AccentPressed" Color="#1D4FAF" />
+    <SolidColorBrush x:Key="NetLoom.Brush.AccentSoft" Color="#EAF1FF" />
+    <SolidColorBrush x:Key="NetLoom.Brush.OnAccent" Color="#FFFFFF" />
+
+    <SolidColorBrush x:Key="NetLoom.Brush.Success" Color="#237A52" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Warning" Color="#A86414" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Critical" Color="#B93C3C" />
+
+    <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#627487" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Selection" Color="#2F6FED" />
+</ResourceDictionary>
