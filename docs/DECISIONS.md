@@ -957,3 +957,51 @@ External integrations may publish **network-state** events or diagnostics to SCA
 - topology `Device` is not generalized into “anything on the plant”;
 - process tags/measurements/history do not enter the topology/configuration database;
 - product scope remains centered on topology, reachability, redundancy, degradation and network incident explanation.
+
+## ADR-069 — committed product sequence is explicit and friction-controlled
+
+**Status:** Accepted.
+
+**Date:** 2026-09-16.
+
+### Context
+
+The realistic stand established a useful product-feedback loop: recurring operator friction was recorded in `FRICTION_LOG.md`, Sprint 33B addressed it, and the fix was accepted on the stand.
+
+Sprint 34 also exposed a planning failure. Sprint 34A through 34E delivered the requested interface-degradation detection path. Sprint 34F through 34K then continued deeper into notification delivery and SMTP operational hardening even though no real deployment relay or operator notification need existed. The work is valid and retained, but its continuation was selected incrementally at each closure rather than from an explicit product sequence.
+
+At the same time, the product specification still places the visual topology map, operator diagnostics, manual topology and direct monitoring control at the center of the working product.
+
+### Decision
+
+Further SMTP/delivery expansion is paused after Sprint 34K. Existing outbox, retry, SMTP delivery, delivery status, acceptance and readiness capabilities remain supported; they are not removed. Real target-relay acceptance, dead-letter/escalation, routing and production notification configuration remain candidates until a real deployment/operator need promotes them.
+
+`BACKLOG.md` owns an explicit `Committed sequence` for the next product/UI work:
+
+1. UI foundation as a preparation task, not a Sprint;
+2. Sprint 35 — diagnostic panel;
+3. Sprint 36 — interactive persistent map with calm semantic motion;
+4. Sprint 37 — manual topology from the UI;
+5. Sprint 38 — Locations on the map;
+6. Sprint 39 — visual language of the map;
+7. Sprint 40 — monitoring control from the UI.
+
+While unchecked items remain in that sequence, the assistant does not choose a different next Sprint. The next work item is the first unchecked committed item, including any preparation task that precedes the next numbered Sprint.
+
+Reordering the committed product sequence requires:
+- recurring real operator friction recorded in `FRICTION_LOG.md`;
+- explicit user approval;
+- a new or amended decision in `DECISIONS.md` that records what moved and why before the reordered product work begins.
+
+Blocking correctness, security, integrity or tooling fixes may interrupt the current work, but they are not promoted into new product Sprints and do not silently reorder the committed sequence.
+
+Every numbered product Sprint must have its operator outcome sentence recorded in `BACKLOG.md` before implementation starts. Internal implementation slices without an independent operator outcome remain tasks inside the Sprint and do not receive lettered, decimal or half-Sprint numbering.
+
+### Consequences
+
+- the next product direction is visible in the repository rather than being inferred from the most recent subsystem;
+- SMTP does not regain priority merely because the delivery subsystem is already open;
+- recurring stand friction can still override the sequence, but the override is explicit and reviewable;
+- UI foundation work happens before the UI-heavy Sprint sequence without being misrepresented as a product Sprint;
+- the sequence can be changed deliberately, but not by momentum at the end of a previous Sprint;
+- `Next candidates` and roadmap items remain non-commitments until the user explicitly commits them.

@@ -6,11 +6,11 @@
 
 ## Текущее состояние
 
-Sprint 32C localization foundation, post-closure neutral-resource correction, master-plan documentation alignment, canonical documentation consolidation, AI development verification hardening, realistic stand acceptance, LLDP topology baseline closure, the modern `net8.0` test foundation, Sprint 33A incremental WPF map reconciliation, Sprint 33B collision-safe topology link-label placement, and Sprint 34A interface counter delta foundation are complete.
+The realistic stand acceptance, Sprint 33A incremental WPF map reconciliation, Sprint 33B collision-safe link-label placement, and Sprint 34A through Sprint 34K are complete. Sprint 34A–34E provide restart-safe interface-degradation detection; Sprint 34F–34K provide a durable notification-delivery path through SMTP plus retry, delivery-status, acceptance and secret-free configuration-readiness diagnostics.
 
-Sprint 34A is committed and pushed as `05d1cd00eff04ed77f2befbfc59d1c3878f61e38`. Portable/core regression continues to run on the modern `net8.0` lane while legacy `net48` remains the WPF-specific and compatibility lane.
+Sprint 34K is technically accepted and pushed as `765eb91e10b275dd73a3694f8deea5594586472e`. Full regression is green at modern `net8.0` 96, legacy Unit 244, Integration 92 and Snapshot 7. Further SMTP/delivery expansion is not committed without a real deployment/operator need.
 
-The recurring LLDP link-label readability friction that promoted Sprint 33B remains resolved on the realistic stand. No other recurring friction is currently recorded. Exactly one next product Sprint is committed: Sprint 34B — durable interface-counter baseline and restart-safe interval evaluation.
+The recurring LLDP link-label readability friction that promoted Sprint 33B remains resolved on the realistic stand. No other recurring friction is currently recorded. The next committed work is the `BACKLOG.md` UI/product sequence: first the unnumbered UI foundation task, then Sprint 35 diagnostic panel through Sprint 40 monitoring control. Reordering that sequence requires recurring `FRICTION_LOG.md` evidence, explicit user approval and a recorded decision.
 
 ## Основа проекта
 

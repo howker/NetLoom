@@ -139,9 +139,9 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 34J
+## Execution map after Sprint 34K
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, and Sprint 34A through Sprint 34J are complete. NetLoom now has restart-safe interface degradation detection, durable transition suppression, durable event delivery with bounded retry, operator-facing delivery status, SMTP acceptance, and stable read-only diagnostics for databases that predate the delivery outbox. Real target SMTP acceptance remains blocked only because no deployment relay configuration exists in the current environment. The next concrete operator friction is configuration readiness: the product can use SMTP environment variables, but it does not yet give an actionable secret-free report of which required fields are missing or whether the auth pair is structurally valid before attempting delivery.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, and Sprint 34A through Sprint 34K are complete. NetLoom can detect restart-safe interface degradation and already has a durable outbound delivery path, but no further SMTP/delivery expansion is committed without a real operator/deployment need. Product priority returns to the main operator experience: readable diagnostics, an interactive persistent map, manual topology, Locations, visual network semantics, and monitoring control from the UI.
 
 ### Completed
 
@@ -157,19 +157,40 @@ The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction revie
 - [x] Sprint 34H — operator-facing delivery state and SMTP acceptance. Add read-only `delivery-status` output that classifies durable events as `Ready`, `Deferred`, or `Delivered` and surfaces failure/retry/delivery UTC evidence without reading SMTP secrets. Add `smtp-acceptance`, which sends a synthetic canary through the same SMTP adapter and environment-variable configuration without writing a synthetic outbox event. Prove adapter success against a controlled local SMTP relay, including MIME/base64 decoding of the UTF-8 body, and prove a deterministic secret-free failure diagnostic when SMTP configuration is absent. No schema migration is required.
 - [x] Sprint 34I environment audit — read-only deployment acceptance attempt. Confirm `HEAD == origin/main` and a clean worktree; confirm target SMTP configuration is absent; scan seven discovered local databases and classify all seven as pre-outbox schema; leave the repository unchanged. This does not count as real target-relay acceptance and does not provide evidence for dead-letter/escalation policy.
 - [x] Sprint 34J — stable legacy-schema diagnostics for `delivery-status`. Add a dedicated SQLite read-only connection path; preflight the complete delivery-status outbox schema before querying it; return stable `ERROR: DELIVERY_STATUS_SCHEMA_UNSUPPORTED` with exit code 7 for pre-outbox or incomplete schema; keep the selected database byte-identical; and preserve normal zero-event reads on a current schema. No migration is added.
+- [x] Sprint 34K — actionable SMTP configuration readiness diagnostics. Add secret-free `smtp-readiness` evaluation for the existing `NETLOOM_SMTP_*` environment contract; report required-field, port, SSL and username/password-pair readiness without printing configured values; make `smtp-acceptance` use the same readiness preflight before any network attempt; preserve existing SMTP transport semantics. Technical acceptance passed with targeted modern 8/8 and full regression modern 96/96, legacy Unit 244/244, Integration 92/92 and Snapshot 7/7; implementation commit `765eb91e10b275dd73a3694f8deea5594586472e` is pushed.
 
-### Committed next product Sprint
+### Committed sequence
 
-- [ ] Sprint 34K — actionable SMTP configuration readiness diagnostics. Add a read-only Engine surface that evaluates the existing `NETLOOM_SMTP_*` environment configuration without printing secret values: required host/from/to presence, port/default validity, SSL/default validity, and username/password pairing. Make `smtp-acceptance` fail with the same stable configuration reason before any network attempt. Preserve existing SMTP transport semantics and do not invent relay values, persist secrets, or add a new secret store. Prove diagnostics for missing, partial-auth, invalid-port/SSL, and structurally ready configurations.
+This sequence is authoritative for the next product/UI work. The assistant does not invent or propose a different next Sprint while unchecked items remain here. Reordering is allowed only after a recurring real problem is recorded in `FRICTION_LOG.md`, the user explicitly approves the change, and the reason is recorded in `DECISIONS.md`. Blocking correctness, integrity, security or tooling fixes may interrupt the current work, but they do not become a new product Sprint and do not silently reorder this sequence.
+
+- [ ] UI foundation — preparation task, not a Sprint.
+  - Operator outcome: the interface reads comfortably and new screens use shared design tokens instead of local `Brushes`, font sizes and spacing literals.
+  - Add shared colors, typography, spacing/geometry tokens, control styles and Light/Dark palettes before new UI surfaces are built.
+- [ ] Sprint 35 — diagnostic panel for the selected network element.
+  - Operator outcome: click the problem and immediately understand what happened and whom it affects.
+  - Surface degradation state from Sprint 34A–34E, freshness/last-seen evidence, STP/evidence details and existing graph failure impact/blast-radius data using readable device/port names rather than GUID-first output.
+- [ ] Sprint 36 — interactive persistent map with calm semantic motion.
+  - Operator outcome: arrange the map comfortably, keep the layout after restart, and see what actually changed without visual noise.
+  - Add node drag, zoom, pan, pinned/locked layout persistence and `Normal` / `Reduced` / `Off` motion; animate only meaningful transitions such as appearance/disappearance, freshness change, search focus and a single new-alert pulse.
+- [ ] Sprint 37 — manual topology from the UI.
+  - Operator outcome: draw an unmanaged device and cable that SNMP/discovery cannot see.
+  - Create/edit/remove manual devices, ports and links through the existing protected manual-topology semantics.
+- [ ] Sprint 38 — Locations on the map.
+  - Operator outcome: read the physical object by site/building/room/rack boundaries instead of a flat graph.
+  - Render movable/resizable/collapsible/lockable Location containers and preserve their layout.
+- [ ] Sprint 39 — visual language of the map.
+  - Operator outcome: understand at a glance what is trustworthy, stale, blocked, degraded or risky.
+  - Make information hierarchy, node/link styling and map modes visually consistent for physical topology, active STP tree, confidence, freshness, degradation, rings and failure boundaries.
+- [ ] Sprint 40 — monitoring control from the UI.
+  - Operator outcome: start, stop, poll now and refresh topology without leaving the main window.
+  - Expose current monitoring state, last successful poll/update time and the existing scheduling/policy controls through the operator UI.
 
 ### Next candidates — not commitments
 
-- [ ] Real target-relay acceptance once the deployment SMTP values actually exist; use 34K readiness diagnostics first, then `smtp-acceptance`.
+- [ ] Real target-relay acceptance only when a real deployment SMTP configuration and an operator need exist.
 - [ ] Dead-letter/escalation policy only if real relay/retry evidence shows a concrete terminal-failure or operator-response need.
-- [ ] Routing by event/kind/severity as configuration rather than architecture.
+- [ ] Routing by event/kind/severity only when an actual notification-routing need appears.
 - [ ] Production configuration boundary and protected secrets for installed deployments.
-- [ ] UI design tokens covering colors, typography, spacing and geometry; Light/Dark themes.
-- [ ] Semantic animations with `Normal` / `Reduced` / `Off` motion modes; no perpetual blinking.
 
 ### Roadmap — direction, not scheduled backlog commitment
 
