@@ -1586,3 +1586,45 @@ Next committed product Sprint:
 - keep real target SMTP acceptance deferred until an actual deployment relay configuration exists.
 
 No dead-letter, escalation, routing, secret-store, or schema migration change is committed by this decision.
+
+## Sprint 34J closure — 2026-09-15
+
+Sprint 34J — stable legacy-schema diagnostics for `delivery-status` — is complete.
+
+Implementation:
+- `SqliteConnectionFactory.OpenReadOnlyConnection()` provides a genuine SQLite read-only path with `ReadOnly=true`, `FailIfMissing=true`, and no normal connection-side WAL/bootstrap behavior;
+- `SqliteInterfaceDegradationDeliveryStatusSchemaProbe` inspects `PRAGMA table_info(interface_degradation_outbox)` and requires the complete column set consumed by the current delivery-status reader;
+- a database with no outbox table or only an incomplete outbox schema is treated as unsupported rather than being queried optimistically;
+- Engine `delivery-status` now returns `ERROR: DELIVERY_STATUS_SCHEMA_UNSUPPORTED` and exit code 7 for an unsupported schema before constructing the status reader;
+- `SqliteInterfaceDegradationEventOutbox.ReadStatus()` itself uses the new read-only connection path;
+- the command does not migrate, initialize, or otherwise mutate an operator-selected database;
+- a current-schema empty database remains compatible and returns the normal zero-event status result;
+- Sprint 34J adds no migration and leaves `Migration018InterfaceDegradationDeliveryRetry` as the current schema migration.
+
+Verification:
+- deterministic RED proved the read-only compatibility boundary absent on the pre-Sprint 34J base: 1/1 failed as expected;
+- forced solution build passed;
+- targeted GREEN passed: Integration 4/4 and modern `net8.0` 4/4;
+- the actual `%LOCALAPPDATA%\NetLoom\netloom.db` observed during Sprint 34I was exercised directly and returned stable exit code 7 plus `ERROR: DELIVERY_STATUS_SCHEMA_UNSUPPORTED`;
+- the same observed legacy database was SHA256-identical before and after the read-only command;
+- raw SQLite `no such table` output was not exposed by the corrected operator path;
+- full regression passed: modern `net8.0` 88/88, legacy Unit 244/244, Integration 92/92, Snapshot 7/7;
+- repository text-integrity and `git diff --check` passed;
+- exact staged/index/commit boundary proof covered seven Sprint 34J files;
+- implementation commit `a355049ce798da196c71b552b15433feb2000d22` (`Add stable delivery status schema diagnostics`) is pushed with `HEAD == origin/main` and a clean worktree.
+
+Remaining deployment evidence:
+- target SMTP relay configuration is still absent in the current environment, so no real target-relay TLS/auth acceptance claim is made;
+- all seven databases found during the Sprint 34I environment audit remain pre-outbox artifacts, although they are now diagnosed cleanly rather than surfacing raw SQL errors;
+- the controlled SMTP relay acceptance from Sprint 34H and the durable retry evidence from Sprint 34G remain the latest positive transport/retry evidence;
+- no dead-letter, escalation, routing, or production secret-store behavior is justified by the currently available evidence.
+
+Next committed product Sprint:
+- Sprint 34K — actionable SMTP configuration readiness diagnostics;
+- expose a read-only Engine command/status that reports whether required SMTP configuration is structurally ready without printing host, addresses, usernames, or passwords;
+- distinguish at minimum missing host/from/to, invalid port, invalid SSL boolean, incomplete username/password pairing, and structurally ready configuration;
+- make `smtp-acceptance` use the same readiness evaluation before it attempts a network connection so the operator receives a stable reason rather than a generic exception type;
+- preserve the existing environment-variable contract, SMTP adapter behavior, and at-least-once delivery semantics;
+- do not invent relay values, persist credentials, or add a secret-store architecture in this Sprint.
+
+No dead-letter, escalation, routing, or new delivery transport is committed at this point.
