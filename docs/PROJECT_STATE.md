@@ -6,11 +6,11 @@
 
 ## Текущее состояние
 
-The realistic stand acceptance, Sprint 33A incremental WPF map reconciliation, Sprint 33B collision-safe link-label placement, Sprint 34A through Sprint 34K, and the post-34K UI foundation task are complete. Sprint 34A–34E provide restart-safe interface-degradation detection; Sprint 34F–34K provide the retained durable notification-delivery path, which is no longer the active product priority.
+The realistic stand acceptance, Sprint 33A incremental WPF map reconciliation, Sprint 33B collision-safe link-label placement, Sprint 34A through Sprint 34K, the post-34K UI foundation task, and Sprint 35 selected-element diagnostics are complete. The retained notification-delivery path remains supported but is not the active product priority.
 
-The UI foundation is technically accepted and pushed as `7cd0d72dc0328ed847290a101363d9a3837dd86f`. WPF now has shared design tokens for typography, spacing and geometry, Light/Dark palette resources, and shared control/map styles used by the current `MainWindow`. The Light palette is still the current default; runtime operator theme switching is not claimed. Full regression is green at modern `net8.0` 96, legacy Unit 248, Integration 92 and Snapshot 7.
+Sprint 35 is technically accepted and pushed as `97d2ead90660cc8424f9fd383a5ee69117df13c3`. WPF can select a device or physical link and show a localized diagnostic panel backed by the same coherent topology refresh read-set as the map and alerts. The panel surfaces readable endpoint/port identity, interface admin/oper and STP state, durable interface degradation, freshness and last-seen/confirmed timestamps, current evidence including raw `Available` / `Expired` / `NotApplicable`, and direction-neutral physical-link bridge/blast-radius impact. MAC/IP lookup selects the resolved device into the same diagnostic surface. Full regression is green at modern `net8.0` 102, legacy Unit 253, Integration 94 and Snapshot 7.
 
-The recurring LLDP link-label readability friction that promoted Sprint 33B remains resolved on the realistic stand. No other recurring friction is currently recorded. The first unchecked item in the authoritative `BACKLOG.md` committed sequence is Sprint 35 — the diagnostic panel for the selected network element. Its operator outcome is to click a problem and immediately understand what happened and whom it affects.
+The recurring LLDP link-label readability friction that promoted Sprint 33B remains resolved on the realistic stand. No other recurring friction is currently recorded. The first unchecked item in the authoritative `BACKLOG.md` committed sequence is Sprint 36 — interactive persistent map with calm semantic motion. Its operator outcome is to arrange the map comfortably, preserve the layout across restart, and see what actually changed without visual noise.
 
 ## Основа проекта
 

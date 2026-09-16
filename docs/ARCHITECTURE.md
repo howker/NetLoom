@@ -94,6 +94,30 @@ The current `MainWindow` and retained map visuals consume the shared resources. 
 
 Interactive zoom/pan, pinned/manual layout persistence and semantic motion remain later committed UI work. Motion is layered on the retained-visual foundation and must support `Normal`, `Reduced` and `Off`; perpetual blinking is not part of the product language.
 
+## Selected-element diagnostic projection boundary
+
+Sprint 35 adds a read-only diagnostic projection without moving topology or monitoring decisions into WPF.
+
+Refresh pipeline:
+
+`one SQLite read transaction -> MaterializedTopologyReadSet -> map + alerts + NetworkDiagnosticSnapshot -> WPF`
+
+`MaterializedTopologyReadSet` now also carries:
+- durable current interface-degradation state;
+- current PhysicalLink evidence explanation/raw-availability state.
+
+The SQLite reader captures these values inside the same coherent read transaction as devices, interfaces, PhysicalLinks, current evidence, Locations and latest STP. Projection and graph analysis happen only after the read transaction closes.
+
+`NetworkDiagnosticSnapshot` is a transport-neutral Contracts model. It contains device, interface, physical-link and evidence diagnostics but no localized operator sentences. WPF owns localized presentation and selection state.
+
+Structural failure impact is computed by the existing `PhysicalGraphSafetyAnalyzer`; the diagnostic projection exposes only direction-neutral bridge partitions and separated-device-pair count. It does not infer an outage direction, root cause or observed outage scope.
+
+Raw evidence availability is exposed as `NotApplicable`, `Available`, `Expired` or `Unknown`. `Expired` means bounded current evidence still exists while the referenced raw observation has already left retention; the diagnostic path does not reload raw varbind payload.
+
+A failed refresh does not manufacture a new diagnostic snapshot. The client keeps the last successful map/alert/diagnostic state under the existing last-known-good/stale refresh semantics.
+
+Sprint 35 adds no write path from WPF and no SQLite migration.
+
 ## Roadmap boundaries — not committed scope
 
 The following directions are architectural map, not a promise of immediate implementation:

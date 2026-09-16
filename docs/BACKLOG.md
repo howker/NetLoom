@@ -94,7 +94,7 @@
 Повторяющаяся реальная проблема из FRICTION_LOG имеет приоритет над speculative product feature.
 ## Operational hardening backlog
 
-- [ ] Surface raw-expired evidence state in localized evidence UI when that detail panel is implemented.
+- [x] Surface raw-expired evidence state in localized evidence UI when that detail panel is implemented — completed in Sprint 35 selected-element diagnostics.
 - [ ] Configurable SNMP WALK varbind limit with explicit step failure before unbounded memory growth.
 - [ ] Propagate CancellationToken into the active poll/collector path; cancellation must not become a failed protocol step.
 - [ ] Multi-device scheduler: bounded parallelism, per-device cadence and startup jitter.
@@ -139,9 +139,9 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 34K
+## Execution map after Sprint 35
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, and Sprint 34A through Sprint 34K are complete. NetLoom can detect restart-safe interface degradation and already has a durable outbound delivery path, but no further SMTP/delivery expansion is committed without a real operator/deployment need. Product priority returns to the main operator experience: readable diagnostics, an interactive persistent map, manual topology, Locations, visual network semantics, and monitoring control from the UI.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, and Sprint 35 are complete. The current WPF client can select a device or physical link and show coherent diagnostics from the same successful topology refresh: interface degradation, STP state, freshness/current evidence, raw-evidence availability, and direction-neutral physical-link failure impact. Product priority now advances to the next committed item: an interactive persistent map with calm semantic motion.
 
 ### Completed
 
@@ -167,9 +167,11 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Operator outcome: the interface reads comfortably and new screens use shared design tokens instead of local `Brushes`, font sizes and spacing literals.
   - Completed: shared colors, typography, spacing/geometry tokens, control styles and Light/Dark palettes are in WPF resources; the current `MainWindow` and retained map visuals consume the shared foundation. The Light palette remains the current default; operator theme switching is not claimed yet.
   - Technical acceptance: deterministic RED 1/1, targeted Unit 4/4, full regression modern 96/96 + legacy Unit 248/248 + Integration 92/92 + Snapshot 7/7; implementation commit `7cd0d72dc0328ed847290a101363d9a3837dd86f` is pushed.
-- [ ] Sprint 35 — diagnostic panel for the selected network element.
+- [x] Sprint 35 — diagnostic panel for the selected network element.
   - Operator outcome: click the problem and immediately understand what happened and whom it affects.
-  - Surface degradation state from Sprint 34A–34E, freshness/last-seen evidence, STP/evidence details and existing graph failure impact/blast-radius data using readable device/port names rather than GUID-first output.
+  - Completed: device/link selection uses a transport-neutral `NetworkDiagnosticSnapshot` projected from the same coherent topology read-set as the map and alerts. Device diagnostics show readable identity/location, last-seen/resolved state, interfaces, admin/oper, STP and durable degradation. Link diagnostics show readable endpoints/ports, strength/freshness, last-seen/confirmed, media/speed, evidence with localized raw `Available` / `Expired` / `NotApplicable` state, and direction-neutral bridge/blast-radius impact from the existing graph safety analyzer. MAC/IP lookup selects the resolved device into the same panel; failed refresh keeps the last successful diagnostic snapshot as stale rather than inventing new state.
+  - No new SQLite migration, monitoring semantics, incident history or causal outage claim was added.
+  - Technical acceptance: deterministic RED 1/1; targeted Unit 5/5 + Integration 2/2 + modern 6/6; full regression modern 102/102 + legacy Unit 253/253 + Integration 94/94 + Snapshot 7/7. A recovery corrected only an orientation-sensitive blast-radius test expectation; product bytes were unchanged. Implementation commit `97d2ead90660cc8424f9fd383a5ee69117df13c3` is pushed.
 - [ ] Sprint 36 — interactive persistent map with calm semantic motion.
   - Operator outcome: arrange the map comfortably, keep the layout after restart, and see what actually changed without visual noise.
   - Add node drag, zoom, pan, pinned/locked layout persistence and `Normal` / `Reduced` / `Off` motion; animate only meaningful transitions such as appearance/disappearance, freshness change, search focus and a single new-alert pulse.
