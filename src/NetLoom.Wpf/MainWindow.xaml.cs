@@ -15,6 +15,8 @@ using NetLoom.Application.Lookup;
 using NetLoom.Application.TopologyMap;
 using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
+using NetLoom.Contracts.Diagnostics;
+using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
 
@@ -68,7 +70,13 @@ public partial class MainWindow : Window
 
     private Guid? _highlightedDeviceId;
 
+    private Guid? _selectedDeviceId;
+
+    private Guid? _selectedPhysicalLinkId;
+
     private MapSnapshot _lastMapSnapshot;
+
+    private NetworkDiagnosticSnapshot _lastDiagnosticSnapshot;
 
     public MainWindow()
         : this(
@@ -169,6 +177,36 @@ public partial class MainWindow : Window
         Title = UiText.Get("WindowTitle");
         MapTitleText.Text = UiText.Get("MapTitle");
 
+        DiagnosticTitleText.Text =
+            UiText.Get("DiagnosticTitle");
+
+        DiagnosticStatusText.Text =
+            UiText.Get("DiagnosticNothingSelected");
+
+        DiagnosticElementTitleText.Text =
+            string.Empty;
+
+        DiagnosticElementSubtitleText.Text =
+            string.Empty;
+
+        DiagnosticPrimaryTitleText.Text =
+            string.Empty;
+
+        DiagnosticSecondaryTitleText.Text =
+            string.Empty;
+
+        DiagnosticTertiaryTitleText.Text =
+            string.Empty;
+
+        DiagnosticFieldsList.ItemsSource =
+            new DiagnosticFieldRow[0];
+
+        DiagnosticSecondaryList.ItemsSource =
+            new DiagnosticTextRow[0];
+
+        DiagnosticTertiaryList.ItemsSource =
+            new DiagnosticTextRow[0];
+
         LookupTitleText.Text =
             UiText.Get("LookupTitle");
 
@@ -202,8 +240,13 @@ public partial class MainWindow : Window
         _lastMapSnapshot =
             EmptySnapshot();
 
+        _lastDiagnosticSnapshot =
+            EmptyDiagnosticSnapshot();
+
         ShowMap(
             _lastMapSnapshot);
+
+        ShowSelectedDiagnostic();
     }
 
     private async void OnWindowLoaded(
@@ -297,8 +340,13 @@ public partial class MainWindow : Window
         _lastMapSnapshot =
             state.Snapshot.MapSnapshot;
 
+        _lastDiagnosticSnapshot =
+            state.Snapshot.DiagnosticSnapshot;
+
         ShowMap(
             state.Snapshot.MapSnapshot);
+
+        ShowSelectedDiagnostic();
 
         var transition =
             _alertTransitionTracker.Observe(
@@ -332,6 +380,10 @@ public partial class MainWindow : Window
                 UiText.Get(
                     "TopologyRefreshInitialFailed");
 
+            DiagnosticStatusText.Text =
+                UiText.Get(
+                    "TopologyRefreshInitialFailed");
+
             return;
         }
 
@@ -355,6 +407,11 @@ public partial class MainWindow : Window
         AlertStatusText.Text =
             UiText.Format(
                 "AlertRefreshStale",
+                lastSuccessLocal);
+
+        DiagnosticStatusText.Text =
+            UiText.Format(
+                "DiagnosticRefreshStale",
                 lastSuccessLocal);
     }
 
@@ -617,6 +674,15 @@ public partial class MainWindow : Window
             DateTime.UtcNow,
             new MapNode[0],
             new MapLink[0]);
+    }
+
+    private static NetworkDiagnosticSnapshot
+        EmptyDiagnosticSnapshot()
+    {
+        return new NetworkDiagnosticSnapshot(
+            DateTime.UtcNow,
+            new DeviceDiagnostic[0],
+            new PhysicalLinkDiagnostic[0]);
     }
 
     public void ShowMap(MapSnapshot snapshot)
@@ -962,8 +1028,12 @@ public partial class MainWindow : Window
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapNodeCard"),
-                Child = content
+                Child = content,
+                Cursor = Cursors.Hand
             };
+
+        border.MouseLeftButtonDown +=
+            OnMapNodeMouseLeftButtonDown;
 
         return new MapNodeVisual(
             border,
@@ -996,11 +1066,17 @@ public partial class MainWindow : Window
                 node,
                 locations);
 
+        visual.Border.Tag =
+            node.DeviceId;
+
         var isHighlighted =
             node.DeviceId.HasValue &&
-            _highlightedDeviceId.HasValue &&
-            node.DeviceId.Value ==
-            _highlightedDeviceId.Value;
+            ((_highlightedDeviceId.HasValue &&
+              node.DeviceId.Value ==
+                  _highlightedDeviceId.Value) ||
+             (_selectedDeviceId.HasValue &&
+              node.DeviceId.Value ==
+                  _selectedDeviceId.Value));
 
         if (isHighlighted)
         {
@@ -1025,19 +1101,33 @@ public partial class MainWindow : Window
     private MapLinkVisual
         CreateLinkVisual()
     {
-        return new MapLinkVisual(
+        var line =
             new Line
             {
                 Style =
                     GetStyleResource(
-                        "NetLoom.Style.MapLink")
-            },
+                        "NetLoom.Style.MapLink"),
+                Cursor = Cursors.Hand
+            };
+
+        var label =
             new TextBlock
             {
                 Style =
                     GetStyleResource(
-                        "NetLoom.Style.MapLinkLabel")
-            });
+                        "NetLoom.Style.MapLinkLabel"),
+                Cursor = Cursors.Hand
+            };
+
+        line.MouseLeftButtonDown +=
+            OnMapLinkMouseLeftButtonDown;
+
+        label.MouseLeftButtonDown +=
+            OnMapLinkMouseLeftButtonDown;
+
+        return new MapLinkVisual(
+            line,
+            label);
     }
 
     private void UpdateLinkVisual(
@@ -1069,6 +1159,44 @@ public partial class MainWindow : Window
 
         visual.Label.Text =
             BuildLinkLabel(link);
+
+        visual.Line.Tag =
+            link.PhysicalLinkId;
+
+        visual.Label.Tag =
+            link.PhysicalLinkId;
+
+        var isSelected =
+            link.PhysicalLinkId.HasValue &&
+            _selectedPhysicalLinkId.HasValue &&
+            link.PhysicalLinkId.Value ==
+                _selectedPhysicalLinkId.Value;
+
+        if (isSelected)
+        {
+            visual.Line.SetResourceReference(
+                Shape.StrokeProperty,
+                "NetLoom.Brush.Selection");
+
+            visual.Line.StrokeThickness =
+                GetDoubleResource(
+                    "NetLoom.Map.LinkSelectedStrokeThickness");
+
+            visual.Label.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                "NetLoom.Brush.Selection");
+        }
+        else
+        {
+            visual.Line.ClearValue(
+                Shape.StrokeProperty);
+
+            visual.Line.ClearValue(
+                Shape.StrokeThicknessProperty);
+
+            visual.Label.ClearValue(
+                TextBlock.ForegroundProperty);
+        }
 
         PlaceLinkLabel(
             visual.Label,
@@ -1329,6 +1457,709 @@ public partial class MainWindow : Window
             : node.Label;
     }
 
+    private void OnMapNodeMouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var element =
+            sender as FrameworkElement;
+
+        if (element == null ||
+            !(element.Tag is Guid))
+        {
+            return;
+        }
+
+        _highlightedDeviceId = null;
+
+        _selectedDeviceId =
+            (Guid)element.Tag;
+
+        _selectedPhysicalLinkId =
+            null;
+
+        RedrawCurrentMap();
+        ShowSelectedDiagnostic();
+        e.Handled = true;
+    }
+
+    private void OnMapLinkMouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var element =
+            sender as FrameworkElement;
+
+        if (element == null ||
+            !(element.Tag is Guid))
+        {
+            return;
+        }
+
+        _highlightedDeviceId = null;
+
+        _selectedDeviceId =
+            null;
+
+        _selectedPhysicalLinkId =
+            (Guid)element.Tag;
+
+        RedrawCurrentMap();
+        ShowSelectedDiagnostic();
+        e.Handled = true;
+    }
+
+    private void OnMapCanvasMouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (!ReferenceEquals(
+            e.OriginalSource,
+            MapCanvas))
+        {
+            return;
+        }
+
+        _highlightedDeviceId = null;
+        _selectedDeviceId = null;
+        _selectedPhysicalLinkId = null;
+
+        RedrawCurrentMap();
+        ShowSelectedDiagnostic();
+    }
+
+    private void ShowSelectedDiagnostic()
+    {
+        if (_lastDiagnosticSnapshot == null)
+        {
+            ClearDiagnosticPanel(
+                "DiagnosticNothingSelected");
+            return;
+        }
+
+        if (_selectedDeviceId.HasValue)
+        {
+            var device =
+                _lastDiagnosticSnapshot.Devices
+                    .FirstOrDefault(
+                        item =>
+                            item.DeviceId ==
+                            _selectedDeviceId.Value);
+
+            if (device == null)
+            {
+                _selectedDeviceId = null;
+                ClearDiagnosticPanel(
+                    "DiagnosticSelectionMissing");
+                return;
+            }
+
+            ShowDeviceDiagnostic(device);
+            return;
+        }
+
+        if (_selectedPhysicalLinkId.HasValue)
+        {
+            var link =
+                _lastDiagnosticSnapshot.Links
+                    .FirstOrDefault(
+                        item =>
+                            item.PhysicalLinkId ==
+                            _selectedPhysicalLinkId.Value);
+
+            if (link == null)
+            {
+                _selectedPhysicalLinkId = null;
+                ClearDiagnosticPanel(
+                    "DiagnosticSelectionMissing");
+                return;
+            }
+
+            ShowLinkDiagnostic(link);
+            return;
+        }
+
+        ClearDiagnosticPanel(
+            "DiagnosticNothingSelected");
+    }
+
+    private void ClearDiagnosticPanel(
+        string statusKey)
+    {
+        DiagnosticStatusText.Text =
+            UiText.Get(statusKey);
+
+        DiagnosticElementTitleText.Text =
+            string.Empty;
+
+        DiagnosticElementSubtitleText.Text =
+            string.Empty;
+
+        DiagnosticPrimaryTitleText.Text =
+            string.Empty;
+
+        DiagnosticSecondaryTitleText.Text =
+            string.Empty;
+
+        DiagnosticTertiaryTitleText.Text =
+            string.Empty;
+
+        DiagnosticFieldsList.ItemsSource =
+            new DiagnosticFieldRow[0];
+
+        DiagnosticSecondaryList.ItemsSource =
+            new DiagnosticTextRow[0];
+
+        DiagnosticTertiaryList.ItemsSource =
+            new DiagnosticTextRow[0];
+    }
+
+    private void ShowDeviceDiagnostic(
+        DeviceDiagnostic device)
+    {
+        DiagnosticStatusText.Text =
+            UiText.Get("DiagnosticCurrent");
+
+        DiagnosticElementTitleText.Text =
+            string.IsNullOrWhiteSpace(
+                device.DisplayName)
+                ? UiText.Get("NodeUnknownLabel")
+                : device.DisplayName;
+
+        DiagnosticElementSubtitleText.Text =
+            string.IsNullOrWhiteSpace(
+                device.SecondaryText)
+                ? string.Empty
+                : device.SecondaryText;
+
+        DiagnosticPrimaryTitleText.Text =
+            UiText.Get("DiagnosticStateTitle");
+
+        var degradedCount =
+            device.Interfaces.Count(
+                item =>
+                    item.DegradationStatus ==
+                    DiagnosticDegradationStatus.Degraded);
+
+        DiagnosticFieldsList.ItemsSource =
+            new[]
+            {
+                Field(
+                    "DiagnosticFieldLocation",
+                    device.LocationName),
+                Field(
+                    "DiagnosticFieldLastSeen",
+                    LocalTimeText(
+                        device.LastSeenUtc)),
+                Field(
+                    "DiagnosticFieldLastResolved",
+                    LocalTimeText(
+                        device.LastResolvedUtc)),
+                Field(
+                    "DiagnosticFieldInterfaces",
+                    device.Interfaces.Count.ToString(
+                        CultureInfo.CurrentCulture)),
+                Field(
+                    "DiagnosticFieldDegradedInterfaces",
+                    degradedCount.ToString(
+                        CultureInfo.CurrentCulture))
+            };
+
+        DiagnosticSecondaryTitleText.Text =
+            UiText.Get("DiagnosticInterfacesTitle");
+
+        DiagnosticSecondaryList.ItemsSource =
+            device.Interfaces.Count == 0
+                ? new[]
+                {
+                    Row("DiagnosticNoInterfaces")
+                }
+                : device.Interfaces
+                    .Select(
+                        item =>
+                            new DiagnosticTextRow(
+                                BuildInterfaceDiagnosticText(
+                                    item)))
+                    .ToArray();
+
+        DiagnosticTertiaryTitleText.Text =
+            UiText.Get("DiagnosticConnectionsTitle");
+
+        var connectedLinks =
+            _lastDiagnosticSnapshot.Links
+                .Where(
+                    item =>
+                        item.DeviceAId == device.DeviceId ||
+                        item.DeviceBId == device.DeviceId)
+                .OrderBy(
+                    item =>
+                        PeerName(
+                            item,
+                            device.DeviceId),
+                    StringComparer.CurrentCultureIgnoreCase)
+                .Select(
+                    item =>
+                        new DiagnosticTextRow(
+                            BuildDeviceLinkDiagnosticText(
+                                device.DeviceId,
+                                item)))
+                .ToArray();
+
+        DiagnosticTertiaryList.ItemsSource =
+            connectedLinks.Length == 0
+                ? new[]
+                {
+                    Row("DiagnosticNoConnections")
+                }
+                : connectedLinks;
+    }
+
+    private void ShowLinkDiagnostic(
+        PhysicalLinkDiagnostic link)
+    {
+        DiagnosticStatusText.Text =
+            UiText.Get("DiagnosticCurrent");
+
+        DiagnosticElementTitleText.Text =
+            UiText.Format(
+                "DiagnosticLinkTitle",
+                DisplayDeviceName(
+                    link.DeviceAName),
+                DisplayDeviceName(
+                    link.DeviceBName));
+
+        DiagnosticElementSubtitleText.Text =
+            UiText.Format(
+                "DiagnosticLinkPorts",
+                DisplayInterfaceName(
+                    link.InterfaceAName),
+                DisplayInterfaceName(
+                    link.InterfaceBName));
+
+        DiagnosticPrimaryTitleText.Text =
+            UiText.Get("DiagnosticStateTitle");
+
+        DiagnosticFieldsList.ItemsSource =
+            new[]
+            {
+                Field(
+                    "DiagnosticFieldStrength",
+                    LinkStrengthText(
+                        link.Strength)),
+                Field(
+                    "DiagnosticFieldFreshness",
+                    FreshnessText(
+                        link.Freshness)),
+                Field(
+                    "DiagnosticFieldLastSeen",
+                    LocalTimeText(
+                        link.LastSeenUtc)),
+                Field(
+                    "DiagnosticFieldLastConfirmed",
+                    LocalTimeText(
+                        link.LastConfirmedUtc)),
+                Field(
+                    "DiagnosticFieldMedia",
+                    link.MediaType),
+                Field(
+                    "DiagnosticFieldSpeed",
+                    SpeedText(
+                        link.SpeedBps)),
+                Field(
+                    "DiagnosticFieldSourceSummary",
+                    link.SourceSummary),
+                Field(
+                    "DiagnosticFieldStpSideA",
+                    StpStateText(
+                        link.StpStateA)),
+                Field(
+                    "DiagnosticFieldStpSideB",
+                    StpStateText(
+                        link.StpStateB))
+            };
+
+        DiagnosticSecondaryTitleText.Text =
+            UiText.Get("DiagnosticImpactTitle");
+
+        DiagnosticSecondaryList.ItemsSource =
+            link.IsBridge
+                ? new[]
+                {
+                    new DiagnosticTextRow(
+                        UiText.Format(
+                            "DiagnosticImpactSideA",
+                            DisplayDeviceName(
+                                link.DeviceAName),
+                            UiText.FormatCount(
+                                "DiagnosticDeviceCount",
+                                link.SideADeviceCount))),
+                    new DiagnosticTextRow(
+                        UiText.Format(
+                            "DiagnosticImpactSideB",
+                            DisplayDeviceName(
+                                link.DeviceBName),
+                            UiText.FormatCount(
+                                "DiagnosticDeviceCount",
+                                link.SideBDeviceCount))),
+                    new DiagnosticTextRow(
+                        UiText.Format(
+                            "DiagnosticImpactPairs",
+                            link.SeparatedDevicePairCount))
+                }
+                : new[]
+                {
+                    Row("DiagnosticImpactAlternativePath")
+                };
+
+        DiagnosticTertiaryTitleText.Text =
+            UiText.Get("DiagnosticEvidenceTitle");
+
+        DiagnosticTertiaryList.ItemsSource =
+            link.Evidence.Count == 0
+                ? new[]
+                {
+                    Row("DiagnosticNoEvidence")
+                }
+                : link.Evidence
+                    .Select(
+                        item =>
+                            new DiagnosticTextRow(
+                                BuildEvidenceText(
+                                    item)))
+                    .ToArray();
+    }
+
+    private static DiagnosticFieldRow Field(
+        string labelKey,
+        string value)
+    {
+        return new DiagnosticFieldRow(
+            UiText.Get(labelKey),
+            string.IsNullOrWhiteSpace(value)
+                ? UiText.Get("DiagnosticNotAvailable")
+                : value);
+    }
+
+    private static DiagnosticTextRow Row(
+        string textKey)
+    {
+        return new DiagnosticTextRow(
+            UiText.Get(textKey));
+    }
+
+    private static string BuildInterfaceDiagnosticText(
+        InterfaceDiagnostic item)
+    {
+        return UiText.Format(
+            "DiagnosticInterfaceRow",
+            DisplayInterfaceName(
+                item.DisplayName),
+            item.IfIndex.HasValue
+                ? item.IfIndex.Value.ToString(
+                    CultureInfo.CurrentCulture)
+                : UiText.Get("DiagnosticNotAvailable"),
+            ValueOrNotAvailable(
+                item.AdminStatus),
+            ValueOrNotAvailable(
+                item.OperStatus),
+            StpStateText(
+                item.StpState),
+            DegradationText(
+                item),
+            LocalTimeText(
+                item.LastSeenUtc),
+            ValueOrNotAvailable(
+                item.MacAddress),
+            ValueOrNotAvailable(
+                SpeedText(
+                    item.SpeedBps)));
+    }
+
+    private static string BuildDeviceLinkDiagnosticText(
+        Guid selectedDeviceId,
+        PhysicalLinkDiagnostic link)
+    {
+        var selectedIsA =
+            link.DeviceAId == selectedDeviceId;
+
+        var peer =
+            selectedIsA
+                ? DisplayDeviceName(
+                    link.DeviceBName)
+                : DisplayDeviceName(
+                    link.DeviceAName);
+
+        var localPort =
+            selectedIsA
+                ? DisplayInterfaceName(
+                    link.InterfaceAName)
+                : DisplayInterfaceName(
+                    link.InterfaceBName);
+
+        var peerPort =
+            selectedIsA
+                ? DisplayInterfaceName(
+                    link.InterfaceBName)
+                : DisplayInterfaceName(
+                    link.InterfaceAName);
+
+        if (!link.IsBridge)
+        {
+            return UiText.Format(
+                "DiagnosticConnectionAlternate",
+                peer,
+                localPort,
+                peerPort,
+                FreshnessText(
+                    link.Freshness));
+        }
+
+        var across =
+            selectedIsA
+                ? link.SideBDeviceCount
+                : link.SideADeviceCount;
+
+        return UiText.Format(
+            "DiagnosticConnectionBridge",
+            peer,
+            localPort,
+            peerPort,
+            FreshnessText(
+                link.Freshness),
+            UiText.FormatCount(
+                "DiagnosticDeviceCount",
+                across));
+    }
+
+    private static string PeerName(
+        PhysicalLinkDiagnostic link,
+        Guid selectedDeviceId)
+    {
+        return link.DeviceAId == selectedDeviceId
+            ? DisplayDeviceName(
+                link.DeviceBName)
+            : DisplayDeviceName(
+                link.DeviceAName);
+    }
+
+    private static string BuildEvidenceText(
+        DiagnosticEvidenceItem evidence)
+    {
+        return UiText.Format(
+            "DiagnosticEvidenceRow",
+            EvidenceKindText(
+                evidence.Kind),
+            evidence.CapturedUtc.HasValue
+                ? LocalTimeText(
+                    evidence.CapturedUtc.Value)
+                : UiText.Get("DiagnosticNotAvailable"),
+            ValueOrNotAvailable(
+                evidence.SourceAddress),
+            ValueOrNotAvailable(
+                evidence.Detail),
+            RawAvailabilityText(
+                evidence.RawAvailability));
+    }
+
+    private static string RawAvailabilityText(
+        DiagnosticRawAvailability availability)
+    {
+        switch (availability)
+        {
+            case DiagnosticRawAvailability.NotApplicable:
+                return UiText.Get(
+                    "DiagnosticRawNotApplicable");
+            case DiagnosticRawAvailability.Available:
+                return UiText.Get(
+                    "DiagnosticRawAvailable");
+            case DiagnosticRawAvailability.Expired:
+                return UiText.Get(
+                    "DiagnosticRawExpired");
+            default:
+                return UiText.Get(
+                    "DiagnosticRawUnknown");
+        }
+    }
+
+    private static string DegradationText(
+        InterfaceDiagnostic item)
+    {
+        if (item.DegradationStatus ==
+            DiagnosticDegradationStatus.Unknown)
+        {
+            return UiText.Get(
+                "DiagnosticDegradationUnknown");
+        }
+
+        if (item.DegradationStatus ==
+            DiagnosticDegradationStatus.Healthy)
+        {
+            return UiText.Format(
+                "DiagnosticDegradationHealthyAt",
+                LocalTimeText(
+                    item.DegradationCapturedUtc));
+        }
+
+        var reasons =
+            item.DegradationReasons.Count == 0
+                ? UiText.Get(
+                    "DiagnosticDegradationReasonUnknown")
+                : string.Join(
+                    ", ",
+                    item.DegradationReasons
+                        .Select(
+                            DegradationReasonText));
+
+        return UiText.Format(
+            "DiagnosticDegradationDegradedAt",
+            reasons,
+            LocalTimeText(
+                item.DegradationCapturedUtc));
+    }
+
+    private static string DegradationReasonText(
+        DiagnosticDegradationReason reason)
+    {
+        switch (reason)
+        {
+            case DiagnosticDegradationReason.NoBaseline:
+                return UiText.Get(
+                    "DiagnosticDegradationReasonNoBaseline");
+            case DiagnosticDegradationReason.CounterDiscontinuity:
+                return UiText.Get(
+                    "DiagnosticDegradationReasonDiscontinuity");
+            case DiagnosticDegradationReason.IncompleteCounterData:
+                return UiText.Get(
+                    "DiagnosticDegradationReasonIncomplete");
+            case DiagnosticDegradationReason.ErrorRateThresholdExceeded:
+                return UiText.Get(
+                    "DiagnosticDegradationReasonErrors");
+            case DiagnosticDegradationReason.DiscardRateThresholdExceeded:
+                return UiText.Get(
+                    "DiagnosticDegradationReasonDiscards");
+            default:
+                return UiText.Get(
+                    "DiagnosticDegradationReasonUnknown");
+        }
+    }
+
+    private static string StpStateText(
+        StpTreePortState state)
+    {
+        switch (state)
+        {
+            case StpTreePortState.Disabled:
+                return UiText.Get("DiagnosticStpDisabled");
+            case StpTreePortState.Blocking:
+                return UiText.Get("DiagnosticStpBlocking");
+            case StpTreePortState.Listening:
+                return UiText.Get("DiagnosticStpListening");
+            case StpTreePortState.Learning:
+                return UiText.Get("DiagnosticStpLearning");
+            case StpTreePortState.Forwarding:
+                return UiText.Get("DiagnosticStpForwarding");
+            case StpTreePortState.Broken:
+                return UiText.Get("DiagnosticStpBroken");
+            default:
+                return UiText.Get("DiagnosticStpUnknown");
+        }
+    }
+
+    private static string LinkStrengthText(
+        DiagnosticLinkStrength strength)
+    {
+        switch (strength)
+        {
+            case DiagnosticLinkStrength.Confirmed:
+                return UiText.Get("DiagnosticStrengthConfirmed");
+            case DiagnosticLinkStrength.Observed:
+                return UiText.Get("DiagnosticStrengthObserved");
+            case DiagnosticLinkStrength.Inferred:
+                return UiText.Get("DiagnosticStrengthInferred");
+            default:
+                return UiText.Get("DiagnosticStrengthManual");
+        }
+    }
+
+    private static string EvidenceKindText(
+        MapEvidenceKind kind)
+    {
+        switch (kind)
+        {
+            case MapEvidenceKind.Lldp:
+                return UiText.Get("DiagnosticEvidenceLldp");
+            case MapEvidenceKind.Cdp:
+                return UiText.Get("DiagnosticEvidenceCdp");
+            case MapEvidenceKind.ArpFdbCorrelation:
+                return UiText.Get("DiagnosticEvidenceArpFdb");
+            default:
+                return UiText.Get("DiagnosticEvidenceManual");
+        }
+    }
+
+    private static string SpeedText(
+        long? speedBps)
+    {
+        if (!speedBps.HasValue)
+        {
+            return null;
+        }
+
+        if (speedBps.Value >= 1000000000L)
+        {
+            return UiText.Format(
+                "DiagnosticSpeedGbps",
+                speedBps.Value / 1000000000.0);
+        }
+
+        if (speedBps.Value >= 1000000L)
+        {
+            return UiText.Format(
+                "DiagnosticSpeedMbps",
+                speedBps.Value / 1000000.0);
+        }
+
+        return UiText.Format(
+            "DiagnosticSpeedBps",
+            speedBps.Value);
+    }
+
+    private static string LocalTimeText(
+        DateTime? value)
+    {
+        return value.HasValue
+            ? value.Value
+                .ToLocalTime()
+                .ToString(
+                    "G",
+                    CultureInfo.CurrentCulture)
+            : UiText.Get("DiagnosticNotAvailable");
+    }
+
+    private static string ValueOrNotAvailable(
+        string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? UiText.Get("DiagnosticNotAvailable")
+            : value;
+    }
+
+    private static string DisplayDeviceName(
+        string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? UiText.Get("NodeUnknownLabel")
+            : value;
+    }
+
+    private static string DisplayInterfaceName(
+        string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? UiText.Get("DiagnosticInterfaceUnknown")
+            : value;
+    }
+
     private async void OnLookupSearchClick(
         object sender,
         RoutedEventArgs e)
@@ -1529,7 +2360,14 @@ public partial class MainWindow : Window
             _highlightedDeviceId =
                 candidate.DeviceId.Value;
 
+            _selectedDeviceId =
+                candidate.DeviceId.Value;
+
+            _selectedPhysicalLinkId =
+                null;
+
             RedrawCurrentMap();
+            ShowSelectedDiagnostic();
             BringHighlightedDeviceIntoView();
         }
         else
@@ -1914,6 +2752,32 @@ public partial class MainWindow : Window
         public Line Line { get; }
 
         public TextBlock Label { get; }
+    }
+
+    private sealed class DiagnosticFieldRow
+    {
+        public DiagnosticFieldRow(
+            string label,
+            string value)
+        {
+            Label = label;
+            Value = value;
+        }
+
+        public string Label { get; }
+
+        public string Value { get; }
+    }
+
+    private sealed class DiagnosticTextRow
+    {
+        public DiagnosticTextRow(
+            string text)
+        {
+            Text = text;
+        }
+
+        public string Text { get; }
     }
 
     private sealed class LookupCandidateRow

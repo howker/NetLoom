@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Globalization;
+using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations.Stp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Locations;
@@ -74,6 +75,11 @@ namespace NetLoom.Persistence.Sqlite.Topology
                         connection,
                         transaction);
 
+                var degradationStates =
+                    ReadInterfaceDegradationStates(
+                        connection,
+                        transaction);
+
                 var links =
                     ReadPhysicalLinks(
                         connection,
@@ -81,6 +87,11 @@ namespace NetLoom.Persistence.Sqlite.Topology
 
                 var evidence =
                     ReadPhysicalLinkEvidence(
+                        connection,
+                        transaction);
+
+                var evidenceExplanations =
+                    ReadPhysicalLinkEvidenceExplanations(
                         connection,
                         transaction);
 
@@ -103,7 +114,9 @@ namespace NetLoom.Persistence.Sqlite.Topology
                     links,
                     evidence,
                     locations,
-                    latestStp);
+                    latestStp,
+                    degradationStates,
+                    evidenceExplanations);
             }
         }
 
@@ -271,6 +284,131 @@ ORDER BY id;";
                                 StringNullable(
                                     reader,
                                     18)));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+
+        private static IReadOnlyList<InterfaceDegradationState>
+            ReadInterfaceDegradationStates(
+                SQLiteConnection connection,
+                SQLiteTransaction transaction)
+        {
+            var result =
+                new List<InterfaceDegradationState>();
+
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.Transaction =
+                    transaction;
+
+                command.CommandText = @"
+SELECT
+    device_id,
+    if_index,
+    captured_utc,
+    status,
+    evidence_fingerprint
+FROM interface_degradation_states
+ORDER BY device_id, if_index;";
+
+                using (var reader =
+                    command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        result.Add(
+                            new InterfaceDegradationState(
+                                Guid.Parse(
+                                    reader.GetString(0)),
+                                reader.GetInt32(1),
+                                DateRequired(
+                                    reader,
+                                    2),
+                                (InterfaceDegradationStatus)
+                                    Convert.ToInt32(
+                                        reader.GetValue(3),
+                                        CultureInfo.InvariantCulture),
+                                reader.GetString(4)));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static IReadOnlyList<PhysicalLinkEvidenceExplanation>
+            ReadPhysicalLinkEvidenceExplanations(
+                SQLiteConnection connection,
+                SQLiteTransaction transaction)
+        {
+            var result =
+                new List<PhysicalLinkEvidenceExplanation>();
+
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.Transaction =
+                    transaction;
+
+                command.CommandText = @"
+SELECT
+    e.physical_link_id,
+    e.evidence_kind,
+    e.evidence_strength,
+    e.source_address,
+    e.slot_discriminator,
+    e.observation_id,
+    e.captured_utc,
+    e.detail,
+    CASE
+        WHEN e.observation_id IS NULL THEN 0
+        WHEN o.observation_id IS NULL THEN 2
+        ELSE 1
+    END AS raw_availability
+FROM physical_link_evidence_current e
+LEFT JOIN observations o
+    ON o.observation_id = e.observation_id
+ORDER BY
+    e.physical_link_id,
+    e.evidence_kind,
+    e.source_address,
+    e.slot_discriminator;";
+
+                using (var reader =
+                    command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var evidence =
+                            new PhysicalLinkEvidence(
+                                Guid.Parse(
+                                    reader.GetString(0)),
+                                Parse<PhysicalLinkEvidenceKind>(
+                                    reader.GetString(1)),
+                                Parse<PhysicalLinkEvidenceStrength>(
+                                    reader.GetString(2)),
+                                reader.GetString(3),
+                                reader.GetString(4),
+                                GuidNullable(
+                                    reader,
+                                    5),
+                                DateNullable(
+                                    reader,
+                                    6),
+                                StringNullable(
+                                    reader,
+                                    7));
+
+                        result.Add(
+                            new PhysicalLinkEvidenceExplanation(
+                                evidence,
+                                (ObservationRawAvailability)
+                                    reader.GetInt32(8)));
                     }
                 }
             }

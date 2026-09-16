@@ -399,4 +399,223 @@
   <data name="NodeUnknownLabel" xml:space="preserve">
     <value>Unknown device</value>
   </data>
+  <data name="DiagnosticTitle" xml:space="preserve">
+    <value>Selected element</value>
+  </data>
+  <data name="DiagnosticNothingSelected" xml:space="preserve">
+    <value>Select a device or link on the map.</value>
+  </data>
+  <data name="DiagnosticSelectionMissing" xml:space="preserve">
+    <value>The selected element is no longer present in the current map snapshot.</value>
+  </data>
+  <data name="DiagnosticCurrent" xml:space="preserve">
+    <value>Current diagnostics from the same topology refresh.</value>
+  </data>
+  <data name="DiagnosticRefreshStale" xml:space="preserve">
+    <value>Showing diagnostics from the last successful refresh at {0:G}.</value>
+  </data>
+  <data name="DiagnosticStateTitle" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="DiagnosticInterfacesTitle" xml:space="preserve">
+    <value>Interfaces</value>
+  </data>
+  <data name="DiagnosticConnectionsTitle" xml:space="preserve">
+    <value>Connections and impact</value>
+  </data>
+  <data name="DiagnosticImpactTitle" xml:space="preserve">
+    <value>Failure impact</value>
+  </data>
+  <data name="DiagnosticEvidenceTitle" xml:space="preserve">
+    <value>Evidence</value>
+  </data>
+  <data name="DiagnosticFieldLocation" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="DiagnosticFieldLastSeen" xml:space="preserve">
+    <value>Last seen</value>
+  </data>
+  <data name="DiagnosticFieldLastResolved" xml:space="preserve">
+    <value>Last resolved</value>
+  </data>
+  <data name="DiagnosticFieldLastConfirmed" xml:space="preserve">
+    <value>Last confirmed</value>
+  </data>
+  <data name="DiagnosticFieldInterfaces" xml:space="preserve">
+    <value>Interfaces</value>
+  </data>
+  <data name="DiagnosticFieldDegradedInterfaces" xml:space="preserve">
+    <value>Degraded interfaces</value>
+  </data>
+  <data name="DiagnosticFieldStrength" xml:space="preserve">
+    <value>Strength</value>
+  </data>
+  <data name="DiagnosticFieldFreshness" xml:space="preserve">
+    <value>Freshness</value>
+  </data>
+  <data name="DiagnosticFieldMedia" xml:space="preserve">
+    <value>Media</value>
+  </data>
+  <data name="DiagnosticFieldSpeed" xml:space="preserve">
+    <value>Speed</value>
+  </data>
+  <data name="DiagnosticFieldSourceSummary" xml:space="preserve">
+    <value>Source summary</value>
+  </data>
+  <data name="DiagnosticFieldStpSideA" xml:space="preserve">
+    <value>STP at side A</value>
+  </data>
+  <data name="DiagnosticFieldStpSideB" xml:space="preserve">
+    <value>STP at side B</value>
+  </data>
+  <data name="DiagnosticNotAvailable" xml:space="preserve">
+    <value>No data</value>
+  </data>
+  <data name="DiagnosticInterfaceUnknown" xml:space="preserve">
+    <value>Unknown interface</value>
+  </data>
+  <data name="DiagnosticNoInterfaces" xml:space="preserve">
+    <value>No materialized interfaces are available for this device.</value>
+  </data>
+  <data name="DiagnosticNoConnections" xml:space="preserve">
+    <value>No visible physical links are connected to this device.</value>
+  </data>
+  <data name="DiagnosticNoEvidence" xml:space="preserve">
+    <value>No current evidence is available for this link.</value>
+  </data>
+  <data name="DiagnosticLinkTitle" xml:space="preserve">
+    <value>{0} ↔ {1}</value>
+  </data>
+  <data name="DiagnosticLinkPorts" xml:space="preserve">
+    <value>{0} ↔ {1}</value>
+  </data>
+  <data name="DiagnosticInterfaceRow" xml:space="preserve">
+    <value>{0} • ifIndex {1} • admin {2} / oper {3} • STP {4} • degradation {5} • seen {6} • MAC {7} • speed {8}</value>
+  </data>
+  <data name="DiagnosticConnectionAlternate" xml:space="preserve">
+    <value>{0} • {1} ↔ {2} • {3} • alternate physical path exists</value>
+  </data>
+  <data name="DiagnosticConnectionBridge" xml:space="preserve">
+    <value>{0} • {1} ↔ {2} • {3} • opposite side: {4}</value>
+  </data>
+  <data name="DiagnosticImpactSideA" xml:space="preserve">
+    <value>Side {0}: {1}</value>
+  </data>
+  <data name="DiagnosticImpactSideB" xml:space="preserve">
+    <value>Side {0}: {1}</value>
+  </data>
+  <data name="DiagnosticImpactPairs" xml:space="preserve">
+    <value>Separated device pairs if this link fails: {0}</value>
+  </data>
+  <data name="DiagnosticImpactAlternativePath" xml:space="preserve">
+    <value>This link is not a graph bridge; an alternate physical path exists in the current materialized graph.</value>
+  </data>
+  <data name="DiagnosticEvidenceRow" xml:space="preserve">
+    <value>{0} • {1} • source {2} • {3} • raw: {4}</value>
+  </data>
+  <data name="DiagnosticDegradationUnknown" xml:space="preserve">
+    <value>not evaluated</value>
+  </data>
+  <data name="DiagnosticDegradationHealthyAt" xml:space="preserve">
+    <value>healthy at {0}</value>
+  </data>
+  <data name="DiagnosticDegradationDegradedAt" xml:space="preserve">
+    <value>degraded: {0}; evaluated at {1}</value>
+  </data>
+  <data name="DiagnosticDegradationReasonNoBaseline" xml:space="preserve">
+    <value>no baseline</value>
+  </data>
+  <data name="DiagnosticDegradationReasonDiscontinuity" xml:space="preserve">
+    <value>counter discontinuity</value>
+  </data>
+  <data name="DiagnosticDegradationReasonIncomplete" xml:space="preserve">
+    <value>incomplete counter data</value>
+  </data>
+  <data name="DiagnosticDegradationReasonErrors" xml:space="preserve">
+    <value>error rate threshold exceeded</value>
+  </data>
+  <data name="DiagnosticDegradationReasonDiscards" xml:space="preserve">
+    <value>discard rate threshold exceeded</value>
+  </data>
+  <data name="DiagnosticDegradationReasonUnknown" xml:space="preserve">
+    <value>unknown reason</value>
+  </data>
+  <data name="DiagnosticStpUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="DiagnosticStpDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="DiagnosticStpBlocking" xml:space="preserve">
+    <value>Blocking / Discarding</value>
+  </data>
+  <data name="DiagnosticStpListening" xml:space="preserve">
+    <value>Listening</value>
+  </data>
+  <data name="DiagnosticStpLearning" xml:space="preserve">
+    <value>Learning</value>
+  </data>
+  <data name="DiagnosticStpForwarding" xml:space="preserve">
+    <value>Forwarding</value>
+  </data>
+  <data name="DiagnosticStpBroken" xml:space="preserve">
+    <value>Broken</value>
+  </data>
+  <data name="DiagnosticStrengthConfirmed" xml:space="preserve">
+    <value>Confirmed</value>
+  </data>
+  <data name="DiagnosticStrengthObserved" xml:space="preserve">
+    <value>Observed</value>
+  </data>
+  <data name="DiagnosticStrengthInferred" xml:space="preserve">
+    <value>Inferred</value>
+  </data>
+  <data name="DiagnosticStrengthManual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="DiagnosticSpeedGbps" xml:space="preserve">
+    <value>{0:0.##} Gbit/s</value>
+  </data>
+  <data name="DiagnosticSpeedMbps" xml:space="preserve">
+    <value>{0:0.##} Mbit/s</value>
+  </data>
+  <data name="DiagnosticSpeedBps" xml:space="preserve">
+    <value>{0} bit/s</value>
+  </data>
+  <data name="DiagnosticRawNotApplicable" xml:space="preserve">
+    <value>Not applicable</value>
+  </data>
+  <data name="DiagnosticRawAvailable" xml:space="preserve">
+    <value>Raw observation retained</value>
+  </data>
+  <data name="DiagnosticRawExpired" xml:space="preserve">
+    <value>Raw observation expired by retention</value>
+  </data>
+  <data name="DiagnosticRawUnknown" xml:space="preserve">
+    <value>Raw observation state unknown</value>
+  </data>
+  <data name="DiagnosticDeviceCountOne" xml:space="preserve">
+    <value>{0} device</value>
+  </data>
+  <data name="DiagnosticDeviceCountFew" xml:space="preserve">
+    <value>{0} devices</value>
+  </data>
+  <data name="DiagnosticDeviceCountMany" xml:space="preserve">
+    <value>{0} devices</value>
+  </data>
+  <data name="DiagnosticDeviceCountOther" xml:space="preserve">
+    <value>{0} devices</value>
+  </data>
+  <data name="DiagnosticEvidenceLldp" xml:space="preserve">
+    <value>LLDP</value>
+  </data>
+  <data name="DiagnosticEvidenceCdp" xml:space="preserve">
+    <value>CDP</value>
+  </data>
+  <data name="DiagnosticEvidenceArpFdb" xml:space="preserve">
+    <value>ARP/FDB</value>
+  </data>
+  <data name="DiagnosticEvidenceManual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
 </root>

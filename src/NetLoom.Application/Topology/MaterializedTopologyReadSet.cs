@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations.Stp;
 using NetLoom.Domain.Locations;
 using NetLoom.Domain.Topology;
@@ -15,7 +16,9 @@ namespace NetLoom.Application.Topology
             IEnumerable<PhysicalLink> physicalLinks,
             IEnumerable<PhysicalLinkEvidence> physicalLinkEvidence,
             IEnumerable<Location> locations,
-            IEnumerable<BoundStpObservation> latestStp)
+            IEnumerable<BoundStpObservation> latestStp,
+            IEnumerable<InterfaceDegradationState> interfaceDegradationStates = null,
+            IEnumerable<PhysicalLinkEvidenceExplanation> physicalLinkEvidenceExplanations = null)
         {
             Devices = Copy(
                 devices,
@@ -40,6 +43,20 @@ namespace NetLoom.Application.Topology
             LatestStp = Copy(
                 latestStp,
                 nameof(latestStp));
+
+            InterfaceDegradationStates =
+                interfaceDegradationStates == null
+                    ? new InterfaceDegradationState[0]
+                    : Copy(
+                        interfaceDegradationStates,
+                        nameof(interfaceDegradationStates));
+
+            PhysicalLinkEvidenceExplanations =
+                physicalLinkEvidenceExplanations == null
+                    ? new PhysicalLinkEvidenceExplanation[0]
+                    : Copy(
+                        physicalLinkEvidenceExplanations,
+                        nameof(physicalLinkEvidenceExplanations));
         }
 
         public IReadOnlyList<TopologyDevice> Devices { get; }
@@ -54,6 +71,12 @@ namespace NetLoom.Application.Topology
         public IReadOnlyList<Location> Locations { get; }
 
         public IReadOnlyList<BoundStpObservation> LatestStp { get; }
+
+        public IReadOnlyList<InterfaceDegradationState>
+            InterfaceDegradationStates { get; }
+
+        public IReadOnlyList<PhysicalLinkEvidenceExplanation>
+            PhysicalLinkEvidenceExplanations { get; }
 
         private static IReadOnlyList<T> Copy<T>(
             IEnumerable<T> items,

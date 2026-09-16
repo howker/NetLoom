@@ -2,6 +2,7 @@ using System;
 using NetLoom.Application.Topology;
 using NetLoom.Application.TopologyRefresh;
 using NetLoom.Topology.Alerts;
+using NetLoom.Topology.Diagnostics;
 using NetLoom.Topology.Map;
 
 namespace NetLoom.Topology.Refresh
@@ -58,12 +59,20 @@ namespace NetLoom.Topology.Refresh
                 _readSetReader.Read(
                     normalizedInstanceId);
 
-            return new TopologyRefreshSnapshot(
+            var mapSnapshot =
                 _mapSnapshotProvider.GetSnapshot(
-                    readSet),
+                    readSet);
+
+            return new TopologyRefreshSnapshot(
+                mapSnapshot,
                 _alertSnapshotProvider.GetSnapshot(
                     normalizedInstanceId,
-                    readSet));
+                    readSet),
+                new MaterializedTopologyDiagnosticSnapshotProjector()
+                    .Project(
+                        readSet,
+                        mapSnapshot,
+                        normalizedInstanceId));
         }
     }
 }

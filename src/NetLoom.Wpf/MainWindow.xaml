@@ -50,42 +50,121 @@
                 Width="{DynamicResource NetLoom.Sidebar.Width}"
                 Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
                 BorderThickness="{DynamicResource NetLoom.Thickness.BorderLeft}">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Top">
-                    <TextBlock x:Name="LookupTitleText"
-                               Style="{StaticResource NetLoom.Style.SectionTitle}" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="3*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="2*" />
+                </Grid.RowDefinitions>
 
-                    <TextBlock x:Name="LookupQueryLabelText"
-                               Margin="{DynamicResource NetLoom.Thickness.FieldLabel}" />
+                <DockPanel Grid.Row="0">
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock x:Name="DiagnosticTitleText"
+                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                        <TextBlock x:Name="DiagnosticStatusText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
 
-                    <TextBox x:Name="LookupQueryTextBox"
-                             KeyDown="OnLookupQueryKeyDown" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock x:Name="DiagnosticElementTitleText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock x:Name="DiagnosticElementSubtitleText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                       TextWrapping="Wrap" />
 
-                    <Button x:Name="LookupSearchButton"
-                            Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                            HorizontalAlignment="Left"
-                            Click="OnLookupSearchClick" />
+                            <TextBlock x:Name="DiagnosticPrimaryTitleText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                            <ItemsControl x:Name="DiagnosticFieldsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                            <TextBlock Text="{Binding Label}"
+                                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                                            <TextBlock Text="{Binding Value}"
+                                                       FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
 
-                    <TextBlock x:Name="LookupStatusText"
+                            <TextBlock x:Name="DiagnosticSecondaryTitleText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                            <ItemsControl x:Name="DiagnosticSecondaryList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Text}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                   TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock x:Name="DiagnosticTertiaryTitleText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                            <ItemsControl x:Name="DiagnosticTertiaryList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Text}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                   TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <Border Grid.Row="1"
+                        BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                        BorderThickness="{DynamicResource NetLoom.Thickness.BorderTop}"
+                        Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+
+                <DockPanel Grid.Row="2">
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock x:Name="LookupTitleText"
+                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
+
+                        <TextBlock x:Name="LookupQueryLabelText"
+                                   Margin="{DynamicResource NetLoom.Thickness.FieldLabel}" />
+
+                        <TextBox x:Name="LookupQueryTextBox"
+                                 KeyDown="OnLookupQueryKeyDown" />
+
+                        <Button x:Name="LookupSearchButton"
+                                Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                HorizontalAlignment="Left"
+                                Click="OnLookupSearchClick" />
+
+                        <TextBlock x:Name="LookupStatusText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
+                                   TextWrapping="Wrap" />
+
+                        <TextBlock x:Name="LookupResultsLabelText"
+                                   Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                   Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="LookupDetailsText"
+                               DockPanel.Dock="Bottom"
                                Style="{StaticResource NetLoom.Style.MutedText}"
                                Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
                                TextWrapping="Wrap" />
 
-                    <TextBlock x:Name="LookupResultsLabelText"
-                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                </StackPanel>
-
-                <TextBlock x:Name="LookupDetailsText"
-                           DockPanel.Dock="Bottom"
-                           Style="{StaticResource NetLoom.Style.MutedText}"
-                           Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
-                           TextWrapping="Wrap" />
-
-                <ListBox x:Name="LookupResultsList"
-                         DisplayMemberPath="Summary"
-                         SelectionChanged="OnLookupSelectionChanged" />
-            </DockPanel>
+                    <ListBox x:Name="LookupResultsList"
+                             DisplayMemberPath="Summary"
+                             SelectionChanged="OnLookupSelectionChanged" />
+                </DockPanel>
+            </Grid>
         </Border>
 
         <Border DockPanel.Dock="Bottom"
@@ -125,6 +204,7 @@
                       VerticalScrollBarVisibility="Auto">
             <Canvas x:Name="MapCanvas"
                     Background="{DynamicResource NetLoom.Brush.Canvas}"
+                    MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
                     Width="{DynamicResource NetLoom.Map.CanvasWidth}"
                     Height="{DynamicResource NetLoom.Map.CanvasHeight}" />
         </ScrollViewer>

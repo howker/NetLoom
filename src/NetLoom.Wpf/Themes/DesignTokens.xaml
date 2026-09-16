@@ -57,6 +57,7 @@
     <sys:Double x:Key="NetLoom.Map.NodeWidth">190</sys:Double>
     <sys:Double x:Key="NetLoom.Map.NodeHeight">92</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">2</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">4</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelPlacementStep">24</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelCollisionMargin">8</sys:Double>
 </ResourceDictionary>

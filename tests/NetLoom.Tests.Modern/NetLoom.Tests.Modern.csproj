@@ -72,6 +72,10 @@
              Link="Shared\Sprint34JDeliveryStatusSchemaContractTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint34JDeliveryStatusCompatibilityTests.cs"
              Link="Shared\Sprint34JDeliveryStatusCompatibilityTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\MaterializedTopologyDiagnosticSnapshotProjectorTests.cs"
+             Link="Shared\MaterializedTopologyDiagnosticSnapshotProjectorTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint35DiagnosticReadSetTests.cs"
+             Link="Shared\Sprint35DiagnosticReadSetTests.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineCommandLine.cs"
              Link="Engine\EngineCommandLine.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineSmtpConfiguration.cs"
