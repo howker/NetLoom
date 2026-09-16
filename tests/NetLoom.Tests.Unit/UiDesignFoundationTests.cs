@@ -128,6 +128,51 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            MapNodeHeightKeepsFourDiagnosticLinesReadable()
+        {
+            var designTokensPath =
+                FindRepositoryFile(
+                    Path.Combine(
+                        "src",
+                        "NetLoom.Wpf",
+                        "Themes",
+                        "DesignTokens.xaml"));
+
+            var document =
+                XDocument.Load(
+                    designTokensPath,
+                    LoadOptions.PreserveWhitespace);
+
+            var nodeHeight =
+                document
+                    .Descendants()
+                    .Single(
+                        element =>
+                            string.Equals(
+                                (string)element.Attribute(
+                                    XamlNamespace +
+                                    "Key"),
+                                "NetLoom.Map.NodeHeight",
+                                StringComparison.Ordinal))
+                    .Value;
+
+            double parsedHeight;
+
+            Assert.IsTrue(
+                double.TryParse(
+                    nodeHeight,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out parsedHeight),
+                "NetLoom.Map.NodeHeight must be a numeric design token.");
+
+            Assert.IsTrue(
+                parsedHeight >= 108.0,
+                "Map node height is too small for title, secondary text, topology metadata and location text.");
+        }
+
+        [TestMethod]
+        public void
             MainWindowUsesSharedStylesInsteadOfLocalBrushAndSpacingLiterals()
         {
             var mainWindowXaml =
