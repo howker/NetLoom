@@ -74,6 +74,8 @@
              Link="Shared\Sprint34JDeliveryStatusCompatibilityTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\MaterializedTopologyDiagnosticSnapshotProjectorTests.cs"
              Link="Shared\MaterializedTopologyDiagnosticSnapshotProjectorTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint35BlastRadiusSymmetryTests.cs"
+             Link="Shared\Sprint35BlastRadiusSymmetryTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint35DiagnosticReadSetTests.cs"
              Link="Shared\Sprint35DiagnosticReadSetTests.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineCommandLine.cs"
