@@ -163,9 +163,10 @@ The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction revie
 
 This sequence is authoritative for the next product/UI work. The assistant does not invent or propose a different next Sprint while unchecked items remain here. Reordering is allowed only after a recurring real problem is recorded in `FRICTION_LOG.md`, the user explicitly approves the change, and the reason is recorded in `DECISIONS.md`. Blocking correctness, integrity, security or tooling fixes may interrupt the current work, but they do not become a new product Sprint and do not silently reorder this sequence.
 
-- [ ] UI foundation — preparation task, not a Sprint.
+- [x] UI foundation — preparation task, not a Sprint.
   - Operator outcome: the interface reads comfortably and new screens use shared design tokens instead of local `Brushes`, font sizes and spacing literals.
-  - Add shared colors, typography, spacing/geometry tokens, control styles and Light/Dark palettes before new UI surfaces are built.
+  - Completed: shared colors, typography, spacing/geometry tokens, control styles and Light/Dark palettes are in WPF resources; the current `MainWindow` and retained map visuals consume the shared foundation. The Light palette remains the current default; operator theme switching is not claimed yet.
+  - Technical acceptance: deterministic RED 1/1, targeted Unit 4/4, full regression modern 96/96 + legacy Unit 248/248 + Integration 92/92 + Snapshot 7/7; implementation commit `7cd0d72dc0328ed847290a101363d9a3837dd86f` is pushed.
 - [ ] Sprint 35 — diagnostic panel for the selected network element.
   - Operator outcome: click the problem and immediately understand what happened and whom it affects.
   - Surface degradation state from Sprint 34A–34E, freshness/last-seen evidence, STP/evidence details and existing graph failure impact/blast-radius data using readable device/port names rather than GUID-first output.

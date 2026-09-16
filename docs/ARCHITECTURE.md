@@ -79,17 +79,20 @@ The current WPF client is not declared frozen, and a future Web client is not de
 
 ADR-063 remains valid for WPF localization. A future client owns its own presentation resources; shared layers expose semantic codes/data rather than localized sentences.
 
-## UI reconciliation direction
+## UI reconciliation and design foundation
 
-Full visual-tree rebuild on every refresh is a current scalability/usability limitation.
+Stable visual reconciliation is implemented for map nodes and links using retained visual identity keyed by stable device/link identity. Unchanged visuals survive refresh instead of rebuilding the whole map visual tree.
 
-The next UI foundation candidate after stand acceptance is stable visual reconciliation keyed by `DeviceId` and `PhysicalLinkId`:
+The WPF presentation layer now has shared resource dictionaries for:
+- typography;
+- spacing and geometry;
+- control styles;
+- map node/link styles;
+- Light and Dark palette tokens.
 
-`Added / Removed / Changed / Unchanged`.
+The current `MainWindow` and retained map visuals consume the shared resources. Light is the current default palette; operator-controlled runtime theme switching is not claimed yet.
 
-Selection, zoom/pan, pinned/manual layout and unchanged visual identity should survive refresh.
-
-Animation is layered **after** this foundation. Presentation design tokens must cover colors, typography, spacing and geometry. Motion modes should support `Normal`, `Reduced` and `Off`.
+Interactive zoom/pan, pinned/manual layout persistence and semantic motion remain later committed UI work. Motion is layered on the retained-visual foundation and must support `Normal`, `Reduced` and `Off`; perpetual blinking is not part of the product language.
 
 ## Roadmap boundaries — not committed scope
 
