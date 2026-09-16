@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
@@ -79,10 +78,18 @@ namespace NetLoom.Engine
             }
         }
 
-        public static void SendAcceptanceProbe()
+        public static void SendAcceptanceProbe(
+            EngineSmtpConfiguration configuration)
         {
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(configuration));
+            }
+
             var adapter =
-                CreateAdapter();
+                CreateAdapter(
+                    configuration);
 
             if (adapter == null)
             {
@@ -114,97 +121,36 @@ namespace NetLoom.Engine
         private static IInterfaceDegradationDeliveryAdapter
             CreateAdapter()
         {
-            var host =
-                Environment.GetEnvironmentVariable(
-                    "NETLOOM_SMTP_HOST");
+            return CreateAdapter(
+                EngineSmtpConfiguration
+                    .ReadFromEnvironment());
+        }
 
-            var from =
-                Environment.GetEnvironmentVariable(
-                    "NETLOOM_SMTP_FROM");
-
-            var to =
-                Environment.GetEnvironmentVariable(
-                    "NETLOOM_SMTP_TO");
-
-            var portText =
-                Environment.GetEnvironmentVariable(
-                    "NETLOOM_SMTP_PORT");
-
-            var sslText =
-                Environment.GetEnvironmentVariable(
-                    "NETLOOM_SMTP_ENABLE_SSL");
-
-            var username =
-                Environment.GetEnvironmentVariable(
-                    "NETLOOM_SMTP_USERNAME");
-
-            var password =
-                Environment.GetEnvironmentVariable(
-                    "NETLOOM_SMTP_PASSWORD");
-
-            var anyConfigured =
-                !string.IsNullOrWhiteSpace(host) ||
-                !string.IsNullOrWhiteSpace(from) ||
-                !string.IsNullOrWhiteSpace(to) ||
-                !string.IsNullOrWhiteSpace(portText) ||
-                !string.IsNullOrWhiteSpace(sslText) ||
-                !string.IsNullOrWhiteSpace(username) ||
-                !string.IsNullOrWhiteSpace(password);
-
-            if (!anyConfigured)
+        private static IInterfaceDegradationDeliveryAdapter
+            CreateAdapter(
+                EngineSmtpConfiguration configuration)
+        {
+            if (!configuration.IsAnyConfigured)
             {
                 return null;
             }
 
-            if (string.IsNullOrWhiteSpace(host) ||
-                string.IsNullOrWhiteSpace(from) ||
-                string.IsNullOrWhiteSpace(to))
+            if (!configuration.IsReady)
             {
                 throw new InvalidOperationException(
-                    "SMTP_DELIVERY_REQUIRES_NETLOOM_SMTP_HOST_FROM_TO");
-            }
-
-            var port = 25;
-
-            if (!string.IsNullOrWhiteSpace(portText) &&
-                (!int.TryParse(
-                    portText,
-                    NumberStyles.Integer,
-                    CultureInfo.InvariantCulture,
-                    out port) ||
-                 port < 1 ||
-                 port > 65535))
-            {
-                throw new InvalidOperationException(
-                    "INVALID_NETLOOM_SMTP_PORT");
-            }
-
-            var enableSsl = false;
-
-            if (!string.IsNullOrWhiteSpace(sslText) &&
-                !bool.TryParse(
-                    sslText,
-                    out enableSsl))
-            {
-                throw new InvalidOperationException(
-                    "INVALID_NETLOOM_SMTP_ENABLE_SSL");
-            }
-
-            if (string.IsNullOrEmpty(username) !=
-                string.IsNullOrEmpty(password))
-            {
-                throw new InvalidOperationException(
-                    "SMTP_USERNAME_AND_PASSWORD_MUST_BE_CONFIGURED_TOGETHER");
+                    "SMTP_CONFIGURATION_NOT_READY reasons=" +
+                    configuration.ReasonSummary);
             }
 
             return new SmtpInterfaceDegradationDeliveryAdapter(
-                host,
-                port,
-                enableSsl,
-                from,
-                to,
-                username,
-                password);
+                configuration.Host,
+                configuration.Port,
+                configuration.EnableSsl,
+                configuration.From,
+                configuration.To,
+                configuration.Username,
+                configuration.Password);
         }
+
     }
 }

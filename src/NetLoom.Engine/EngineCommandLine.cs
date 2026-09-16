@@ -76,6 +76,20 @@ namespace NetLoom.Engine
                 };
             }
 
+            if (command == "smtp-readiness")
+            {
+                if (args.Length != 1)
+                {
+                    throw Invalid(
+                        "SMTP_READINESS_TAKES_NO_ARGUMENTS");
+                }
+
+                return new EngineCommandLine
+                {
+                    Command = command
+                };
+            }
+
             if (command == "smtp-acceptance")
             {
                 if (args.Length != 1)

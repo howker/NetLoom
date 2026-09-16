@@ -97,6 +97,12 @@ namespace NetLoom.Engine
             }
 
             if (options.Command ==
+                "smtp-readiness")
+            {
+                return RunSmtpReadiness();
+            }
+
+            if (options.Command ==
                 "smtp-acceptance")
             {
                 return RunSmtpAcceptance(
@@ -123,13 +129,46 @@ namespace NetLoom.Engine
                 hostLog);
         }
 
+        private static int RunSmtpReadiness()
+        {
+            var configuration =
+                EngineSmtpConfiguration
+                    .ReadFromEnvironment();
+
+            Console.WriteLine(
+                "SMTP-READINESS: " +
+                configuration.DiagnosticText);
+
+            return configuration.IsReady
+                ? 0
+                : 8;
+        }
+
         private static int RunSmtpAcceptance(
             HostLogManager hostLog)
         {
+            var configuration =
+                EngineSmtpConfiguration
+                    .ReadFromEnvironment();
+
+            if (!configuration.IsReady)
+            {
+                hostLog.Error(
+                    "SMTP_ACCEPTANCE_CONFIG_NOT_READY reasons=" +
+                    configuration.ReasonSummary);
+
+                Console.Error.WriteLine(
+                    "ERROR: SMTP_ACCEPTANCE_CONFIG_NOT_READY reasons=" +
+                    configuration.ReasonSummary);
+
+                return 5;
+            }
+
             try
             {
                 EngineInterfaceDegradationDelivery
-                    .SendAcceptanceProbe();
+                    .SendAcceptanceProbe(
+                        configuration);
 
                 hostLog.Info(
                     "SMTP_ACCEPTANCE_SUCCESS");

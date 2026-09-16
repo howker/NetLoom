@@ -74,6 +74,8 @@
              Link="Shared\Sprint34JDeliveryStatusCompatibilityTests.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineCommandLine.cs"
              Link="Engine\EngineCommandLine.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineSmtpConfiguration.cs"
+             Link="Engine\EngineSmtpConfiguration.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\SmtpInterfaceDegradationDeliveryAdapter.cs"
              Link="Engine\SmtpInterfaceDegradationDeliveryAdapter.cs" />
   </ItemGroup>
