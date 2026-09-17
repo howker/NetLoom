@@ -78,6 +78,10 @@
              Link="Shared\Sprint35BlastRadiusSymmetryTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint35DiagnosticReadSetTests.cs"
              Link="Shared\Sprint35DiagnosticReadSetTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\MapLayoutModelTests.cs"
+             Link="Shared\MapLayoutModelTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Integration\Sprint36MapLayoutStoreTests.cs"
+             Link="Shared\Sprint36MapLayoutStoreTests.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineCommandLine.cs"
              Link="Engine\EngineCommandLine.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineSmtpConfiguration.cs"

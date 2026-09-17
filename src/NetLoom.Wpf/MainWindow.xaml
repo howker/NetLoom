@@ -38,10 +38,37 @@
                                Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
                 </StackPanel>
 
-                <TextBlock Grid.Column="1"
-                           VerticalAlignment="Center"
-                           Style="{StaticResource NetLoom.Style.MutedText}"
-                           Text="NetLoom" />
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <CheckBox x:Name="MapLockSelectedCheckBox"
+                              VerticalAlignment="Center"
+                              IsEnabled="False"
+                              Checked="OnMapLockSelectedChanged"
+                              Unchecked="OnMapLockSelectedChanged" />
+
+                    <TextBlock x:Name="MapZoomLabelText"
+                               Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource NetLoom.Style.MutedText}" />
+
+                    <Button x:Name="MapZoomOutButton"
+                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Click="OnMapZoomOutClick" />
+
+                    <TextBlock x:Name="MapZoomValueText"
+                               Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                               VerticalAlignment="Center"
+                               FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
+
+                    <Button x:Name="MapZoomInButton"
+                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Click="OnMapZoomInClick" />
+
+                    <Button x:Name="MapMotionModeButton"
+                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Click="OnMapMotionModeClick" />
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -201,7 +228,11 @@
         <ScrollViewer x:Name="MapScrollViewer"
                       Background="{DynamicResource NetLoom.Brush.Canvas}"
                       HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Auto">
+                      VerticalScrollBarVisibility="Auto"
+                      PreviewMouseWheel="OnMapPreviewMouseWheel"
+                      PreviewMouseDown="OnMapPreviewMouseDown"
+                      PreviewMouseMove="OnMapPreviewMouseMove"
+                      PreviewMouseUp="OnMapPreviewMouseUp">
             <Canvas x:Name="MapCanvas"
                     Background="{DynamicResource NetLoom.Brush.Canvas}"
                     MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"

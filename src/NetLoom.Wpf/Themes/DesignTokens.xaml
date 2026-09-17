@@ -27,6 +27,7 @@
 
     <Thickness x:Key="NetLoom.Thickness.GapXsTop">0,4,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.GapSmTop">0,8,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.InlineGap">8,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FieldLabel">0,12,0,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.SubsectionLabel">0,14,0,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.StatusTop">0,10,0,0</Thickness>
@@ -56,6 +57,9 @@
     <sys:Double x:Key="NetLoom.Map.CanvasHeight">1000</sys:Double>
     <sys:Double x:Key="NetLoom.Map.NodeWidth">190</sys:Double>
     <sys:Double x:Key="NetLoom.Map.NodeHeight">108</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.ZoomMin">0.5</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.ZoomMax">2.0</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.ZoomStep">0.1</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">2</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">4</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelPlacementStep">24</sys:Double>

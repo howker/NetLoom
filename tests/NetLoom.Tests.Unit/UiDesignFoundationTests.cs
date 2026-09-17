@@ -106,11 +106,15 @@ namespace NetLoom.Tests.Unit
                     "NetLoom.Spacing.Lg",
                     "NetLoom.Spacing.Xl",
                     "NetLoom.Thickness.PanelPadding",
+                    "NetLoom.Thickness.InlineGap",
                     "NetLoom.Radius.Control",
                     "NetLoom.Radius.Panel",
                     "NetLoom.Radius.MapNode",
                     "NetLoom.Map.NodeWidth",
                     "NetLoom.Map.NodeHeight",
+                    "NetLoom.Map.ZoomMin",
+                    "NetLoom.Map.ZoomMax",
+                    "NetLoom.Map.ZoomStep",
                     "NetLoom.Map.LinkLabelPlacementStep",
                     "NetLoom.Map.LinkLabelCollisionMargin"
                 };

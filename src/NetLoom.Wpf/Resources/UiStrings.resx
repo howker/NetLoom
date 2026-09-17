@@ -618,4 +618,31 @@
   <data name="DiagnosticEvidenceManual" xml:space="preserve">
     <value>Manual</value>
   </data>
+  <data name="MapLockSelected" xml:space="preserve">
+    <value>Lock selected node</value>
+  </data>
+  <data name="MapZoomLabel" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="MapZoomOutAction" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="MapZoomInAction" xml:space="preserve">
+    <value>+</value>
+  </data>
+  <data name="MapMotionNormal" xml:space="preserve">
+    <value>Motion: normal</value>
+  </data>
+  <data name="MapMotionReduced" xml:space="preserve">
+    <value>Motion: reduced</value>
+  </data>
+  <data name="MapMotionOff" xml:space="preserve">
+    <value>Motion: off</value>
+  </data>
+  <data name="MapLayoutSaveFailed" xml:space="preserve">
+    <value>Map layout could not be saved. Details were written to the log.</value>
+  </data>
+  <data name="MapInteractionHint" xml:space="preserve">
+    <value>Mouse wheel: zoom. Middle-drag: pan. Drag an unlocked node to move it.</value>
+  </data>
 </root>

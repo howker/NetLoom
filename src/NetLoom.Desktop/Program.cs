@@ -4,6 +4,7 @@ using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Locations;
 using NetLoom.Persistence.Sqlite.Lookup;
+using NetLoom.Persistence.Sqlite.MapLayout;
 using NetLoom.Persistence.Sqlite.Stp;
 using NetLoom.Persistence.Sqlite.Topology;
 using NetLoom.Topology.Alerts;
@@ -92,6 +93,8 @@ namespace NetLoom.Desktop
                         new MainWindow(
                             refreshProvider,
                             new SqliteMacIpLookupReader(
+                                connectionFactory),
+                            new SqliteMapLayoutStore(
                                 connectionFactory)));
 
                 hostLog.Info(

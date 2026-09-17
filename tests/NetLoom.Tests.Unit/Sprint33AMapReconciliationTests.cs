@@ -270,6 +270,9 @@ namespace NetLoom.Tests.Unit
 
                     try
                     {
+                        DisableMotion(
+                            window);
+
                         var retained =
                             Node(
                                 "retained",
@@ -434,6 +437,26 @@ namespace NetLoom.Tests.Unit
             Assert.IsNotNull(title);
 
             return title;
+        }
+
+        private static void DisableMotion(
+            MainWindow window)
+        {
+            var motionButton =
+                window.FindName(
+                    "MapMotionModeButton")
+                as Button;
+
+            Assert.IsNotNull(
+                motionButton);
+
+            motionButton.RaiseEvent(
+                new System.Windows.RoutedEventArgs(
+                    Button.ClickEvent));
+
+            motionButton.RaiseEvent(
+                new System.Windows.RoutedEventArgs(
+                    Button.ClickEvent));
         }
 
         private static void RunOnSta(

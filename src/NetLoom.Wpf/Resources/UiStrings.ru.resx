@@ -618,4 +618,31 @@
   <data name="DiagnosticEvidenceManual" xml:space="preserve">
     <value>Ручное</value>
   </data>
+  <data name="MapLockSelected" xml:space="preserve">
+    <value>Зафиксировать выбранный узел</value>
+  </data>
+  <data name="MapZoomLabel" xml:space="preserve">
+    <value>Масштаб</value>
+  </data>
+  <data name="MapZoomOutAction" xml:space="preserve">
+    <value>-</value>
+  </data>
+  <data name="MapZoomInAction" xml:space="preserve">
+    <value>+</value>
+  </data>
+  <data name="MapMotionNormal" xml:space="preserve">
+    <value>Движение: обычное</value>
+  </data>
+  <data name="MapMotionReduced" xml:space="preserve">
+    <value>Движение: уменьшенное</value>
+  </data>
+  <data name="MapMotionOff" xml:space="preserve">
+    <value>Движение: выключено</value>
+  </data>
+  <data name="MapLayoutSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить расположение карты. Подробности записаны в журнал.</value>
+  </data>
+  <data name="MapInteractionHint" xml:space="preserve">
+    <value>Колесо мыши — масштаб; средняя кнопка с перетаскиванием — панорама; незакреплённый узел можно перетаскивать.</value>
+  </data>
 </root>

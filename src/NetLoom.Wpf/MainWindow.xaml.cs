@@ -8,10 +8,13 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using NetLoom.Application.Alerts;
 using NetLoom.Application.Lookup;
+using NetLoom.Application.MapLayout;
 using NetLoom.Application.TopologyMap;
 using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
@@ -19,6 +22,7 @@ using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.MapInteraction;
 
 namespace NetLoom.Wpf;
 
@@ -31,6 +35,9 @@ public partial class MainWindow : Window
     private readonly double _nodeHeight;
     private readonly double _linkLabelPlacementStep;
     private readonly double _linkLabelCollisionMargin;
+    private readonly double _zoomMin;
+    private readonly double _zoomMax;
+    private readonly double _zoomStep;
 
     private readonly TopologyRefreshCoordinator
         _topologyRefreshCoordinator;
@@ -50,6 +57,17 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer
         _refreshTimer;
 
+    private readonly IMapLayoutStore
+        _mapLayoutStore;
+
+    private readonly Guid
+        _mapLayoutId =
+            MapLayoutScope.PhysicalTopologyMapId;
+
+    private readonly Dictionary<Guid, MapDeviceLayout>
+        _persistedDeviceLayouts =
+            new Dictionary<Guid, MapDeviceLayout>();
+
     private readonly CancellationTokenSource
         _lifetimeCancellation =
             new CancellationTokenSource();
@@ -67,6 +85,35 @@ public partial class MainWindow : Window
         _linkVisualsByIdentity =
             new Dictionary<string, MapLinkVisual>(
                 StringComparer.Ordinal);
+
+    private MapMotionMode _motionMode =
+        MapMotionMode.Normal;
+
+    private double _zoom = 1.0;
+
+    private double _pendingPanX;
+
+    private double _pendingPanY;
+
+    private bool _suppressLockSelectedChange;
+
+    private MapNodeVisual _dragNodeVisual;
+
+    private Point _dragStartPoint;
+
+    private double _dragStartLeft;
+
+    private double _dragStartTop;
+
+    private bool _dragMoved;
+
+    private bool _isPanning;
+
+    private Point _panStartPoint;
+
+    private double _panStartHorizontalOffset;
+
+    private double _panStartVerticalOffset;
 
     private Guid? _highlightedDeviceId;
 
@@ -121,6 +168,17 @@ public partial class MainWindow : Window
     public MainWindow(
         ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
         IMacIpLookupReader lookupReader)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            new EmptyMapLayoutStore())
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMapLayoutStore mapLayoutStore)
     {
         InitializeComponent();
 
@@ -139,6 +197,25 @@ public partial class MainWindow : Window
         _linkLabelCollisionMargin =
             GetDoubleResource(
                 "NetLoom.Map.LinkLabelCollisionMargin");
+
+        _zoomMin =
+            GetDoubleResource(
+                "NetLoom.Map.ZoomMin");
+
+        _zoomMax =
+            GetDoubleResource(
+                "NetLoom.Map.ZoomMax");
+
+        _zoomStep =
+            GetDoubleResource(
+                "NetLoom.Map.ZoomStep");
+
+        _mapLayoutStore =
+            mapLayoutStore ??
+            throw new ArgumentNullException(
+                nameof(mapLayoutStore));
+
+        LoadPersistedMapLayout();
 
         _topologyRefreshCoordinator =
             new TopologyRefreshCoordinator(
@@ -176,6 +253,26 @@ public partial class MainWindow : Window
 
         Title = UiText.Get("WindowTitle");
         MapTitleText.Text = UiText.Get("MapTitle");
+
+        MapLockSelectedCheckBox.Content =
+            UiText.Get("MapLockSelected");
+
+        MapZoomLabelText.Text =
+            UiText.Get("MapZoomLabel");
+
+        MapZoomOutButton.Content =
+            UiText.Get("MapZoomOutAction");
+
+        MapZoomInButton.Content =
+            UiText.Get("MapZoomInAction");
+
+        MapScrollViewer.ToolTip =
+            UiText.Get("MapInteractionHint");
+
+        UpdateZoomText();
+        UpdateMotionModeText();
+        UpdateSelectedLayoutControl();
+        ApplyZoomTransform();
 
         DiagnosticTitleText.Text =
             UiText.Get("DiagnosticTitle");
@@ -253,6 +350,7 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
+        RestoreViewportOffsets();
         _refreshTimer.Start();
 
         await RefreshTopologyAsync();
@@ -262,6 +360,7 @@ public partial class MainWindow : Window
         object sender,
         EventArgs e)
     {
+        TrySaveViewportLayout();
         _refreshTimer.Stop();
 
         _topologyRefreshCoordinator.Close();
@@ -440,6 +539,275 @@ public partial class MainWindow : Window
         }
     }
 
+    private void LoadPersistedMapLayout()
+    {
+        try
+        {
+            var snapshot =
+                _mapLayoutStore.Load(
+                    _mapLayoutId);
+
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            _zoom =
+                ClampZoom(
+                    snapshot.Viewport.Zoom);
+
+            _pendingPanX =
+                Math.Max(
+                    0.0,
+                    snapshot.Viewport.PanX);
+
+            _pendingPanY =
+                Math.Max(
+                    0.0,
+                    snapshot.Viewport.PanY);
+
+            _persistedDeviceLayouts.Clear();
+
+            foreach (var item in snapshot.Devices)
+            {
+                _persistedDeviceLayouts[item.DeviceId] =
+                    item;
+            }
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                error.ToString());
+
+            _zoom = 1.0;
+            _pendingPanX = 0.0;
+            _pendingPanY = 0.0;
+            _persistedDeviceLayouts.Clear();
+        }
+    }
+
+    private void RestoreViewportOffsets()
+    {
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(
+                () =>
+                {
+                    MapScrollViewer
+                        .ScrollToHorizontalOffset(
+                            _pendingPanX);
+
+                    MapScrollViewer
+                        .ScrollToVerticalOffset(
+                            _pendingPanY);
+                }));
+    }
+
+    private void ApplyZoomTransform()
+    {
+        MapCanvas.LayoutTransform =
+            new ScaleTransform(
+                _zoom,
+                _zoom);
+    }
+
+    private double ClampZoom(
+        double value)
+    {
+        return Math.Max(
+            _zoomMin,
+            Math.Min(
+                _zoomMax,
+                value));
+    }
+
+    private void UpdateZoomText()
+    {
+        MapZoomValueText.Text =
+            Math.Round(
+                    _zoom * 100.0)
+                .ToString(
+                    "0",
+                    CultureInfo.CurrentCulture) +
+            "%";
+    }
+
+    private void ChangeZoom(
+        double requestedZoom)
+    {
+        var next =
+            ClampZoom(
+                requestedZoom);
+
+        if (Math.Abs(next - _zoom) < 0.0001)
+        {
+            return;
+        }
+
+        var viewportWidth =
+            MapScrollViewer.ViewportWidth;
+
+        var viewportHeight =
+            MapScrollViewer.ViewportHeight;
+
+        var logicalCenterX =
+            (_zoom <= 0.0)
+                ? 0.0
+                : (MapScrollViewer.HorizontalOffset +
+                   (viewportWidth / 2.0)) / _zoom;
+
+        var logicalCenterY =
+            (_zoom <= 0.0)
+                ? 0.0
+                : (MapScrollViewer.VerticalOffset +
+                   (viewportHeight / 2.0)) / _zoom;
+
+        _zoom = next;
+        ApplyZoomTransform();
+        UpdateZoomText();
+
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(
+                () =>
+                {
+                    MapScrollViewer
+                        .ScrollToHorizontalOffset(
+                            Math.Max(
+                                0.0,
+                                (logicalCenterX * _zoom) -
+                                (viewportWidth / 2.0)));
+
+                    MapScrollViewer
+                        .ScrollToVerticalOffset(
+                            Math.Max(
+                                0.0,
+                                (logicalCenterY * _zoom) -
+                                (viewportHeight / 2.0)));
+
+                    TrySaveViewportLayout();
+                }));
+    }
+
+    private void TrySaveViewportLayout()
+    {
+        try
+        {
+            _mapLayoutStore.SaveViewport(
+                _mapLayoutId,
+                new MapViewportLayout(
+                    _zoom,
+                    Math.Max(
+                        0.0,
+                        MapScrollViewer.HorizontalOffset),
+                    Math.Max(
+                        0.0,
+                        MapScrollViewer.VerticalOffset)));
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                error.ToString());
+
+            MapStatusText.Text =
+                UiText.Get(
+                    "MapLayoutSaveFailed");
+        }
+    }
+
+    private void TrySaveDeviceLayout(
+        MapNodeVisual visual)
+    {
+        if (visual == null ||
+            !visual.DeviceId.HasValue)
+        {
+            return;
+        }
+
+        var layout =
+            new MapDeviceLayout(
+                visual.DeviceId.Value,
+                NodeLeft(visual),
+                NodeTop(visual),
+                visual.IsLocked);
+
+        try
+        {
+            _mapLayoutStore.SaveDevice(
+                _mapLayoutId,
+                layout);
+
+            _persistedDeviceLayouts[
+                layout.DeviceId] =
+                layout;
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                error.ToString());
+
+            MapStatusText.Text =
+                UiText.Get(
+                    "MapLayoutSaveFailed");
+        }
+    }
+
+    private void UpdateMotionModeText()
+    {
+        switch (_motionMode)
+        {
+            case MapMotionMode.Normal:
+                MapMotionModeButton.Content =
+                    UiText.Get(
+                        "MapMotionNormal");
+                break;
+
+            case MapMotionMode.Reduced:
+                MapMotionModeButton.Content =
+                    UiText.Get(
+                        "MapMotionReduced");
+                break;
+
+            default:
+                MapMotionModeButton.Content =
+                    UiText.Get(
+                        "MapMotionOff");
+                break;
+        }
+    }
+
+    private void UpdateSelectedLayoutControl()
+    {
+        _suppressLockSelectedChange = true;
+
+        try
+        {
+            MapNodeVisual visual = null;
+
+            if (_selectedDeviceId.HasValue)
+            {
+                visual =
+                    _nodeVisualsByIdentity.Values
+                        .FirstOrDefault(
+                            item =>
+                                item.DeviceId.HasValue &&
+                                item.DeviceId.Value ==
+                                    _selectedDeviceId.Value);
+            }
+
+            MapLockSelectedCheckBox.IsEnabled =
+                visual != null;
+
+            MapLockSelectedCheckBox.IsChecked =
+                visual != null &&
+                visual.IsLocked;
+        }
+        finally
+        {
+            _suppressLockSelectedChange = false;
+        }
+    }
+
     private static string AlertSeverityText(
         TopologyAlertSeverity severity)
     {
@@ -596,6 +964,10 @@ public partial class MainWindow : Window
                 AlertTransitionText.Text =
                     UiText.Get(
                         "AlertTransitionFirstAppearance");
+
+                AnimatePulse(
+                    AlertTransitionText,
+                    MapMotionKind.AlertPulse);
                 break;
 
             case TopologyAlertTransitionKind.Changed:
@@ -615,6 +987,188 @@ public partial class MainWindow : Window
                     string.Empty;
                 break;
         }
+    }
+
+    private void AnimateAppearance(
+        UIElement element)
+    {
+        if (element == null)
+        {
+            return;
+        }
+
+        var duration =
+            MapMotionPolicy.Duration(
+                _motionMode,
+                MapMotionKind.Appearance);
+
+        if (duration == TimeSpan.Zero)
+        {
+            element.Opacity = 1.0;
+            return;
+        }
+
+        var start =
+            MapMotionPolicy.PulseOpacity(
+                _motionMode);
+
+        element.Opacity = start;
+
+        var animation =
+            new DoubleAnimation(
+                start,
+                1.0,
+                new Duration(duration));
+
+        animation.Completed +=
+            (sender, args) =>
+            {
+                element.BeginAnimation(
+                    UIElement.OpacityProperty,
+                    null);
+
+                element.Opacity = 1.0;
+            };
+
+        element.BeginAnimation(
+            UIElement.OpacityProperty,
+            animation,
+            HandoffBehavior.SnapshotAndReplace);
+    }
+
+    private void AnimateRemoval(
+        UIElement element,
+        Action remove)
+    {
+        if (element == null)
+        {
+            remove?.Invoke();
+            return;
+        }
+
+        var duration =
+            MapMotionPolicy.Duration(
+                _motionMode,
+                MapMotionKind.Disappearance);
+
+        if (duration == TimeSpan.Zero)
+        {
+            remove?.Invoke();
+            return;
+        }
+
+        var animation =
+            new DoubleAnimation(
+                element.Opacity,
+                0.0,
+                new Duration(duration));
+
+        animation.Completed +=
+            (sender, args) =>
+            {
+                element.BeginAnimation(
+                    UIElement.OpacityProperty,
+                    null);
+
+                element.Opacity = 1.0;
+                remove?.Invoke();
+            };
+
+        element.BeginAnimation(
+            UIElement.OpacityProperty,
+            animation,
+            HandoffBehavior.SnapshotAndReplace);
+    }
+
+    private void AnimatePulse(
+        UIElement element,
+        MapMotionKind kind)
+    {
+        if (element == null)
+        {
+            return;
+        }
+
+        var duration =
+            MapMotionPolicy.Duration(
+                _motionMode,
+                kind);
+
+        if (duration == TimeSpan.Zero)
+        {
+            element.Opacity = 1.0;
+            return;
+        }
+
+        var halfDuration =
+            TimeSpan.FromTicks(
+                Math.Max(
+                    1L,
+                    duration.Ticks / 2L));
+
+        var animation =
+            new DoubleAnimation(
+                1.0,
+                MapMotionPolicy.PulseOpacity(
+                    _motionMode),
+                new Duration(
+                    halfDuration))
+            {
+                AutoReverse = true
+            };
+
+        animation.Completed +=
+            (sender, args) =>
+            {
+                element.BeginAnimation(
+                    UIElement.OpacityProperty,
+                    null);
+
+                element.Opacity = 1.0;
+            };
+
+        element.BeginAnimation(
+            UIElement.OpacityProperty,
+            animation,
+            HandoffBehavior.SnapshotAndReplace);
+    }
+
+    private void StopAllMotion()
+    {
+        foreach (var visual in
+            _nodeVisualsByIdentity.Values)
+        {
+            StopMotion(
+                visual.Border);
+        }
+
+        foreach (var visual in
+            _linkVisualsByIdentity.Values)
+        {
+            StopMotion(
+                visual.Line);
+
+            StopMotion(
+                visual.Label);
+        }
+
+        StopMotion(
+            AlertTransitionText);
+    }
+
+    private static void StopMotion(
+        UIElement element)
+    {
+        if (element == null)
+        {
+            return;
+        }
+
+        element.BeginAnimation(
+            UIElement.OpacityProperty,
+            null);
+
+        element.Opacity = 1.0;
     }
 
     private double GetDoubleResource(
@@ -709,6 +1263,8 @@ public partial class MainWindow : Window
             snapshot.Links,
             nodes);
 
+        UpdateSelectedLayoutControl();
+
         if (snapshot.Nodes.Count == 0)
         {
             MapStatusText.Text =
@@ -751,6 +1307,7 @@ public partial class MainWindow : Window
             }
 
             MapNodeVisual visual;
+            var created = false;
 
             if (!_nodeVisualsByIdentity.TryGetValue(
                     identity,
@@ -759,17 +1316,35 @@ public partial class MainWindow : Window
                 visual =
                     CreateNodeVisual();
 
+                created = true;
+
                 _nodeVisualsByIdentity.Add(
                     identity,
                     visual);
 
+                var left = node.X;
+                var top = node.Y;
+
+                if (node.DeviceId.HasValue)
+                {
+                    MapDeviceLayout persisted;
+
+                    if (_persistedDeviceLayouts.TryGetValue(
+                            node.DeviceId.Value,
+                            out persisted))
+                    {
+                        left = persisted.X;
+                        top = persisted.Y;
+                    }
+                }
+
                 Canvas.SetLeft(
                     visual.Border,
-                    node.X);
+                    left);
 
                 Canvas.SetTop(
                     visual.Border,
-                    node.Y);
+                    top);
 
                 Panel.SetZIndex(
                     visual.Border,
@@ -803,6 +1378,12 @@ public partial class MainWindow : Window
                 visual,
                 node,
                 locations);
+
+            if (created)
+            {
+                AnimateAppearance(
+                    visual.Border);
+            }
         }
 
         foreach (var identity in
@@ -817,11 +1398,14 @@ public partial class MainWindow : Window
                 _nodeVisualsByIdentity[
                     identity];
 
-            MapCanvas.Children.Remove(
-                visual.Border);
-
             _nodeVisualsByIdentity.Remove(
                 identity);
+
+            AnimateRemoval(
+                visual.Border,
+                () =>
+                    MapCanvas.Children.Remove(
+                        visual.Border));
         }
 
         _nodeBordersByDeviceId.Clear();
@@ -892,6 +1476,7 @@ public partial class MainWindow : Window
             }
 
             MapLinkVisual visual;
+            var created = false;
 
             if (!_linkVisualsByIdentity.TryGetValue(
                     identity,
@@ -899,6 +1484,8 @@ public partial class MainWindow : Window
             {
                 visual =
                     CreateLinkVisual();
+
+                created = true;
 
                 _linkVisualsByIdentity.Add(
                     identity,
@@ -924,6 +1511,15 @@ public partial class MainWindow : Window
                 link,
                 sourceVisual,
                 targetVisual);
+
+            if (created)
+            {
+                AnimateAppearance(
+                    visual.Line);
+
+                AnimateAppearance(
+                    visual.Label);
+            }
         }
 
         foreach (var identity in
@@ -938,14 +1534,20 @@ public partial class MainWindow : Window
                 _linkVisualsByIdentity[
                     identity];
 
-            MapCanvas.Children.Remove(
-                visual.Line);
-
-            MapCanvas.Children.Remove(
-                visual.Label);
-
             _linkVisualsByIdentity.Remove(
                 identity);
+
+            AnimateRemoval(
+                visual.Line,
+                () =>
+                    MapCanvas.Children.Remove(
+                        visual.Line));
+
+            AnimateRemoval(
+                visual.Label,
+                () =>
+                    MapCanvas.Children.Remove(
+                        visual.Label));
         }
     }
 
@@ -1035,6 +1637,12 @@ public partial class MainWindow : Window
         border.MouseLeftButtonDown +=
             OnMapNodeMouseLeftButtonDown;
 
+        border.MouseMove +=
+            OnMapNodeMouseMove;
+
+        border.MouseLeftButtonUp +=
+            OnMapNodeMouseLeftButtonUp;
+
         return new MapNodeVisual(
             border,
             title,
@@ -1065,6 +1673,29 @@ public partial class MainWindow : Window
             BuildLocationText(
                 node,
                 locations);
+
+        visual.DeviceId =
+            node.DeviceId;
+
+        visual.IsLocked = false;
+
+        if (node.DeviceId.HasValue)
+        {
+            MapDeviceLayout persisted;
+
+            if (_persistedDeviceLayouts.TryGetValue(
+                    node.DeviceId.Value,
+                    out persisted))
+            {
+                visual.IsLocked =
+                    persisted.IsLocked;
+            }
+        }
+
+        visual.Border.Cursor =
+            visual.IsLocked
+                ? Cursors.Hand
+                : Cursors.SizeAll;
 
         visual.Border.Tag =
             node.DeviceId;
@@ -1136,6 +1767,11 @@ public partial class MainWindow : Window
         MapNodeVisual source,
         MapNodeVisual target)
     {
+        var freshnessChanged =
+            visual.LastFreshness.HasValue &&
+            visual.LastFreshness.Value !=
+                link.Freshness;
+
         var x1 =
             NodeLeft(source) +
             (_nodeWidth / 2.0);
@@ -1204,6 +1840,20 @@ public partial class MainWindow : Window
             y1,
             x2,
             y2);
+
+        if (freshnessChanged)
+        {
+            AnimatePulse(
+                visual.Line,
+                MapMotionKind.FreshnessChange);
+
+            AnimatePulse(
+                visual.Label,
+                MapMotionKind.FreshnessChange);
+        }
+
+        visual.LastFreshness =
+            link.Freshness;
     }
 
     private void PlaceLinkLabel(
@@ -1478,8 +2128,349 @@ public partial class MainWindow : Window
         _selectedPhysicalLinkId =
             null;
 
+        var visual =
+            _nodeVisualsByIdentity.Values
+                .FirstOrDefault(
+                    item =>
+                        ReferenceEquals(
+                            item.Border,
+                            element));
+
+        if (visual != null &&
+            !visual.IsLocked)
+        {
+            _dragNodeVisual =
+                visual;
+
+            _dragStartPoint =
+                e.GetPosition(
+                    MapCanvas);
+
+            _dragStartLeft =
+                NodeLeft(visual);
+
+            _dragStartTop =
+                NodeTop(visual);
+
+            _dragMoved = false;
+
+            visual.Border.CaptureMouse();
+        }
+
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
+        e.Handled = true;
+    }
+
+    private void OnMapNodeMouseMove(
+        object sender,
+        MouseEventArgs e)
+    {
+        var element =
+            sender as Border;
+
+        if (_dragNodeVisual == null ||
+            element == null ||
+            !ReferenceEquals(
+                _dragNodeVisual.Border,
+                element) ||
+            e.LeftButton !=
+                MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        var current =
+            e.GetPosition(
+                MapCanvas);
+
+        var deltaX =
+            current.X -
+            _dragStartPoint.X;
+
+        var deltaY =
+            current.Y -
+            _dragStartPoint.Y;
+
+        if (!_dragMoved &&
+            Math.Abs(deltaX) <
+                SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(deltaY) <
+                SystemParameters.MinimumVerticalDragDistance)
+        {
+            return;
+        }
+
+        _dragMoved = true;
+
+        var canvasWidth =
+            MapCanvas.ActualWidth > 0.0
+                ? MapCanvas.ActualWidth
+                : MapCanvas.Width;
+
+        var canvasHeight =
+            MapCanvas.ActualHeight > 0.0
+                ? MapCanvas.ActualHeight
+                : MapCanvas.Height;
+
+        var left =
+            Math.Max(
+                0.0,
+                Math.Min(
+                    Math.Max(
+                        0.0,
+                        canvasWidth -
+                        _nodeWidth),
+                    _dragStartLeft +
+                    deltaX));
+
+        var top =
+            Math.Max(
+                0.0,
+                Math.Min(
+                    Math.Max(
+                        0.0,
+                        canvasHeight -
+                        _nodeHeight),
+                    _dragStartTop +
+                    deltaY));
+
+        Canvas.SetLeft(
+            _dragNodeVisual.Border,
+            left);
+
+        Canvas.SetTop(
+            _dragNodeVisual.Border,
+            top);
+
+        UpdateLinksForCurrentNodePositions();
+        e.Handled = true;
+    }
+
+    private void OnMapNodeMouseLeftButtonUp(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (_dragNodeVisual == null)
+        {
+            return;
+        }
+
+        var visual =
+            _dragNodeVisual;
+
+        _dragNodeVisual = null;
+
+        if (visual.Border.IsMouseCaptured)
+        {
+            visual.Border.ReleaseMouseCapture();
+        }
+
+        if (_dragMoved)
+        {
+            TrySaveDeviceLayout(
+                visual);
+        }
+
+        _dragMoved = false;
+        e.Handled = true;
+    }
+
+    private void UpdateLinksForCurrentNodePositions()
+    {
+        if (_lastMapSnapshot == null)
+        {
+            return;
+        }
+
+        var nodes =
+            _lastMapSnapshot.Nodes
+                .ToDictionary(
+                    node => node.Key,
+                    StringComparer.Ordinal);
+
+        ReconcileLinks(
+            _lastMapSnapshot.Links,
+            nodes);
+    }
+
+    private void OnMapZoomOutClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ChangeZoom(
+            _zoom -
+            _zoomStep);
+    }
+
+    private void OnMapZoomInClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ChangeZoom(
+            _zoom +
+            _zoomStep);
+    }
+
+    private void OnMapMotionModeClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        switch (_motionMode)
+        {
+            case MapMotionMode.Normal:
+                _motionMode =
+                    MapMotionMode.Reduced;
+                break;
+
+            case MapMotionMode.Reduced:
+                _motionMode =
+                    MapMotionMode.Off;
+                StopAllMotion();
+                break;
+
+            default:
+                _motionMode =
+                    MapMotionMode.Normal;
+                break;
+        }
+
+        UpdateMotionModeText();
+    }
+
+    private void OnMapLockSelectedChanged(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (_suppressLockSelectedChange ||
+            !_selectedDeviceId.HasValue)
+        {
+            return;
+        }
+
+        var visual =
+            _nodeVisualsByIdentity.Values
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId.HasValue &&
+                        item.DeviceId.Value ==
+                            _selectedDeviceId.Value);
+
+        if (visual == null)
+        {
+            return;
+        }
+
+        visual.IsLocked =
+            MapLockSelectedCheckBox.IsChecked ==
+            true;
+
+        visual.Border.Cursor =
+            visual.IsLocked
+                ? Cursors.Hand
+                : Cursors.SizeAll;
+
+        TrySaveDeviceLayout(
+            visual);
+    }
+
+    private void OnMapPreviewMouseWheel(
+        object sender,
+        MouseWheelEventArgs e)
+    {
+        ChangeZoom(
+            _zoom +
+            (e.Delta > 0
+                ? _zoomStep
+                : -_zoomStep));
+
+        e.Handled = true;
+    }
+
+    private void OnMapPreviewMouseDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton !=
+            MouseButton.Middle)
+        {
+            return;
+        }
+
+        _isPanning = true;
+        _panStartPoint =
+            e.GetPosition(
+                MapScrollViewer);
+
+        _panStartHorizontalOffset =
+            MapScrollViewer.HorizontalOffset;
+
+        _panStartVerticalOffset =
+            MapScrollViewer.VerticalOffset;
+
+        MapScrollViewer.Cursor =
+            Cursors.SizeAll;
+
+        MapScrollViewer.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OnMapPreviewMouseMove(
+        object sender,
+        MouseEventArgs e)
+    {
+        if (!_isPanning ||
+            e.MiddleButton !=
+                MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        var current =
+            e.GetPosition(
+                MapScrollViewer);
+
+        MapScrollViewer
+            .ScrollToHorizontalOffset(
+                Math.Max(
+                    0.0,
+                    _panStartHorizontalOffset -
+                    (current.X -
+                     _panStartPoint.X)));
+
+        MapScrollViewer
+            .ScrollToVerticalOffset(
+                Math.Max(
+                    0.0,
+                    _panStartVerticalOffset -
+                    (current.Y -
+                     _panStartPoint.Y)));
+
+        e.Handled = true;
+    }
+
+    private void OnMapPreviewMouseUp(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        if (!_isPanning ||
+            e.ChangedButton !=
+                MouseButton.Middle)
+        {
+            return;
+        }
+
+        _isPanning = false;
+
+        if (MapScrollViewer.IsMouseCaptured)
+        {
+            MapScrollViewer.ReleaseMouseCapture();
+        }
+
+        MapScrollViewer.Cursor = null;
+
+        TrySaveViewportLayout();
         e.Handled = true;
     }
 
@@ -1506,6 +2497,7 @@ public partial class MainWindow : Window
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
         e.Handled = true;
     }
 
@@ -1526,6 +2518,7 @@ public partial class MainWindow : Window
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
     }
 
     private void ShowSelectedDiagnostic()
@@ -1612,6 +2605,8 @@ public partial class MainWindow : Window
 
         DiagnosticTertiaryList.ItemsSource =
             new DiagnosticTextRow[0];
+
+        UpdateSelectedLayoutControl();
     }
 
     private void ShowDeviceDiagnostic(
@@ -2368,6 +3363,7 @@ public partial class MainWindow : Window
 
             RedrawCurrentMap();
             ShowSelectedDiagnostic();
+            UpdateSelectedLayoutControl();
             BringHighlightedDeviceIntoView();
         }
         else
@@ -2391,6 +3387,10 @@ public partial class MainWindow : Window
             out border))
         {
             border.BringIntoView();
+
+            AnimatePulse(
+                border,
+                MapMotionKind.SearchFocus);
         }
     }
 
@@ -2737,6 +3737,10 @@ public partial class MainWindow : Window
         public TextBlock TopologyMetadata { get; }
 
         public TextBlock Location { get; }
+
+        public Guid? DeviceId { get; set; }
+
+        public bool IsLocked { get; set; }
     }
 
     private sealed class MapLinkVisual
@@ -2752,6 +3756,8 @@ public partial class MainWindow : Window
         public Line Line { get; }
 
         public TextBlock Label { get; }
+
+        public MapFreshness? LastFreshness { get; set; }
     }
 
     private sealed class DiagnosticFieldRow
@@ -2878,6 +3884,34 @@ public partial class MainWindow : Window
         public MapSnapshot GetSnapshot()
         {
             return EmptySnapshot();
+        }
+    }
+
+    private sealed class EmptyMapLayoutStore :
+        IMapLayoutStore
+    {
+        public MapLayoutSnapshot Load(
+            Guid mapId)
+        {
+            return new MapLayoutSnapshot(
+                mapId,
+                new MapViewportLayout(
+                    1.0,
+                    0.0,
+                    0.0),
+                new MapDeviceLayout[0]);
+        }
+
+        public void SaveViewport(
+            Guid mapId,
+            MapViewportLayout viewport)
+        {
+        }
+
+        public void SaveDevice(
+            Guid mapId,
+            MapDeviceLayout deviceLayout)
+        {
         }
     }
 
