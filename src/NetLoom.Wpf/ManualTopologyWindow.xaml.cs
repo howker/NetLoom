@@ -31,6 +31,17 @@ namespace NetLoom.Wpf
 
         public ManualTopologyWindow(
             IManualTopologyService service)
+            : this(
+                service,
+                null,
+                null)
+        {
+        }
+
+        public ManualTopologyWindow(
+            IManualTopologyService service,
+            Guid? initialDeviceId,
+            Guid? initialLinkId)
         {
             _service = service ??
                 throw new ArgumentNullException(
@@ -44,6 +55,27 @@ namespace NetLoom.Wpf
             ManualTopologyStatusText.Text =
                 UiText.Get(
                     "ManualTopologyStatusReady");
+
+            if (initialDeviceId.HasValue)
+            {
+                ManualTopologyTabs.SelectedItem =
+                    ManualDevicesTab;
+
+                SelectDevice(
+                    initialDeviceId.Value);
+
+                BeginDeviceEdit();
+            }
+            else if (initialLinkId.HasValue)
+            {
+                ManualTopologyTabs.SelectedItem =
+                    ManualLinksTab;
+
+                SelectLink(
+                    initialLinkId.Value);
+
+                BeginLinkEdit();
+            }
         }
 
         public bool HasChanges { get; private set; }
@@ -743,6 +775,15 @@ namespace NetLoom.Wpf
                         id);
                     SelectPortDevice(
                         id);
+
+                    ManualTopologyTabs.SelectedItem =
+                        ManualPortsTab;
+
+                    OnNewPortClick(
+                        this,
+                        new RoutedEventArgs());
+
+                    ManualPortNameTextBox.Focus();
                 },
                 "ManualTopologyStatusDeviceCreated");
         }

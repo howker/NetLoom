@@ -1884,6 +1884,83 @@ public partial class MainWindow : Window
             link.Key;
     }
 
+    private ContextMenu CreateMapElementContextMenu(
+        FrameworkElement target,
+        RoutedEventHandler editHandler,
+        RoutedEventHandler deleteHandler,
+        RoutedEventHandler openedHandler)
+    {
+        var edit =
+            new MenuItem
+            {
+                Header =
+                    UiText.Get(
+                        "ManualTopologyEdit"),
+                Tag = target
+            };
+
+        edit.Click +=
+            editHandler;
+
+        var delete =
+            new MenuItem
+            {
+                Header =
+                    UiText.Get(
+                        "ManualTopologyDelete"),
+                Tag = target
+            };
+
+        delete.Click +=
+            deleteHandler;
+
+        var menu =
+            new ContextMenu
+            {
+                Tag = target
+            };
+
+        menu.Items.Add(edit);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(delete);
+
+        menu.Opened +=
+            openedHandler;
+
+        return menu;
+    }
+
+    private static void UpdateMapElementContextMenuState(
+        ContextMenu menu,
+        bool canChange)
+    {
+        if (menu == null ||
+            menu.Items.Count < 3)
+        {
+            return;
+        }
+
+        var edit =
+            menu.Items[0]
+                as MenuItem;
+
+        var delete =
+            menu.Items[2]
+                as MenuItem;
+
+        if (edit != null)
+        {
+            edit.IsEnabled =
+                canChange;
+        }
+
+        if (delete != null)
+        {
+            delete.IsEnabled =
+                canChange;
+        }
+    }
+
     private MapNodeVisual
         CreateNodeVisual()
     {
@@ -1900,7 +1977,9 @@ public partial class MainWindow : Window
             {
                 Style =
                     GetStyleResource(
-                        "NetLoom.Style.MapNodeSecondary")
+                        "NetLoom.Style.MapNodeSecondary"),
+                TextWrapping =
+                    TextWrapping.Wrap
             };
 
         var topologyMetadata =
@@ -1908,7 +1987,9 @@ public partial class MainWindow : Window
             {
                 Style =
                     GetStyleResource(
-                        "NetLoom.Style.MapNodeMeta")
+                        "NetLoom.Style.MapNodeMeta"),
+                TextWrapping =
+                    TextWrapping.Wrap
             };
 
         var locationText =
@@ -1916,7 +1997,9 @@ public partial class MainWindow : Window
             {
                 Style =
                     GetStyleResource(
-                        "NetLoom.Style.MapNodeMeta")
+                        "NetLoom.Style.MapNodeMeta"),
+                TextWrapping =
+                    TextWrapping.Wrap
             };
 
         var lockBadge =
@@ -1960,17 +2043,31 @@ public partial class MainWindow : Window
                     GetStyleResource(
                         "NetLoom.Style.MapNodeCard"),
                 Child = content,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Focusable = true
             };
+
+        border.ContextMenu =
+            CreateMapElementContextMenu(
+                border,
+                OnMapNodeContextEditClick,
+                OnMapNodeContextDeleteClick,
+                OnMapNodeContextMenuOpened);
 
         border.MouseLeftButtonDown +=
             OnMapNodeMouseLeftButtonDown;
+
+        border.MouseRightButtonDown +=
+            OnMapNodeMouseRightButtonDown;
 
         border.MouseMove +=
             OnMapNodeMouseMove;
 
         border.MouseLeftButtonUp +=
             OnMapNodeMouseLeftButtonUp;
+
+        border.KeyDown +=
+            OnMapNodeKeyDown;
 
         return new MapNodeVisual(
             border,
@@ -2006,6 +2103,10 @@ public partial class MainWindow : Window
 
         visual.DeviceId =
             node.DeviceId;
+
+        visual.IsManual =
+            node.Origin ==
+            MapNodeOrigin.Manual;
 
         visual.IsLocked = false;
 
@@ -2066,7 +2167,8 @@ public partial class MainWindow : Window
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapLink"),
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Focusable = true
             };
 
         var label =
@@ -2075,14 +2177,41 @@ public partial class MainWindow : Window
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapLinkLabel"),
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Focusable = true
             };
+
+        line.ContextMenu =
+            CreateMapElementContextMenu(
+                line,
+                OnMapLinkContextEditClick,
+                OnMapLinkContextDeleteClick,
+                OnMapLinkContextMenuOpened);
+
+        label.ContextMenu =
+            CreateMapElementContextMenu(
+                label,
+                OnMapLinkContextEditClick,
+                OnMapLinkContextDeleteClick,
+                OnMapLinkContextMenuOpened);
 
         line.MouseLeftButtonDown +=
             OnMapLinkMouseLeftButtonDown;
 
         label.MouseLeftButtonDown +=
             OnMapLinkMouseLeftButtonDown;
+
+        line.MouseRightButtonDown +=
+            OnMapLinkMouseRightButtonDown;
+
+        label.MouseRightButtonDown +=
+            OnMapLinkMouseRightButtonDown;
+
+        line.KeyDown +=
+            OnMapLinkKeyDown;
+
+        label.KeyDown +=
+            OnMapLinkKeyDown;
 
         return new MapLinkVisual(
             line,
@@ -2434,7 +2563,10 @@ public partial class MainWindow : Window
             visual.IsLocked
                 ? UiText.Get(
                     "MapNodeLockedHint")
-                : null;
+                : visual.IsManual
+                    ? UiText.Get(
+                        "ManualTopologyMapNodeHint")
+                    : null;
     }
 
     private static string DisplayNodeLabel(
@@ -2455,7 +2587,7 @@ public partial class MainWindow : Window
             : node.Label;
     }
 
-    private void OnMapNodeMouseLeftButtonDown(
+    private async void OnMapNodeMouseLeftButtonDown(
         object sender,
         MouseButtonEventArgs e)
     {
@@ -2468,13 +2600,44 @@ public partial class MainWindow : Window
             return;
         }
 
+        var deviceId =
+            (Guid)element.Tag;
+
         _highlightedDeviceId = null;
 
         _selectedDeviceId =
-            (Guid)element.Tag;
+            deviceId;
 
         _selectedPhysicalLinkId =
             null;
+
+        element.Focus();
+
+        RedrawCurrentMap();
+        ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
+
+        if (e.ClickCount >= 2)
+        {
+            _dragNodeVisual = null;
+            _dragMoved = false;
+
+            if (element.IsMouseCaptured)
+            {
+                element.ReleaseMouseCapture();
+            }
+
+            if (IsManualDevice(deviceId))
+            {
+                e.Handled = true;
+
+                await OpenManualTopologyEditorAsync(
+                    deviceId,
+                    null);
+            }
+
+            return;
+        }
 
         var visual =
             _nodeVisualsByIdentity.Values
@@ -2505,10 +2668,115 @@ public partial class MainWindow : Window
             visual.Border.CaptureMouse();
         }
 
+        e.Handled = true;
+    }
+
+    private void OnMapNodeMouseRightButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var element =
+            sender as FrameworkElement;
+
+        if (element == null ||
+            !(element.Tag is Guid))
+        {
+            return;
+        }
+
+        _highlightedDeviceId = null;
+        _selectedDeviceId = (Guid)element.Tag;
+        _selectedPhysicalLinkId = null;
+
+        element.Focus();
+
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
+    }
+
+    private void OnMapNodeContextMenuOpened(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var menu =
+            sender as ContextMenu;
+
+        var target =
+            menu == null
+                ? null
+                : menu.Tag as FrameworkElement;
+
+        var canChange =
+            target != null &&
+            target.Tag is Guid &&
+            IsManualDevice(
+                (Guid)target.Tag);
+
+        UpdateMapElementContextMenuState(
+            menu,
+            canChange);
+    }
+
+    private async void OnMapNodeContextEditClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var deviceId =
+            MapElementIdFromMenuItem(sender);
+
+        if (!deviceId.HasValue ||
+            !IsManualDevice(
+                deviceId.Value))
+        {
+            ShowManualTopologyWarning(
+                "ManualTopologyValidationManualDevice");
+            return;
+        }
+
+        await OpenManualTopologyEditorAsync(
+            deviceId.Value,
+            null);
+    }
+
+    private async void OnMapNodeContextDeleteClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var deviceId =
+            MapElementIdFromMenuItem(sender);
+
+        if (!deviceId.HasValue)
+        {
+            return;
+        }
+
+        await DeleteManualDeviceFromMapAsync(
+            deviceId.Value);
+    }
+
+    private async void OnMapNodeKeyDown(
+        object sender,
+        KeyEventArgs e)
+    {
+        if (e.Key != Key.Delete)
+        {
+            return;
+        }
+
+        var element =
+            sender as FrameworkElement;
+
+        if (element == null ||
+            !(element.Tag is Guid))
+        {
+            return;
+        }
+
         e.Handled = true;
+
+        await DeleteManualDeviceFromMapAsync(
+            (Guid)element.Tag);
     }
 
     private void OnMapNodeMouseMove(
@@ -2672,9 +2940,20 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
+        await OpenManualTopologyEditorAsync(
+            null,
+            null);
+    }
+
+    private async Task OpenManualTopologyEditorAsync(
+        Guid? initialDeviceId,
+        Guid? initialLinkId)
+    {
         var editor =
             new ManualTopologyWindow(
-                _manualTopologyService)
+                _manualTopologyService,
+                initialDeviceId,
+                initialLinkId)
             {
                 Owner = this
             };
@@ -2685,6 +2964,287 @@ public partial class MainWindow : Window
         {
             await RefreshTopologyAsync();
         }
+    }
+
+    private static Guid? MapElementIdFromMenuItem(
+        object sender)
+    {
+        var menuItem =
+            sender as MenuItem;
+
+        var target =
+            menuItem == null
+                ? null
+                : menuItem.Tag as FrameworkElement;
+
+        return target != null &&
+               target.Tag is Guid
+            ? (Guid?)((Guid)target.Tag)
+            : null;
+    }
+
+    private bool IsManualDevice(
+        Guid deviceId)
+    {
+        try
+        {
+            return _manualTopologyService
+                .GetSnapshot()
+                .Devices
+                .Any(
+                    item =>
+                        item.DeviceId == deviceId &&
+                        item.IsManual);
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "MANUAL_TOPOLOGY_MAP_DEVICE_LOOKUP_FAILED " +
+                exception);
+
+            return false;
+        }
+    }
+
+    private bool IsManualLink(
+        Guid physicalLinkId)
+    {
+        try
+        {
+            return _manualTopologyService
+                .GetSnapshot()
+                .Links
+                .Any(
+                    item =>
+                        item.PhysicalLinkId ==
+                            physicalLinkId &&
+                        item.IsManual);
+        }
+        catch (Exception exception)
+        {
+            Trace.TraceError(
+                "MANUAL_TOPOLOGY_MAP_LINK_LOOKUP_FAILED " +
+                exception);
+
+            return false;
+        }
+    }
+
+    private async Task DeleteManualDeviceFromMapAsync(
+        Guid deviceId)
+    {
+        ManualTopologyEditorSnapshot snapshot;
+
+        try
+        {
+            snapshot =
+                _manualTopologyService
+                    .GetSnapshot();
+        }
+        catch (Exception exception)
+        {
+            ShowManualTopologyOperationFailure(
+                exception);
+            return;
+        }
+
+        var device =
+            snapshot.Devices
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId == deviceId);
+
+        if (device == null ||
+            !device.IsManual)
+        {
+            ShowManualTopologyWarning(
+                "ManualTopologyValidationManualDevice");
+            return;
+        }
+
+        if (snapshot.Ports.Any(
+                port =>
+                    port.DeviceId == deviceId) ||
+            snapshot.Links.Any(
+                link =>
+                    link.DeviceAId == deviceId ||
+                    link.DeviceBId == deviceId))
+        {
+            ShowManualTopologyWarning(
+                "ManualTopologyDeleteConnectedDevice");
+            return;
+        }
+
+        if (!ConfirmManualTopologyDelete(
+                "ManualTopologyConfirmDeleteDevice",
+                device.DisplayName))
+        {
+            return;
+        }
+
+        try
+        {
+            _manualTopologyService.DeleteDevice(
+                deviceId);
+
+            if (_selectedDeviceId == deviceId)
+            {
+                _selectedDeviceId = null;
+            }
+
+            await RefreshTopologyAsync();
+        }
+        catch (InvalidOperationException exception)
+        {
+            Trace.TraceError(
+                "MANUAL_TOPOLOGY_MAP_DELETE_DEVICE_BLOCKED " +
+                exception);
+
+            ShowManualTopologyWarning(
+                "ManualTopologyDeleteConnectedDevice");
+        }
+        catch (Exception exception)
+        {
+            ShowManualTopologyOperationFailure(
+                exception);
+        }
+    }
+
+    private async Task DeleteManualLinkFromMapAsync(
+        Guid physicalLinkId)
+    {
+        ManualTopologyEditorSnapshot snapshot;
+
+        try
+        {
+            snapshot =
+                _manualTopologyService
+                    .GetSnapshot();
+        }
+        catch (Exception exception)
+        {
+            ShowManualTopologyOperationFailure(
+                exception);
+            return;
+        }
+
+        var link =
+            snapshot.Links
+                .FirstOrDefault(
+                    item =>
+                        item.PhysicalLinkId ==
+                            physicalLinkId);
+
+        if (link == null ||
+            !link.IsManual)
+        {
+            ShowManualTopologyWarning(
+                "ManualTopologyValidationManualLink");
+            return;
+        }
+
+        if (!ConfirmManualTopologyDelete(
+                "ManualTopologyConfirmDeleteLink",
+                ManualTopologyLinkDisplayName(
+                    snapshot,
+                    link)))
+        {
+            return;
+        }
+
+        try
+        {
+            _manualTopologyService.DeleteLink(
+                physicalLinkId);
+
+            if (_selectedPhysicalLinkId ==
+                physicalLinkId)
+            {
+                _selectedPhysicalLinkId = null;
+            }
+
+            await RefreshTopologyAsync();
+        }
+        catch (Exception exception)
+        {
+            ShowManualTopologyOperationFailure(
+                exception);
+        }
+    }
+
+    private static string ManualTopologyLinkDisplayName(
+        ManualTopologyEditorSnapshot snapshot,
+        ManualTopologyLinkItem link)
+    {
+        var sideA =
+            snapshot.Devices
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId ==
+                            link.DeviceAId);
+
+        var sideB =
+            snapshot.Devices
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId ==
+                            link.DeviceBId);
+
+        return
+            (sideA == null
+                ? link.DeviceAId.ToString("D")
+                : sideA.DisplayName) +
+            " ↔ " +
+            (sideB == null
+                ? link.DeviceBId.ToString("D")
+                : sideB.DisplayName);
+    }
+
+    private bool ConfirmManualTopologyDelete(
+        string messageKey,
+        string displayName)
+    {
+        return MessageBox.Show(
+            this,
+            UiText.Format(
+                messageKey,
+                displayName),
+            UiText.Get(
+                "ManualTopologyConfirmDeleteTitle"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning,
+            MessageBoxResult.No) ==
+            MessageBoxResult.Yes;
+    }
+
+    private void ShowManualTopologyWarning(
+        string messageKey)
+    {
+        MessageBox.Show(
+            this,
+            UiText.Get(
+                messageKey),
+            UiText.Get(
+                "ManualTopologyWarningTitle"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+    }
+
+    private void ShowManualTopologyOperationFailure(
+        Exception exception)
+    {
+        Trace.TraceError(
+            "MANUAL_TOPOLOGY_MAP_OPERATION_FAILED " +
+            exception);
+
+        MessageBox.Show(
+            this,
+            UiText.Get(
+                "ManualTopologyOperationFailed"),
+            UiText.Get(
+                "ManualTopologyErrorTitle"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
     }
 
     private void OnMapHelpClick(
@@ -2874,7 +3434,50 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void OnMapLinkMouseLeftButtonDown(
+    private async void OnMapLinkMouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var element =
+            sender as FrameworkElement;
+
+        if (element == null ||
+            !(element.Tag is Guid))
+        {
+            return;
+        }
+
+        var physicalLinkId =
+            (Guid)element.Tag;
+
+        _highlightedDeviceId = null;
+        _selectedDeviceId = null;
+        _selectedPhysicalLinkId =
+            physicalLinkId;
+
+        element.Focus();
+
+        RedrawCurrentMap();
+        ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
+
+        if (e.ClickCount >= 2 &&
+            IsManualLink(
+                physicalLinkId))
+        {
+            e.Handled = true;
+
+            await OpenManualTopologyEditorAsync(
+                null,
+                physicalLinkId);
+
+            return;
+        }
+
+        e.Handled = true;
+    }
+
+    private void OnMapLinkMouseRightButtonDown(
         object sender,
         MouseButtonEventArgs e)
     {
@@ -2888,17 +3491,99 @@ public partial class MainWindow : Window
         }
 
         _highlightedDeviceId = null;
-
-        _selectedDeviceId =
-            null;
-
+        _selectedDeviceId = null;
         _selectedPhysicalLinkId =
             (Guid)element.Tag;
+
+        element.Focus();
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
+    }
+
+    private void OnMapLinkContextMenuOpened(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var menu =
+            sender as ContextMenu;
+
+        var target =
+            menu == null
+                ? null
+                : menu.Tag as FrameworkElement;
+
+        var canChange =
+            target != null &&
+            target.Tag is Guid &&
+            IsManualLink(
+                (Guid)target.Tag);
+
+        UpdateMapElementContextMenuState(
+            menu,
+            canChange);
+    }
+
+    private async void OnMapLinkContextEditClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var physicalLinkId =
+            MapElementIdFromMenuItem(sender);
+
+        if (!physicalLinkId.HasValue ||
+            !IsManualLink(
+                physicalLinkId.Value))
+        {
+            ShowManualTopologyWarning(
+                "ManualTopologyValidationManualLink");
+            return;
+        }
+
+        await OpenManualTopologyEditorAsync(
+            null,
+            physicalLinkId.Value);
+    }
+
+    private async void OnMapLinkContextDeleteClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var physicalLinkId =
+            MapElementIdFromMenuItem(sender);
+
+        if (!physicalLinkId.HasValue)
+        {
+            return;
+        }
+
+        await DeleteManualLinkFromMapAsync(
+            physicalLinkId.Value);
+    }
+
+    private async void OnMapLinkKeyDown(
+        object sender,
+        KeyEventArgs e)
+    {
+        if (e.Key != Key.Delete)
+        {
+            return;
+        }
+
+        var element =
+            sender as FrameworkElement;
+
+        if (element == null ||
+            !(element.Tag is Guid))
+        {
+            return;
+        }
+
         e.Handled = true;
+
+        await DeleteManualLinkFromMapAsync(
+            (Guid)element.Tag);
     }
 
     private void OnMapCanvasMouseLeftButtonDown(
@@ -3066,6 +3751,26 @@ public partial class MainWindow : Window
                         device.LastResolvedUtc)));
         }
 
+        var connectedLinks =
+            _lastDiagnosticSnapshot.Links
+                .Where(
+                    item =>
+                        item.DeviceAId == device.DeviceId ||
+                        item.DeviceBId == device.DeviceId)
+                .OrderBy(
+                    item =>
+                        PeerName(
+                            item,
+                            device.DeviceId),
+                    StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+
+        stateFields.Add(
+            Field(
+                "DiagnosticFieldConnections",
+                connectedLinks.Length.ToString(
+                    CultureInfo.CurrentCulture)));
+
         stateFields.Add(
             Field(
                 "DiagnosticFieldInterfaces",
@@ -3085,9 +3790,27 @@ public partial class MainWindow : Window
             stateFields;
 
         DiagnosticSecondaryTitleText.Text =
-            UiText.Get("DiagnosticInterfacesTitle");
+            UiText.Get("DiagnosticConnectionsTitle");
 
         DiagnosticSecondaryList.ItemsSource =
+            connectedLinks.Length == 0
+                ? new[]
+                {
+                    Row("DiagnosticNoConnections")
+                }
+                : connectedLinks
+                    .Select(
+                        item =>
+                            new DiagnosticTextRow(
+                                BuildDeviceLinkDiagnosticText(
+                                    device.DeviceId,
+                                    item)))
+                    .ToArray();
+
+        DiagnosticTertiaryTitleText.Text =
+            UiText.Get("DiagnosticInterfacesTitle");
+
+        DiagnosticTertiaryList.ItemsSource =
             device.Interfaces.Count == 0
                 ? new[]
                 {
@@ -3100,37 +3823,6 @@ public partial class MainWindow : Window
                                 BuildInterfaceDiagnosticText(
                                     item)))
                     .ToArray();
-
-        DiagnosticTertiaryTitleText.Text =
-            UiText.Get("DiagnosticConnectionsTitle");
-
-        var connectedLinks =
-            _lastDiagnosticSnapshot.Links
-                .Where(
-                    item =>
-                        item.DeviceAId == device.DeviceId ||
-                        item.DeviceBId == device.DeviceId)
-                .OrderBy(
-                    item =>
-                        PeerName(
-                            item,
-                            device.DeviceId),
-                    StringComparer.CurrentCultureIgnoreCase)
-                .Select(
-                    item =>
-                        new DiagnosticTextRow(
-                            BuildDeviceLinkDiagnosticText(
-                                device.DeviceId,
-                                item)))
-                .ToArray();
-
-        DiagnosticTertiaryList.ItemsSource =
-            connectedLinks.Length == 0
-                ? new[]
-                {
-                    Row("DiagnosticNoConnections")
-                }
-                : connectedLinks;
     }
 
     private void ShowLinkDiagnostic(
@@ -4304,6 +4996,8 @@ public partial class MainWindow : Window
         public TextBlock LockBadge { get; }
 
         public Guid? DeviceId { get; set; }
+
+        public bool IsManual { get; set; }
 
         public bool IsLocked { get; set; }
     }

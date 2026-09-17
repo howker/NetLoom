@@ -157,9 +157,11 @@ namespace NetLoom.Tests.Unit
                         "ManualTopologyLinkConflict",
                         "ManualTopologyMediaFiber",
                         "ManualTopologyInteractionHint",
+                        "ManualTopologyMapNodeHint",
                         "ManualTopologyConfirmDeleteDevice",
                         "ManualTopologyConfirmDeletePort",
                         "ManualTopologyConfirmDeleteLink",
+                        "DiagnosticFieldConnections",
                         "DiagnosticInterfaceIdentityIfIndex",
                         "DiagnosticDeviceLevelEndpoint",
                         "DiagnosticInterfaceNoTelemetry"
@@ -265,6 +267,101 @@ namespace NetLoom.Tests.Unit
                 mainCode.Contains(
                     "\"DiagnosticInterfaceRow\""),
                 "The device panel must not render the old all-fields-in-one-line interface row.");
+        }
+
+        [TestMethod]
+        public void ManualTopologyMainMapOperatorInteractionContractIsPresent()
+        {
+            var mainCode =
+                ReadRepositoryFile(
+                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+
+            var editorCode =
+                ReadRepositoryFile(
+                    "src/NetLoom.Wpf/ManualTopologyWindow.xaml.cs");
+
+            StringAssert.Contains(
+                mainCode,
+                "CreateMapElementContextMenu");
+
+            StringAssert.Contains(
+                mainCode,
+                "OnMapNodeMouseRightButtonDown");
+
+            StringAssert.Contains(
+                mainCode,
+                "OnMapNodeKeyDown");
+
+            StringAssert.Contains(
+                mainCode,
+                "e.ClickCount >= 2");
+
+            StringAssert.Contains(
+                mainCode,
+                "DeleteManualDeviceFromMapAsync");
+
+            StringAssert.Contains(
+                mainCode,
+                "DeleteManualLinkFromMapAsync");
+
+            StringAssert.Contains(
+                mainCode,
+                "ManualTopologyConfirmDeleteDevice");
+
+            StringAssert.Contains(
+                mainCode,
+                "ManualTopologyConfirmDeleteLink");
+
+            StringAssert.Contains(
+                editorCode,
+                "Guid? initialDeviceId");
+
+            StringAssert.Contains(
+                editorCode,
+                "Guid? initialLinkId");
+
+            StringAssert.Contains(
+                editorCode,
+                "ManualTopologyTabs.SelectedItem");
+
+            StringAssert.Contains(
+                editorCode,
+                "ManualPortsTab");
+
+            var showDeviceStart =
+                mainCode.IndexOf(
+                    "private void ShowDeviceDiagnostic",
+                    StringComparison.Ordinal);
+
+            var showLinkStart =
+                mainCode.IndexOf(
+                    "private void ShowLinkDiagnostic",
+                    StringComparison.Ordinal);
+
+            Assert.IsTrue(
+                showDeviceStart >= 0 &&
+                showLinkStart > showDeviceStart,
+                "Device diagnostic method boundary was not found.");
+
+            var deviceDiagnostic =
+                mainCode.Substring(
+                    showDeviceStart,
+                    showLinkStart - showDeviceStart);
+
+            var connectionsTitle =
+                deviceDiagnostic.IndexOf(
+                    "DiagnosticConnectionsTitle",
+                    StringComparison.Ordinal);
+
+            var interfacesTitle =
+                deviceDiagnostic.IndexOf(
+                    "DiagnosticInterfacesTitle",
+                    StringComparison.Ordinal);
+
+            Assert.IsTrue(
+                connectionsTitle >= 0 &&
+                interfacesTitle > connectionsTitle,
+                "Physical connections must be shown before the interface inventory in the selected-device panel.");
         }
 
         private static string ReadRepositoryFile(

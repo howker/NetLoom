@@ -421,7 +421,7 @@
     <value>Интерфейсы</value>
   </data>
   <data name="DiagnosticConnectionsTitle" xml:space="preserve">
-    <value>Связи и радиус влияния</value>
+    <value>Физические связи</value>
   </data>
   <data name="DiagnosticImpactTitle" xml:space="preserve">
     <value>Последствия отказа</value>
@@ -440,6 +440,9 @@
   </data>
   <data name="DiagnosticFieldLastConfirmed" xml:space="preserve">
     <value>Последнее подтверждение</value>
+  </data>
+  <data name="DiagnosticFieldConnections" xml:space="preserve">
+    <value>Физических связей</value>
   </data>
   <data name="DiagnosticFieldInterfaces" xml:space="preserve">
     <value>Интерфейсов</value>
@@ -786,7 +789,7 @@
     <value>Выберите два разных устройства и при необходимости порты, затем нажмите «Создать».</value>
   </data>
   <data name="ManualTopologyStatusDeviceCreated" xml:space="preserve">
-    <value>Ручное устройство создано.</value>
+    <value>Ручное устройство создано. Добавьте виртуальный порт и выберите для него среду.</value>
   </data>
   <data name="ManualTopologyStatusDeviceSaved" xml:space="preserve">
     <value>Изменения ручного устройства сохранены.</value>
@@ -894,7 +897,10 @@
     <value>Неизвестно</value>
   </data>
   <data name="ManualTopologyInteractionHint" xml:space="preserve">
-    <value>Среда задаётся у порта или связи, а не у устройства. После создания ручное устройство автоматически выбирается на вкладке «Порты». Двойной щелчок открывает ручной элемент для изменения, правый щелчок показывает действия, Del удаляет выбранный ручной элемент после подтверждения.</value>
+    <value>Среда задаётся у порта или связи, а не у устройства. После создания устройства сразу открывается вкладка «Порты», а созданное устройство уже выбрано. Двойной щелчок открывает ручной элемент для изменения, правый щелчок показывает действия, Del удаляет выбранный ручной элемент после подтверждения.</value>
+  </data>
+  <data name="ManualTopologyMapNodeHint" xml:space="preserve">
+    <value>Двойной щелчок — изменить это ручное устройство. ПКМ — действия. Del — удалить после подтверждения.</value>
   </data>
   <data name="ManualTopologyEdit" xml:space="preserve">
     <value>Изменить</value>
@@ -930,7 +936,7 @@
     <value>{0} (ifIndex {1})</value>
   </data>
   <data name="DiagnosticInterfaceIdentityId" xml:space="preserve">
-    <value>{0} (ID {1})</value>
+    <value>{0} (без ifIndex, ID {1})</value>
   </data>
   <data name="DiagnosticDeviceLevelEndpoint" xml:space="preserve">
     <value>Устройство целиком — порт не указан</value>

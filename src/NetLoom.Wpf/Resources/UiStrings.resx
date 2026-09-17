@@ -421,7 +421,7 @@
     <value>Interfaces</value>
   </data>
   <data name="DiagnosticConnectionsTitle" xml:space="preserve">
-    <value>Connections and impact</value>
+    <value>Physical connections</value>
   </data>
   <data name="DiagnosticImpactTitle" xml:space="preserve">
     <value>Failure impact</value>
@@ -440,6 +440,9 @@
   </data>
   <data name="DiagnosticFieldLastConfirmed" xml:space="preserve">
     <value>Last confirmed</value>
+  </data>
+  <data name="DiagnosticFieldConnections" xml:space="preserve">
+    <value>Connections</value>
   </data>
   <data name="DiagnosticFieldInterfaces" xml:space="preserve">
     <value>Interfaces</value>
@@ -786,7 +789,7 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Choose two different devices and optional ports, then choose Create.</value>
   </data>
   <data name="ManualTopologyStatusDeviceCreated" xml:space="preserve">
-    <value>Manual device created.</value>
+    <value>Manual device created. Add a virtual port and choose its media type.</value>
   </data>
   <data name="ManualTopologyStatusDeviceSaved" xml:space="preserve">
     <value>Manual device changes saved.</value>
@@ -894,7 +897,10 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Unknown</value>
   </data>
   <data name="ManualTopologyInteractionHint" xml:space="preserve">
-    <value>Media is set on a port or link, not on a device. After a manual device is created it is selected automatically on the Ports tab. Double-click a manual item to edit it, right-click for actions, and press Del to delete the selected manual item after confirmation.</value>
+    <value>Media is set on a port or link, not on a device. After a manual device is created the Ports tab opens immediately with that device selected. Double-click a manual item to edit it, right-click for actions, and press Del to delete the selected manual item after confirmation.</value>
+  </data>
+  <data name="ManualTopologyMapNodeHint" xml:space="preserve">
+    <value>Double-click to edit this manual device. Right-click for actions. Del deletes it after confirmation.</value>
   </data>
   <data name="ManualTopologyEdit" xml:space="preserve">
     <value>Edit</value>
@@ -930,7 +936,7 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>{0} (ifIndex {1})</value>
   </data>
   <data name="DiagnosticInterfaceIdentityId" xml:space="preserve">
-    <value>{0} (ID {1})</value>
+    <value>{0} (no ifIndex, ID {1})</value>
   </data>
   <data name="DiagnosticDeviceLevelEndpoint" xml:space="preserve">
     <value>Whole device — no port specified</value>
