@@ -429,3 +429,48 @@ Latest/current STP selection не materialize'ится в отдельной т�
 WPF использует только read-only Application contracts. Alert UI не пишет SQLite.
 
 Текущий schema level после Sprint 31B остаётся `Migration012ObservationDeviceBindings`.
+
+## Schema progression after Sprint 31B
+
+The source tree is authoritative for migrations that landed after the older Sprint 31B documentation boundary:
+
+- Migration013 — `LLDP topology identity`;
+- Migration014 — `Interface counter baselines`;
+- Migration015 — `Interface degradation states`;
+- Migration016 — `Interface degradation outbox`;
+- Migration017 — `Interface degradation delivery acknowledgement`;
+- Migration018 — `Interface degradation delivery retry`;
+- Migration019 — `Persistent map layout`.
+
+Migration019 is the current schema migration; total migrations: 19.
+
+## Sprint 36 — Migration019 persistent map layout
+
+`Migration019MapLayout` adds two layout-only tables and one index.
+
+`maps`:
+- `id TEXT PRIMARY KEY`;
+- `name TEXT NOT NULL`;
+- optional `root_location_id`;
+- optional `description`;
+- `default_zoom REAL NOT NULL DEFAULT 1.0`;
+- `default_pan_x REAL NOT NULL DEFAULT 0.0`;
+- `default_pan_y REAL NOT NULL DEFAULT 0.0`;
+- created/updated UTC timestamps.
+
+`map_device_layout`:
+- composite primary key `(map_id, device_id)`;
+- logical `x` / `y`;
+- reserved `width`, `height`, `shape`, `is_hidden`, `z_index`;
+- current Sprint 36 persistence uses `x`, `y` and `is_locked`;
+- `map_id -> maps(id) ON DELETE CASCADE`;
+- `device_id -> devices(id) ON DELETE CASCADE`.
+
+Index:
+- `ix_map_device_layout_device(device_id)`.
+
+The current physical-topology map uses stable `MapLayoutScope.PhysicalTopologyMapId`. `SqliteMapLayoutStore` loads read-only snapshots and uses immediate writes for viewport/device layout updates. The WPF client accesses this store only through Application `IMapLayoutStore`; WPF has no direct SQLite dependency.
+
+Viewport pan may be signed because Sprint 36 stores logical pan around a virtual map origin. The large WPF working canvas is a presentation detail and is not encoded as topology identity.
+
+Migration019 stores operator layout only. It does not create manual devices/links, Location-container layout, topology history, incidents or metric/time-series data.

@@ -92,7 +92,7 @@ The WPF presentation layer now has shared resource dictionaries for:
 
 The current `MainWindow` and retained map visuals consume the shared resources. Light is the current default palette; operator-controlled runtime theme switching is not claimed yet.
 
-Interactive zoom/pan, pinned/manual layout persistence and semantic motion remain later committed UI work. Motion is layered on the retained-visual foundation and must support `Normal`, `Reduced` and `Off`; perpetual blinking is not part of the product language.
+Interactive zoom/pan, persisted device layout/locking and semantic motion are implemented by Sprint 36 on the retained-visual foundation. Manual topology editing remains Sprint 37 scope. Motion supports `Normal`, `Reduced` and `Off`; perpetual blinking is not part of the product language.
 
 ## Selected-element diagnostic projection boundary
 
@@ -117,6 +117,29 @@ Raw evidence availability is exposed as `NotApplicable`, `Available`, `Expired` 
 A failed refresh does not manufacture a new diagnostic snapshot. The client keeps the last successful map/alert/diagnostic state under the existing last-known-good/stale refresh semantics.
 
 Sprint 35 adds no write path from WPF and no SQLite migration.
+
+## Interactive persistent map boundary
+
+Sprint 36 adds operator-controlled map layout without moving topology facts or topology decisions into WPF.
+
+Write path:
+
+`WPF interaction -> Application IMapLayoutStore -> SqliteMapLayoutStore -> maps / map_device_layout`
+
+`NetLoom.Desktop` remains the composition root that wires the concrete SQLite layout store into WPF. WPF does not reference SQLite directly and layout persistence does not mutate `devices`, `interfaces`, `physical_links`, discovery evidence or topology identity.
+
+The physical-topology layout uses a stable map identity (`MapLayoutScope.PhysicalTopologyMapId`). Persisted state contains:
+- viewport zoom and signed pan;
+- per-device logical X/Y keyed by stable `DeviceId`;
+- per-device `is_locked`.
+
+The WPF canvas uses a large virtual origin/working area as a presentation implementation detail. Persisted coordinates stay logical relative to that origin so changing the canvas implementation does not redefine DeviceId or topology identity. The accepted UI zoom range is `0.01..5.0` (`1%..500%`). `Show all` is a presentation operation that fits currently visible node visuals into the viewport; it does not rewrite topology.
+
+Node locking is presentation/layout state only. A locked node is visibly marked and rejects drag; discovery/refresh may update the node's topology/diagnostic data without moving its persisted layout position.
+
+Semantic motion is also presentation-only. `Normal`, `Reduced` and `Off` alter duration/intensity of meaningful transitions (appearance, disappearance, freshness change, search focus and one new-alert pulse). The setting is under Map settings, is not topology state, and perpetual/decorative blinking remains prohibited. Static topology with no relevant transition is expected to show little or no motion.
+
+Sprint 36 introduces `Migration019MapLayout`; no manual topology write semantics, Location-container layout or broad map visual-language policy is added here.
 
 ## Roadmap boundaries — not committed scope
 

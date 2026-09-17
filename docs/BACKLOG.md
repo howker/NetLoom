@@ -139,9 +139,9 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 35
+## Execution map after Sprint 36
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, and Sprint 35 are complete. The current WPF client can select a device or physical link and show coherent diagnostics from the same successful topology refresh: interface degradation, STP state, freshness/current evidence, raw-evidence availability, and direction-neutral physical-link failure impact. Product priority now advances to the next committed item: an interactive persistent map with calm semantic motion.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, and Sprint 36 are complete. The current WPF client now combines coherent selected-element diagnostics with an operator-arrangeable persistent physical map: unlocked nodes can be dragged, locked nodes are visibly marked, viewport/layout state survives restart, zoom spans 1%-500%, the operator can recover a lost topology with Show all, and the map uses a very large virtual workspace for large sites. Calm semantic motion is available from Map settings and is intentionally visible only when meaningful state actually changes. Product priority now advances to Sprint 37 — manual topology from the UI.
 
 ### Completed
 
@@ -172,9 +172,13 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Completed: device/link selection uses a transport-neutral `NetworkDiagnosticSnapshot` projected from the same coherent topology read-set as the map and alerts. Device diagnostics show readable identity/location, last-seen/resolved state, interfaces, admin/oper, STP and durable degradation. Link diagnostics show readable endpoints/ports, strength/freshness, last-seen/confirmed, media/speed, evidence with localized raw `Available` / `Expired` / `NotApplicable` state, and direction-neutral bridge/blast-radius impact from the existing graph safety analyzer. MAC/IP lookup selects the resolved device into the same panel; failed refresh keeps the last successful diagnostic snapshot as stale rather than inventing new state.
   - No new SQLite migration, monitoring semantics, incident history or causal outage claim was added.
   - Technical acceptance: deterministic RED 1/1; targeted Unit 5/5 + Integration 2/2 + modern 6/6; full regression modern 102/102 + legacy Unit 253/253 + Integration 94/94 + Snapshot 7/7. A recovery corrected only an orientation-sensitive blast-radius test expectation; product bytes were unchanged. Implementation commit `97d2ead90660cc8424f9fd383a5ee69117df13c3` is pushed.
-- [ ] Sprint 36 — interactive persistent map with calm semantic motion.
+- [x] Sprint 36 — interactive persistent map with calm semantic motion.
   - Operator outcome: arrange the map comfortably, keep the layout after restart, and see what actually changed without visual noise.
-  - Add node drag, zoom, pan, pinned/locked layout persistence and `Normal` / `Reduced` / `Off` motion; animate only meaningful transitions such as appearance/disappearance, freshness change, search focus and a single new-alert pulse.
+  - Completed: unlocked nodes can be dragged; locked nodes are persisted by stable `DeviceId`, visibly marked `Locked` / `Закреплён`, and reject drag until unlocked. Viewport zoom/pan and device positions survive Desktop restart through Application `IMapLayoutStore` and SQLite `Migration019MapLayout`.
+  - Navigation acceptance: zoom range is `1%..500%`; middle-drag pans; `Show all` fits the visible topology back into the viewport; a very large virtual workspace allows practical movement far in every direction; compact Help replaces the long inline instruction.
+  - Motion acceptance: map-change animation moved out of the primary toolbar into Map settings. `Normal` / `Reduced` / `Off` affect only semantic transitions: appearance/disappearance, freshness change, search focus and one new-alert pulse. A static stand is expected to show little or no motion because perpetual/decorative animation is intentionally absent.
+  - Scope boundary: Sprint 36 does not add manual devices/links (Sprint 37), Location containers (Sprint 38), or the broader visual-language work (Sprint 39).
+  - Technical acceptance: initial implementation commit `c9c6714b8663074be9864e8fb14f1c8355b76955`; operator-accepted navigation/virtual-workspace follow-up `1ff950e45f5a4d67ae72dfce1dfdecc316d9999a`. Latest regression evidence is modern 111/111, legacy Unit 266/266, Integration 98/98 and Snapshot 7/7.
 - [ ] Sprint 37 — manual topology from the UI.
   - Operator outcome: draw an unmanaged device and cable that SNMP/discovery cannot see.
   - Create/edit/remove manual devices, ports and links through the existing protected manual-topology semantics.
