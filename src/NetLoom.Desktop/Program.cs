@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using NetLoom.Application.Topology;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Locations;
@@ -95,7 +96,11 @@ namespace NetLoom.Desktop
                             new SqliteMacIpLookupReader(
                                 connectionFactory),
                             new SqliteMapLayoutStore(
-                                connectionFactory)));
+                                connectionFactory),
+                            new ManualTopologyService(
+                                topologyRepository,
+                                new SqliteManualTopologyAuditStore(
+                                    connectionFactory))));
 
                 hostLog.Info(
                     "HOST_STOPPED exitCode=" +

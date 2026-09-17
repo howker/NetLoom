@@ -16,6 +16,7 @@ using System.Windows.Threading;
 using NetLoom.Application.Alerts;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.MapLayout;
+using NetLoom.Application.Topology;
 using NetLoom.Application.TopologyMap;
 using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
@@ -63,6 +64,9 @@ public partial class MainWindow : Window
 
     private readonly IMapLayoutStore
         _mapLayoutStore;
+
+    private readonly IManualTopologyService
+        _manualTopologyService;
 
     private readonly Guid
         _mapLayoutId =
@@ -187,6 +191,19 @@ public partial class MainWindow : Window
         ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
         IMacIpLookupReader lookupReader,
         IMapLayoutStore mapLayoutStore)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            mapLayoutStore,
+            new EmptyManualTopologyService())
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMapLayoutStore mapLayoutStore,
+        IManualTopologyService manualTopologyService)
     {
         InitializeComponent();
 
@@ -234,6 +251,11 @@ public partial class MainWindow : Window
             mapLayoutStore ??
             throw new ArgumentNullException(
                 nameof(mapLayoutStore));
+
+        _manualTopologyService =
+            manualTopologyService ??
+            throw new ArgumentNullException(
+                nameof(manualTopologyService));
 
         LoadPersistedMapLayout();
 
@@ -288,6 +310,12 @@ public partial class MainWindow : Window
 
         MapFitAllButton.Content =
             UiText.Get("MapFitAllAction");
+
+        ManualTopologyButton.Content =
+            UiText.Get("ManualTopologyAction");
+
+        ManualTopologyButton.ToolTip =
+            UiText.Get("ManualTopologyHint");
 
         MapHelpButton.Content =
             UiText.Get("MapHelpAction");
@@ -2640,6 +2668,25 @@ public partial class MainWindow : Window
         FitTopologyToViewport();
     }
 
+    private async void OnManualTopologyClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var editor =
+            new ManualTopologyWindow(
+                _manualTopologyService)
+            {
+                Owner = this
+            };
+
+        editor.ShowDialog();
+
+        if (editor.HasChanges)
+        {
+            await RefreshTopologyAsync();
+        }
+    }
+
     private void OnMapHelpClick(
         object sender,
         RoutedEventArgs e)
@@ -4241,6 +4288,97 @@ public partial class MainWindow : Window
         public MapSnapshot GetSnapshot()
         {
             return EmptySnapshot();
+        }
+    }
+
+    private sealed class EmptyManualTopologyService :
+        IManualTopologyService
+    {
+        public ManualTopologyEditorSnapshot GetSnapshot()
+        {
+            return new ManualTopologyEditorSnapshot(
+                new ManualTopologyDeviceItem[0],
+                new ManualTopologyPortItem[0],
+                new ManualTopologyLinkItem[0]);
+        }
+
+        public Guid CreateDevice(
+            string name,
+            ManualTopologyDeviceCategory category,
+            string notes)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public void UpdateDevice(
+            Guid deviceId,
+            string name,
+            ManualTopologyDeviceCategory category,
+            string notes)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public void DeleteDevice(
+            Guid deviceId)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public Guid CreatePort(
+            Guid deviceId,
+            string name,
+            string mediaType)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public void UpdatePort(
+            Guid interfaceId,
+            string name,
+            string mediaType)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public void DeletePort(
+            Guid interfaceId)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public Guid CreateLink(
+            Guid deviceAId,
+            Guid? interfaceAId,
+            Guid deviceBId,
+            Guid? interfaceBId,
+            string mediaType,
+            string notes)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public void UpdateLink(
+            Guid physicalLinkId,
+            string mediaType,
+            string notes)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
+        }
+
+        public void DeleteLink(
+            Guid physicalLinkId)
+        {
+            throw new InvalidOperationException(
+                "Manual topology service is not configured.");
         }
     }
 

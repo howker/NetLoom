@@ -697,4 +697,196 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   <data name="MapInteractionHint" xml:space="preserve">
     <value>Open map help.</value>
   </data>
+  <data name="ManualTopologyAction" xml:space="preserve">
+    <value>Manual topology</value>
+  </data>
+  <data name="ManualTopologyHint" xml:space="preserve">
+    <value>Create and edit unmanaged devices, virtual ports, and manual cables.</value>
+  </data>
+  <data name="ManualTopologyWindowTitle" xml:space="preserve">
+    <value>Manual topology</value>
+  </data>
+  <data name="ManualTopologyTitle" xml:space="preserve">
+    <value>Manual topology</value>
+  </data>
+  <data name="ManualTopologyIntro" xml:space="preserve">
+    <value>Use this editor only for equipment and cables that discovery cannot represent. Automatic topology is read-only here.</value>
+  </data>
+  <data name="ManualTopologyClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="ManualTopologyDevicesTab" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="ManualTopologyPortsTab" xml:space="preserve">
+    <value>Ports</value>
+  </data>
+  <data name="ManualTopologyLinksTab" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="ManualTopologyDevicesList" xml:space="preserve">
+    <value>Topology devices</value>
+  </data>
+  <data name="ManualTopologyDeviceName" xml:space="preserve">
+    <value>Device name</value>
+  </data>
+  <data name="ManualTopologyDeviceCategory" xml:space="preserve">
+    <value>Device type</value>
+  </data>
+  <data name="ManualTopologyNotes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="ManualTopologyPortDevice" xml:space="preserve">
+    <value>Device</value>
+  </data>
+  <data name="ManualTopologyPortsList" xml:space="preserve">
+    <value>Ports</value>
+  </data>
+  <data name="ManualTopologyPortName" xml:space="preserve">
+    <value>Port name</value>
+  </data>
+  <data name="ManualTopologyMediaType" xml:space="preserve">
+    <value>Media / connection type</value>
+  </data>
+  <data name="ManualTopologyLinksList" xml:space="preserve">
+    <value>Physical links</value>
+  </data>
+  <data name="ManualTopologyEndpointA" xml:space="preserve">
+    <value>Endpoint A</value>
+  </data>
+  <data name="ManualTopologyEndpointB" xml:space="preserve">
+    <value>Endpoint B</value>
+  </data>
+  <data name="ManualTopologyNew" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="ManualTopologyCreate" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="ManualTopologySave" xml:space="preserve">
+    <value>Save changes</value>
+  </data>
+  <data name="ManualTopologyDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="ManualTopologyStatusReady" xml:space="preserve">
+    <value>Select an item to inspect it, or choose New to create a manual item.</value>
+  </data>
+  <data name="ManualTopologyStatusNewDevice" xml:space="preserve">
+    <value>Enter the manual device details and choose Create.</value>
+  </data>
+  <data name="ManualTopologyStatusNewPort" xml:space="preserve">
+    <value>Choose a manual device, enter the virtual port details, and choose Create.</value>
+  </data>
+  <data name="ManualTopologyStatusNewLink" xml:space="preserve">
+    <value>Choose two different devices and optional ports, then choose Create.</value>
+  </data>
+  <data name="ManualTopologyStatusDeviceCreated" xml:space="preserve">
+    <value>Manual device created.</value>
+  </data>
+  <data name="ManualTopologyStatusDeviceSaved" xml:space="preserve">
+    <value>Manual device changes saved.</value>
+  </data>
+  <data name="ManualTopologyStatusDeviceDeleted" xml:space="preserve">
+    <value>Manual device deleted.</value>
+  </data>
+  <data name="ManualTopologyStatusPortCreated" xml:space="preserve">
+    <value>Manual port created.</value>
+  </data>
+  <data name="ManualTopologyStatusPortSaved" xml:space="preserve">
+    <value>Manual port changes saved.</value>
+  </data>
+  <data name="ManualTopologyStatusPortDeleted" xml:space="preserve">
+    <value>Manual port deleted.</value>
+  </data>
+  <data name="ManualTopologyStatusLinkCreated" xml:space="preserve">
+    <value>Manual link created.</value>
+  </data>
+  <data name="ManualTopologyStatusLinkSaved" xml:space="preserve">
+    <value>Manual link changes saved.</value>
+  </data>
+  <data name="ManualTopologyStatusLinkDeleted" xml:space="preserve">
+    <value>Manual link deleted.</value>
+  </data>
+  <data name="ManualTopologyValidationDeviceName" xml:space="preserve">
+    <value>Enter a device name.</value>
+  </data>
+  <data name="ManualTopologyValidationCategory" xml:space="preserve">
+    <value>Choose a device type.</value>
+  </data>
+  <data name="ManualTopologyValidationManualDevice" xml:space="preserve">
+    <value>Only a manual device can be changed in this editor.</value>
+  </data>
+  <data name="ManualTopologyValidationPortManualDevice" xml:space="preserve">
+    <value>Virtual ports can be created only on a manual device.</value>
+  </data>
+  <data name="ManualTopologyValidationPortName" xml:space="preserve">
+    <value>Enter a port name.</value>
+  </data>
+  <data name="ManualTopologyValidationManualPort" xml:space="preserve">
+    <value>Only a manual port can be changed in this editor.</value>
+  </data>
+  <data name="ManualTopologyValidationEndpoints" xml:space="preserve">
+    <value>Choose both cable endpoints.</value>
+  </data>
+  <data name="ManualTopologyValidationDifferentDevices" xml:space="preserve">
+    <value>A physical cable must connect two different devices.</value>
+  </data>
+  <data name="ManualTopologyValidationManualLink" xml:space="preserve">
+    <value>Only a manual link can be changed in this editor.</value>
+  </data>
+  <data name="ManualTopologyDeleteConnectedDevice" xml:space="preserve">
+    <value>The device is still connected. Delete its manual cables and ports first.</value>
+  </data>
+  <data name="ManualTopologyDeleteConnectedPort" xml:space="preserve">
+    <value>The port is still used by a cable. Delete the manual cable first.</value>
+  </data>
+  <data name="ManualTopologyLinkConflict" xml:space="preserve">
+    <value>A compatible physical cable already exists. The existing automatic or manual cable was not replaced.</value>
+  </data>
+  <data name="ManualTopologyOperationFailed" xml:space="preserve">
+    <value>The operation could not be completed. Details were written to the log.</value>
+  </data>
+  <data name="ManualTopologyDeviceSummaryManual" xml:space="preserve">
+    <value>[Manual] {0}</value>
+  </data>
+  <data name="ManualTopologyDeviceSummaryAutomatic" xml:space="preserve">
+    <value>[Automatic, read-only] {0}</value>
+  </data>
+  <data name="ManualTopologyPortSummaryManual" xml:space="preserve">
+    <value>[Manual] {0} • {1}</value>
+  </data>
+  <data name="ManualTopologyPortSummaryAutomatic" xml:space="preserve">
+    <value>[Automatic, read-only] {0} • {1}</value>
+  </data>
+  <data name="ManualTopologyLinkSummaryManual" xml:space="preserve">
+    <value>[Manual] {0} ↔ {1} • {2}</value>
+  </data>
+  <data name="ManualTopologyLinkSummaryAutomatic" xml:space="preserve">
+    <value>[Automatic, read-only] {0} ↔ {1} • {2}</value>
+  </data>
+  <data name="ManualTopologyEndpointSummary" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="ManualTopologyNoPort" xml:space="preserve">
+    <value>Device only / port not specified</value>
+  </data>
+  <data name="ManualTopologyMediaCopper" xml:space="preserve">
+    <value>Copper</value>
+  </data>
+  <data name="ManualTopologyMediaFiber" xml:space="preserve">
+    <value>Fiber</value>
+  </data>
+  <data name="ManualTopologyMediaWireless" xml:space="preserve">
+    <value>Wireless</value>
+  </data>
+  <data name="ManualTopologyMediaLogical" xml:space="preserve">
+    <value>Logical</value>
+  </data>
+  <data name="ManualTopologyMediaUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="CategoryUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
 </root>

@@ -69,6 +69,10 @@
                             Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                             Click="OnMapFitAllClick" />
 
+                    <Button x:Name="ManualTopologyButton"
+                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Click="OnManualTopologyClick" />
+
                     <Button x:Name="MapHelpButton"
                             Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                             Click="OnMapHelpClick" />

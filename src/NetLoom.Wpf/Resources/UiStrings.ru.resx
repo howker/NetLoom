@@ -697,4 +697,196 @@
   <data name="MapInteractionHint" xml:space="preserve">
     <value>Открыть справку по управлению картой.</value>
   </data>
+  <data name="ManualTopologyAction" xml:space="preserve">
+    <value>Ручная топология</value>
+  </data>
+  <data name="ManualTopologyHint" xml:space="preserve">
+    <value>Создание и редактирование неуправляемых устройств, виртуальных портов и ручных кабелей.</value>
+  </data>
+  <data name="ManualTopologyWindowTitle" xml:space="preserve">
+    <value>Ручная топология</value>
+  </data>
+  <data name="ManualTopologyTitle" xml:space="preserve">
+    <value>Ручная топология</value>
+  </data>
+  <data name="ManualTopologyIntro" xml:space="preserve">
+    <value>Используйте этот редактор только для оборудования и кабелей, которые Discovery не может представить. Автоматическая топология здесь доступна только для чтения.</value>
+  </data>
+  <data name="ManualTopologyClose" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="ManualTopologyDevicesTab" xml:space="preserve">
+    <value>Устройства</value>
+  </data>
+  <data name="ManualTopologyPortsTab" xml:space="preserve">
+    <value>Порты</value>
+  </data>
+  <data name="ManualTopologyLinksTab" xml:space="preserve">
+    <value>Связи</value>
+  </data>
+  <data name="ManualTopologyDevicesList" xml:space="preserve">
+    <value>Устройства топологии</value>
+  </data>
+  <data name="ManualTopologyDeviceName" xml:space="preserve">
+    <value>Название устройства</value>
+  </data>
+  <data name="ManualTopologyDeviceCategory" xml:space="preserve">
+    <value>Тип устройства</value>
+  </data>
+  <data name="ManualTopologyNotes" xml:space="preserve">
+    <value>Заметки</value>
+  </data>
+  <data name="ManualTopologyPortDevice" xml:space="preserve">
+    <value>Устройство</value>
+  </data>
+  <data name="ManualTopologyPortsList" xml:space="preserve">
+    <value>Порты</value>
+  </data>
+  <data name="ManualTopologyPortName" xml:space="preserve">
+    <value>Название порта</value>
+  </data>
+  <data name="ManualTopologyMediaType" xml:space="preserve">
+    <value>Среда / тип соединения</value>
+  </data>
+  <data name="ManualTopologyLinksList" xml:space="preserve">
+    <value>Физические связи</value>
+  </data>
+  <data name="ManualTopologyEndpointA" xml:space="preserve">
+    <value>Конец A</value>
+  </data>
+  <data name="ManualTopologyEndpointB" xml:space="preserve">
+    <value>Конец B</value>
+  </data>
+  <data name="ManualTopologyNew" xml:space="preserve">
+    <value>Новый</value>
+  </data>
+  <data name="ManualTopologyCreate" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="ManualTopologySave" xml:space="preserve">
+    <value>Сохранить изменения</value>
+  </data>
+  <data name="ManualTopologyDelete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="ManualTopologyStatusReady" xml:space="preserve">
+    <value>Выберите элемент для просмотра или нажмите «Новый», чтобы создать ручной элемент.</value>
+  </data>
+  <data name="ManualTopologyStatusNewDevice" xml:space="preserve">
+    <value>Введите параметры ручного устройства и нажмите «Создать».</value>
+  </data>
+  <data name="ManualTopologyStatusNewPort" xml:space="preserve">
+    <value>Выберите ручное устройство, введите параметры виртуального порта и нажмите «Создать».</value>
+  </data>
+  <data name="ManualTopologyStatusNewLink" xml:space="preserve">
+    <value>Выберите два разных устройства и при необходимости порты, затем нажмите «Создать».</value>
+  </data>
+  <data name="ManualTopologyStatusDeviceCreated" xml:space="preserve">
+    <value>Ручное устройство создано.</value>
+  </data>
+  <data name="ManualTopologyStatusDeviceSaved" xml:space="preserve">
+    <value>Изменения ручного устройства сохранены.</value>
+  </data>
+  <data name="ManualTopologyStatusDeviceDeleted" xml:space="preserve">
+    <value>Ручное устройство удалено.</value>
+  </data>
+  <data name="ManualTopologyStatusPortCreated" xml:space="preserve">
+    <value>Ручной порт создан.</value>
+  </data>
+  <data name="ManualTopologyStatusPortSaved" xml:space="preserve">
+    <value>Изменения ручного порта сохранены.</value>
+  </data>
+  <data name="ManualTopologyStatusPortDeleted" xml:space="preserve">
+    <value>Ручной порт удалён.</value>
+  </data>
+  <data name="ManualTopologyStatusLinkCreated" xml:space="preserve">
+    <value>Ручная связь создана.</value>
+  </data>
+  <data name="ManualTopologyStatusLinkSaved" xml:space="preserve">
+    <value>Изменения ручной связи сохранены.</value>
+  </data>
+  <data name="ManualTopologyStatusLinkDeleted" xml:space="preserve">
+    <value>Ручная связь удалена.</value>
+  </data>
+  <data name="ManualTopologyValidationDeviceName" xml:space="preserve">
+    <value>Введите название устройства.</value>
+  </data>
+  <data name="ManualTopologyValidationCategory" xml:space="preserve">
+    <value>Выберите тип устройства.</value>
+  </data>
+  <data name="ManualTopologyValidationManualDevice" xml:space="preserve">
+    <value>В этом редакторе можно изменять только ручное устройство.</value>
+  </data>
+  <data name="ManualTopologyValidationPortManualDevice" xml:space="preserve">
+    <value>Виртуальный порт можно создать только на ручном устройстве.</value>
+  </data>
+  <data name="ManualTopologyValidationPortName" xml:space="preserve">
+    <value>Введите название порта.</value>
+  </data>
+  <data name="ManualTopologyValidationManualPort" xml:space="preserve">
+    <value>В этом редакторе можно изменять только ручной порт.</value>
+  </data>
+  <data name="ManualTopologyValidationEndpoints" xml:space="preserve">
+    <value>Выберите оба конца кабеля.</value>
+  </data>
+  <data name="ManualTopologyValidationDifferentDevices" xml:space="preserve">
+    <value>Физический кабель должен соединять два разных устройства.</value>
+  </data>
+  <data name="ManualTopologyValidationManualLink" xml:space="preserve">
+    <value>В этом редакторе можно изменять только ручную связь.</value>
+  </data>
+  <data name="ManualTopologyDeleteConnectedDevice" xml:space="preserve">
+    <value>Устройство всё ещё подключено. Сначала удалите его ручные кабели и порты.</value>
+  </data>
+  <data name="ManualTopologyDeleteConnectedPort" xml:space="preserve">
+    <value>Порт всё ещё используется кабелем. Сначала удалите ручной кабель.</value>
+  </data>
+  <data name="ManualTopologyLinkConflict" xml:space="preserve">
+    <value>Совместимый физический кабель уже существует. Существующая автоматическая или ручная связь не заменена.</value>
+  </data>
+  <data name="ManualTopologyOperationFailed" xml:space="preserve">
+    <value>Не удалось выполнить операцию. Подробности записаны в журнал.</value>
+  </data>
+  <data name="ManualTopologyDeviceSummaryManual" xml:space="preserve">
+    <value>[Ручное] {0}</value>
+  </data>
+  <data name="ManualTopologyDeviceSummaryAutomatic" xml:space="preserve">
+    <value>[Автоматическое, только чтение] {0}</value>
+  </data>
+  <data name="ManualTopologyPortSummaryManual" xml:space="preserve">
+    <value>[Ручной] {0} • {1}</value>
+  </data>
+  <data name="ManualTopologyPortSummaryAutomatic" xml:space="preserve">
+    <value>[Автоматический, только чтение] {0} • {1}</value>
+  </data>
+  <data name="ManualTopologyLinkSummaryManual" xml:space="preserve">
+    <value>[Ручная] {0} ↔ {1} • {2}</value>
+  </data>
+  <data name="ManualTopologyLinkSummaryAutomatic" xml:space="preserve">
+    <value>[Автоматическая, только чтение] {0} ↔ {1} • {2}</value>
+  </data>
+  <data name="ManualTopologyEndpointSummary" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="ManualTopologyNoPort" xml:space="preserve">
+    <value>Только устройство / порт не указан</value>
+  </data>
+  <data name="ManualTopologyMediaCopper" xml:space="preserve">
+    <value>Медь</value>
+  </data>
+  <data name="ManualTopologyMediaFiber" xml:space="preserve">
+    <value>Оптика</value>
+  </data>
+  <data name="ManualTopologyMediaWireless" xml:space="preserve">
+    <value>Беспроводная</value>
+  </data>
+  <data name="ManualTopologyMediaLogical" xml:space="preserve">
+    <value>Логическая</value>
+  </data>
+  <data name="ManualTopologyMediaUnknown" xml:space="preserve">
+    <value>Неизвестно</value>
+  </data>
+  <data name="CategoryUnknown" xml:space="preserve">
+    <value>Неизвестно</value>
+  </data>
 </root>
