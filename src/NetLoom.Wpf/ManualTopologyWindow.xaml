@@ -32,6 +32,10 @@
                            Style="{StaticResource NetLoom.Style.MutedText}"
                            Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                            TextWrapping="Wrap" />
+                <TextBlock x:Name="ManualTopologyInteractionHintText"
+                           Style="{StaticResource NetLoom.Style.MutedText}"
+                           Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                           TextWrapping="Wrap" />
                 <TextBlock x:Name="ManualTopologyStatusText"
                            Style="{StaticResource NetLoom.Style.StatusEmphasis}"
                            Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
@@ -63,7 +67,21 @@
                         <ListBox x:Name="ManualDevicesList"
                                  Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                  DisplayMemberPath="Summary"
-                                 SelectionChanged="OnDeviceSelectionChanged" />
+                                 SelectionChanged="OnDeviceSelectionChanged"
+                                 MouseDoubleClick="OnDeviceListDoubleClick"
+                                 PreviewMouseRightButtonDown="OnDeviceListPreviewMouseRightButtonDown"
+                                 ContextMenuOpening="OnDeviceContextMenuOpening"
+                                 KeyDown="OnDeviceListKeyDown">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem x:Name="ManualDeviceContextEdit"
+                                              Click="OnDeviceContextEditClick" />
+                                    <Separator />
+                                    <MenuItem x:Name="ManualDeviceContextDelete"
+                                              Click="OnDeviceContextDeleteClick" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
                     </StackPanel>
 
                     <Border Grid.Column="1"
@@ -130,7 +148,21 @@
                         <ListBox x:Name="ManualPortsList"
                                  Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                  DisplayMemberPath="Summary"
-                                 SelectionChanged="OnPortSelectionChanged" />
+                                 SelectionChanged="OnPortSelectionChanged"
+                                 MouseDoubleClick="OnPortListDoubleClick"
+                                 PreviewMouseRightButtonDown="OnPortListPreviewMouseRightButtonDown"
+                                 ContextMenuOpening="OnPortContextMenuOpening"
+                                 KeyDown="OnPortListKeyDown">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem x:Name="ManualPortContextEdit"
+                                              Click="OnPortContextEditClick" />
+                                    <Separator />
+                                    <MenuItem x:Name="ManualPortContextDelete"
+                                              Click="OnPortContextDeleteClick" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
                     </StackPanel>
 
                     <Border Grid.Column="1"
@@ -182,7 +214,21 @@
                         <ListBox x:Name="ManualLinksList"
                                  Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                  DisplayMemberPath="Summary"
-                                 SelectionChanged="OnLinkSelectionChanged" />
+                                 SelectionChanged="OnLinkSelectionChanged"
+                                 MouseDoubleClick="OnLinkListDoubleClick"
+                                 PreviewMouseRightButtonDown="OnLinkListPreviewMouseRightButtonDown"
+                                 ContextMenuOpening="OnLinkContextMenuOpening"
+                                 KeyDown="OnLinkListKeyDown">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem x:Name="ManualLinkContextEdit"
+                                              Click="OnLinkContextEditClick" />
+                                    <Separator />
+                                    <MenuItem x:Name="ManualLinkContextDelete"
+                                              Click="OnLinkContextDeleteClick" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
                     </StackPanel>
 
                     <Border Grid.Column="1"

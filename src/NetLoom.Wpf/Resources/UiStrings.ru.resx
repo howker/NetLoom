@@ -409,7 +409,7 @@
     <value>Выбранного элемента больше нет в текущем снимке карты.</value>
   </data>
   <data name="DiagnosticCurrent" xml:space="preserve">
-    <value>Актуальная диагностика из того же обновления топологии.</value>
+    <value>Данные из текущего снимка топологии.</value>
   </data>
   <data name="DiagnosticRefreshStale" xml:space="preserve">
     <value>Показана диагностика из последнего успешного обновления {0:G}.</value>
@@ -487,16 +487,20 @@
     <value>{0} ↔ {1}</value>
   </data>
   <data name="DiagnosticLinkPorts" xml:space="preserve">
-    <value>{0} ↔ {1}</value>
+    <value>Интерфейсы: {0} ↔ {1}</value>
   </data>
   <data name="DiagnosticInterfaceRow" xml:space="preserve">
     <value>{0} • ifIndex {1} • admin {2} / oper {3} • STP {4} • деградация {5} • наблюдение {6} • MAC {7} • скорость {8}</value>
   </data>
   <data name="DiagnosticConnectionAlternate" xml:space="preserve">
-    <value>{0} • {1} ↔ {2} • {3} • существует обходной физический путь</value>
+    <value>Локальный интерфейс: {1}
+Связь: {0} / {2}
+Состояние: {3}; есть обходной физический путь.</value>
   </data>
   <data name="DiagnosticConnectionBridge" xml:space="preserve">
-    <value>{0} • {1} ↔ {2} • {3} • на противоположной стороне: {4}</value>
+    <value>Локальный интерфейс: {1}
+Связь: {0} / {2}
+Состояние: {3}; на противоположной стороне: {4}.</value>
   </data>
   <data name="DiagnosticImpactSideA" xml:space="preserve">
     <value>Сторона {0}: {1}</value>
@@ -888,5 +892,71 @@
   </data>
   <data name="CategoryUnknown" xml:space="preserve">
     <value>Неизвестно</value>
+  </data>
+  <data name="ManualTopologyInteractionHint" xml:space="preserve">
+    <value>Среда задаётся у порта или связи, а не у устройства. После создания ручное устройство автоматически выбирается на вкладке «Порты». Двойной щелчок открывает ручной элемент для изменения, правый щелчок показывает действия, Del удаляет выбранный ручной элемент после подтверждения.</value>
+  </data>
+  <data name="ManualTopologyEdit" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="ManualTopologyStatusEditingDevice" xml:space="preserve">
+    <value>Редактирование устройства «{0}». Измените поля справа и нажмите «Сохранить изменения».</value>
+  </data>
+  <data name="ManualTopologyStatusEditingPort" xml:space="preserve">
+    <value>Редактирование порта «{0}». Измените поля справа и нажмите «Сохранить изменения».</value>
+  </data>
+  <data name="ManualTopologyStatusEditingLink" xml:space="preserve">
+    <value>Редактирование связи «{0}». Измените среду или заметки и нажмите «Сохранить изменения».</value>
+  </data>
+  <data name="ManualTopologyConfirmDeleteTitle" xml:space="preserve">
+    <value>Подтверждение удаления</value>
+  </data>
+  <data name="ManualTopologyConfirmDeleteDevice" xml:space="preserve">
+    <value>Удалить устройство «{0}»? Действие нельзя отменить.</value>
+  </data>
+  <data name="ManualTopologyConfirmDeletePort" xml:space="preserve">
+    <value>Удалить порт «{0}»? Действие нельзя отменить.</value>
+  </data>
+  <data name="ManualTopologyConfirmDeleteLink" xml:space="preserve">
+    <value>Удалить связь «{0}»? Действие нельзя отменить.</value>
+  </data>
+  <data name="ManualTopologyWarningTitle" xml:space="preserve">
+    <value>Ручная топология</value>
+  </data>
+  <data name="ManualTopologyErrorTitle" xml:space="preserve">
+    <value>Ошибка ручной топологии</value>
+  </data>
+  <data name="DiagnosticInterfaceIdentityIfIndex" xml:space="preserve">
+    <value>{0} (ifIndex {1})</value>
+  </data>
+  <data name="DiagnosticInterfaceIdentityId" xml:space="preserve">
+    <value>{0} (ID {1})</value>
+  </data>
+  <data name="DiagnosticDeviceLevelEndpoint" xml:space="preserve">
+    <value>Устройство целиком — порт не указан</value>
+  </data>
+  <data name="DiagnosticInterfaceAdmin" xml:space="preserve">
+    <value>Адм. состояние: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceOper" xml:space="preserve">
+    <value>Фактическое состояние: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceStp" xml:space="preserve">
+    <value>STP: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceDegradation" xml:space="preserve">
+    <value>Качество: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceLastSeen" xml:space="preserve">
+    <value>Последнее наблюдение: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceMac" xml:space="preserve">
+    <value>MAC: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceSpeed" xml:space="preserve">
+    <value>Скорость: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceNoTelemetry" xml:space="preserve">
+    <value>{0}&#xA;Диагностических данных по интерфейсу пока нет.</value>
   </data>
 </root>

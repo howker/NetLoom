@@ -409,7 +409,7 @@
     <value>The selected element is no longer present in the current map snapshot.</value>
   </data>
   <data name="DiagnosticCurrent" xml:space="preserve">
-    <value>Current diagnostics from the same topology refresh.</value>
+    <value>Data from the current topology snapshot.</value>
   </data>
   <data name="DiagnosticRefreshStale" xml:space="preserve">
     <value>Showing diagnostics from the last successful refresh at {0:G}.</value>
@@ -487,16 +487,20 @@
     <value>{0} ↔ {1}</value>
   </data>
   <data name="DiagnosticLinkPorts" xml:space="preserve">
-    <value>{0} ↔ {1}</value>
+    <value>Interfaces: {0} ↔ {1}</value>
   </data>
   <data name="DiagnosticInterfaceRow" xml:space="preserve">
     <value>{0} • ifIndex {1} • admin {2} / oper {3} • STP {4} • degradation {5} • seen {6} • MAC {7} • speed {8}</value>
   </data>
   <data name="DiagnosticConnectionAlternate" xml:space="preserve">
-    <value>{0} • {1} ↔ {2} • {3} • alternate physical path exists</value>
+    <value>Local interface: {1}
+Link: {0} / {2}
+State: {3}; an alternate physical path exists.</value>
   </data>
   <data name="DiagnosticConnectionBridge" xml:space="preserve">
-    <value>{0} • {1} ↔ {2} • {3} • opposite side: {4}</value>
+    <value>Local interface: {1}
+Link: {0} / {2}
+State: {3}; opposite side: {4}.</value>
   </data>
   <data name="DiagnosticImpactSideA" xml:space="preserve">
     <value>Side {0}: {1}</value>
@@ -888,5 +892,71 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   </data>
   <data name="CategoryUnknown" xml:space="preserve">
     <value>Unknown</value>
+  </data>
+  <data name="ManualTopologyInteractionHint" xml:space="preserve">
+    <value>Media is set on a port or link, not on a device. After a manual device is created it is selected automatically on the Ports tab. Double-click a manual item to edit it, right-click for actions, and press Del to delete the selected manual item after confirmation.</value>
+  </data>
+  <data name="ManualTopologyEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="ManualTopologyStatusEditingDevice" xml:space="preserve">
+    <value>Editing device “{0}”. Change the fields on the right and choose Save changes.</value>
+  </data>
+  <data name="ManualTopologyStatusEditingPort" xml:space="preserve">
+    <value>Editing port “{0}”. Change the fields on the right and choose Save changes.</value>
+  </data>
+  <data name="ManualTopologyStatusEditingLink" xml:space="preserve">
+    <value>Editing link “{0}”. Change media or notes and choose Save changes.</value>
+  </data>
+  <data name="ManualTopologyConfirmDeleteTitle" xml:space="preserve">
+    <value>Confirm deletion</value>
+  </data>
+  <data name="ManualTopologyConfirmDeleteDevice" xml:space="preserve">
+    <value>Delete device “{0}”? This action cannot be undone.</value>
+  </data>
+  <data name="ManualTopologyConfirmDeletePort" xml:space="preserve">
+    <value>Delete port “{0}”? This action cannot be undone.</value>
+  </data>
+  <data name="ManualTopologyConfirmDeleteLink" xml:space="preserve">
+    <value>Delete link “{0}”? This action cannot be undone.</value>
+  </data>
+  <data name="ManualTopologyWarningTitle" xml:space="preserve">
+    <value>Manual topology</value>
+  </data>
+  <data name="ManualTopologyErrorTitle" xml:space="preserve">
+    <value>Manual topology error</value>
+  </data>
+  <data name="DiagnosticInterfaceIdentityIfIndex" xml:space="preserve">
+    <value>{0} (ifIndex {1})</value>
+  </data>
+  <data name="DiagnosticInterfaceIdentityId" xml:space="preserve">
+    <value>{0} (ID {1})</value>
+  </data>
+  <data name="DiagnosticDeviceLevelEndpoint" xml:space="preserve">
+    <value>Whole device — no port specified</value>
+  </data>
+  <data name="DiagnosticInterfaceAdmin" xml:space="preserve">
+    <value>admin: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceOper" xml:space="preserve">
+    <value>oper: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceStp" xml:space="preserve">
+    <value>STP: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceDegradation" xml:space="preserve">
+    <value>degradation: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceLastSeen" xml:space="preserve">
+    <value>seen: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceMac" xml:space="preserve">
+    <value>MAC: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceSpeed" xml:space="preserve">
+    <value>speed: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceNoTelemetry" xml:space="preserve">
+    <value>{0}&#xA;No interface diagnostics are available yet.</value>
   </data>
 </root>

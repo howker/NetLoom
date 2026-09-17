@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using NetLoom.Application.Topology;
 using NetLoom.Wpf.Localization;
 
@@ -60,6 +61,10 @@ namespace NetLoom.Wpf
             ManualTopologyIntroText.Text =
                 UiText.Get(
                     "ManualTopologyIntro");
+
+            ManualTopologyInteractionHintText.Text =
+                UiText.Get(
+                    "ManualTopologyInteractionHint");
 
             ManualTopologyCloseButton.Content =
                 UiText.Get(
@@ -180,6 +185,78 @@ namespace NetLoom.Wpf
                     UiText.Get(
                         "ManualTopologyDelete");
             }
+
+            ApplyContextMenuText(
+                ManualDevicesList.ContextMenu);
+
+            ApplyContextMenuText(
+                ManualPortsList.ContextMenu);
+
+            ApplyContextMenuText(
+                ManualLinksList.ContextMenu);
+        }
+
+        private static void ApplyContextMenuText(
+            ContextMenu menu)
+        {
+            if (menu == null ||
+                menu.Items.Count < 3)
+            {
+                return;
+            }
+
+            var edit =
+                menu.Items[0]
+                    as MenuItem;
+
+            var delete =
+                menu.Items[2]
+                    as MenuItem;
+
+            if (edit != null)
+            {
+                edit.Header =
+                    UiText.Get(
+                        "ManualTopologyEdit");
+            }
+
+            if (delete != null)
+            {
+                delete.Header =
+                    UiText.Get(
+                        "ManualTopologyDelete");
+            }
+        }
+
+        private static void UpdateContextMenuState(
+            ContextMenu menu,
+            bool canEdit)
+        {
+            if (menu == null ||
+                menu.Items.Count < 3)
+            {
+                return;
+            }
+
+            var edit =
+                menu.Items[0]
+                    as MenuItem;
+
+            var delete =
+                menu.Items[2]
+                    as MenuItem;
+
+            if (edit != null)
+            {
+                edit.IsEnabled =
+                    canEdit;
+            }
+
+            if (delete != null)
+            {
+                delete.IsEnabled =
+                    canEdit;
+            }
         }
 
         private void BuildOptions()
@@ -260,6 +337,15 @@ namespace NetLoom.Wpf
 
         private void RefreshSnapshot()
         {
+            var selectedPortDevice =
+                SelectedDevice(
+                    ManualPortDeviceComboBox);
+
+            var selectedPortDeviceId =
+                selectedPortDevice == null
+                    ? (Guid?)null
+                    : selectedPortDevice.Item.DeviceId;
+
             _refreshing = true;
 
             try
@@ -284,6 +370,22 @@ namespace NetLoom.Wpf
 
                 ManualPortDeviceComboBox.ItemsSource =
                     deviceRows;
+
+                if (selectedPortDeviceId.HasValue)
+                {
+                    SelectDeviceRow(
+                        ManualPortDeviceComboBox,
+                        selectedPortDeviceId.Value);
+                }
+
+                if (SelectedDevice(
+                    ManualPortDeviceComboBox) == null)
+                {
+                    ManualPortDeviceComboBox.SelectedItem =
+                        deviceRows.FirstOrDefault(
+                            row =>
+                                row.Item.IsManual);
+                }
 
                 ManualLinkDeviceAComboBox.ItemsSource =
                     deviceRows;
@@ -465,6 +567,120 @@ namespace NetLoom.Wpf
             UpdateDeviceControls();
         }
 
+        private void OnDeviceListPreviewMouseRightButtonDown(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            SelectItemUnderMouse(
+                ManualDevicesList,
+                e);
+        }
+
+        private void OnDeviceContextMenuOpening(
+            object sender,
+            ContextMenuEventArgs e)
+        {
+            var row =
+                ManualDevicesList.SelectedItem
+                    as DeviceRow;
+
+            var canEdit =
+                row != null &&
+                row.Item.CanEdit;
+
+            UpdateContextMenuState(
+                ManualDevicesList.ContextMenu,
+                canEdit);
+        }
+
+        private void OnDeviceListDoubleClick(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            BeginDeviceEdit();
+        }
+
+        private void OnDeviceContextEditClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            BeginDeviceEdit();
+        }
+
+        private void BeginDeviceEdit()
+        {
+            var row =
+                ManualDevicesList.SelectedItem
+                    as DeviceRow;
+
+            if (row == null)
+            {
+                return;
+            }
+
+            if (!row.Item.CanEdit)
+            {
+                ShowWarning(
+                    "ManualTopologyValidationManualDevice");
+                return;
+            }
+
+            ManualTopologyStatusText.Text =
+                UiText.Format(
+                    "ManualTopologyStatusEditingDevice",
+                    row.Item.DisplayName);
+
+            ManualDeviceNameTextBox.Focus();
+            ManualDeviceNameTextBox.SelectAll();
+        }
+
+        private void OnDeviceContextDeleteClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            OnDeleteDeviceClick(
+                sender,
+                e);
+        }
+
+        private void OnDeviceListKeyDown(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (e.Key != Key.Delete ||
+                ManualDevicesList.SelectedItem == null)
+            {
+                return;
+            }
+
+            OnDeleteDeviceClick(
+                sender,
+                new RoutedEventArgs());
+
+            e.Handled = true;
+        }
+
+        private static void SelectItemUnderMouse(
+            ListBox list,
+            MouseButtonEventArgs e)
+        {
+            var source =
+                e.OriginalSource as DependencyObject;
+
+            var item =
+                source == null
+                    ? null
+                    : ItemsControl.ContainerFromElement(
+                        list,
+                        source) as ListBoxItem;
+
+            if (item != null)
+            {
+                item.IsSelected = true;
+                item.Focus();
+            }
+        }
+
         private void OnNewDeviceClick(
             object sender,
             RoutedEventArgs e)
@@ -524,6 +740,8 @@ namespace NetLoom.Wpf
 
                     RefreshSnapshot();
                     SelectDevice(
+                        id);
+                    SelectPortDevice(
                         id);
                 },
                 "ManualTopologyStatusDeviceCreated");
@@ -596,9 +814,32 @@ namespace NetLoom.Wpf
             if (row == null ||
                 !row.Item.CanEdit)
             {
-                ShowValidation(
+                ShowWarning(
                     "ManualTopologyValidationManualDevice");
 
+                return;
+            }
+
+            if (_snapshot.Ports.Any(
+                    port =>
+                        port.DeviceId ==
+                        row.Item.DeviceId) ||
+                _snapshot.Links.Any(
+                    link =>
+                        link.DeviceAId ==
+                        row.Item.DeviceId ||
+                        link.DeviceBId ==
+                        row.Item.DeviceId))
+            {
+                ShowWarning(
+                    "ManualTopologyDeleteConnectedDevice");
+                return;
+            }
+
+            if (!ConfirmDelete(
+                "ManualTopologyConfirmDeleteDevice",
+                row.Item.DisplayName))
+            {
                 return;
             }
 
@@ -623,9 +864,8 @@ namespace NetLoom.Wpf
                     "MANUAL_TOPOLOGY_DELETE_DEVICE_FAILED " +
                     exception);
 
-                ManualTopologyStatusText.Text =
-                    UiText.Get(
-                        "ManualTopologyDeleteConnectedDevice");
+                ShowWarning(
+                    "ManualTopologyDeleteConnectedDevice");
             }
             catch (Exception exception)
             {
@@ -704,6 +944,99 @@ namespace NetLoom.Wpf
             }
 
             UpdatePortControls();
+        }
+
+        private void OnPortListPreviewMouseRightButtonDown(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            SelectItemUnderMouse(
+                ManualPortsList,
+                e);
+        }
+
+        private void OnPortContextMenuOpening(
+            object sender,
+            ContextMenuEventArgs e)
+        {
+            var row =
+                ManualPortsList.SelectedItem
+                    as PortRow;
+
+            var canEdit =
+                row != null &&
+                row.Item.CanEdit;
+
+            UpdateContextMenuState(
+                ManualPortsList.ContextMenu,
+                canEdit);
+        }
+
+        private void OnPortListDoubleClick(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            BeginPortEdit();
+        }
+
+        private void OnPortContextEditClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            BeginPortEdit();
+        }
+
+        private void BeginPortEdit()
+        {
+            var row =
+                ManualPortsList.SelectedItem
+                    as PortRow;
+
+            if (row == null)
+            {
+                return;
+            }
+
+            if (!row.Item.CanEdit)
+            {
+                ShowWarning(
+                    "ManualTopologyValidationManualPort");
+                return;
+            }
+
+            ManualTopologyStatusText.Text =
+                UiText.Format(
+                    "ManualTopologyStatusEditingPort",
+                    row.Item.DisplayName);
+
+            ManualPortNameTextBox.Focus();
+            ManualPortNameTextBox.SelectAll();
+        }
+
+        private void OnPortContextDeleteClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            OnDeletePortClick(
+                sender,
+                e);
+        }
+
+        private void OnPortListKeyDown(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (e.Key != Key.Delete ||
+                ManualPortsList.SelectedItem == null)
+            {
+                return;
+            }
+
+            OnDeletePortClick(
+                sender,
+                new RoutedEventArgs());
+
+            e.Handled = true;
         }
 
         private void OnNewPortClick(
@@ -834,9 +1167,28 @@ namespace NetLoom.Wpf
             if (row == null ||
                 !row.Item.CanEdit)
             {
-                ShowValidation(
+                ShowWarning(
                     "ManualTopologyValidationManualPort");
 
+                return;
+            }
+
+            if (_snapshot.Links.Any(
+                link =>
+                    link.InterfaceAId ==
+                    row.Item.InterfaceId ||
+                    link.InterfaceBId ==
+                    row.Item.InterfaceId))
+            {
+                ShowWarning(
+                    "ManualTopologyDeleteConnectedPort");
+                return;
+            }
+
+            if (!ConfirmDelete(
+                "ManualTopologyConfirmDeletePort",
+                row.Item.DisplayName))
+            {
                 return;
             }
 
@@ -865,9 +1217,8 @@ namespace NetLoom.Wpf
                     "MANUAL_TOPOLOGY_DELETE_PORT_FAILED " +
                     exception);
 
-                ManualTopologyStatusText.Text =
-                    UiText.Get(
-                        "ManualTopologyDeleteConnectedPort");
+                ShowWarning(
+                    "ManualTopologyDeleteConnectedPort");
             }
             catch (Exception exception)
             {
@@ -915,6 +1266,98 @@ namespace NetLoom.Wpf
                 row.Item.Notes ?? string.Empty;
 
             UpdateLinkControls();
+        }
+
+        private void OnLinkListPreviewMouseRightButtonDown(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            SelectItemUnderMouse(
+                ManualLinksList,
+                e);
+        }
+
+        private void OnLinkContextMenuOpening(
+            object sender,
+            ContextMenuEventArgs e)
+        {
+            var row =
+                ManualLinksList.SelectedItem
+                    as LinkRow;
+
+            var canEdit =
+                row != null &&
+                row.Item.CanEdit;
+
+            UpdateContextMenuState(
+                ManualLinksList.ContextMenu,
+                canEdit);
+        }
+
+        private void OnLinkListDoubleClick(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            BeginLinkEdit();
+        }
+
+        private void OnLinkContextEditClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            BeginLinkEdit();
+        }
+
+        private void BeginLinkEdit()
+        {
+            var row =
+                ManualLinksList.SelectedItem
+                    as LinkRow;
+
+            if (row == null)
+            {
+                return;
+            }
+
+            if (!row.Item.CanEdit)
+            {
+                ShowWarning(
+                    "ManualTopologyValidationManualLink");
+                return;
+            }
+
+            ManualTopologyStatusText.Text =
+                UiText.Format(
+                    "ManualTopologyStatusEditingLink",
+                    row.Summary);
+
+            ManualLinkMediaComboBox.Focus();
+        }
+
+        private void OnLinkContextDeleteClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            OnDeleteLinkClick(
+                sender,
+                e);
+        }
+
+        private void OnLinkListKeyDown(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (e.Key != Key.Delete ||
+                ManualLinksList.SelectedItem == null)
+            {
+                return;
+            }
+
+            OnDeleteLinkClick(
+                sender,
+                new RoutedEventArgs());
+
+            e.Handled = true;
         }
 
         private void OnNewLinkClick(
@@ -1093,9 +1536,8 @@ namespace NetLoom.Wpf
                     "MANUAL_TOPOLOGY_CREATE_LINK_FAILED " +
                     exception);
 
-                ManualTopologyStatusText.Text =
-                    UiText.Get(
-                        "ManualTopologyLinkConflict");
+                ShowWarning(
+                    "ManualTopologyLinkConflict");
             }
             catch (Exception exception)
             {
@@ -1150,9 +1592,16 @@ namespace NetLoom.Wpf
             if (row == null ||
                 !row.Item.CanEdit)
             {
-                ShowValidation(
+                ShowWarning(
                     "ManualTopologyValidationManualLink");
 
+                return;
+            }
+
+            if (!ConfirmDelete(
+                "ManualTopologyConfirmDeleteLink",
+                row.Summary))
+            {
                 return;
             }
 
@@ -1241,9 +1690,8 @@ namespace NetLoom.Wpf
                 !canEdit;
 
             ManualPortMediaComboBox.IsEnabled =
-                !editing
-                    ? canCreate
-                    : canEdit;
+                !editing ||
+                canEdit;
         }
 
         private void UpdateLinkControls()
@@ -1319,6 +1767,51 @@ namespace NetLoom.Wpf
             ManualTopologyStatusText.Text =
                 UiText.Get(
                     "ManualTopologyOperationFailed");
+
+            MessageBox.Show(
+                this,
+                UiText.Get(
+                    "ManualTopologyOperationFailed"),
+                UiText.Get(
+                    "ManualTopologyErrorTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+
+        private bool ConfirmDelete(
+            string messageKey,
+            string displayName)
+        {
+            return MessageBox.Show(
+                this,
+                UiText.Format(
+                    messageKey,
+                    displayName),
+                UiText.Get(
+                    "ManualTopologyConfirmDeleteTitle"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No) ==
+                MessageBoxResult.Yes;
+        }
+
+        private void ShowWarning(
+            string key)
+        {
+            var message =
+                UiText.Get(
+                    key);
+
+            ManualTopologyStatusText.Text =
+                message;
+
+            MessageBox.Show(
+                this,
+                message,
+                UiText.Get(
+                    "ManualTopologyWarningTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
 
         private void ShowValidation(

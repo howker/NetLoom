@@ -155,7 +155,14 @@ namespace NetLoom.Tests.Unit
                         "ManualTopologyValidationDifferentDevices",
                         "ManualTopologyDeleteConnectedDevice",
                         "ManualTopologyLinkConflict",
-                        "ManualTopologyMediaFiber"
+                        "ManualTopologyMediaFiber",
+                        "ManualTopologyInteractionHint",
+                        "ManualTopologyConfirmDeleteDevice",
+                        "ManualTopologyConfirmDeletePort",
+                        "ManualTopologyConfirmDeleteLink",
+                        "DiagnosticInterfaceIdentityIfIndex",
+                        "DiagnosticDeviceLevelEndpoint",
+                        "DiagnosticInterfaceNoTelemetry"
                     })
                 {
                     Assert.IsTrue(
@@ -193,6 +200,71 @@ namespace NetLoom.Tests.Unit
             Assert.AreEqual(
                 "Ручная топология",
                 action);
+        }
+
+        [TestMethod]
+        public void ManualTopologyOperatorRemediationContractIsPresent()
+        {
+            var editorXaml =
+                ReadRepositoryFile(
+                    "src/NetLoom.Wpf/ManualTopologyWindow.xaml");
+
+            var editorCode =
+                ReadRepositoryFile(
+                    "src/NetLoom.Wpf/ManualTopologyWindow.xaml.cs");
+
+            var mainCode =
+                ReadRepositoryFile(
+                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+
+            StringAssert.Contains(
+                editorXaml,
+                "MouseDoubleClick=\"OnDeviceListDoubleClick\"");
+
+            StringAssert.Contains(
+                editorXaml,
+                "PreviewMouseRightButtonDown=\"OnPortListPreviewMouseRightButtonDown\"");
+
+            StringAssert.Contains(
+                editorXaml,
+                "KeyDown=\"OnLinkListKeyDown\"");
+
+            StringAssert.Contains(
+                editorCode,
+                "Key.Delete");
+
+            StringAssert.Contains(
+                editorCode,
+                "ManualTopologyConfirmDeleteDevice");
+
+            StringAssert.Contains(
+                editorCode,
+                "MessageBoxButton.YesNo");
+
+            StringAssert.Contains(
+                editorCode,
+                "ManualTopologyDeleteConnectedDevice");
+
+            StringAssert.Contains(
+                editorCode,
+                "ManualPortMediaComboBox.IsEnabled");
+
+            StringAssert.Contains(
+                mainCode,
+                "DisplayLinkEndpointInterface");
+
+            StringAssert.Contains(
+                mainCode,
+                "DiagnosticInterfaceIdentityIfIndex");
+
+            StringAssert.Contains(
+                mainCode,
+                "DiagnosticDeviceLevelEndpoint");
+
+            Assert.IsFalse(
+                mainCode.Contains(
+                    "\"DiagnosticInterfaceRow\""),
+                "The device panel must not render the old all-fields-in-one-line interface row.");
         }
 
         private static string ReadRepositoryFile(

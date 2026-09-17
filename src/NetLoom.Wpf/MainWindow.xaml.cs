@@ -3036,29 +3036,53 @@ public partial class MainWindow : Window
                     item.DegradationStatus ==
                     DiagnosticDegradationStatus.Degraded);
 
-        DiagnosticFieldsList.ItemsSource =
-            new[]
-            {
+        var stateFields =
+            new List<DiagnosticFieldRow>();
+
+        if (!string.IsNullOrWhiteSpace(
+            device.LocationName))
+        {
+            stateFields.Add(
                 Field(
                     "DiagnosticFieldLocation",
-                    device.LocationName),
+                    device.LocationName));
+        }
+
+        if (device.LastSeenUtc.HasValue)
+        {
+            stateFields.Add(
                 Field(
                     "DiagnosticFieldLastSeen",
                     LocalTimeText(
-                        device.LastSeenUtc)),
+                        device.LastSeenUtc)));
+        }
+
+        if (device.LastResolvedUtc.HasValue)
+        {
+            stateFields.Add(
                 Field(
                     "DiagnosticFieldLastResolved",
                     LocalTimeText(
-                        device.LastResolvedUtc)),
-                Field(
-                    "DiagnosticFieldInterfaces",
-                    device.Interfaces.Count.ToString(
-                        CultureInfo.CurrentCulture)),
+                        device.LastResolvedUtc)));
+        }
+
+        stateFields.Add(
+            Field(
+                "DiagnosticFieldInterfaces",
+                device.Interfaces.Count.ToString(
+                    CultureInfo.CurrentCulture)));
+
+        if (degradedCount > 0)
+        {
+            stateFields.Add(
                 Field(
                     "DiagnosticFieldDegradedInterfaces",
                     degradedCount.ToString(
-                        CultureInfo.CurrentCulture))
-            };
+                        CultureInfo.CurrentCulture)));
+        }
+
+        DiagnosticFieldsList.ItemsSource =
+            stateFields;
 
         DiagnosticSecondaryTitleText.Text =
             UiText.Get("DiagnosticInterfacesTitle");
@@ -3126,9 +3150,11 @@ public partial class MainWindow : Window
         DiagnosticElementSubtitleText.Text =
             UiText.Format(
                 "DiagnosticLinkPorts",
-                DisplayInterfaceName(
+                DisplayLinkEndpointInterface(
+                    link.InterfaceAId,
                     link.InterfaceAName),
-                DisplayInterfaceName(
+                DisplayLinkEndpointInterface(
+                    link.InterfaceBId,
                     link.InterfaceBName));
 
         DiagnosticPrimaryTitleText.Text =
@@ -3245,32 +3271,163 @@ public partial class MainWindow : Window
     private static string BuildInterfaceDiagnosticText(
         InterfaceDiagnostic item)
     {
-        return UiText.Format(
-            "DiagnosticInterfaceRow",
-            DisplayInterfaceName(
-                item.DisplayName),
-            item.IfIndex.HasValue
-                ? item.IfIndex.Value.ToString(
-                    CultureInfo.CurrentCulture)
-                : UiText.Get("DiagnosticNotAvailable"),
-            ValueOrNotAvailable(
-                item.AdminStatus),
-            ValueOrNotAvailable(
-                item.OperStatus),
+        var identity =
+            InterfaceIdentity(item);
+
+        var details =
+            new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(
+            item.AdminStatus))
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceAdmin",
+                    item.AdminStatus));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+            item.OperStatus))
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceOper",
+                    item.OperStatus));
+        }
+
+        var stp =
             StpStateText(
-                item.StpState),
-            DegradationText(
-                item),
-            LocalTimeText(
-                item.LastSeenUtc),
-            ValueOrNotAvailable(
-                item.MacAddress),
-            ValueOrNotAvailable(
-                SpeedText(
-                    item.SpeedBps)));
+                item.StpState);
+
+        if (!string.Equals(
+            stp,
+            UiText.Get(
+                "DiagnosticStpUnknown"),
+            StringComparison.CurrentCulture))
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceStp",
+                    stp));
+        }
+
+        if (item.DegradationStatus !=
+            DiagnosticDegradationStatus.Unknown)
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceDegradation",
+                    DegradationText(
+                        item)));
+        }
+
+        if (item.LastSeenUtc.HasValue)
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceLastSeen",
+                    LocalTimeText(
+                        item.LastSeenUtc)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+            item.MacAddress))
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceMac",
+                    item.MacAddress));
+        }
+
+        if (item.SpeedBps.HasValue)
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceSpeed",
+                    SpeedText(
+                        item.SpeedBps)));
+        }
+
+        return details.Count == 0
+            ? UiText.Format(
+                "DiagnosticInterfaceNoTelemetry",
+                identity)
+            : identity +
+              Environment.NewLine +
+              string.Join(
+                  " • ",
+                  details);
     }
 
-    private static string BuildDeviceLinkDiagnosticText(
+    private static string InterfaceIdentity(
+        InterfaceDiagnostic item)
+    {
+        var name =
+            DisplayInterfaceName(
+                item.DisplayName);
+
+        if (item.IfIndex.HasValue)
+        {
+            return UiText.Format(
+                "DiagnosticInterfaceIdentityIfIndex",
+                name,
+                item.IfIndex.Value.ToString(
+                    CultureInfo.CurrentCulture));
+        }
+
+        return UiText.Format(
+            "DiagnosticInterfaceIdentityId",
+            name,
+            ShortIdentifier(
+                item.InterfaceId));
+    }
+
+    private string DisplayLinkEndpointInterface(
+        Guid? interfaceId,
+        string interfaceName)
+    {
+        if (!interfaceId.HasValue)
+        {
+            return UiText.Get(
+                "DiagnosticDeviceLevelEndpoint");
+        }
+
+        var diagnostic =
+            _lastDiagnosticSnapshot == null
+                ? null
+                : _lastDiagnosticSnapshot.Devices
+                    .SelectMany(
+                        device =>
+                            device.Interfaces)
+                    .FirstOrDefault(
+                        item =>
+                            item.InterfaceId ==
+                            interfaceId.Value);
+
+        if (diagnostic != null)
+        {
+            return InterfaceIdentity(
+                diagnostic);
+        }
+
+        return UiText.Format(
+            "DiagnosticInterfaceIdentityId",
+            DisplayInterfaceName(
+                interfaceName),
+            ShortIdentifier(
+                interfaceId.Value));
+    }
+
+    private static string ShortIdentifier(
+        Guid value)
+    {
+        return value
+            .ToString("N")
+            .Substring(0, 8)
+            .ToUpperInvariant();
+    }
+
+    private string BuildDeviceLinkDiagnosticText(
         Guid selectedDeviceId,
         PhysicalLinkDiagnostic link)
     {
@@ -3286,16 +3443,20 @@ public partial class MainWindow : Window
 
         var localPort =
             selectedIsA
-                ? DisplayInterfaceName(
+                ? DisplayLinkEndpointInterface(
+                    link.InterfaceAId,
                     link.InterfaceAName)
-                : DisplayInterfaceName(
+                : DisplayLinkEndpointInterface(
+                    link.InterfaceBId,
                     link.InterfaceBName);
 
         var peerPort =
             selectedIsA
-                ? DisplayInterfaceName(
+                ? DisplayLinkEndpointInterface(
+                    link.InterfaceBId,
                     link.InterfaceBName)
-                : DisplayInterfaceName(
+                : DisplayLinkEndpointInterface(
+                    link.InterfaceAId,
                     link.InterfaceAName);
 
         if (!link.IsBridge)
