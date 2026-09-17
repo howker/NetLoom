@@ -430,9 +430,25 @@ namespace NetLoom.Tests.Unit
 
             Assert.IsNotNull(content);
 
-            var title =
+            var directTitle =
                 content.Children[0]
                 as TextBlock;
+
+            if (directTitle != null)
+            {
+                return directTitle;
+            }
+
+            var header =
+                content.Children[0]
+                as Panel;
+
+            Assert.IsNotNull(header);
+
+            var title =
+                header.Children
+                    .OfType<TextBlock>()
+                    .LastOrDefault();
 
             Assert.IsNotNull(title);
 
@@ -442,21 +458,39 @@ namespace NetLoom.Tests.Unit
         private static void DisableMotion(
             MainWindow window)
         {
-            var motionButton =
+            var settingsButton =
                 window.FindName(
-                    "MapMotionModeButton")
+                    "MapSettingsButton")
                 as Button;
 
             Assert.IsNotNull(
-                motionButton);
+                settingsButton);
 
-            motionButton.RaiseEvent(
-                new System.Windows.RoutedEventArgs(
-                    Button.ClickEvent));
+            var settingsMenu =
+                settingsButton.ContextMenu;
 
-            motionButton.RaiseEvent(
+            Assert.IsNotNull(
+                settingsMenu);
+
+            var motionMenu =
+                settingsMenu.Items
+                    .OfType<MenuItem>()
+                    .SingleOrDefault();
+
+            Assert.IsNotNull(
+                motionMenu);
+
+            var offItem =
+                motionMenu.Items
+                    .OfType<MenuItem>()
+                    .LastOrDefault();
+
+            Assert.IsNotNull(
+                offItem);
+
+            offItem.RaiseEvent(
                 new System.Windows.RoutedEventArgs(
-                    Button.ClickEvent));
+                    MenuItem.ClickEvent));
         }
 
         private static void RunOnSta(

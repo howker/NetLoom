@@ -210,6 +210,18 @@
                 Value="CharacterEllipsis" />
     </Style>
 
+    <Style x:Key="NetLoom.Style.MapNodeLockBadge"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.InlineGap}" />
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.Caption}" />
+        <Setter Property="FontWeight"
+                Value="SemiBold" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.Accent}" />
+    </Style>
+
     <Style x:Key="NetLoom.Style.MapNodeSecondary"
            TargetType="{x:Type TextBlock}">
         <Setter Property="Margin"

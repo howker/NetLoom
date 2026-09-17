@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -38,6 +39,9 @@ public partial class MainWindow : Window
     private readonly double _zoomMin;
     private readonly double _zoomMax;
     private readonly double _zoomStep;
+    private readonly double _fitPadding;
+    private readonly double _virtualOriginX;
+    private readonly double _virtualOriginY;
 
     private readonly TopologyRefreshCoordinator
         _topologyRefreshCoordinator;
@@ -88,6 +92,10 @@ public partial class MainWindow : Window
 
     private MapMotionMode _motionMode =
         MapMotionMode.Normal;
+
+    private MenuItem _motionNormalMenuItem;
+    private MenuItem _motionReducedMenuItem;
+    private MenuItem _motionOffMenuItem;
 
     private double _zoom = 1.0;
 
@@ -210,6 +218,18 @@ public partial class MainWindow : Window
             GetDoubleResource(
                 "NetLoom.Map.ZoomStep");
 
+        _fitPadding =
+            GetDoubleResource(
+                "NetLoom.Map.FitPadding");
+
+        _virtualOriginX =
+            GetDoubleResource(
+                "NetLoom.Map.VirtualOriginX");
+
+        _virtualOriginY =
+            GetDoubleResource(
+                "NetLoom.Map.VirtualOriginY");
+
         _mapLayoutStore =
             mapLayoutStore ??
             throw new ArgumentNullException(
@@ -266,8 +286,19 @@ public partial class MainWindow : Window
         MapZoomInButton.Content =
             UiText.Get("MapZoomInAction");
 
-        MapScrollViewer.ToolTip =
+        MapFitAllButton.Content =
+            UiText.Get("MapFitAllAction");
+
+        MapHelpButton.Content =
+            UiText.Get("MapHelpAction");
+
+        MapHelpButton.ToolTip =
             UiText.Get("MapInteractionHint");
+
+        MapSettingsButton.Content =
+            UiText.Get("MapSettingsAction");
+
+        InitializeMapSettingsMenu();
 
         UpdateZoomText();
         UpdateMotionModeText();
@@ -557,14 +588,10 @@ public partial class MainWindow : Window
                     snapshot.Viewport.Zoom);
 
             _pendingPanX =
-                Math.Max(
-                    0.0,
-                    snapshot.Viewport.PanX);
+                snapshot.Viewport.PanX;
 
             _pendingPanY =
-                Math.Max(
-                    0.0,
-                    snapshot.Viewport.PanY);
+                snapshot.Viewport.PanY;
 
             _persistedDeviceLayouts.Clear();
 
@@ -595,11 +622,19 @@ public partial class MainWindow : Window
                 {
                     MapScrollViewer
                         .ScrollToHorizontalOffset(
-                            _pendingPanX);
+                            MapVirtualWorkspace
+                                .ToScrollOffset(
+                                    _pendingPanX,
+                                    _virtualOriginX,
+                                    _zoom));
 
                     MapScrollViewer
                         .ScrollToVerticalOffset(
-                            _pendingPanY);
+                            MapVirtualWorkspace
+                                .ToScrollOffset(
+                                    _pendingPanY,
+                                    _virtualOriginY,
+                                    _zoom));
                 }));
     }
 
@@ -689,6 +724,124 @@ public partial class MainWindow : Window
                 }));
     }
 
+    private void FitTopologyToViewport()
+    {
+        var visuals =
+            _nodeVisualsByIdentity.Values
+                .Where(
+                    visual =>
+                        visual != null &&
+                        visual.Border.Visibility ==
+                            Visibility.Visible)
+                .ToArray();
+
+        if (visuals.Length == 0)
+        {
+            return;
+        }
+
+        var viewportWidth =
+            MapScrollViewer.ViewportWidth;
+
+        var viewportHeight =
+            MapScrollViewer.ViewportHeight;
+
+        if (viewportWidth <= 0.0 ||
+            viewportHeight <= 0.0)
+        {
+            return;
+        }
+
+        var minX =
+            visuals.Min(
+                NodeLeft);
+
+        var minY =
+            visuals.Min(
+                NodeTop);
+
+        var maxX =
+            visuals.Max(
+                visual =>
+                    NodeLeft(
+                        visual) +
+                    _nodeWidth);
+
+        var maxY =
+            visuals.Max(
+                visual =>
+                    NodeTop(
+                        visual) +
+                    _nodeHeight);
+
+        var contentWidth =
+            Math.Max(
+                1.0,
+                maxX -
+                minX);
+
+        var contentHeight =
+            Math.Max(
+                1.0,
+                maxY -
+                minY);
+
+        var availableWidth =
+            Math.Max(
+                1.0,
+                viewportWidth -
+                (_fitPadding * 2.0));
+
+        var availableHeight =
+            Math.Max(
+                1.0,
+                viewportHeight -
+                (_fitPadding * 2.0));
+
+        _zoom =
+            ClampZoom(
+                Math.Min(
+                    availableWidth /
+                    contentWidth,
+                    availableHeight /
+                    contentHeight));
+
+        var centerX =
+            (minX +
+             maxX) /
+            2.0;
+
+        var centerY =
+            (minY +
+             maxY) /
+            2.0;
+
+        ApplyZoomTransform();
+        UpdateZoomText();
+
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(
+                () =>
+                {
+                    MapScrollViewer
+                        .ScrollToHorizontalOffset(
+                            Math.Max(
+                                0.0,
+                                (centerX * _zoom) -
+                                (viewportWidth / 2.0)));
+
+                    MapScrollViewer
+                        .ScrollToVerticalOffset(
+                            Math.Max(
+                                0.0,
+                                (centerY * _zoom) -
+                                (viewportHeight / 2.0)));
+
+                    TrySaveViewportLayout();
+                }));
+    }
+
     private void TrySaveViewportLayout()
     {
         try
@@ -697,12 +850,18 @@ public partial class MainWindow : Window
                 _mapLayoutId,
                 new MapViewportLayout(
                     _zoom,
-                    Math.Max(
-                        0.0,
-                        MapScrollViewer.HorizontalOffset),
-                    Math.Max(
-                        0.0,
-                        MapScrollViewer.VerticalOffset)));
+                    MapVirtualWorkspace
+                        .ToLogicalPan(
+                            MapScrollViewer
+                                .HorizontalOffset,
+                            _virtualOriginX,
+                            _zoom),
+                    MapVirtualWorkspace
+                        .ToLogicalPan(
+                            MapScrollViewer
+                                .VerticalOffset,
+                            _virtualOriginY,
+                            _zoom)));
         }
         catch (Exception error)
         {
@@ -727,8 +886,16 @@ public partial class MainWindow : Window
         var layout =
             new MapDeviceLayout(
                 visual.DeviceId.Value,
-                NodeLeft(visual),
-                NodeTop(visual),
+                MapVirtualWorkspace
+                    .ToLogicalCoordinate(
+                        NodeLeft(
+                            visual),
+                        _virtualOriginX),
+                MapVirtualWorkspace
+                    .ToLogicalCoordinate(
+                        NodeTop(
+                            visual),
+                        _virtualOriginY),
                 visual.IsLocked);
 
         try
@@ -752,28 +919,124 @@ public partial class MainWindow : Window
         }
     }
 
+    private void InitializeMapSettingsMenu()
+    {
+        _motionNormalMenuItem =
+            new MenuItem
+            {
+                Header =
+                    UiText.Get(
+                        "MapMotionNormalAction"),
+                IsCheckable = true,
+                ToolTip =
+                    UiText.Get(
+                        "MapMotionNormalHint")
+            };
+
+        _motionNormalMenuItem.Click +=
+            OnMapMotionNormalClick;
+
+        _motionReducedMenuItem =
+            new MenuItem
+            {
+                Header =
+                    UiText.Get(
+                        "MapMotionReducedAction"),
+                IsCheckable = true,
+                ToolTip =
+                    UiText.Get(
+                        "MapMotionReducedHint")
+            };
+
+        _motionReducedMenuItem.Click +=
+            OnMapMotionReducedClick;
+
+        _motionOffMenuItem =
+            new MenuItem
+            {
+                Header =
+                    UiText.Get(
+                        "MapMotionOffAction"),
+                IsCheckable = true,
+                ToolTip =
+                    UiText.Get(
+                        "MapMotionOffHint")
+            };
+
+        _motionOffMenuItem.Click +=
+            OnMapMotionOffClick;
+
+        var motionMenu =
+            new MenuItem
+            {
+                Header =
+                    UiText.Get(
+                        "MapMotionSettings")
+            };
+
+        motionMenu.Items.Add(
+            _motionNormalMenuItem);
+
+        motionMenu.Items.Add(
+            _motionReducedMenuItem);
+
+        motionMenu.Items.Add(
+            _motionOffMenuItem);
+
+        var settingsMenu =
+            new ContextMenu
+            {
+                Placement =
+                    PlacementMode.Bottom,
+                PlacementTarget =
+                    MapSettingsButton
+            };
+
+        settingsMenu.Items.Add(
+            motionMenu);
+
+        MapSettingsButton.ContextMenu =
+            settingsMenu;
+
+        MapSettingsButton.ToolTip =
+            UiText.Get(
+                "MapSettingsHint");
+    }
+
     private void UpdateMotionModeText()
     {
-        switch (_motionMode)
+        if (_motionNormalMenuItem == null ||
+            _motionReducedMenuItem == null ||
+            _motionOffMenuItem == null)
         {
-            case MapMotionMode.Normal:
-                MapMotionModeButton.Content =
-                    UiText.Get(
-                        "MapMotionNormal");
-                break;
-
-            case MapMotionMode.Reduced:
-                MapMotionModeButton.Content =
-                    UiText.Get(
-                        "MapMotionReduced");
-                break;
-
-            default:
-                MapMotionModeButton.Content =
-                    UiText.Get(
-                        "MapMotionOff");
-                break;
+            return;
         }
+
+        _motionNormalMenuItem.IsChecked =
+            _motionMode ==
+            MapMotionMode.Normal;
+
+        _motionReducedMenuItem.IsChecked =
+            _motionMode ==
+            MapMotionMode.Reduced;
+
+        _motionOffMenuItem.IsChecked =
+            _motionMode ==
+            MapMotionMode.Off;
+    }
+
+    private void SetMotionMode(
+        MapMotionMode mode)
+    {
+        _motionMode = mode;
+
+        if (_motionMode ==
+            MapMotionMode.Off)
+        {
+            StopAllMotion();
+        }
+
+        UpdateMotionModeText();
     }
 
     private void UpdateSelectedLayoutControl()
@@ -1340,11 +1603,17 @@ public partial class MainWindow : Window
 
                 Canvas.SetLeft(
                     visual.Border,
-                    left);
+                    MapVirtualWorkspace
+                        .ToCanvasCoordinate(
+                            left,
+                            _virtualOriginX));
 
                 Canvas.SetTop(
                     visual.Border,
-                    top);
+                    MapVirtualWorkspace
+                        .ToCanvasCoordinate(
+                            top,
+                            _virtualOriginY));
 
                 Panel.SetZIndex(
                     visual.Border,
@@ -1361,7 +1630,10 @@ public partial class MainWindow : Window
                 {
                     Canvas.SetLeft(
                         visual.Border,
-                        node.X);
+                        MapVirtualWorkspace
+                            .ToCanvasCoordinate(
+                                node.X,
+                                _virtualOriginX));
                 }
 
                 if (double.IsNaN(
@@ -1370,7 +1642,10 @@ public partial class MainWindow : Window
                 {
                     Canvas.SetTop(
                         visual.Border,
-                        node.Y);
+                        MapVirtualWorkspace
+                            .ToCanvasCoordinate(
+                                node.Y,
+                                _virtualOriginY));
                 }
             }
 
@@ -1616,10 +1891,36 @@ public partial class MainWindow : Window
                         "NetLoom.Style.MapNodeMeta")
             };
 
+        var lockBadge =
+            new TextBlock
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeLockBadge"),
+                Text =
+                    UiText.Get(
+                        "MapNodeLockedBadge"),
+                Visibility =
+                    Visibility.Collapsed
+            };
+
+        var header =
+            new DockPanel();
+
+        DockPanel.SetDock(
+            lockBadge,
+            Dock.Right);
+
+        header.Children.Add(
+            lockBadge);
+
+        header.Children.Add(
+            title);
+
         var content =
             new StackPanel();
 
-        content.Children.Add(title);
+        content.Children.Add(header);
         content.Children.Add(secondary);
         content.Children.Add(topologyMetadata);
         content.Children.Add(locationText);
@@ -1648,7 +1949,8 @@ public partial class MainWindow : Window
             title,
             secondary,
             topologyMetadata,
-            locationText);
+            locationText,
+            lockBadge);
     }
 
     private void UpdateNodeVisual(
@@ -1692,10 +1994,8 @@ public partial class MainWindow : Window
             }
         }
 
-        visual.Border.Cursor =
-            visual.IsLocked
-                ? Cursors.Hand
-                : Cursors.SizeAll;
+        UpdateNodeLockPresentation(
+            visual);
 
         visual.Border.Tag =
             node.DeviceId;
@@ -2089,6 +2389,26 @@ public partial class MainWindow : Window
             status;
     }
 
+    private static void UpdateNodeLockPresentation(
+        MapNodeVisual visual)
+    {
+        visual.Border.Cursor =
+            visual.IsLocked
+                ? Cursors.Hand
+                : Cursors.SizeAll;
+
+        visual.LockBadge.Visibility =
+            visual.IsLocked
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        visual.Border.ToolTip =
+            visual.IsLocked
+                ? UiText.Get(
+                    "MapNodeLockedHint")
+                : null;
+    }
+
     private static string DisplayNodeLabel(
         MapNode node)
     {
@@ -2313,30 +2633,65 @@ public partial class MainWindow : Window
             _zoomStep);
     }
 
-    private void OnMapMotionModeClick(
+    private void OnMapFitAllClick(
         object sender,
         RoutedEventArgs e)
     {
-        switch (_motionMode)
+        FitTopologyToViewport();
+    }
+
+    private void OnMapHelpClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        MessageBox.Show(
+            this,
+            UiText.Get(
+                "MapHelpBody"),
+            UiText.Get(
+                "MapHelpTitle"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    private void OnMapSettingsClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (MapSettingsButton.ContextMenu == null)
         {
-            case MapMotionMode.Normal:
-                _motionMode =
-                    MapMotionMode.Reduced;
-                break;
-
-            case MapMotionMode.Reduced:
-                _motionMode =
-                    MapMotionMode.Off;
-                StopAllMotion();
-                break;
-
-            default:
-                _motionMode =
-                    MapMotionMode.Normal;
-                break;
+            return;
         }
 
-        UpdateMotionModeText();
+        MapSettingsButton.ContextMenu.PlacementTarget =
+            MapSettingsButton;
+
+        MapSettingsButton.ContextMenu.IsOpen =
+            true;
+    }
+
+    private void OnMapMotionNormalClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        SetMotionMode(
+            MapMotionMode.Normal);
+    }
+
+    private void OnMapMotionReducedClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        SetMotionMode(
+            MapMotionMode.Reduced);
+    }
+
+    private void OnMapMotionOffClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        SetMotionMode(
+            MapMotionMode.Off);
     }
 
     private void OnMapLockSelectedChanged(
@@ -2366,10 +2721,8 @@ public partial class MainWindow : Window
             MapLockSelectedCheckBox.IsChecked ==
             true;
 
-        visual.Border.Cursor =
-            visual.IsLocked
-                ? Cursors.Hand
-                : Cursors.SizeAll;
+        UpdateNodeLockPresentation(
+            visual);
 
         TrySaveDeviceLayout(
             visual);
@@ -3719,13 +4072,15 @@ public partial class MainWindow : Window
             TextBlock title,
             TextBlock secondary,
             TextBlock topologyMetadata,
-            TextBlock location)
+            TextBlock location,
+            TextBlock lockBadge)
         {
             Border = border;
             Title = title;
             Secondary = secondary;
             TopologyMetadata = topologyMetadata;
             Location = location;
+            LockBadge = lockBadge;
         }
 
         public Border Border { get; }
@@ -3737,6 +4092,8 @@ public partial class MainWindow : Window
         public TextBlock TopologyMetadata { get; }
 
         public TextBlock Location { get; }
+
+        public TextBlock LockBadge { get; }
 
         public Guid? DeviceId { get; set; }
 

@@ -619,7 +619,59 @@
     <value>Ручное</value>
   </data>
   <data name="MapLockSelected" xml:space="preserve">
-    <value>Зафиксировать выбранный узел</value>
+    <value>Закрепить выбранный узел</value>
+  </data>
+  <data name="MapNodeLockedBadge" xml:space="preserve">
+    <value>Закреплён</value>
+  </data>
+  <data name="MapNodeLockedHint" xml:space="preserve">
+    <value>Узел закреплён: его нельзя перетаскивать. Снимите флажок «Закрепить выбранный узел», чтобы снова перемещать.</value>
+  </data>
+  <data name="MapMotionNormalHint" xml:space="preserve">
+    <value>Анимируются только изменения карты: появление и исчезновение, изменение свежести данных, переход к результату поиска и один импульс нового предупреждения. Перетаскивание узлов от этого режима не зависит. Нажмите для короткой анимации.</value>
+  </data>
+  <data name="MapMotionReducedHint" xml:space="preserve">
+    <value>Те же изменения карты показываются более короткой и слабой анимацией. Перетаскивание узлов от этого режима не зависит. Нажмите, чтобы отключить анимацию изменений.</value>
+  </data>
+  <data name="MapMotionOffHint" xml:space="preserve">
+    <value>Изменения карты применяются без анимации. Перетаскивание узлов продолжает работать как обычно. Нажмите, чтобы вернуть полную анимацию изменений.</value>
+  </data>
+  <data name="MapFitAllAction" xml:space="preserve">
+    <value>Показать всё</value>
+  </data>
+  <data name="MapHelpAction" xml:space="preserve">
+    <value>Справка</value>
+  </data>
+  <data name="MapHelpTitle" xml:space="preserve">
+    <value>Управление картой</value>
+  </data>
+  <data name="MapHelpBody" xml:space="preserve">
+    <value>Управление картой
+
+• Колесо мыши — изменить масштаб.
+• Удерживайте среднюю кнопку мыши и тяните — перемещаться по карте.
+• Незакреплённый узел можно перетаскивать левой кнопкой мыши.
+• «Показать всё» возвращает все текущие узлы топологии в видимую область.
+
+Положение узлов, масштаб, положение области просмотра и закрепление сохраняются автоматически и восстанавливаются при следующем запуске.</value>
+  </data>
+  <data name="MapSettingsAction" xml:space="preserve">
+    <value>Настройки карты</value>
+  </data>
+  <data name="MapSettingsHint" xml:space="preserve">
+    <value>Настройки отображения карты.</value>
+  </data>
+  <data name="MapMotionSettings" xml:space="preserve">
+    <value>Анимация изменений</value>
+  </data>
+  <data name="MapMotionNormalAction" xml:space="preserve">
+    <value>Полная</value>
+  </data>
+  <data name="MapMotionReducedAction" xml:space="preserve">
+    <value>Короткая</value>
+  </data>
+  <data name="MapMotionOffAction" xml:space="preserve">
+    <value>Выключена</value>
   </data>
   <data name="MapZoomLabel" xml:space="preserve">
     <value>Масштаб</value>
@@ -631,18 +683,18 @@
     <value>+</value>
   </data>
   <data name="MapMotionNormal" xml:space="preserve">
-    <value>Движение: обычное</value>
+    <value>Анимация изменений: полная</value>
   </data>
   <data name="MapMotionReduced" xml:space="preserve">
-    <value>Движение: уменьшенное</value>
+    <value>Анимация изменений: короткая</value>
   </data>
   <data name="MapMotionOff" xml:space="preserve">
-    <value>Движение: выключено</value>
+    <value>Анимация изменений: выключена</value>
   </data>
   <data name="MapLayoutSaveFailed" xml:space="preserve">
     <value>Не удалось сохранить расположение карты. Подробности записаны в журнал.</value>
   </data>
   <data name="MapInteractionHint" xml:space="preserve">
-    <value>Колесо мыши — масштаб; средняя кнопка с перетаскиванием — панорама; незакреплённый узел можно перетаскивать.</value>
+    <value>Открыть справку по управлению картой.</value>
   </data>
 </root>

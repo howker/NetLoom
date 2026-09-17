@@ -56,6 +56,38 @@ namespace NetLoom.Tests.Unit
                         "MapInteraction",
                         "MapMotionPolicy.cs"));
 
+            var virtualWorkspace =
+                ReadRepositoryFile(
+                    Path.Combine(
+                        "src",
+                        "NetLoom.Wpf",
+                        "MapInteraction",
+                        "MapVirtualWorkspace.cs"));
+
+            var designTokens =
+                ReadRepositoryFile(
+                    Path.Combine(
+                        "src",
+                        "NetLoom.Wpf",
+                        "Themes",
+                        "DesignTokens.xaml"));
+
+            var controls =
+                ReadRepositoryFile(
+                    Path.Combine(
+                        "src",
+                        "NetLoom.Wpf",
+                        "Themes",
+                        "Controls.xaml"));
+
+            var russianStrings =
+                ReadRepositoryFile(
+                    Path.Combine(
+                        "src",
+                        "NetLoom.Wpf",
+                        "Resources",
+                        "UiStrings.ru.resx"));
+
             var desktop =
                 ReadRepositoryFile(
                     Path.Combine(
@@ -106,6 +138,99 @@ namespace NetLoom.Tests.Unit
             StringAssert.Contains(
                 motion,
                 "MapMotionKind.AlertPulse");
+
+            StringAssert.Contains(
+                code,
+                "MapNodeLockedBadge");
+
+            StringAssert.Contains(
+                code,
+                "MapMotionNormalHint");
+
+            StringAssert.Contains(
+                code,
+                "MapVirtualWorkspace");
+
+            StringAssert.Contains(
+                code,
+                "ToCanvasCoordinate");
+
+            StringAssert.Contains(
+                code,
+                "ToLogicalPan");
+
+            StringAssert.Contains(
+                code,
+                "UpdateNodeLockPresentation");
+
+            Assert.IsFalse(
+                code.Contains(
+                    "private static void UpdateNodeLockPresentation(\r\n" +
+                    "        MapNodeVisual visual)\r\n" +
+                    "    {\r\n" +
+                    "        UpdateNodeLockPresentation("),
+                "Lock presentation must not recursively call itself.");
+
+            StringAssert.Contains(
+                virtualWorkspace,
+                "ToScrollOffset");
+
+            StringAssert.Contains(
+                designTokens,
+                "NetLoom.Map.VirtualOriginX");
+
+            StringAssert.Contains(
+                designTokens,
+                "1000000");
+
+            StringAssert.Contains(
+                designTokens,
+                "NetLoom.Map.ZoomMin\">0.01");
+
+            StringAssert.Contains(
+                designTokens,
+                "NetLoom.Map.ZoomMax\">5.0");
+
+            StringAssert.Contains(
+                xaml,
+                "MapFitAllButton");
+
+            StringAssert.Contains(
+                xaml,
+                "MapHelpButton");
+
+            StringAssert.Contains(
+                xaml,
+                "MapSettingsButton");
+
+            Assert.IsFalse(
+                xaml.Contains(
+                    "MapMotionModeButton"),
+                "Change animation is a map setting, not a primary toolbar action.");
+
+            StringAssert.Contains(
+                code,
+                "FitTopologyToViewport");
+
+            StringAssert.Contains(
+                code,
+                "MapHelpBody");
+
+            StringAssert.Contains(
+                code,
+                "InitializeMapSettingsMenu");
+
+            StringAssert.Contains(
+                controls,
+                "NetLoom.Style.MapNodeLockBadge");
+
+            StringAssert.Contains(
+                russianStrings,
+                "MapNodeLockedHint");
+
+            StringAssert.Contains(
+                russianStrings,
+                "MapMotionReducedHint");
 
             StringAssert.Contains(
                 desktop,

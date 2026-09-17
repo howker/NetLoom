@@ -65,9 +65,17 @@
                             Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                             Click="OnMapZoomInClick" />
 
-                    <Button x:Name="MapMotionModeButton"
+                    <Button x:Name="MapFitAllButton"
                             Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                            Click="OnMapMotionModeClick" />
+                            Click="OnMapFitAllClick" />
+
+                    <Button x:Name="MapHelpButton"
+                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Click="OnMapHelpClick" />
+
+                    <Button x:Name="MapSettingsButton"
+                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Click="OnMapSettingsClick" />
                 </StackPanel>
             </Grid>
         </Border>

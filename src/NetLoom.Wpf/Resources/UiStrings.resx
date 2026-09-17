@@ -621,6 +621,58 @@
   <data name="MapLockSelected" xml:space="preserve">
     <value>Lock selected node</value>
   </data>
+  <data name="MapNodeLockedBadge" xml:space="preserve">
+    <value>locked</value>
+  </data>
+  <data name="MapNodeLockedHint" xml:space="preserve">
+    <value>This node is locked and cannot be dragged. Clear "Lock selected node" to move it again.</value>
+  </data>
+  <data name="MapMotionNormalHint" xml:space="preserve">
+    <value>Only map changes are animated: appearance/disappearance, freshness changes, search focus and one new-alert pulse. Node dragging is unaffected. Click for shorter animation.</value>
+  </data>
+  <data name="MapMotionReducedHint" xml:space="preserve">
+    <value>The same map changes use shorter, milder animation. Node dragging is unaffected. Click to turn change animation off.</value>
+  </data>
+  <data name="MapMotionOffHint" xml:space="preserve">
+    <value>Map changes are applied without animation. Node dragging still works normally. Click to restore full change animation.</value>
+  </data>
+  <data name="MapFitAllAction" xml:space="preserve">
+    <value>Show all</value>
+  </data>
+  <data name="MapHelpAction" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="MapHelpTitle" xml:space="preserve">
+    <value>Map controls</value>
+  </data>
+  <data name="MapHelpBody" xml:space="preserve">
+    <value>Map controls
+
+• Mouse wheel — zoom in or out.
+• Hold the middle mouse button and drag — move around the map.
+• Drag an unlocked device card with the left mouse button.
+• “Show all” brings all current topology devices back into view.
+
+Positions, zoom, viewport position and locked state are saved automatically and restored on the next launch.</value>
+  </data>
+  <data name="MapSettingsAction" xml:space="preserve">
+    <value>Map settings</value>
+  </data>
+  <data name="MapSettingsHint" xml:space="preserve">
+    <value>Map display preferences.</value>
+  </data>
+  <data name="MapMotionSettings" xml:space="preserve">
+    <value>Change animation</value>
+  </data>
+  <data name="MapMotionNormalAction" xml:space="preserve">
+    <value>Full</value>
+  </data>
+  <data name="MapMotionReducedAction" xml:space="preserve">
+    <value>Short</value>
+  </data>
+  <data name="MapMotionOffAction" xml:space="preserve">
+    <value>Off</value>
+  </data>
   <data name="MapZoomLabel" xml:space="preserve">
     <value>Zoom</value>
   </data>
@@ -631,18 +683,18 @@
     <value>+</value>
   </data>
   <data name="MapMotionNormal" xml:space="preserve">
-    <value>Motion: normal</value>
+    <value>Change animation: full</value>
   </data>
   <data name="MapMotionReduced" xml:space="preserve">
-    <value>Motion: reduced</value>
+    <value>Change animation: short</value>
   </data>
   <data name="MapMotionOff" xml:space="preserve">
-    <value>Motion: off</value>
+    <value>Change animation: off</value>
   </data>
   <data name="MapLayoutSaveFailed" xml:space="preserve">
     <value>Map layout could not be saved. Details were written to the log.</value>
   </data>
   <data name="MapInteractionHint" xml:space="preserve">
-    <value>Mouse wheel: zoom. Middle-drag: pan. Drag an unlocked node to move it.</value>
+    <value>Open map help.</value>
   </data>
 </root>
