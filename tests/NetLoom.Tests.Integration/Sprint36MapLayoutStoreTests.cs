@@ -26,11 +26,12 @@ namespace NetLoom.Tests.Integration
                         connection.CreateCommand())
                     {
                         command.CommandText = @"
-SELECT MAX(version)
-FROM schema_migrations;";
+SELECT COUNT(*)
+FROM schema_migrations
+WHERE version = 19;";
 
                         Assert.AreEqual(
-                            19L,
+                            1L,
                             Convert.ToInt64(
                                 command.ExecuteScalar()));
                     }

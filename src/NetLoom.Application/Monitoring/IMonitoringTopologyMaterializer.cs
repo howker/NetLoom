@@ -7,12 +7,17 @@ namespace NetLoom.Application.Monitoring
     {
         void MaterializeDevice(
             Guid deviceId,
-            DateTime observedUtc);
+            DateTime observedUtc,
+            string managementAddress = null);
 
         void MaterializeInterface(
             Guid deviceId,
             int ifIndex,
-            DateTime observedUtc);
+            DateTime observedUtc,
+            string ifName = null,
+            string ifDescription = null,
+            string ifAlias = null,
+            int? ifType = null);
 
         void MaterializeLldp(
             Guid deviceId,

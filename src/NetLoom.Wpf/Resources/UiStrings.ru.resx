@@ -965,4 +965,28 @@
   <data name="DiagnosticInterfaceNoTelemetry" xml:space="preserve">
     <value>{0}&#xA;Диагностических данных по интерфейсу пока нет.</value>
   </data>
+  <data name="MapNodeIpAddress" xml:space="preserve">
+    <value>IP: {0}</value>
+  </data>
+  <data name="DiagnosticFieldManagementAddress" xml:space="preserve">
+    <value>IP управления</value>
+  </data>
+  <data name="DiagnosticInterfaceType" xml:space="preserve">
+    <value>Тип IF-MIB: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceIfName" xml:space="preserve">
+    <value>Имя порта (ifName): {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceIfAlias" xml:space="preserve">
+    <value>Описание оператора (ifAlias): {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceIfDescription" xml:space="preserve">
+    <value>Описание устройства (ifDescr): {0}</value>
+  </data>
+  <data name="ManualTopologySaveBeforeLeavingTitle" xml:space="preserve">
+    <value>Сохранение устройства</value>
+  </data>
+  <data name="ManualTopologySaveBeforeLeavingDevice" xml:space="preserve">
+    <value>У устройства есть несохранённые изменения. Сохранить их перед переходом к «Портам» или «Связям»?</value>
+  </data>
 </root>

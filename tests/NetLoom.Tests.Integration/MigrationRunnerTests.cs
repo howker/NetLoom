@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
@@ -95,6 +95,61 @@ CREATE TABLE rollback_probe
                         ExecuteScalarInt64(
                             connection,
                             "SELECT COUNT(*) FROM schema_migrations WHERE version = 2;"));
+                }
+            }
+            finally
+            {
+                SQLiteConnection.ClearAllPools();
+
+                if (Directory.Exists(tempDirectory))
+                {
+                    Directory.Delete(
+                        tempDirectory,
+                        recursive: true);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void FreshDatabaseIncludesManagementAddressAndIfTypeColumns()
+        {
+            var tempDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "NetLoom.Tests",
+                Guid.NewGuid().ToString("N"));
+
+            var databasePath = Path.Combine(
+                tempDirectory,
+                "migration20.db");
+
+            try
+            {
+                var connectionFactory =
+                    new SqliteConnectionFactory(databasePath);
+
+                new DatabaseInitializer(
+                    connectionFactory)
+                    .Initialize();
+
+                using (var connection = connectionFactory.OpenConnection())
+                {
+                    Assert.AreEqual(
+                        1L,
+                        ExecuteScalarInt64(
+                            connection,
+                            "SELECT COUNT(*) FROM pragma_table_info('devices') WHERE name = 'management_address';"));
+
+                    Assert.AreEqual(
+                        1L,
+                        ExecuteScalarInt64(
+                            connection,
+                            "SELECT COUNT(*) FROM pragma_table_info('interfaces') WHERE name = 'if_type';"));
+
+                    Assert.AreEqual(
+                        1L,
+                        ExecuteScalarInt64(
+                            connection,
+                            "SELECT COUNT(*) FROM schema_migrations WHERE version = 20;"));
                 }
             }
             finally

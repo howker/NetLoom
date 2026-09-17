@@ -49,6 +49,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         discovered_name, lldp_chassis_id,
         is_hidden, is_archived,
         first_seen_utc, last_seen_utc, last_resolved_utc,
+        management_address,
         created_at_utc, updated_at_utc
     )
     VALUES
@@ -59,6 +60,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         @discoveredName, @lldpChassisId,
         @hidden, @archived,
         @firstSeen, @lastSeen, @lastResolved,
+        @managementAddress,
         @created, @updated
     )
     ON CONFLICT(id) DO UPDATE SET
@@ -74,6 +76,8 @@ namespace NetLoom.Persistence.Sqlite.Topology
             COALESCE(excluded.discovered_name, devices.discovered_name),
         lldp_chassis_id =
             COALESCE(excluded.lldp_chassis_id, devices.lldp_chassis_id),
+        management_address =
+            COALESCE(excluded.management_address, devices.management_address),
         is_hidden = excluded.is_hidden,
         is_archived = excluded.is_archived,
         first_seen_utc =
@@ -110,6 +114,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
                         Add(command, "@notes", device.Notes);
                         Add(command, "@discoveredName", device.DiscoveredName);
                         Add(command, "@lldpChassisId", device.LldpChassisId);
+                        Add(command, "@managementAddress", device.ManagementAddress);
                         Add(command, "@hidden", device.IsHidden ? 1 : 0);
                         Add(command, "@archived", device.IsArchived ? 1 : 0);
                         AddDate(command, "@firstSeen", device.FirstSeenUtc);
@@ -151,7 +156,8 @@ namespace NetLoom.Persistence.Sqlite.Topology
         speed_bps, media_type_auto, media_type_override,
         is_manual, is_hidden,
         first_seen_utc, last_seen_utc,
-        lldp_port_id, lldp_port_description
+        lldp_port_id, lldp_port_description,
+        if_type
     )
     VALUES
     (
@@ -161,7 +167,8 @@ namespace NetLoom.Persistence.Sqlite.Topology
         @speed, @mediaAuto, @mediaOverride,
         @manual, @hidden,
         @firstSeen, @lastSeen,
-        @lldpPortId, @lldpPortDescription
+        @lldpPortId, @lldpPortDescription,
+        @ifType
     )
     ON CONFLICT(id) DO UPDATE SET
         device_id = excluded.device_id,
@@ -197,7 +204,11 @@ namespace NetLoom.Persistence.Sqlite.Topology
         lldp_port_description =
             COALESCE(
                 excluded.lldp_port_description,
-                interfaces.lldp_port_description);";
+                interfaces.lldp_port_description),
+        if_type =
+            COALESCE(
+                excluded.if_type,
+                interfaces.if_type);";
 
                         Add(command, "@id", networkInterface.Id.ToString("D"));
                         Add(command, "@deviceId", networkInterface.DeviceId.ToString("D"));
@@ -218,6 +229,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
                         AddDate(command, "@lastSeen", networkInterface.LastSeenUtc);
                         Add(command, "@lldpPortId", networkInterface.LldpPortId);
                         Add(command, "@lldpPortDescription", networkInterface.LldpPortDescription);
+                        Add(command, "@ifType", networkInterface.IfType);
 
                         command.ExecuteNonQuery();
                     }
@@ -370,7 +382,8 @@ SELECT
     vendor_override, model_override, notes,
     discovered_name, lldp_chassis_id,
     is_hidden, is_archived,
-    first_seen_utc, last_seen_utc, last_resolved_utc
+    first_seen_utc, last_seen_utc, last_resolved_utc,
+    management_address
 FROM devices
 WHERE id = @id;";
 
@@ -400,7 +413,8 @@ SELECT
     vendor_override, model_override, notes,
     discovered_name, lldp_chassis_id,
     is_hidden, is_archived,
-    first_seen_utc, last_seen_utc, last_resolved_utc
+    first_seen_utc, last_seen_utc, last_resolved_utc,
+    management_address
 FROM devices
 ORDER BY id;";
 
@@ -435,7 +449,8 @@ SELECT
     speed_bps, media_type_auto, media_type_override,
     is_manual, is_hidden,
     first_seen_utc, last_seen_utc,
-    lldp_port_id, lldp_port_description
+    lldp_port_id, lldp_port_description,
+    if_type
 FROM interfaces
 ORDER BY id;";
 
@@ -1266,7 +1281,8 @@ ORDER BY
                 DateNullable(reader, offset + 13),
                 DateNullable(reader, offset + 14),
                 StringNullable(reader, offset + 8),
-                StringNullable(reader, offset + 9));
+                StringNullable(reader, offset + 9),
+                StringNullable(reader, offset + 15));
         }
 
         private static DeviceInterface ReadInterface(
@@ -1291,7 +1307,8 @@ ORDER BY
                 DateNullable(reader, 15),
                 DateNullable(reader, 16),
                 StringNullable(reader, 17),
-                StringNullable(reader, 18));
+                StringNullable(reader, 18),
+                reader.IsDBNull(19) ? (int?)null : reader.GetInt32(19));
         }
 
         private static PhysicalLink ReadLink(

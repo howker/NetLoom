@@ -53,7 +53,8 @@
         </Border>
 
         <TabControl x:Name="ManualTopologyTabs"
-                    Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                    Margin="{DynamicResource NetLoom.Thickness.PanelPadding}"
+                    SelectionChanged="OnManualTopologyTabsSelectionChanged">
             <TabItem x:Name="ManualDevicesTab">
                 <Grid Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
                     <Grid.ColumnDefinitions>

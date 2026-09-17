@@ -189,7 +189,8 @@ namespace NetLoom.Contracts.Diagnostics
             string locationName,
             DateTime? lastSeenUtc,
             DateTime? lastResolvedUtc,
-            IEnumerable<InterfaceDiagnostic> interfaces)
+            IEnumerable<InterfaceDiagnostic> interfaces,
+            string managementAddress = null)
         {
             if (deviceId == Guid.Empty)
             {
@@ -230,6 +231,7 @@ namespace NetLoom.Contracts.Diagnostics
             LastSeenUtc = lastSeenUtc;
             LastResolvedUtc = lastResolvedUtc;
             Interfaces = interfaceSnapshot;
+            ManagementAddress = Normalize(managementAddress);
         }
 
         public Guid DeviceId { get; }
@@ -245,6 +247,8 @@ namespace NetLoom.Contracts.Diagnostics
         public DateTime? LastResolvedUtc { get; }
 
         public IReadOnlyList<InterfaceDiagnostic> Interfaces { get; }
+
+        public string ManagementAddress { get; }
 
         private static string Normalize(string value)
         {
@@ -282,7 +286,11 @@ namespace NetLoom.Contracts.Diagnostics
             StpTreePortState stpState,
             DiagnosticDegradationStatus degradationStatus,
             DateTime? degradationCapturedUtc,
-            IEnumerable<DiagnosticDegradationReason> degradationReasons)
+            IEnumerable<DiagnosticDegradationReason> degradationReasons,
+            string ifName = null,
+            string ifAlias = null,
+            int? ifType = null,
+            string ifDescription = null)
         {
             if (interfaceId == Guid.Empty)
             {
@@ -308,6 +316,12 @@ namespace NetLoom.Contracts.Diagnostics
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(speedBps));
+            }
+
+            if (ifType.HasValue && ifType.Value < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(ifType));
             }
 
             RequireUtc(lastSeenUtc, nameof(lastSeenUtc));
@@ -347,6 +361,10 @@ namespace NetLoom.Contracts.Diagnostics
             DegradationStatus = degradationStatus;
             DegradationCapturedUtc = degradationCapturedUtc;
             DegradationReasons = reasons;
+            IfName = Normalize(ifName);
+            IfAlias = Normalize(ifAlias);
+            IfType = ifType;
+            IfDescription = Normalize(ifDescription);
         }
 
         public Guid InterfaceId { get; }
@@ -375,6 +393,14 @@ namespace NetLoom.Contracts.Diagnostics
 
         public IReadOnlyList<DiagnosticDegradationReason>
             DegradationReasons { get; }
+
+        public string IfName { get; }
+
+        public string IfAlias { get; }
+
+        public int? IfType { get; }
+
+        public string IfDescription { get; }
 
         private static string Normalize(string value)
         {

@@ -142,7 +142,8 @@ SELECT
     vendor_override, model_override, notes,
     discovered_name, lldp_chassis_id,
     is_hidden, is_archived,
-    first_seen_utc, last_seen_utc, last_resolved_utc
+    first_seen_utc, last_seen_utc, last_resolved_utc,
+    management_address
 FROM devices
 ORDER BY id;";
 
@@ -192,7 +193,10 @@ ORDER BY id;";
                                     9),
                                 StringNullable(
                                     reader,
-                                    10)));
+                                    10),
+                                StringNullable(
+                                    reader,
+                                    16)));
                     }
                 }
             }
@@ -222,7 +226,8 @@ SELECT
     speed_bps, media_type_auto, media_type_override,
     is_manual, is_hidden,
     first_seen_utc, last_seen_utc,
-    lldp_port_id, lldp_port_description
+    lldp_port_id, lldp_port_description,
+    if_type
 FROM interfaces
 ORDER BY id;";
 
@@ -283,7 +288,10 @@ ORDER BY id;";
                                     17),
                                 StringNullable(
                                     reader,
-                                    18)));
+                                    18),
+                                NullableInt(
+                                    reader,
+                                    19)));
                     }
                 }
             }

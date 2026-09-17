@@ -23,7 +23,8 @@ namespace NetLoom.Domain.Topology
             DateTime? firstSeenUtc,
             DateTime? lastSeenUtc,
             string lldpPortId = null,
-            string lldpPortDescription = null)
+            string lldpPortDescription = null,
+            int? ifType = null)
         {
             if (id == Guid.Empty)
             {
@@ -51,6 +52,13 @@ namespace NetLoom.Domain.Topology
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(speedBps));
+            }
+
+            if (ifType.HasValue &&
+                ifType.Value < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(ifType));
             }
 
             RequireUtc(firstSeenUtc, nameof(firstSeenUtc));
@@ -85,6 +93,7 @@ namespace NetLoom.Domain.Topology
             LldpPortId = Normalize(lldpPortId);
             LldpPortDescription =
                 Normalize(lldpPortDescription);
+            IfType = ifType;
         }
 
         public Guid Id { get; }
@@ -124,6 +133,8 @@ namespace NetLoom.Domain.Topology
         public string LldpPortId { get; }
 
         public string LldpPortDescription { get; }
+
+        public int? IfType { get; }
 
         private static string Normalize(string value)
         {

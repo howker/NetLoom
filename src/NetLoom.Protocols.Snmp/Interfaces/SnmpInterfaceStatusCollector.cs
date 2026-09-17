@@ -9,6 +9,12 @@ namespace NetLoom.Protocols.Snmp.Interfaces
     public sealed class SnmpInterfaceStatusCollector :
         IInterfaceCollector
     {
+        private const string IfDescr =
+            "1.3.6.1.2.1.2.2.1.2";
+
+        private const string IfType =
+            "1.3.6.1.2.1.2.2.1.3";
+
         private const string IfAdminStatus =
             "1.3.6.1.2.1.2.2.1.7";
 
@@ -26,6 +32,12 @@ namespace NetLoom.Protocols.Snmp.Interfaces
 
         private const string IfOutErrors =
             "1.3.6.1.2.1.2.2.1.20";
+
+        private const string IfName =
+            "1.3.6.1.2.1.31.1.1.1.1";
+
+        private const string IfAlias =
+            "1.3.6.1.2.1.31.1.1.1.18";
 
         private const string IfCounterDiscontinuityTime =
             "1.3.6.1.2.1.31.1.1.1.19";
@@ -58,6 +70,40 @@ namespace NetLoom.Protocols.Snmp.Interfaces
 
             var builders =
                 new Dictionary<int, Builder>();
+
+            ApplyText(
+                builders,
+                Walk(
+                    request,
+                    IfDescr),
+                IfDescr,
+                (builder, value) =>
+                    builder.IfDescription = value);
+
+            ApplyType(
+                builders,
+                Walk(
+                    request,
+                    IfType),
+                IfType);
+
+            ApplyText(
+                builders,
+                WalkOptional(
+                    request,
+                    IfName),
+                IfName,
+                (builder, value) =>
+                    builder.IfName = value);
+
+            ApplyText(
+                builders,
+                WalkOptional(
+                    request,
+                    IfAlias),
+                IfAlias,
+                (builder, value) =>
+                    builder.IfAlias = value);
 
             Apply(
                 builders,
@@ -146,7 +192,11 @@ namespace NetLoom.Protocols.Snmp.Interfaces
                             pair.Value.OutErrors,
                             pair.Value.InDiscards,
                             pair.Value.OutDiscards,
-                            pair.Value.CounterDiscontinuityTimeTicks))
+                            pair.Value.CounterDiscontinuityTimeTicks,
+                            pair.Value.IfName,
+                            pair.Value.IfDescription,
+                            pair.Value.IfAlias,
+                            pair.Value.IfType))
                 .ToArray();
         }
 
@@ -164,6 +214,113 @@ namespace NetLoom.Protocols.Snmp.Interfaces
                     request.TimeoutMilliseconds,
                     request.RetryCount,
                     request.MaxRepetitions));
+        }
+
+        private IReadOnlyList<SnmpVariable> WalkOptional(
+            InterfaceCollectionRequest request,
+            string oid)
+        {
+            try
+            {
+                return Walk(
+                    request,
+                    oid);
+            }
+            catch (SnmpTransportException exception)
+            {
+                if (exception.Failure !=
+                    SnmpTransportFailure.Protocol)
+                {
+                    throw;
+                }
+
+                return new SnmpVariable[0];
+            }
+        }
+
+        private static void ApplyText(
+            IDictionary<int, Builder> builders,
+            IEnumerable<SnmpVariable> variables,
+            string columnOid,
+            Action<Builder, string> apply)
+        {
+            foreach (var variable in variables)
+            {
+                var ifIndex =
+                    SnmpInterfaceStatusParser.ParseIfIndex(
+                        variable.Oid,
+                        columnOid);
+
+                if (!ifIndex.HasValue)
+                {
+                    continue;
+                }
+
+                Builder builder;
+
+                if (!builders.TryGetValue(
+                    ifIndex.Value,
+                    out builder))
+                {
+                    builder = new Builder();
+
+                    builders.Add(
+                        ifIndex.Value,
+                        builder);
+                }
+
+                var value =
+                    string.IsNullOrWhiteSpace(
+                        variable.DisplayValue)
+                        ? null
+                        : variable.DisplayValue.Trim();
+
+                apply(
+                    builder,
+                    value);
+            }
+        }
+
+        private static void ApplyType(
+            IDictionary<int, Builder> builders,
+            IEnumerable<SnmpVariable> variables,
+            string columnOid)
+        {
+            foreach (var variable in variables)
+            {
+                var ifIndex =
+                    SnmpInterfaceStatusParser.ParseIfIndex(
+                        variable.Oid,
+                        columnOid);
+
+                if (!ifIndex.HasValue)
+                {
+                    continue;
+                }
+
+                Builder builder;
+
+                if (!builders.TryGetValue(
+                    ifIndex.Value,
+                    out builder))
+                {
+                    builder = new Builder();
+
+                    builders.Add(
+                        ifIndex.Value,
+                        builder);
+                }
+
+                var value =
+                    SnmpInterfaceStatusParser.ParseStatus(
+                        variable.DisplayValue);
+
+                builder.IfType =
+                    value.HasValue &&
+                    value.Value > 0
+                        ? value
+                        : null;
+            }
         }
 
         private static void Apply(
@@ -256,6 +413,14 @@ namespace NetLoom.Protocols.Snmp.Interfaces
 
         private sealed class Builder
         {
+            public string IfName { get; set; }
+
+            public string IfDescription { get; set; }
+
+            public string IfAlias { get; set; }
+
+            public int? IfType { get; set; }
+
             public int? AdminStatus { get; set; }
 
             public int? OperStatus { get; set; }

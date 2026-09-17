@@ -240,7 +240,8 @@ namespace NetLoom.Application.Monitoring
                         {
                             MaterializeDevice(
                                 request.DeviceId,
-                                cdp.Observation.CapturedUtc);
+                                cdp.Observation.CapturedUtc,
+                                request.Address.ToString());
                         }
 
                         break;
@@ -267,7 +268,8 @@ namespace NetLoom.Application.Monitoring
                         {
                             MaterializeDevice(
                                 request.DeviceId,
-                                fdb.Observation.CapturedUtc);
+                                fdb.Observation.CapturedUtc,
+                                request.Address.ToString());
                         }
 
                         break;
@@ -294,7 +296,8 @@ namespace NetLoom.Application.Monitoring
                         {
                             MaterializeDevice(
                                 request.DeviceId,
-                                arp.Observation.CapturedUtc);
+                                arp.Observation.CapturedUtc,
+                                request.Address.ToString());
                         }
 
                         break;
@@ -327,7 +330,8 @@ namespace NetLoom.Application.Monitoring
                         {
                             MaterializeDevice(
                                 request.DeviceId,
-                                stp.Observation.CapturedUtc);
+                                stp.Observation.CapturedUtc,
+                                request.Address.ToString());
                         }
 
                         break;
@@ -352,7 +356,8 @@ namespace NetLoom.Application.Monitoring
 
                         MaterializeDevice(
                             request.DeviceId,
-                            NowUtc());
+                            NowUtc(),
+                            request.Address.ToString());
 
                         return new MonitoringPollStepResult(
                             kind,
@@ -385,7 +390,8 @@ namespace NetLoom.Application.Monitoring
 
                         MaterializeDevice(
                             request.DeviceId,
-                            interfaceObservedUtc);
+                            interfaceObservedUtc,
+                            request.Address.ToString());
 
                         if (_topologyMaterializer != null &&
                             request.DeviceId.HasValue)
@@ -396,7 +402,11 @@ namespace NetLoom.Application.Monitoring
                                     .MaterializeInterface(
                                         request.DeviceId.Value,
                                         snapshot.IfIndex,
-                                        interfaceObservedUtc);
+                                        interfaceObservedUtc,
+                                        snapshot.IfName,
+                                        snapshot.IfDescription,
+                                        snapshot.IfAlias,
+                                        snapshot.IfType);
                             }
                         }
 
@@ -583,7 +593,8 @@ namespace NetLoom.Application.Monitoring
 
         private void MaterializeDevice(
             Guid? deviceId,
-            DateTime observedUtc)
+            DateTime observedUtc,
+            string managementAddress)
         {
             if (_topologyMaterializer == null ||
                 !deviceId.HasValue)
@@ -593,7 +604,8 @@ namespace NetLoom.Application.Monitoring
 
             _topologyMaterializer.MaterializeDevice(
                 deviceId.Value,
-                observedUtc);
+                observedUtc,
+                managementAddress);
         }
 
         private DateTime NowUtc()

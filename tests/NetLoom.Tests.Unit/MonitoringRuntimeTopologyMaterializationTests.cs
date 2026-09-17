@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
@@ -138,6 +139,53 @@ namespace NetLoom.Tests.Unit
                 materializer.LldpCalls);
         }
 
+
+        [TestMethod]
+        public void
+            BoundInterfacePollCarriesRealIdentityAndManagementAddressIntoMaterialization()
+        {
+            var materializer =
+                new RecordingTopologyMaterializer();
+
+            var runtime =
+                new MonitoringRuntime(
+                    new FixedLldpCollector(null),
+                    new NullCdpCollector(),
+                    new NullFdbCollector(),
+                    new NullArpCollector(),
+                    null,
+                    new FixedInterfaceCollector(),
+                    () => T1,
+                    topologyMaterializer:
+                        materializer);
+
+            var result =
+                runtime.PollOnce(
+                    new MonitoringPollRequest(
+                        IPAddress.Parse("192.0.2.10"),
+                        161,
+                        SnmpVersion.V2C,
+                        new SnmpCommunityCredentials(
+                            new byte[] { 1, 2, 3 }),
+                        1000,
+                        1,
+                        10,
+                        new[]
+                        {
+                            MonitoringPollKind.Interface
+                        },
+                        DeviceId));
+
+            Assert.IsTrue(result.AllSucceeded);
+            Assert.AreEqual(1, materializer.DeviceCalls);
+            Assert.AreEqual(1, materializer.InterfaceCalls);
+            Assert.AreEqual("192.0.2.10", materializer.LastManagementAddress);
+            Assert.AreEqual(10107, materializer.LastIfIndex);
+            Assert.AreEqual("ge-1/0/1", materializer.LastIfName);
+            Assert.AreEqual("uplink", materializer.LastIfAlias);
+            Assert.AreEqual(6, materializer.LastIfType);
+        }
+
         private static MonitoringPollRequest Request(
             Guid? deviceId)
         {
@@ -207,6 +255,28 @@ namespace NetLoom.Tests.Unit
             }
         }
 
+        private sealed class FixedInterfaceCollector :
+            IInterfaceCollector
+        {
+            public System.Collections.Generic.IReadOnlyList<InterfaceMonitoringSnapshot> Collect(
+                InterfaceCollectionRequest request)
+            {
+                return new[]
+                {
+                    new InterfaceMonitoringSnapshot(
+                        request.DeviceId,
+                        10107,
+                        1,
+                        1,
+                        T1,
+                        ifName: "ge-1/0/1",
+                        ifDescription: "ge-1/0/1",
+                        ifAlias: "uplink",
+                        ifType: 6)
+                };
+            }
+        }
+
         private sealed class RecordingTopologyMaterializer :
             IMonitoringTopologyMaterializer
         {
@@ -240,13 +310,45 @@ namespace NetLoom.Tests.Unit
                 private set;
             }
 
+            public string LastManagementAddress
+            {
+                get;
+                private set;
+            }
+
+            public int LastIfIndex
+            {
+                get;
+                private set;
+            }
+
+            public string LastIfName
+            {
+                get;
+                private set;
+            }
+
+            public string LastIfAlias
+            {
+                get;
+                private set;
+            }
+
+            public int? LastIfType
+            {
+                get;
+                private set;
+            }
+
             public void MaterializeDevice(
                 Guid deviceId,
-                DateTime observedUtc)
+                DateTime observedUtc,
+                string managementAddress = null)
             {
                 DeviceCalls++;
                 LastDeviceId = deviceId;
                 LastObservedUtc = observedUtc;
+                LastManagementAddress = managementAddress;
             }
 
             public void MaterializeLldp(
@@ -262,9 +364,17 @@ namespace NetLoom.Tests.Unit
             public void MaterializeInterface(
                 Guid deviceId,
                 int ifIndex,
-                DateTime observedUtc)
+                DateTime observedUtc,
+                string ifName = null,
+                string ifDescription = null,
+                string ifAlias = null,
+                int? ifType = null)
             {
                 InterfaceCalls++;
+                LastIfIndex = ifIndex;
+                LastIfName = ifName;
+                LastIfAlias = ifAlias;
+                LastIfType = ifType;
             }
         }
     }

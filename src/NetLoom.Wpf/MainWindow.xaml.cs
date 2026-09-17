@@ -292,6 +292,7 @@ public partial class MainWindow : Window
 
         Loaded += OnWindowLoaded;
         Closed += OnWindowClosed;
+        PreviewKeyDown += OnMainWindowPreviewKeyDown;
 
         Title = UiText.Get("WindowTitle");
         MapTitleText.Text = UiText.Get("MapTitle");
@@ -800,7 +801,8 @@ public partial class MainWindow : Window
                 visual =>
                     NodeTop(
                         visual) +
-                    _nodeHeight);
+                    NodeVisualHeight(
+                        visual));
 
         var contentWidth =
             Math.Max(
@@ -1992,6 +1994,16 @@ public partial class MainWindow : Window
                     TextWrapping.Wrap
             };
 
+        var managementAddressText =
+            new TextBlock
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeMeta"),
+                TextWrapping =
+                    TextWrapping.Wrap
+            };
+
         var locationText =
             new TextBlock
             {
@@ -2034,6 +2046,7 @@ public partial class MainWindow : Window
         content.Children.Add(header);
         content.Children.Add(secondary);
         content.Children.Add(topologyMetadata);
+        content.Children.Add(managementAddressText);
         content.Children.Add(locationText);
 
         var border =
@@ -2044,7 +2057,7 @@ public partial class MainWindow : Window
                         "NetLoom.Style.MapNodeCard"),
                 Child = content,
                 Cursor = Cursors.Hand,
-                Focusable = true
+                Focusable = false
             };
 
         border.ContextMenu =
@@ -2066,14 +2079,12 @@ public partial class MainWindow : Window
         border.MouseLeftButtonUp +=
             OnMapNodeMouseLeftButtonUp;
 
-        border.KeyDown +=
-            OnMapNodeKeyDown;
-
         return new MapNodeVisual(
             border,
             title,
             secondary,
             topologyMetadata,
+            managementAddressText,
             locationText,
             lockBadge);
     }
@@ -2095,6 +2106,15 @@ public partial class MainWindow : Window
 
         visual.TopologyMetadata.Text =
             BuildTopologyMetadata(node);
+
+        visual.ManagementAddress.Text =
+            UiText.Format(
+                "MapNodeIpAddress",
+                string.IsNullOrWhiteSpace(
+                    node.ManagementAddress)
+                    ? UiText.Get(
+                        "DiagnosticNotAvailable")
+                    : node.ManagementAddress);
 
         visual.Location.Text =
             BuildLocationText(
@@ -2168,7 +2188,7 @@ public partial class MainWindow : Window
                     GetStyleResource(
                         "NetLoom.Style.MapLink"),
                 Cursor = Cursors.Hand,
-                Focusable = true
+                Focusable = false
             };
 
         var label =
@@ -2178,7 +2198,7 @@ public partial class MainWindow : Window
                     GetStyleResource(
                         "NetLoom.Style.MapLinkLabel"),
                 Cursor = Cursors.Hand,
-                Focusable = true
+                Focusable = false
             };
 
         line.ContextMenu =
@@ -2207,12 +2227,6 @@ public partial class MainWindow : Window
         label.MouseRightButtonDown +=
             OnMapLinkMouseRightButtonDown;
 
-        line.KeyDown +=
-            OnMapLinkKeyDown;
-
-        label.KeyDown +=
-            OnMapLinkKeyDown;
-
         return new MapLinkVisual(
             line,
             label);
@@ -2235,7 +2249,7 @@ public partial class MainWindow : Window
 
         var y1 =
             NodeTop(source) +
-            (_nodeHeight / 2.0);
+            (NodeVisualHeight(source) / 2.0);
 
         var x2 =
             NodeLeft(target) +
@@ -2243,7 +2257,7 @@ public partial class MainWindow : Window
 
         var y2 =
             NodeTop(target) +
-            (_nodeHeight / 2.0);
+            (NodeVisualHeight(target) / 2.0);
 
         visual.Line.X1 = x1;
         visual.Line.Y1 = y1;
@@ -2491,7 +2505,33 @@ public partial class MainWindow : Window
             NodeLeft(visual),
             NodeTop(visual),
             _nodeWidth,
-            _nodeHeight);
+            NodeVisualHeight(visual));
+    }
+
+    private double NodeVisualHeight(
+        MapNodeVisual visual)
+    {
+        if (visual == null ||
+            visual.Border == null)
+        {
+            return _nodeHeight;
+        }
+
+        visual.Border.Measure(
+            new Size(
+                _nodeWidth,
+                double.PositiveInfinity));
+
+        var measured =
+            Math.Max(
+                visual.Border.ActualHeight,
+                visual.Border.DesiredSize.Height);
+
+        return measured > 0.0
+            ? Math.Max(
+                _nodeHeight,
+                measured)
+            : _nodeHeight;
     }
 
     private static double NodeLeft(
@@ -2611,7 +2651,6 @@ public partial class MainWindow : Window
         _selectedPhysicalLinkId =
             null;
 
-        element.Focus();
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -2688,7 +2727,6 @@ public partial class MainWindow : Window
         _selectedDeviceId = (Guid)element.Tag;
         _selectedPhysicalLinkId = null;
 
-        element.Focus();
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -2753,6 +2791,36 @@ public partial class MainWindow : Window
 
         await DeleteManualDeviceFromMapAsync(
             deviceId.Value);
+    }
+
+    private async void OnMainWindowPreviewKeyDown(
+        object sender,
+        KeyEventArgs e)
+    {
+        if (e.Key != Key.Delete ||
+            e.OriginalSource is TextBoxBase ||
+            e.OriginalSource is PasswordBox)
+        {
+            return;
+        }
+
+        if (_selectedPhysicalLinkId.HasValue)
+        {
+            e.Handled = true;
+
+            await DeleteManualLinkFromMapAsync(
+                _selectedPhysicalLinkId.Value);
+
+            return;
+        }
+
+        if (_selectedDeviceId.HasValue)
+        {
+            e.Handled = true;
+
+            await DeleteManualDeviceFromMapAsync(
+                _selectedDeviceId.Value);
+        }
     }
 
     private async void OnMapNodeKeyDown(
@@ -2848,7 +2916,8 @@ public partial class MainWindow : Window
                     Math.Max(
                         0.0,
                         canvasHeight -
-                        _nodeHeight),
+                        NodeVisualHeight(
+                            _dragNodeVisual)),
                     _dragStartTop +
                     deltaY));
 
@@ -3062,10 +3131,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (snapshot.Ports.Any(
-                port =>
-                    port.DeviceId == deviceId) ||
-            snapshot.Links.Any(
+        if (snapshot.Links.Any(
                 link =>
                     link.DeviceAId == deviceId ||
                     link.DeviceBId == deviceId))
@@ -3455,7 +3521,6 @@ public partial class MainWindow : Window
         _selectedPhysicalLinkId =
             physicalLinkId;
 
-        element.Focus();
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -3495,7 +3560,6 @@ public partial class MainWindow : Window
         _selectedPhysicalLinkId =
             (Guid)element.Tag;
 
-        element.Focus();
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -3723,6 +3787,11 @@ public partial class MainWindow : Window
 
         var stateFields =
             new List<DiagnosticFieldRow>();
+
+        stateFields.Add(
+            Field(
+                "DiagnosticFieldManagementAddress",
+                device.ManagementAddress));
 
         if (!string.IsNullOrWhiteSpace(
             device.LocationName))
@@ -3969,6 +4038,46 @@ public partial class MainWindow : Window
         var details =
             new List<string>();
 
+        details.Add(
+            UiText.Format(
+                "DiagnosticInterfaceType",
+                item.IfType.HasValue
+                    ? IfTypeText(
+                        item.IfType.Value)
+                    : UiText.Get(
+                        "DiagnosticNotAvailable")));
+
+        if (!string.IsNullOrWhiteSpace(
+            item.IfName))
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceIfName",
+                    item.IfName));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+            item.IfAlias))
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceIfAlias",
+                    item.IfAlias));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+            item.IfDescription) &&
+            !string.Equals(
+                item.IfDescription,
+                item.IfName,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            details.Add(
+                UiText.Format(
+                    "DiagnosticInterfaceIfDescription",
+                    item.IfDescription));
+        }
+
         if (!string.IsNullOrWhiteSpace(
             item.AdminStatus))
         {
@@ -4108,6 +4217,58 @@ public partial class MainWindow : Window
                 interfaceName),
             ShortIdentifier(
                 interfaceId.Value));
+    }
+
+    private static string IfTypeText(
+        int ifType)
+    {
+        string name;
+
+        switch (ifType)
+        {
+            case 6:
+                name = "ethernetCsmacd";
+                break;
+            case 24:
+                name = "softwareLoopback";
+                break;
+            case 53:
+                name = "propVirtual";
+                break;
+            case 62:
+                name = "fastEther";
+                break;
+            case 69:
+                name = "fastEtherFX";
+                break;
+            case 71:
+                name = "ieee80211";
+                break;
+            case 117:
+                name = "gigabitEthernet";
+                break;
+            case 131:
+                name = "tunnel";
+                break;
+            case 135:
+                name = "l2vlan";
+                break;
+            case 161:
+                name = "ieee8023adLag";
+                break;
+            default:
+                name = null;
+                break;
+        }
+
+        return name == null
+            ? ifType.ToString(
+                CultureInfo.InvariantCulture)
+            : ifType.ToString(
+                CultureInfo.InvariantCulture) +
+              " (" +
+              name +
+              ")";
     }
 
     private static string ShortIdentifier(
@@ -4972,6 +5133,7 @@ public partial class MainWindow : Window
             TextBlock title,
             TextBlock secondary,
             TextBlock topologyMetadata,
+            TextBlock managementAddress,
             TextBlock location,
             TextBlock lockBadge)
         {
@@ -4979,6 +5141,7 @@ public partial class MainWindow : Window
             Title = title;
             Secondary = secondary;
             TopologyMetadata = topologyMetadata;
+            ManagementAddress = managementAddress;
             Location = location;
             LockBadge = lockBadge;
         }
@@ -4990,6 +5153,8 @@ public partial class MainWindow : Window
         public TextBlock Secondary { get; }
 
         public TextBlock TopologyMetadata { get; }
+
+        public TextBlock ManagementAddress { get; }
 
         public TextBlock Location { get; }
 

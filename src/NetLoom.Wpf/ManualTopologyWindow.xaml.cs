@@ -29,6 +29,9 @@ namespace NetLoom.Wpf
         private bool
             _refreshing;
 
+        private bool
+            _restoringTabSelection;
+
         public ManualTopologyWindow(
             IManualTopologyService service)
             : this(
@@ -861,11 +864,7 @@ namespace NetLoom.Wpf
                 return;
             }
 
-            if (_snapshot.Ports.Any(
-                    port =>
-                        port.DeviceId ==
-                        row.Item.DeviceId) ||
-                _snapshot.Links.Any(
+            if (_snapshot.Links.Any(
                     link =>
                         link.DeviceAId ==
                         row.Item.DeviceId ||
@@ -912,6 +911,199 @@ namespace NetLoom.Wpf
             {
                 ShowOperationFailure(
                     exception);
+            }
+        }
+
+        private void OnManualTopologyTabsSelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (_refreshing ||
+                _restoringTabSelection ||
+                !ReferenceEquals(
+                    e.OriginalSource,
+                    ManualTopologyTabs) ||
+                !e.RemovedItems.Contains(
+                    ManualDevicesTab) ||
+                ReferenceEquals(
+                    ManualTopologyTabs.SelectedItem,
+                    ManualDevicesTab) ||
+                !HasPendingDeviceEdits())
+            {
+                return;
+            }
+
+            var requestedTab =
+                ManualTopologyTabs.SelectedItem;
+
+            var result =
+                MessageBox.Show(
+                    this,
+                    UiText.Get(
+                        "ManualTopologySaveBeforeLeavingDevice"),
+                    UiText.Get(
+                        "ManualTopologySaveBeforeLeavingTitle"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question,
+                    MessageBoxResult.Yes);
+
+            if (result != MessageBoxResult.Yes ||
+                !TryPersistPendingDevice())
+            {
+                RestoreDevicesTab();
+                return;
+            }
+
+            _restoringTabSelection = true;
+
+            try
+            {
+                ManualTopologyTabs.SelectedItem =
+                    requestedTab;
+            }
+            finally
+            {
+                _restoringTabSelection = false;
+            }
+        }
+
+        private bool HasPendingDeviceEdits()
+        {
+            var row =
+                ManualDevicesList.SelectedItem
+                    as DeviceRow;
+
+            var name =
+                Normalize(
+                    ManualDeviceNameTextBox.Text);
+
+            var notes =
+                Normalize(
+                    ManualDeviceNotesTextBox.Text);
+
+            var category =
+                SelectedCategory();
+
+            if (row == null)
+            {
+                return name != null ||
+                    notes != null;
+            }
+
+            if (!row.Item.CanEdit)
+            {
+                return false;
+            }
+
+            return
+                !string.Equals(
+                    name,
+                    Normalize(
+                        row.Item.DisplayName),
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    notes,
+                    Normalize(
+                        row.Item.Notes),
+                    StringComparison.Ordinal) ||
+                !category.HasValue ||
+                category.Value !=
+                    row.Item.Category;
+        }
+
+        private bool TryPersistPendingDevice()
+        {
+            var name =
+                Normalize(
+                    ManualDeviceNameTextBox.Text);
+
+            if (name == null)
+            {
+                ShowWarning(
+                    "ManualTopologyValidationDeviceName");
+                return false;
+            }
+
+            var category =
+                SelectedCategory();
+
+            if (!category.HasValue)
+            {
+                ShowWarning(
+                    "ManualTopologyValidationCategory");
+                return false;
+            }
+
+            var row =
+                ManualDevicesList.SelectedItem
+                    as DeviceRow;
+
+            try
+            {
+                Guid id;
+
+                if (row == null)
+                {
+                    id =
+                        _service.CreateDevice(
+                            name,
+                            category.Value,
+                            ManualDeviceNotesTextBox.Text);
+
+                    ManualTopologyStatusText.Text =
+                        UiText.Get(
+                            "ManualTopologyStatusDeviceCreated");
+                }
+                else
+                {
+                    if (!row.Item.CanEdit)
+                    {
+                        ShowWarning(
+                            "ManualTopologyValidationManualDevice");
+                        return false;
+                    }
+
+                    id =
+                        row.Item.DeviceId;
+
+                    _service.UpdateDevice(
+                        id,
+                        name,
+                        category.Value,
+                        ManualDeviceNotesTextBox.Text);
+
+                    ManualTopologyStatusText.Text =
+                        UiText.Get(
+                            "ManualTopologyStatusDeviceSaved");
+                }
+
+                HasChanges = true;
+                RefreshSnapshot();
+                SelectDevice(id);
+                SelectPortDevice(id);
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                ShowOperationFailure(
+                    exception);
+                return false;
+            }
+        }
+
+        private void RestoreDevicesTab()
+        {
+            _restoringTabSelection = true;
+
+            try
+            {
+                ManualTopologyTabs.SelectedItem =
+                    ManualDevicesTab;
+            }
+            finally
+            {
+                _restoringTabSelection = false;
             }
         }
 

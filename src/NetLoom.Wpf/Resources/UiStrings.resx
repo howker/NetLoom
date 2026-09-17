@@ -965,4 +965,28 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   <data name="DiagnosticInterfaceNoTelemetry" xml:space="preserve">
     <value>{0}&#xA;No interface diagnostics are available yet.</value>
   </data>
+  <data name="MapNodeIpAddress" xml:space="preserve">
+    <value>IP: {0}</value>
+  </data>
+  <data name="DiagnosticFieldManagementAddress" xml:space="preserve">
+    <value>Management IP</value>
+  </data>
+  <data name="DiagnosticInterfaceType" xml:space="preserve">
+    <value>IF-MIB type: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceIfName" xml:space="preserve">
+    <value>ifName: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceIfAlias" xml:space="preserve">
+    <value>ifAlias: {0}</value>
+  </data>
+  <data name="DiagnosticInterfaceIfDescription" xml:space="preserve">
+    <value>ifDescr: {0}</value>
+  </data>
+  <data name="ManualTopologySaveBeforeLeavingTitle" xml:space="preserve">
+    <value>Save device</value>
+  </data>
+  <data name="ManualTopologySaveBeforeLeavingDevice" xml:space="preserve">
+    <value>The device has unsaved changes. Save them before switching to Ports or Links?</value>
+  </data>
 </root>

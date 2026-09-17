@@ -214,7 +214,8 @@ namespace NetLoom.Topology.Diagnostics
                 locationName,
                 device.LastSeenUtc,
                 device.LastResolvedUtc,
-                diagnostics);
+                diagnostics,
+                device.ManagementAddress);
         }
 
         private static InterfaceDiagnostic ProjectInterface(
@@ -269,7 +270,11 @@ namespace NetLoom.Topology.Diagnostics
                     ? (DateTime?)null
                     : degradation.CapturedUtc,
                 DiagnosticDegradationReasonsFor(
-                    degradation));
+                    degradation),
+                networkInterface.IfName,
+                networkInterface.IfAlias,
+                networkInterface.IfType,
+                networkInterface.IfDescription);
         }
 
         private static PhysicalLinkDiagnostic ProjectLink(

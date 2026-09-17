@@ -184,7 +184,7 @@
            TargetType="{x:Type Border}">
         <Setter Property="Width"
                 Value="{DynamicResource NetLoom.Map.NodeWidth}" />
-        <Setter Property="Height"
+        <Setter Property="MinHeight"
                 Value="{DynamicResource NetLoom.Map.NodeHeight}" />
         <Setter Property="Padding"
                 Value="{DynamicResource NetLoom.Thickness.MapNodePadding}" />

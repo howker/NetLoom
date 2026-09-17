@@ -1,9 +1,14 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
 using System.Xml.Linq;
+using NetLoom.Contracts.TopologyMap;
+using NetLoom.Wpf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace NetLoom.Tests.Unit
@@ -132,47 +137,119 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
-            MapNodeHeightKeepsFourDiagnosticLinesReadable()
+            MapNodeCardMeasuresProductionContentWithoutVerticalClipping()
         {
-            var designTokensPath =
-                FindRepositoryFile(
-                    Path.Combine(
-                        "src",
-                        "NetLoom.Wpf",
-                        "Themes",
-                        "DesignTokens.xaml"));
+            Exception failure = null;
 
-            var document =
-                XDocument.Load(
-                    designTokensPath,
-                    LoadOptions.PreserveWhitespace);
+            var thread =
+                new Thread(
+                    () =>
+                    {
+                        try
+                        {
+                            var window =
+                                new MainWindow();
 
-            var nodeHeight =
-                document
-                    .Descendants()
-                    .Single(
-                        element =>
-                            string.Equals(
-                                (string)element.Attribute(
-                                    XamlNamespace +
-                                    "Key"),
-                                "NetLoom.Map.NodeHeight",
-                                StringComparison.Ordinal))
-                    .Value;
+                            window.ShowMap(
+                                new MapSnapshot(
+                                    DateTime.UtcNow,
+                                    new[]
+                                    {
+                                        new MapNode(
+                                            "device:layout-probe",
+                                            "Коммутатор доступа с длинным именем",
+                                            "Автоматическое устройство",
+                                            0.0,
+                                            0.0,
+                                            null,
+                                            MapNodeOrigin.Automatic,
+                                            MapMonitoringCapability.None,
+                                            MapNodeCategory.UnmanagedSwitch,
+                                            Guid.NewGuid(),
+                                            "192.0.2.10")
+                                    },
+                                    new MapLink[0]));
 
-            double parsedHeight;
+                            var canvas =
+                                window.FindName("MapCanvas")
+                                    as Canvas;
 
-            Assert.IsTrue(
-                double.TryParse(
-                    nodeHeight,
-                    System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out parsedHeight),
-                "NetLoom.Map.NodeHeight must be a numeric design token.");
+                            Assert.IsNotNull(
+                                canvas,
+                                "Production MapCanvas was not found.");
 
-            Assert.IsTrue(
-                parsedHeight >= 108.0,
-                "Map node height is too small for title, secondary text, topology metadata and location text.");
+                            var card =
+                                canvas.Children
+                                    .OfType<Border>()
+                                    .Single();
+
+                            var content =
+                                card.Child as FrameworkElement;
+
+                            Assert.IsNotNull(
+                                content,
+                                "Production map-node content was not found.");
+
+                            var contentWidth =
+                                card.Width -
+                                card.Padding.Left -
+                                card.Padding.Right -
+                                card.BorderThickness.Left -
+                                card.BorderThickness.Right;
+
+                            content.Measure(
+                                new Size(
+                                    contentWidth,
+                                    double.PositiveInfinity));
+
+                            var naturalContentHeight =
+                                content.DesiredSize.Height;
+
+                            card.Measure(
+                                new Size(
+                                    card.Width,
+                                    double.PositiveInfinity));
+
+                            var availableContentHeight =
+                                card.DesiredSize.Height -
+                                card.Padding.Top -
+                                card.Padding.Bottom -
+                                card.BorderThickness.Top -
+                                card.BorderThickness.Bottom;
+
+                            Assert.IsTrue(
+                                naturalContentHeight <=
+                                    availableContentHeight + 0.1,
+                                string.Format(
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    "Production map-node content ({0:F1}) does not fit measured card content height ({1:F1}).",
+                                    naturalContentHeight,
+                                    availableContentHeight));
+
+                            Assert.IsTrue(
+                                double.IsNaN(card.Height),
+                                "Map-node card must not use a fixed Height; content must be allowed to grow.");
+
+                            window.Close();
+                        }
+                        catch (Exception exception)
+                        {
+                            failure = exception;
+                        }
+                    });
+
+            thread.SetApartmentState(
+                ApartmentState.STA);
+
+            thread.Start();
+            thread.Join();
+
+            if (failure != null)
+            {
+                throw new AssertFailedException(
+                    "Production map-node layout measurement failed: " +
+                    failure);
+            }
         }
 
         [TestMethod]

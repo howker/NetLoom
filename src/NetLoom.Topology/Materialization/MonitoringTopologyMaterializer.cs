@@ -44,7 +44,8 @@ namespace NetLoom.Topology.Materialization
 
         public void MaterializeDevice(
             Guid deviceId,
-            DateTime observedUtc)
+            DateTime observedUtc,
+            string managementAddress = null)
         {
             RequireDeviceId(deviceId);
             RequireUtc(observedUtc);
@@ -65,13 +66,18 @@ namespace NetLoom.Topology.Materialization
                 observedUtc,
                 existing,
                 null,
-                null);
+                null,
+                managementAddress);
         }
 
         public void MaterializeInterface(
             Guid deviceId,
             int ifIndex,
-            DateTime observedUtc)
+            DateTime observedUtc,
+            string ifName = null,
+            string ifDescription = null,
+            string ifAlias = null,
+            int? ifType = null)
         {
             RequireDeviceId(deviceId);
             RequireUtc(observedUtc);
@@ -122,15 +128,21 @@ namespace NetLoom.Topology.Materialization
                         : existing.Id,
                     deviceId,
                     ifIndex,
-                    existing == null
-                        ? null
-                        : existing.IfName,
-                    existing == null
-                        ? null
-                        : existing.IfDescription,
-                    existing == null
-                        ? null
-                        : existing.IfAlias,
+                    FirstNonEmpty(
+                        ifName,
+                        existing == null
+                            ? null
+                            : existing.IfName),
+                    FirstNonEmpty(
+                        ifDescription,
+                        existing == null
+                            ? null
+                            : existing.IfDescription),
+                    FirstNonEmpty(
+                        ifAlias,
+                        existing == null
+                            ? null
+                            : existing.IfAlias),
                     existing == null
                         ? null
                         : existing.CustomName,
@@ -158,7 +170,13 @@ namespace NetLoom.Topology.Materialization
                     existing == null
                         ? observedUtc
                         : existing.FirstSeenUtc,
-                    observedUtc));
+                    observedUtc,
+                    null,
+                    null,
+                    ifType ??
+                        (existing == null
+                            ? (int?)null
+                            : existing.IfType)));
         }
 
         public void MaterializeLldp(
@@ -670,7 +688,8 @@ namespace NetLoom.Topology.Materialization
             DateTime observedUtc,
             TopologyDevice existing,
             string discoveredName,
-            string lldpChassisId)
+            string lldpChassisId,
+            string managementAddress = null)
         {
             var origin =
                 existing == null
@@ -720,7 +739,12 @@ namespace NetLoom.Topology.Materialization
                         lldpChassisId,
                         existing == null
                             ? null
-                            : existing.LldpChassisId)));
+                            : existing.LldpChassisId),
+                    FirstNonEmpty(
+                        managementAddress,
+                        existing == null
+                            ? null
+                            : existing.ManagementAddress)));
         }
 
         private static DateTime FirstSeen(

@@ -15,7 +15,8 @@ namespace NetLoom.Contracts.TopologyMap
             MapMonitoringCapability monitoringCapability =
                 MapMonitoringCapability.Unknown,
             MapNodeCategory category = MapNodeCategory.Unknown,
-            Guid? deviceId = null)
+            Guid? deviceId = null,
+            string managementAddress = null)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -41,6 +42,10 @@ namespace NetLoom.Contracts.TopologyMap
             MonitoringCapability = monitoringCapability;
             Category = category;
             DeviceId = deviceId;
+            ManagementAddress =
+                string.IsNullOrWhiteSpace(managementAddress)
+                    ? null
+                    : managementAddress.Trim();
         }
 
         // Presentation key only.
@@ -66,5 +71,7 @@ namespace NetLoom.Contracts.TopologyMap
         // Stable NetLoom identity when this node comes from
         // materialized topology. It is separate from Key.
         public Guid? DeviceId { get; }
+
+        public string ManagementAddress { get; }
     }
 }

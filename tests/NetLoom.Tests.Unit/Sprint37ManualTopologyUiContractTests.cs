@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -362,6 +362,47 @@ namespace NetLoom.Tests.Unit
                 connectionsTitle >= 0 &&
                 interfacesTitle > connectionsTitle,
                 "Physical connections must be shown before the interface inventory in the selected-device panel.");
+        }
+
+        [TestMethod]
+        public void
+            Pass4UsesObservedInterfaceIdentityAndExplicitSavePrompt()
+        {
+            var mainCode =
+                ReadRepositoryFile(
+                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+
+            var editorCode =
+                ReadRepositoryFile(
+                    "src/NetLoom.Wpf/ManualTopologyWindow.xaml.cs");
+
+            StringAssert.Contains(
+                mainCode,
+                "item.IfName");
+
+            StringAssert.Contains(
+                mainCode,
+                "item.IfAlias");
+
+            StringAssert.Contains(
+                mainCode,
+                "item.IfType");
+
+            Assert.IsFalse(
+                mainCode.Contains("InterfacePrefix"),
+                "UI must not synthesize vendor-specific port prefixes from speed or media.");
+
+            Assert.IsFalse(
+                mainCode.Contains("StandardInterfaceDisplayName"),
+                "UI must render observed interface identity rather than invented names.");
+
+            StringAssert.Contains(
+                editorCode,
+                "ManualTopologySaveBeforeLeavingDevice");
+
+            StringAssert.Contains(
+                editorCode,
+                "MessageBoxButton.YesNo");
         }
 
         private static string ReadRepositoryFile(

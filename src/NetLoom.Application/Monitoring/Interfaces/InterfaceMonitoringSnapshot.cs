@@ -10,11 +10,44 @@ namespace NetLoom.Application.Monitoring.Interfaces
             int? adminStatus,
             int? operStatus,
             DateTime capturedUtc,
+            uint? inErrors,
+            uint? outErrors,
+            uint? inDiscards,
+            uint? outDiscards,
+            uint? counterDiscontinuityTimeTicks)
+            : this(
+                deviceId,
+                ifIndex,
+                adminStatus,
+                operStatus,
+                capturedUtc,
+                inErrors,
+                outErrors,
+                inDiscards,
+                outDiscards,
+                counterDiscontinuityTimeTicks,
+                null,
+                null,
+                null,
+                null)
+        {
+        }
+
+        public InterfaceMonitoringSnapshot(
+            Guid? deviceId,
+            int ifIndex,
+            int? adminStatus,
+            int? operStatus,
+            DateTime capturedUtc,
             uint? inErrors = null,
             uint? outErrors = null,
             uint? inDiscards = null,
             uint? outDiscards = null,
-            uint? counterDiscontinuityTimeTicks = null)
+            uint? counterDiscontinuityTimeTicks = null,
+            string ifName = null,
+            string ifDescription = null,
+            string ifAlias = null,
+            int? ifType = null)
         {
             if (deviceId.HasValue &&
                 deviceId.Value == Guid.Empty)
@@ -37,6 +70,13 @@ namespace NetLoom.Application.Monitoring.Interfaces
                     nameof(capturedUtc));
             }
 
+            if (ifType.HasValue &&
+                ifType.Value < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(ifType));
+            }
+
             DeviceId = deviceId;
             IfIndex = ifIndex;
             AdminStatus = adminStatus;
@@ -48,6 +88,10 @@ namespace NetLoom.Application.Monitoring.Interfaces
             OutDiscards = outDiscards;
             CounterDiscontinuityTimeTicks =
                 counterDiscontinuityTimeTicks;
+            IfName = Normalize(ifName);
+            IfDescription = Normalize(ifDescription);
+            IfAlias = Normalize(ifAlias);
+            IfType = ifType;
         }
 
         public Guid? DeviceId { get; }
@@ -69,5 +113,20 @@ namespace NetLoom.Application.Monitoring.Interfaces
         public uint? OutDiscards { get; }
 
         public uint? CounterDiscontinuityTimeTicks { get; }
+
+        public string IfName { get; }
+
+        public string IfDescription { get; }
+
+        public string IfAlias { get; }
+
+        public int? IfType { get; }
+
+        private static string Normalize(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? null
+                : value.Trim();
+        }
     }
 }
