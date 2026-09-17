@@ -7,7 +7,8 @@ using NetLoom.Persistence.Sqlite.Database;
 namespace NetLoom.Persistence.Sqlite.MapLayout
 {
     public sealed class SqliteMapLayoutStore :
-        IMapLayoutStore
+        IMapLayoutStore,
+        IMapLocationLayoutStore
     {
         private readonly SqliteConnectionFactory
             _connectionFactory;
@@ -39,10 +40,16 @@ namespace NetLoom.Persistence.Sqlite.MapLayout
                         connection,
                         mapId);
 
+                var locations =
+                    LoadLocations(
+                        connection,
+                        mapId);
+
                 return new MapLayoutSnapshot(
                     mapId,
                     viewport,
-                    devices);
+                    devices,
+                    locations);
             }
         }
 
@@ -184,6 +191,106 @@ ON CONFLICT(map_id, device_id) DO UPDATE SET
             }
         }
 
+        public void SaveLocation(
+            Guid mapId,
+            MapLocationLayout locationLayout)
+        {
+            ValidateMapId(mapId);
+
+            if (locationLayout == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(locationLayout));
+            }
+
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            {
+                SqliteImmediateWrite.Execute(
+                    connection,
+                    () =>
+                    {
+                        EnsureMap(
+                            connection,
+                            mapId);
+
+                        using (var command =
+                            connection.CreateCommand())
+                        {
+                            command.CommandText = @"
+INSERT INTO map_location_layout
+(
+    map_id,
+    location_id,
+    x,
+    y,
+    width,
+    height,
+    is_collapsed,
+    is_locked
+)
+VALUES
+(
+    @mapId,
+    @locationId,
+    @x,
+    @y,
+    @width,
+    @height,
+    @isCollapsed,
+    @isLocked
+)
+ON CONFLICT(map_id, location_id) DO UPDATE SET
+    x = excluded.x,
+    y = excluded.y,
+    width = excluded.width,
+    height = excluded.height,
+    is_collapsed = excluded.is_collapsed,
+    is_locked = excluded.is_locked;";
+
+                            command.Parameters.AddWithValue(
+                                "@mapId",
+                                mapId.ToString("D"));
+
+                            command.Parameters.AddWithValue(
+                                "@locationId",
+                                locationLayout.LocationId
+                                    .ToString("D"));
+
+                            command.Parameters.AddWithValue(
+                                "@x",
+                                locationLayout.X);
+
+                            command.Parameters.AddWithValue(
+                                "@y",
+                                locationLayout.Y);
+
+                            command.Parameters.AddWithValue(
+                                "@width",
+                                locationLayout.Width);
+
+                            command.Parameters.AddWithValue(
+                                "@height",
+                                locationLayout.Height);
+
+                            command.Parameters.AddWithValue(
+                                "@isCollapsed",
+                                locationLayout.IsCollapsed
+                                    ? 1
+                                    : 0);
+
+                            command.Parameters.AddWithValue(
+                                "@isLocked",
+                                locationLayout.IsLocked
+                                    ? 1
+                                    : 0);
+
+                            command.ExecuteNonQuery();
+                        }
+                    });
+            }
+        }
+
         private static MapViewportLayout LoadViewport(
             System.Data.SQLite.SQLiteConnection connection,
             Guid mapId)
@@ -259,6 +366,56 @@ ORDER BY device_id;";
                                 reader.GetDouble(1),
                                 reader.GetDouble(2),
                                 reader.GetInt32(3) != 0));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static IReadOnlyList<MapLocationLayout>
+            LoadLocations(
+                System.Data.SQLite.SQLiteConnection connection,
+                Guid mapId)
+        {
+            var result =
+                new List<MapLocationLayout>();
+
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    location_id,
+    x,
+    y,
+    width,
+    height,
+    is_collapsed,
+    is_locked
+FROM map_location_layout
+WHERE map_id = @mapId
+ORDER BY location_id;";
+
+                command.Parameters.AddWithValue(
+                    "@mapId",
+                    mapId.ToString("D"));
+
+                using (var reader =
+                    command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        result.Add(
+                            new MapLocationLayout(
+                                Guid.Parse(
+                                    reader.GetString(0)),
+                                reader.GetDouble(1),
+                                reader.GetDouble(2),
+                                reader.GetDouble(3),
+                                reader.GetDouble(4),
+                                reader.GetInt32(5) != 0,
+                                reader.GetInt32(6) != 0));
                     }
                 }
             }

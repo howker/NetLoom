@@ -107,12 +107,98 @@ namespace NetLoom.Application.MapLayout
         }
     }
 
+    public sealed class MapLocationLayout
+    {
+        public MapLocationLayout(
+            Guid locationId,
+            double x,
+            double y,
+            double width,
+            double height,
+            bool isCollapsed,
+            bool isLocked)
+        {
+            if (locationId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Location id is required.",
+                    nameof(locationId));
+            }
+
+            if (!IsFinite(x))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(x));
+            }
+
+            if (!IsFinite(y))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(y));
+            }
+
+            if (!IsFinite(width) || width <= 0.0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(width));
+            }
+
+            if (!IsFinite(height) || height <= 0.0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(height));
+            }
+
+            LocationId = locationId;
+            X = x;
+            Y = y;
+            Width = width;
+            Height = height;
+            IsCollapsed = isCollapsed;
+            IsLocked = isLocked;
+        }
+
+        public Guid LocationId { get; }
+
+        public double X { get; }
+
+        public double Y { get; }
+
+        public double Width { get; }
+
+        public double Height { get; }
+
+        public bool IsCollapsed { get; }
+
+        public bool IsLocked { get; }
+
+        private static bool IsFinite(
+            double value)
+        {
+            return !double.IsNaN(value) &&
+                   !double.IsInfinity(value);
+        }
+    }
+
     public sealed class MapLayoutSnapshot
     {
         public MapLayoutSnapshot(
             Guid mapId,
             MapViewportLayout viewport,
             IEnumerable<MapDeviceLayout> devices)
+            : this(
+                mapId,
+                viewport,
+                devices,
+                new MapLocationLayout[0])
+        {
+        }
+
+        public MapLayoutSnapshot(
+            Guid mapId,
+            MapViewportLayout viewport,
+            IEnumerable<MapDeviceLayout> devices,
+            IEnumerable<MapLocationLayout> locations)
         {
             if (mapId == Guid.Empty)
             {
@@ -133,10 +219,16 @@ namespace NetLoom.Application.MapLayout
                     nameof(devices));
             }
 
-            var materialized =
+            if (locations == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(locations));
+            }
+
+            var materializedDevices =
                 devices.ToArray();
 
-            if (materialized
+            if (materializedDevices
                 .GroupBy(item => item.DeviceId)
                 .Any(group => group.Count() > 1))
             {
@@ -145,9 +237,22 @@ namespace NetLoom.Application.MapLayout
                     nameof(devices));
             }
 
+            var materializedLocations =
+                locations.ToArray();
+
+            if (materializedLocations
+                .GroupBy(item => item.LocationId)
+                .Any(group => group.Count() > 1))
+            {
+                throw new ArgumentException(
+                    "Map layout contains duplicate location ids.",
+                    nameof(locations));
+            }
+
             MapId = mapId;
             Viewport = viewport;
-            Devices = materialized;
+            Devices = materializedDevices;
+            Locations = materializedLocations;
         }
 
         public Guid MapId { get; }
@@ -155,6 +260,8 @@ namespace NetLoom.Application.MapLayout
         public MapViewportLayout Viewport { get; }
 
         public IReadOnlyList<MapDeviceLayout> Devices { get; }
+
+        public IReadOnlyList<MapLocationLayout> Locations { get; }
     }
 
     public interface IMapLayoutStore
@@ -169,5 +276,12 @@ namespace NetLoom.Application.MapLayout
         void SaveDevice(
             Guid mapId,
             MapDeviceLayout deviceLayout);
+    }
+
+    public interface IMapLocationLayoutStore
+    {
+        void SaveLocation(
+            Guid mapId,
+            MapLocationLayout locationLayout);
     }
 }

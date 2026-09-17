@@ -36,7 +36,8 @@ namespace NetLoom.Persistence.Sqlite.Database
                     new Migration017InterfaceDegradationDelivery(),
                     new Migration018InterfaceDegradationDeliveryRetry(),
                     new Migration019MapLayout(),
-                    new Migration020InterfaceIdentityAndManagementAddress()
+                    new Migration020InterfaceIdentityAndManagementAddress(),
+                    new Migration021MapLocationLayout()
                 });
         }
 
