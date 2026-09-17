@@ -181,7 +181,17 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Technical acceptance: initial implementation commit `c9c6714b8663074be9864e8fb14f1c8355b76955`; operator-accepted navigation/virtual-workspace follow-up `1ff950e45f5a4d67ae72dfce1dfdecc316d9999a`. Latest regression evidence is modern 111/111, legacy Unit 266/266, Integration 98/98 and Snapshot 7/7.
 - [ ] Sprint 37 — manual topology from the UI.
   - Operator outcome: draw an unmanaged device and cable that SNMP/discovery cannot see.
-  - Create/edit/remove manual devices, ports and links through the existing protected manual-topology semantics.
+  - Source-audit baseline: `e10b5200dd12fbe8032ca890791c190a8e2ab418`. Existing backend semantics already provide `ManualTopologyFactory`, shared `devices` / `interfaces` / `physical_links`, protected manual deletion, manual-link protection, stable `DeviceId` / `PhysicalLinkId`, and map projection of manual elements.
+  - Backend first: add one Application manual-topology command/read boundary. WPF receives only transport-neutral editor DTOs/commands and does not own Domain state or reference SQLite/Topology write implementations. `NetLoom.Desktop` remains the composition root.
+  - Manual devices: create/edit/remove name, supported category and notes; persist `DiscoveryOrigin = Manual` and `MonitoringCapability = None`; never infer `Offline` merely because the device cannot be polled.
+  - Manual ports: create/edit/remove named virtual ports on a manual device; persist `ifIndex = null`, `IsManual = true`, and optional media override.
+  - Manual links: create links between existing devices and optional existing interfaces, including automatic ↔ manual endpoints; persist `PhysicalLinkStrength.Manual`, media type and notes. Edit link metadata without mutating canonical cable identity; changing endpoints is remove + create because a rewired cable is a new PhysicalLink identity.
+  - Operator actions write a bounded manual `ObservationKind.Manual` / `SourceAddress = User` audit observation through an Application persistence boundary; manual observations remain excluded from raw-protocol retention.
+  - Deletion safety: connected manual interfaces/devices cannot be deleted until their manual links are removed; automatic elements are never editable/deletable through the manual-topology UI.
+  - UI: add one localized manual-topology editor reachable from the main map. It manages manual devices, ports and links, uses shared design resources, surfaces validation errors in operator language, and refreshes the existing coherent topology snapshot after a successful write.
+  - Persistence: no new SQLite migration is planned. Sprint 37 reuses Migration009 materialized topology, existing `observations`, and Migration019 map layout.
+  - Scope boundary: Location-container editing remains Sprint 38; node shape/size and broader map visual language remain Sprint 39; monitoring controls remain Sprint 40.
+  - Acceptance: RED→GREEN backend command tests where practical; integration coverage for create/edit/delete/protection and restart persistence; localized WPF contract/interaction coverage; forced solution build; full regression; operator acceptance on the realistic stand including Desktop close/reopen.
 - [ ] Sprint 38 — Locations on the map.
   - Operator outcome: read the physical object by site/building/room/rack boundaries instead of a flat graph.
   - Render movable/resizable/collapsible/lockable Location containers and preserve their layout.

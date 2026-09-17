@@ -141,6 +141,30 @@ Semantic motion is also presentation-only. `Normal`, `Reduced` and `Off` alter d
 
 Sprint 36 introduces `Migration019MapLayout`; no manual topology write semantics, Location-container layout or broad map visual-language policy is added here.
 
+## Manual topology command boundary
+
+Sprint 37 exposes the already-existing protected manual topology through an operator command surface; it does not create a second graph.
+
+Write/read path:
+
+`WPF manual-topology editor -> Application manual-topology service -> existing ManualTopologyFactory + materialized topology repository + manual observation persistence -> SQLite`
+
+`NetLoom.Desktop` remains the composition root. WPF receives Application/Contracts editor models and commands only; it does not construct Domain topology entities as owned state and does not reference `NetLoom.Persistence.Sqlite` or `NetLoom.Topology` write implementations.
+
+Manual and automatic topology continue to share the same materialized graph:
+- manual device: `DiscoveryOrigin = Manual`, `MonitoringCapability = None`;
+- manual interface: `ifIndex = null`, `IsManual = true`;
+- manual link: `PhysicalLinkStrength = Manual`;
+- manual operator action: `ObservationKind.Manual`, `SourceAddress = User`.
+
+The editor may use automatic devices/interfaces as endpoints for a manual cable, but automatic devices/interfaces/links are read-only in this command surface. Existing repository protection remains authoritative: discovery/automatic materialization cannot replace manual topology, connected manual interfaces/devices cannot be deleted, and endpoint interfaces must belong to the selected endpoint device.
+
+Canonical PhysicalLink identity remains ADR-038 semantics. Link metadata such as media/notes may be edited while retaining identity. Rewiring to different endpoints is modeled as deleting the old manual PhysicalLink and creating a new one; the UI must not mutate an existing PhysicalLink id onto an incompatible device pair.
+
+After a successful command, WPF requests/awaits the existing coherent topology refresh path; it does not patch a separate UI-owned graph. Map layout remains separate Sprint 36 state keyed by stable DeviceId. Deleting a manual device is allowed only after links are removed; the existing map-layout FK cascade may then remove its persisted layout row.
+
+Sprint 37 adds no Location-container editing, node shape/size customization, broad visual-language changes or monitoring controls. Those remain Sprint 38, Sprint 39 and Sprint 40 respectively.
+
 ## Roadmap boundaries — not committed scope
 
 The following directions are architectural map, not a promise of immediate implementation:

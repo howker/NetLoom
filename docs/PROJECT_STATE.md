@@ -12,7 +12,9 @@ Sprint 36 is operator-accepted. Initial implementation is `c9c6714b8663074be9864
 
 Semantic motion remains deliberately quiet: `Normal`, `Reduced` and `Off` live under Map settings and affect only appearance/disappearance, freshness change, search focus and one new-alert pulse. A static realistic stand may show no obvious animation when no relevant state transition occurs; perpetual/decorative motion is not part of the accepted behavior.
 
-The recurring LLDP link-label readability friction remains resolved. Sprint 36 acceptance also exposed repeated map-navigation/discoverability friction (finite workspace, narrow zoom, no recovery-to-topology action, overlong help text and unclear motion placement); these observations were resolved inside Sprint 36 without reordering the committed product sequence. Latest regression evidence is modern `net8.0` 111, legacy Unit 266, Integration 98 and Snapshot 7. The first unchecked committed item is Sprint 37 — manual topology from the UI, with the operator outcome of drawing unmanaged devices and cables that discovery cannot see.
+The recurring LLDP link-label readability friction remains resolved. Sprint 36 acceptance also exposed repeated map-navigation/discoverability friction (finite workspace, narrow zoom, no recovery-to-topology action, overlong help text and unclear motion placement); these observations were resolved inside Sprint 36 without reordering the committed product sequence. Latest regression evidence is modern `net8.0` 111, legacy Unit 266, Integration 98 and Snapshot 7.
+
+Sprint 37 is now the active committed product Sprint. Its operator outcome is to draw an unmanaged device and cable that SNMP/discovery cannot see. A read-only source audit at `e10b5200dd12fbe8032ca890791c190a8e2ab418` confirmed that the shared manual-topology Domain/persistence semantics already exist, so Sprint 37 adds an Application command/read boundary and localized WPF editor rather than a second manual graph or new topology schema. The detailed scope and acceptance checklist live in `docs/BACKLOG.md`. The next technical gate is backend command implementation before UI wiring.
 
 ## Основа проекта
 

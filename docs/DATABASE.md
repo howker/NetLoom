@@ -474,3 +474,24 @@ The current physical-topology map uses stable `MapLayoutScope.PhysicalTopologyMa
 Viewport pan may be signed because Sprint 36 stores logical pan around a virtual map origin. The large WPF working canvas is a presentation detail and is not encoded as topology identity.
 
 Migration019 stores operator layout only. It does not create manual devices/links, Location-container layout, topology history, incidents or metric/time-series data.
+
+## Sprint 37 — manual topology UI persistence boundary
+
+Sprint 37 does not add `Migration020`.
+
+The UI command path reuses the existing shared materialized topology schema:
+- `devices` for manual devices with `discovery_origin = Manual` and `monitoring_capability = None`;
+- `interfaces` for virtual manual ports with `if_index = NULL` and `is_manual = 1`;
+- `physical_links` for manual cables with `strength = Manual`;
+- existing `observations` for operator-action evidence with `ObservationKind.Manual` / `SourceAddress = User`;
+- `maps` / `map_device_layout` for the existing Sprint 36 layout state of the created stable DeviceId.
+
+Manual topology is not duplicated into `manual_*` tables. Automatic persistence remains forbidden from replacing manual devices, interfaces or physical links.
+
+A manual PhysicalLink may connect automatic and manual devices/interfaces, but each non-null interface endpoint must belong to its device. Connected manual interfaces/devices remain undeletable until the referencing link is removed.
+
+Canonical PhysicalLink identity is unchanged. Editing media type/notes does not redefine endpoints; changing cable endpoints is represented as delete + create rather than reusing one PhysicalLink id for an incompatible device pair.
+
+Manual operator observations are audit/evidence records, not discovery facts and not high-frequency time-series. Existing observation retention continues to exclude `ObservationKind.Manual`.
+
+Migration019 remains the current schema migration; total migrations remain 19 for Sprint 37.
