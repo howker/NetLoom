@@ -92,7 +92,7 @@ The WPF presentation layer now has shared resource dictionaries for:
 
 The current `MainWindow` and retained map visuals consume the shared resources. Light is the current default palette; operator-controlled runtime theme switching is not claimed yet.
 
-Interactive zoom/pan, persisted device layout/locking and semantic motion are implemented by Sprint 36 on the retained-visual foundation. Manual topology editing remains Sprint 37 scope. Motion supports `Normal`, `Reduced` and `Off`; perpetual blinking is not part of the product language.
+Interactive zoom/pan, persisted device layout/locking and semantic motion are implemented by Sprint 36 on the retained-visual foundation. Sprint 37 adds the operator-accepted manual-topology editor on the same retained map. Motion supports `Normal`, `Reduced` and `Off`; perpetual blinking is not part of the product language.
 
 ## Selected-element diagnostic projection boundary
 
@@ -156,6 +156,12 @@ Manual and automatic topology continue to share the same materialized graph:
 - manual interface: `ifIndex = null`, `IsManual = true`;
 - manual link: `PhysicalLinkStrength = Manual`;
 - manual operator action: `ObservationKind.Manual`, `SourceAddress = User`.
+
+Sprint 37 operator remediation also made the diagnostic projection consume observed interface identity rather than presentation guesses. For an explicitly bound `(DeviceId, ifIndex)`, the lightweight IF-MIB monitoring path may carry observed `ifName`, `ifDescr`, `ifAlias` and numeric `ifType` into materialization. The stable identity remains `DeviceId` + `ifIndex`; these strings/type values are descriptive metadata. WPF may fall back to `ifIndex` when names are unavailable, but must not synthesize vendor-specific names from speed or media.
+
+The management address carried by an explicitly bound poll is materialized as nullable device metadata for operator diagnostics. It remains an observation/management address and never becomes DeviceId. `Migration020InterfaceIdentityAndManagementAddress` persists only the previously missing `devices.management_address` and `interfaces.if_type`; it does not create monitoring time-series storage or change manual/automatic topology identity. See ADR-070.
+
+Map-node height is content-driven at presentation time. A fixed card height is not a topology contract; layout regression evidence measures production content rather than pinning a symptom-specific numeric constant. Cable selection must not move the viewport merely to acquire keyboard focus.
 
 The editor may use automatic devices/interfaces as endpoints for a manual cable, but automatic devices/interfaces/links are read-only in this command surface. Existing repository protection remains authoritative: discovery/automatic materialization cannot replace manual topology, connected manual interfaces/devices cannot be deleted, and endpoint interfaces must belong to the selected endpoint device.
 

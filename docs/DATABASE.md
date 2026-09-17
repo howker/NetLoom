@@ -440,9 +440,10 @@ The source tree is authoritative for migrations that landed after the older Spri
 - Migration016 — `Interface degradation outbox`;
 - Migration017 — `Interface degradation delivery acknowledgement`;
 - Migration018 — `Interface degradation delivery retry`;
-- Migration019 — `Persistent map layout`.
+- Migration019 — `Persistent map layout`;
+- Migration020 — `Interface identity and management address`.
 
-Migration019 is the current schema migration; total migrations: 19.
+Migration020 is the current schema migration; total migrations: 20.
 
 ## Sprint 36 — Migration019 persistent map layout
 
@@ -477,9 +478,7 @@ Migration019 stores operator layout only. It does not create manual devices/link
 
 ## Sprint 37 — manual topology UI persistence boundary
 
-Sprint 37 does not add `Migration020`.
-
-The UI command path reuses the existing shared materialized topology schema:
+The manual-topology command path reuses the existing shared materialized topology schema:
 - `devices` for manual devices with `discovery_origin = Manual` and `monitoring_capability = None`;
 - `interfaces` for virtual manual ports with `if_index = NULL` and `is_manual = 1`;
 - `physical_links` for manual cables with `strength = Manual`;
@@ -494,4 +493,14 @@ Canonical PhysicalLink identity is unchanged. Editing media type/notes does not 
 
 Manual operator observations are audit/evidence records, not discovery facts and not high-frequency time-series. Existing observation retention continues to exclude `ObservationKind.Manual`.
 
-Migration019 remains the current schema migration; total migrations remain 19 for Sprint 37.
+### Migration020 — truthful interface identity and management address
+
+Final Sprint 37 operator acceptance exposed two pieces of observed metadata that the materialized graph could not faithfully present. `Migration020InterfaceIdentityAndManagementAddress` therefore adds only:
+- nullable `devices.management_address TEXT`;
+- nullable `interfaces.if_type INTEGER`.
+
+`interfaces.if_name`, `interfaces.if_description` and `interfaces.if_alias` already existed; the production interface-monitoring path now carries the observed IF-MIB identity fields into materialization instead of synthesizing a vendor-specific name from speed/media. `if_type` is the observed numeric IF-MIB `ifType` when available; missing data remains `NULL`.
+
+`devices.management_address` stores the observed management/source address associated with an explicitly known stable DeviceId. It is presentation/operational metadata only: IP is never DeviceId and an unbound poll still cannot create guessed topology identity.
+
+Migration020 does not add time-series storage, persist high-frequency counters, create a second manual graph, or change PhysicalLink identity. Migration020 is the current schema migration; total migrations: 20.

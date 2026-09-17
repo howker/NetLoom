@@ -1005,3 +1005,33 @@ Every numbered product Sprint must have its operator outcome sentence recorded i
 - UI foundation work happens before the UI-heavy Sprint sequence without being misrepresented as a product Sprint;
 - the sequence can be changed deliberately, but not by momentum at the end of a previous Sprint;
 - `Next candidates` and roadmap items remain non-commitments until the user explicitly commits them.
+
+## ADR-070 — operator diagnostics persist observed interface identity, not inferred port names
+
+**Status:** Accepted.
+
+**Date:** 2026-09-17.
+
+### Context
+
+Sprint 37 operator acceptance showed that a topology editor is not usable if the map invents a familiar-looking port prefix or omits the actual interface type/address needed to identify a connection. The existing materialized interface already carried `ifName`, `ifDescription` and `ifAlias`, but the lightweight monitoring path did not propagate that identity into materialization, `ifType` was not persisted, and the materialized device had no management-address field for the diagnostic projection.
+
+Inferring `Gi`/`Fa`/`Te` from link speed would turn a measurement into vendor-specific configuration syntax that the device never reported. That violates the same evidence-first boundary used elsewhere in topology resolution.
+
+### Decision
+
+For an explicitly bound interface poll, the monitoring path may collect and carry observed IF-MIB `ifName`, `ifDescr`, `ifAlias` and numeric `ifType` alongside the existing status/counter snapshot. Materialization may persist these descriptive fields on the already-known stable `(DeviceId, ifIndex)` interface.
+
+`Migration020InterfaceIdentityAndManagementAddress` adds nullable `interfaces.if_type` and nullable `devices.management_address`. The management address comes from the explicit polling request associated with an already-known DeviceId; it remains metadata and is never topology identity.
+
+Presentation clients must prefer observed interface identity. If a device does not provide a usable name, the UI may show `ifIndex`; it must not synthesize Cisco, Juniper, Huawei or other vendor-specific port notation from speed, media, category or heuristics. Missing identity/type/address remains unknown rather than guessed.
+
+This persistence is bounded current topology/diagnostic metadata, not metric/time-series history. Interface counters and interval degradation evidence retain their existing operational boundaries.
+
+### Consequences
+
+- operator-visible port names correspond to device evidence when available;
+- `ifIndex` remains the portable fallback and stable per-device SNMP key;
+- management IP can be shown without violating the rule that IP is not DeviceId;
+- the materialized schema advances to Migration020 for two nullable metadata columns only;
+- future presentation layers inherit the same evidence rule and must not repair missing protocol facts with vendor-name heuristics.
