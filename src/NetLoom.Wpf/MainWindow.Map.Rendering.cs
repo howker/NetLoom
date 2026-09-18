@@ -2047,11 +2047,9 @@ public partial class MainWindow
         }
         else
         {
-            visual.Border.ClearValue(
-                Border.BorderThicknessProperty);
-
-            visual.Border.ClearValue(
-                Border.BorderBrushProperty);
+            ApplyNodeDegradationPresentation(
+                visual,
+                node.DeviceId);
         }
     }
 

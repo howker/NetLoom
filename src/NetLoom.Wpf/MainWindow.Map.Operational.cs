@@ -201,6 +201,116 @@ public partial class MainWindow
         }
     }
 
+    private enum MapNodeDegradationState
+    {
+        Normal = 0,
+        Degraded = 1
+    }
+
+    private void ApplyNodeDegradationPresentation(
+        MapNodeVisual visual,
+        Guid? deviceId)
+    {
+        var state =
+            NodeDegradationState(
+                deviceId);
+
+        var brushKey =
+            NodeDegradationBrushKey(
+                state);
+
+        if (brushKey == null)
+        {
+            visual.Border.ClearValue(
+                System.Windows.Controls.Border.BorderThicknessProperty);
+
+            visual.Border.ClearValue(
+                System.Windows.Controls.Border.BorderBrushProperty);
+
+            return;
+        }
+
+        visual.Border.BorderThickness =
+            GetThicknessResource(
+                "NetLoom.Thickness.BorderFocus");
+
+        visual.Border.SetResourceReference(
+            System.Windows.Controls.Border.BorderBrushProperty,
+            brushKey);
+    }
+
+    private MapNodeDegradationState
+        NodeDegradationState(
+            Guid? deviceId)
+    {
+        if (!deviceId.HasValue ||
+            _lastDiagnosticSnapshot == null)
+        {
+            return MapNodeDegradationState.Normal;
+        }
+
+        foreach (var device in
+            _lastDiagnosticSnapshot.Devices)
+        {
+            if (device.DeviceId !=
+                deviceId.Value)
+            {
+                continue;
+            }
+
+            var statuses =
+                new List<DiagnosticDegradationStatus>();
+
+            foreach (var item in
+                device.Interfaces)
+            {
+                statuses.Add(
+                    item.DegradationStatus);
+            }
+
+            return ClassifyNodeDegradationState(
+                statuses);
+        }
+
+        return MapNodeDegradationState.Normal;
+    }
+
+    private static MapNodeDegradationState
+        ClassifyNodeDegradationState(
+            IEnumerable<DiagnosticDegradationStatus> statuses)
+    {
+        if (statuses == null)
+        {
+            throw new ArgumentNullException(
+                nameof(statuses));
+        }
+
+        foreach (var status in statuses)
+        {
+            if (status ==
+                DiagnosticDegradationStatus.Degraded)
+            {
+                return MapNodeDegradationState.Degraded;
+            }
+        }
+
+        return MapNodeDegradationState.Normal;
+    }
+
+    private static string NodeDegradationBrushKey(
+        MapNodeDegradationState state)
+    {
+        switch (state)
+        {
+            case MapNodeDegradationState.Degraded:
+                return "NetLoom.Brush.Warning";
+
+            case MapNodeDegradationState.Normal:
+            default:
+                return null;
+        }
+    }
+
     private static string LinkOperationalBrushKey(
         MapLinkOperationalState state)
     {
