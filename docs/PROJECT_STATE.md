@@ -14,7 +14,9 @@ Holistic operator acceptance found two workflow defects after the first redesign
 
 Sprint 38 adds no database migration; `Migration020InterfaceIdentityAndManagementAddress` remains the current schema migration. No Sprint 38 product change remains open.
 
-The pre-Sprint-39 preparation gate is complete. `MainWindow.xaml.cs` was mechanically decomposed into focused diagnostics, lookup, alerts and `MainWindow.Map.*` partial files without behavior, schema, localization or dependency changes; the original monolith was reduced from roughly 8.5k lines to roughly 0.9k lines. The first unchecked product item in the existing `Committed sequence` is now Sprint 39 — visual language of the map; Sprint 40 remains subsequent. No product-Sprint reorder was introduced.
+The pre-Sprint-39 preparation gate is complete. `MainWindow.xaml.cs` was mechanically decomposed into focused diagnostics, lookup, alerts and `MainWindow.Map.*` partial files without behavior, schema, localization or dependency changes; the original monolith was reduced from roughly 8.5k lines to roughly 0.9k lines. Sprint 39 — visual language of the map — is now active; Sprint 40 remains subsequent. No product-Sprint reorder was introduced.
+
+Sprint 39 starts from the contracts already present at the accepted baseline. `MapLink` carries `MapConfidence` (`Low` / `Medium` / `High`) and `MapFreshness` (`Fresh` / `Aging` / `Stale`), while `MapNode` does not carry confidence, freshness or degradation state. STP/ring/forwarding-safety contracts (`StpTreePortState`, `RingProtectionAnalysis`, `ForwardingCycleAnalysis`) exist, but the current `MainWindow.Map.*` renderer does not consume them. Therefore Sprint 39A is intentionally limited to truthful link confidence/freshness presentation with selection kept as a separate interaction layer; Sprint 39B will wire the existing STP/ring/failure classifications before visualizing blocked/risky state; Sprint 39C will complete truthful node/degradation semantics and holistic operator acceptance. No new domain contract is planned for 39A.
 
 ## Основа проекта
 
