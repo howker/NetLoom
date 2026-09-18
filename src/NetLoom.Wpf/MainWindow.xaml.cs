@@ -604,6 +604,10 @@ public partial class MainWindow : Window
         _lastDiagnosticSnapshot =
             state.Snapshot.DiagnosticSnapshot;
 
+        UpdateLinkOperationalStates(
+            state.Snapshot.DiagnosticSnapshot,
+            state.Snapshot.AlertSnapshot);
+
         ShowMap(
             state.Snapshot.MapSnapshot);
 

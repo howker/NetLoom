@@ -2192,14 +2192,9 @@ public partial class MainWindow
         }
         else
         {
-            visual.Line.ClearValue(
-                Shape.StrokeProperty);
-
-            visual.Line.ClearValue(
-                Shape.StrokeThicknessProperty);
-
-            visual.Label.ClearValue(
-                TextBlock.ForegroundProperty);
+            ApplyLinkOperationalPresentation(
+                visual,
+                link.PhysicalLinkId);
         }
 
         PlaceLinkLabel(
