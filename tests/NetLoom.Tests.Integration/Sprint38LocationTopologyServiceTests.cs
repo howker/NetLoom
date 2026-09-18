@@ -168,6 +168,103 @@ namespace NetLoom.Tests.Integration
         }
 
         [TestMethod]
+        public void HierarchyRejectsMissingParentCyclesAndNonLeafDeletion()
+        {
+            WithDatabase(
+                factory =>
+                {
+                    var locations =
+                        new SqliteLocationRepository(
+                            factory);
+
+                    var service =
+                        new LocationTopologyService(
+                            locations,
+                            new SqliteMaterializedTopologyRepository(
+                                factory));
+
+                    AssertInvalidOperation(
+                        () =>
+                            service.CreateLocation(
+                                Guid.NewGuid(),
+                                "Orphan",
+                                null));
+
+                    var siteId =
+                        service.CreateLocation(
+                            null,
+                            "Site",
+                            null);
+
+                    var buildingId =
+                        service.CreateLocation(
+                            siteId,
+                            "Building",
+                            null);
+
+                    var roomId =
+                        service.CreateLocation(
+                            buildingId,
+                            "Room",
+                            null);
+
+                    var rackId =
+                        service.CreateLocation(
+                            roomId,
+                            "Rack",
+                            null);
+
+                    AssertInvalidOperation(
+                        () =>
+                            service.UpdateLocation(
+                                siteId,
+                                rackId,
+                                "Site",
+                                null));
+
+                    Assert.AreEqual(
+                        (Guid?)null,
+                        locations
+                            .Get(siteId)
+                            .ParentLocationId);
+
+                    AssertInvalidOperation(
+                        () =>
+                            service.DeleteLocation(
+                                buildingId));
+
+                    Assert.IsNotNull(
+                        locations.Get(
+                            buildingId));
+
+                    service.UpdateLocation(
+                        rackId,
+                        roomId,
+                        "Rack 01",
+                        "Renamed without identity change");
+
+                    var renamed =
+                        locations.Get(
+                            rackId);
+
+                    Assert.AreEqual(
+                        rackId,
+                        renamed.Id);
+
+                    Assert.AreEqual(
+                        "Rack 01",
+                        renamed.Name);
+
+                    service.DeleteLocation(
+                        rackId);
+
+                    Assert.IsNull(
+                        locations.Get(
+                            rackId));
+                });
+        }
+
+        [TestMethod]
         public void AssigningUnknownLocationDoesNotMutateDevice()
         {
             WithDatabase(

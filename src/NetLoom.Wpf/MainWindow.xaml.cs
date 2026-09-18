@@ -151,7 +151,9 @@ public partial class MainWindow : Window
 
     private bool _locationDragMoved;
 
-    private bool _locationDragMovesDevices;
+    private readonly Dictionary<MapLocationVisual, Point>
+        _locationDragLocationStarts =
+            new Dictionary<MapLocationVisual, Point>();
 
     private readonly Dictionary<MapNodeVisual, Point>
         _locationDragDeviceStarts =
@@ -1726,6 +1728,9 @@ public partial class MainWindow : Window
             throw new ArgumentNullException(nameof(snapshot));
         }
 
+        _lastMapSnapshot =
+            snapshot;
+
         var nodes =
             snapshot.Nodes.ToDictionary(
                 node => node.Key,
@@ -1742,6 +1747,12 @@ public partial class MainWindow : Window
         ReconcileLocations(
             snapshot.Locations,
             snapshot.Nodes);
+
+        NormalizeLocationHierarchy(
+            snapshot.Locations,
+            snapshot.Nodes);
+
+        UpdateLocationHierarchyVisibility();
 
         ReconcileLinks(
             snapshot.Links,
@@ -1942,7 +1953,7 @@ public partial class MainWindow : Window
 
         var ordered =
             locations
-                .OrderByDescending(
+                .OrderBy(
                     item =>
                         LocationDepth(
                             item,
@@ -1990,7 +2001,7 @@ public partial class MainWindow : Window
                     visual,
                     layout);
             }
-            else
+            else if (created)
             {
                 layout =
                     CreateDefaultLocationLayout(
@@ -2053,6 +2064,471 @@ public partial class MainWindow : Window
         }
 
         UpdateLocationSelectionPresentation();
+    }
+
+    private void NormalizeLocationHierarchy(
+        IReadOnlyList<MapLocation> locations,
+        IReadOnlyList<MapNode> nodes)
+    {
+        if (locations == null ||
+            locations.Count == 0)
+        {
+            return;
+        }
+
+        var byId =
+            locations.ToDictionary(
+                item => item.Id);
+
+        // Сначала увеличиваем только размер контейнеров снизу вверх.
+        // Их позиция при этом остаётся стабильной: иерархия не должна
+        // самопроизвольно перетаскивать родителя к ошибочно сохранённому ребёнку.
+        foreach (var location in
+            locations
+                .OrderByDescending(
+                    item =>
+                        LocationDepth(
+                            item,
+                            byId)))
+        {
+            MapLocationVisual visual;
+
+            if (!_locationVisualsById.TryGetValue(
+                    location.Id,
+                    out visual))
+            {
+                continue;
+            }
+
+            var requiredWidth =
+                _locationMinWidth;
+
+            var requiredHeight =
+                _locationMinHeight;
+
+            foreach (var child in
+                locations.Where(
+                    item =>
+                        item.ParentLocationId ==
+                        location.Id))
+            {
+                MapLocationVisual childVisual;
+
+                if (!_locationVisualsById.TryGetValue(
+                        child.Id,
+                        out childVisual))
+                {
+                    continue;
+                }
+
+                requiredWidth =
+                    Math.Max(
+                        requiredWidth,
+                        Math.Max(
+                            _locationMinWidth,
+                            childVisual.ExpandedWidth) +
+                        (2.0 *
+                         _locationContentPadding));
+
+                requiredHeight =
+                    Math.Max(
+                        requiredHeight,
+                        Math.Max(
+                            _locationMinHeight,
+                            childVisual.ExpandedHeight) +
+                        _locationHeaderHeight +
+                        (2.0 *
+                         _locationContentPadding));
+            }
+
+            foreach (var node in
+                nodes.Where(
+                    item =>
+                        item.LocationId ==
+                        location.Id))
+            {
+                MapNodeVisual nodeVisual;
+
+                if (!_nodeVisualsByIdentity.TryGetValue(
+                        NodeIdentity(node),
+                        out nodeVisual))
+                {
+                    continue;
+                }
+
+                requiredWidth =
+                    Math.Max(
+                        requiredWidth,
+                        _nodeWidth +
+                        (2.0 *
+                         _locationContentPadding));
+
+                requiredHeight =
+                    Math.Max(
+                        requiredHeight,
+                        NodeVisualHeight(
+                            nodeVisual) +
+                        _locationHeaderHeight +
+                        (2.0 *
+                         _locationContentPadding));
+            }
+
+            var widthChanged =
+                visual.ExpandedWidth + 0.001 <
+                requiredWidth;
+
+            var heightChanged =
+                visual.ExpandedHeight + 0.001 <
+                requiredHeight;
+
+            if (!widthChanged &&
+                !heightChanged)
+            {
+                continue;
+            }
+
+            visual.ExpandedWidth =
+                Math.Max(
+                    visual.ExpandedWidth,
+                    requiredWidth);
+
+            visual.ExpandedHeight =
+                Math.Max(
+                    visual.ExpandedHeight,
+                    requiredHeight);
+
+            UpdateLocationVisualState(
+                visual);
+
+            if (_persistedLocationLayouts.ContainsKey(
+                    location.Id))
+            {
+                TrySaveLocationLayout(
+                    visual);
+            }
+        }
+
+        // Затем сверху вниз возвращаем каждый дочерний контейнер и устройство
+        // внутрь физического родителя. Если приходится сдвинуть Location,
+        // вместе с ним движется всё его поддерево, а не только рамка.
+        foreach (var location in
+            locations
+                .OrderBy(
+                    item =>
+                        LocationDepth(
+                            item,
+                            byId)))
+        {
+            MapLocationVisual visual;
+
+            if (!_locationVisualsById.TryGetValue(
+                    location.Id,
+                    out visual))
+            {
+                continue;
+            }
+
+            if (visual.ParentLocationId.HasValue)
+            {
+                var left =
+                    LocationLeft(
+                        visual);
+
+                var top =
+                    LocationTop(
+                        visual);
+
+                var constrained =
+                    ConstrainLocationPositionToParent(
+                        visual,
+                        left,
+                        top);
+
+                var deltaX =
+                    constrained.X - left;
+
+                var deltaY =
+                    constrained.Y - top;
+
+                if (Math.Abs(deltaX) > 0.001 ||
+                    Math.Abs(deltaY) > 0.001)
+                {
+                    MoveLocationSubtreeByDelta(
+                        location.Id,
+                        deltaX,
+                        deltaY);
+                }
+            }
+
+            foreach (var node in
+                nodes.Where(
+                    item =>
+                        item.LocationId ==
+                        location.Id))
+            {
+                MapNodeVisual nodeVisual;
+
+                if (!_nodeVisualsByIdentity.TryGetValue(
+                        NodeIdentity(node),
+                        out nodeVisual))
+                {
+                    continue;
+                }
+
+                var left =
+                    NodeLeft(
+                        nodeVisual);
+
+                var top =
+                    NodeTop(
+                        nodeVisual);
+
+                var constrained =
+                    ConstrainNodePositionToLocation(
+                        nodeVisual,
+                        left,
+                        top);
+
+                if (Math.Abs(
+                        constrained.X - left) <= 0.001 &&
+                    Math.Abs(
+                        constrained.Y - top) <= 0.001)
+                {
+                    continue;
+                }
+
+                Canvas.SetLeft(
+                    nodeVisual.Border,
+                    constrained.X);
+
+                Canvas.SetTop(
+                    nodeVisual.Border,
+                    constrained.Y);
+
+                if (node.DeviceId.HasValue &&
+                    _persistedDeviceLayouts.ContainsKey(
+                        node.DeviceId.Value))
+                {
+                    TrySaveDeviceLayout(
+                        nodeVisual);
+                }
+            }
+        }
+    }
+
+    private void MoveLocationSubtreeByDelta(
+        Guid locationId,
+        double deltaX,
+        double deltaY)
+    {
+        if (Math.Abs(deltaX) <= 0.001 &&
+            Math.Abs(deltaY) <= 0.001)
+        {
+            return;
+        }
+
+        var includedLocations =
+            DescendantLocationIds(
+                locationId);
+
+        includedLocations.Add(
+            locationId);
+
+        foreach (var currentLocationId in
+            includedLocations)
+        {
+            MapLocationVisual visual;
+
+            if (!_locationVisualsById.TryGetValue(
+                    currentLocationId,
+                    out visual))
+            {
+                continue;
+            }
+
+            Canvas.SetLeft(
+                visual.Border,
+                LocationLeft(
+                    visual) +
+                deltaX);
+
+            Canvas.SetTop(
+                visual.Border,
+                LocationTop(
+                    visual) +
+                deltaY);
+
+            if (_persistedLocationLayouts.ContainsKey(
+                    currentLocationId))
+            {
+                TrySaveLocationLayout(
+                    visual);
+            }
+        }
+
+        if (_lastMapSnapshot == null)
+        {
+            return;
+        }
+
+        foreach (var node in
+            _lastMapSnapshot.Nodes)
+        {
+            if (!node.LocationId.HasValue ||
+                !includedLocations.Contains(
+                    node.LocationId.Value))
+            {
+                continue;
+            }
+
+            MapNodeVisual visual;
+
+            if (!_nodeVisualsByIdentity.TryGetValue(
+                    NodeIdentity(node),
+                    out visual))
+            {
+                continue;
+            }
+
+            Canvas.SetLeft(
+                visual.Border,
+                NodeLeft(
+                    visual) +
+                deltaX);
+
+            Canvas.SetTop(
+                visual.Border,
+                NodeTop(
+                    visual) +
+                deltaY);
+
+            if (node.DeviceId.HasValue &&
+                _persistedDeviceLayouts.ContainsKey(
+                    node.DeviceId.Value))
+            {
+                TrySaveDeviceLayout(
+                    visual);
+            }
+        }
+    }
+
+    private void UpdateLocationHierarchyVisibility()
+    {
+        if (_lastMapSnapshot == null)
+        {
+            return;
+        }
+
+        var byId =
+            _lastMapSnapshot.Locations
+                .ToDictionary(
+                    item => item.Id);
+
+        foreach (var location in
+            _lastMapSnapshot.Locations)
+        {
+            MapLocationVisual visual;
+
+            if (!_locationVisualsById.TryGetValue(
+                    location.Id,
+                    out visual))
+            {
+                continue;
+            }
+
+            visual.Border.Visibility =
+                HasCollapsedLocationAncestor(
+                    location,
+                    byId,
+                    includeSelf: false)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+        }
+
+        foreach (var node in
+            _lastMapSnapshot.Nodes)
+        {
+            MapNodeVisual visual;
+
+            if (!_nodeVisualsByIdentity.TryGetValue(
+                    NodeIdentity(node),
+                    out visual))
+            {
+                continue;
+            }
+
+            var hidden = false;
+
+            if (node.LocationId.HasValue)
+            {
+                MapLocation location;
+
+                if (byId.TryGetValue(
+                        node.LocationId.Value,
+                        out location))
+                {
+                    hidden =
+                        HasCollapsedLocationAncestor(
+                            location,
+                            byId,
+                            includeSelf: true);
+                }
+            }
+
+            visual.Border.Visibility =
+                hidden
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+        }
+    }
+
+    private bool HasCollapsedLocationAncestor(
+        MapLocation location,
+        IReadOnlyDictionary<Guid, MapLocation> locations,
+        bool includeSelf)
+    {
+        var current =
+            includeSelf
+                ? location
+                : null;
+
+        var parentId =
+            includeSelf
+                ? (Guid?)location.Id
+                : location.ParentLocationId;
+
+        var visited =
+            new HashSet<Guid>();
+
+        while (parentId.HasValue &&
+               visited.Add(
+                   parentId.Value))
+        {
+            MapLocation candidate;
+
+            if (!locations.TryGetValue(
+                    parentId.Value,
+                    out candidate))
+            {
+                break;
+            }
+
+            MapLocationVisual visual;
+
+            if (_locationVisualsById.TryGetValue(
+                    candidate.Id,
+                    out visual) &&
+                visual.IsCollapsed)
+            {
+                return true;
+            }
+
+            current = candidate;
+            parentId =
+                current.ParentLocationId;
+        }
+
+        return false;
     }
 
     private MapLocationVisual CreateLocationVisual()
@@ -2951,6 +3427,22 @@ public partial class MainWindow : Window
                 link,
                 sourceVisual,
                 targetVisual);
+
+            var linkVisible =
+                sourceVisual.Border.Visibility ==
+                    Visibility.Visible &&
+                targetVisual.Border.Visibility ==
+                    Visibility.Visible;
+
+            visual.Line.Visibility =
+                linkVisible
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            visual.Label.Visibility =
+                linkVisible
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
 
             if (created)
             {
@@ -4071,13 +4563,19 @@ public partial class MainWindow : Window
                     _dragStartTop +
                     deltaY));
 
+        var constrained =
+            ConstrainNodePositionToLocation(
+                _dragNodeVisual,
+                left,
+                top);
+
         Canvas.SetLeft(
             _dragNodeVisual.Border,
-            left);
+            constrained.X);
 
         Canvas.SetTop(
             _dragNodeVisual.Border,
-            top);
+            constrained.Y);
 
         UpdateLinksForCurrentNodePositions();
         e.Handled = true;
@@ -4334,18 +4832,14 @@ public partial class MainWindow : Window
 
         _locationDragMoved = false;
 
-        _locationDragMovesDevices =
-            (Keyboard.Modifiers &
-             ModifierKeys.Shift) ==
-            ModifierKeys.Shift;
-
+        _locationDragLocationStarts.Clear();
         _locationDragDeviceStarts.Clear();
 
-        if (_locationDragMovesDevices)
-        {
-            CaptureLocationDeviceStarts(
-                locationId.Value);
-        }
+        CaptureLocationSubtreeStarts(
+            locationId.Value);
+
+        CaptureLocationDeviceStarts(
+            locationId.Value);
 
         visual.Header.CaptureMouse();
         e.Handled = true;
@@ -4462,40 +4956,10 @@ public partial class MainWindow : Window
                     _locationDragStartTop +
                     deltaY));
 
-        var actualDeltaX =
-            left -
-            _locationDragStartLeft;
-
-        var actualDeltaY =
-            top -
-            _locationDragStartTop;
-
-        Canvas.SetLeft(
-            visual.Border,
-            left);
-
-        Canvas.SetTop(
-            visual.Border,
+        ApplyLocationDrag(
+            visual,
+            left,
             top);
-
-        if (_locationDragMovesDevices)
-        {
-            foreach (var pair in
-                _locationDragDeviceStarts)
-            {
-                Canvas.SetLeft(
-                    pair.Key.Border,
-                    pair.Value.X +
-                    actualDeltaX);
-
-                Canvas.SetTop(
-                    pair.Key.Border,
-                    pair.Value.Y +
-                    actualDeltaY);
-            }
-
-            UpdateLinksForCurrentNodePositions();
-        }
 
         e.Handled = true;
     }
@@ -4524,19 +4988,23 @@ public partial class MainWindow : Window
             TrySaveLocationLayout(
                 visual);
 
-            if (_locationDragMovesDevices)
+            foreach (var child in
+                _locationDragLocationStarts.Keys)
             {
-                foreach (var node in
-                    _locationDragDeviceStarts.Keys)
-                {
-                    TrySaveDeviceLayout(
-                        node);
-                }
+                TrySaveLocationLayout(
+                    child);
+            }
+
+            foreach (var node in
+                _locationDragDeviceStarts.Keys)
+            {
+                TrySaveDeviceLayout(
+                    node);
             }
         }
 
         _locationDragMoved = false;
-        _locationDragMovesDevices = false;
+        _locationDragLocationStarts.Clear();
         _locationDragDeviceStarts.Clear();
 
         e.Handled = true;
@@ -4572,8 +5040,7 @@ public partial class MainWindow : Window
 
             if (!_nodeVisualsByIdentity.TryGetValue(
                     NodeIdentity(node),
-                    out visual) ||
-                visual.IsLocked)
+                    out visual))
             {
                 continue;
             }
@@ -4629,6 +5096,377 @@ public partial class MainWindow : Window
         return result;
     }
 
+    private void ApplyLocationDrag(
+        MapLocationVisual visual,
+        double desiredLeft,
+        double desiredTop)
+    {
+        if (visual == null)
+        {
+            return;
+        }
+
+        var constrained =
+            ConstrainLocationPositionToParent(
+                visual,
+                desiredLeft,
+                desiredTop);
+
+        var actualDeltaX =
+            constrained.X -
+            _locationDragStartLeft;
+
+        var actualDeltaY =
+            constrained.Y -
+            _locationDragStartTop;
+
+        Canvas.SetLeft(
+            visual.Border,
+            constrained.X);
+
+        Canvas.SetTop(
+            visual.Border,
+            constrained.Y);
+
+        foreach (var pair in
+            _locationDragLocationStarts)
+        {
+            Canvas.SetLeft(
+                pair.Key.Border,
+                pair.Value.X +
+                actualDeltaX);
+
+            Canvas.SetTop(
+                pair.Key.Border,
+                pair.Value.Y +
+                actualDeltaY);
+        }
+
+        foreach (var pair in
+            _locationDragDeviceStarts)
+        {
+            Canvas.SetLeft(
+                pair.Key.Border,
+                pair.Value.X +
+                actualDeltaX);
+
+            Canvas.SetTop(
+                pair.Key.Border,
+                pair.Value.Y +
+                actualDeltaY);
+        }
+
+        UpdateLinksForCurrentNodePositions();
+    }
+
+    private void CaptureLocationSubtreeStarts(
+        Guid locationId)
+    {
+        foreach (var descendantId in
+            DescendantLocationIds(
+                locationId))
+        {
+            MapLocationVisual visual;
+
+            if (!_locationVisualsById.TryGetValue(
+                    descendantId,
+                    out visual))
+            {
+                continue;
+            }
+
+            _locationDragLocationStarts[
+                visual] =
+                new Point(
+                    LocationLeft(
+                        visual),
+                    LocationTop(
+                        visual));
+        }
+    }
+
+    private Point ConstrainLocationPositionToParent(
+        MapLocationVisual visual,
+        double desiredLeft,
+        double desiredTop)
+    {
+        if (visual == null ||
+            !visual.ParentLocationId.HasValue)
+        {
+            return new Point(
+                desiredLeft,
+                desiredTop);
+        }
+
+        MapLocationVisual parent;
+
+        if (!_locationVisualsById.TryGetValue(
+                visual.ParentLocationId.Value,
+                out parent))
+        {
+            return new Point(
+                desiredLeft,
+                desiredTop);
+        }
+
+        var parentBounds =
+            ExpandedLocationBounds(
+                parent);
+
+        var width =
+            Math.Max(
+                _locationMinWidth,
+                visual.ExpandedWidth);
+
+        var height =
+            Math.Max(
+                _locationMinHeight,
+                visual.ExpandedHeight);
+
+        var minimumLeft =
+            parentBounds.Left +
+            _locationContentPadding;
+
+        var minimumTop =
+            parentBounds.Top +
+            _locationHeaderHeight +
+            _locationContentPadding;
+
+        var maximumLeft =
+            Math.Max(
+                minimumLeft,
+                parentBounds.Right -
+                _locationContentPadding -
+                width);
+
+        var maximumTop =
+            Math.Max(
+                minimumTop,
+                parentBounds.Bottom -
+                _locationContentPadding -
+                height);
+
+        return new Point(
+            Math.Max(
+                minimumLeft,
+                Math.Min(
+                    maximumLeft,
+                    desiredLeft)),
+            Math.Max(
+                minimumTop,
+                Math.Min(
+                    maximumTop,
+                    desiredTop)));
+    }
+
+    private Point ConstrainNodePositionToLocation(
+        MapNodeVisual visual,
+        double desiredLeft,
+        double desiredTop)
+    {
+        if (visual == null ||
+            !visual.LocationId.HasValue)
+        {
+            return new Point(
+                desiredLeft,
+                desiredTop);
+        }
+
+        MapLocationVisual location;
+
+        if (!_locationVisualsById.TryGetValue(
+                visual.LocationId.Value,
+                out location))
+        {
+            return new Point(
+                desiredLeft,
+                desiredTop);
+        }
+
+        var bounds =
+            ExpandedLocationBounds(
+                location);
+
+        var nodeHeight =
+            NodeVisualHeight(
+                visual);
+
+        var minimumLeft =
+            bounds.Left +
+            _locationContentPadding;
+
+        var minimumTop =
+            bounds.Top +
+            _locationHeaderHeight +
+            _locationContentPadding;
+
+        var maximumLeft =
+            Math.Max(
+                minimumLeft,
+                bounds.Right -
+                _locationContentPadding -
+                _nodeWidth);
+
+        var maximumTop =
+            Math.Max(
+                minimumTop,
+                bounds.Bottom -
+                _locationContentPadding -
+                nodeHeight);
+
+        return new Point(
+            Math.Max(
+                minimumLeft,
+                Math.Min(
+                    maximumLeft,
+                    desiredLeft)),
+            Math.Max(
+                minimumTop,
+                Math.Min(
+                    maximumTop,
+                    desiredTop)));
+    }
+
+    private Size MinimumLocationExpandedSize(
+        Guid locationId)
+    {
+        var visual =
+            LocationVisual(
+                locationId);
+
+        if (visual == null)
+        {
+            return new Size(
+                _locationMinWidth,
+                _locationMinHeight);
+        }
+
+        var left =
+            LocationLeft(
+                visual);
+
+        var top =
+            LocationTop(
+                visual);
+
+        var requiredRight =
+            left +
+            _locationMinWidth;
+
+        var requiredBottom =
+            top +
+            _locationMinHeight;
+
+        foreach (var child in
+            _locationVisualsById.Values
+                .Where(
+                    item =>
+                        item.ParentLocationId ==
+                        locationId))
+        {
+            var childBounds =
+                ExpandedLocationBounds(
+                    child);
+
+            requiredRight =
+                Math.Max(
+                    requiredRight,
+                    childBounds.Right +
+                    _locationContentPadding);
+
+            requiredBottom =
+                Math.Max(
+                    requiredBottom,
+                    childBounds.Bottom +
+                    _locationContentPadding);
+        }
+
+        if (_lastMapSnapshot != null)
+        {
+            foreach (var node in
+                _lastMapSnapshot.Nodes
+                    .Where(
+                        item =>
+                            item.LocationId ==
+                            locationId))
+            {
+                MapNodeVisual nodeVisual;
+
+                if (!_nodeVisualsByIdentity.TryGetValue(
+                        NodeIdentity(node),
+                        out nodeVisual))
+                {
+                    continue;
+                }
+
+                var nodeBounds =
+                    NodeBounds(
+                        nodeVisual);
+
+                requiredRight =
+                    Math.Max(
+                        requiredRight,
+                        nodeBounds.Right +
+                        _locationContentPadding);
+
+                requiredBottom =
+                    Math.Max(
+                        requiredBottom,
+                        nodeBounds.Bottom +
+                        _locationContentPadding);
+            }
+        }
+
+        return new Size(
+            Math.Max(
+                _locationMinWidth,
+                requiredRight - left),
+            Math.Max(
+                _locationMinHeight,
+                requiredBottom - top));
+    }
+
+    private Size MaximumLocationExpandedSizeInParent(
+        MapLocationVisual visual)
+    {
+        if (visual == null ||
+            !visual.ParentLocationId.HasValue)
+        {
+            return new Size(
+                double.PositiveInfinity,
+                double.PositiveInfinity);
+        }
+
+        MapLocationVisual parent;
+
+        if (!_locationVisualsById.TryGetValue(
+                visual.ParentLocationId.Value,
+                out parent))
+        {
+            return new Size(
+                double.PositiveInfinity,
+                double.PositiveInfinity);
+        }
+
+        var parentBounds =
+            ExpandedLocationBounds(
+                parent);
+
+        return new Size(
+            Math.Max(
+                _locationMinWidth,
+                parentBounds.Right -
+                _locationContentPadding -
+                LocationLeft(
+                    visual)),
+            Math.Max(
+                _locationMinHeight,
+                parentBounds.Bottom -
+                _locationContentPadding -
+                LocationTop(
+                    visual)));
+    }
+
     private void OnMapLocationResizeDragDelta(
         object sender,
         DragDeltaEventArgs e)
@@ -4653,17 +5491,29 @@ public partial class MainWindow : Window
             return;
         }
 
+        var minimum =
+            MinimumLocationExpandedSize(
+                locationId.Value);
+
+        var maximum =
+            MaximumLocationExpandedSizeInParent(
+                visual);
+
         visual.ExpandedWidth =
             Math.Max(
-                _locationMinWidth,
-                visual.ExpandedWidth +
-                e.HorizontalChange);
+                minimum.Width,
+                Math.Min(
+                    maximum.Width,
+                    visual.ExpandedWidth +
+                    e.HorizontalChange));
 
         visual.ExpandedHeight =
             Math.Max(
-                _locationMinHeight,
-                visual.ExpandedHeight +
-                e.VerticalChange);
+                minimum.Height,
+                Math.Min(
+                    maximum.Height,
+                    visual.ExpandedHeight +
+                    e.VerticalChange));
 
         UpdateLocationVisualState(
             visual);
@@ -4735,6 +5585,9 @@ public partial class MainWindow : Window
 
         UpdateLocationVisualState(
             visual);
+
+        UpdateLocationHierarchyVisibility();
+        UpdateLinksForCurrentNodePositions();
 
         TrySaveLocationLayout(
             visual);

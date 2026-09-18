@@ -1002,10 +1002,10 @@
     <value>Локации</value>
   </data>
   <data name="LocationTopologyIntro" xml:space="preserve">
-    <value>Создавайте вложенные физические локации и назначайте им устройства. Положение и размер каждого контейнера сохраняются отдельно.</value>
+    <value>Создавайте вложенные физические локации и назначайте им устройства. Карта сохраняет физическую иерархию и расположение после перезапуска.</value>
   </data>
   <data name="LocationTopologyInteractionHint" xml:space="preserve">
-    <value>Двойной щелчок по локации открывает редактирование. Удаление требует подтверждения. На карте перетаскивайте заголовок рамки; Shift+перетаскивание двигает рамку вместе с назначенными устройствами.</value>
+    <value>Выбор локации только показывает её данные. Для изменения нажмите «Изменить» или дважды щёлкните; «Новая» создаёт отдельный черновик. На карте перемещение локации двигает всё её физическое поддерево и назначенные устройства.</value>
   </data>
   <data name="LocationTopologyClose" xml:space="preserve">
     <value>Закрыть</value>
@@ -1036,6 +1036,9 @@
   </data>
   <data name="LocationTopologySave" xml:space="preserve">
     <value>Сохранить</value>
+  </data>
+  <data name="LocationTopologyCancel" xml:space="preserve">
+    <value>Отмена</value>
   </data>
   <data name="LocationTopologyDelete" xml:space="preserve">
     <value>Удалить</value>
@@ -1097,7 +1100,7 @@
   <data name="MapLocationToolTip" xml:space="preserve">
     <value>{0}
 {1}
-Перетаскивание заголовка двигает рамку. Shift+перетаскивание двигает и назначенные устройства.</value>
+Перетаскивание заголовка двигает эту локацию вместе с дочерними локациями и назначенными устройствами.</value>
   </data>
   <data name="MapLocationCollapse" xml:space="preserve">
     <value>Свернуть</value>

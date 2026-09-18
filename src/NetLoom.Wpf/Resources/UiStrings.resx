@@ -1002,10 +1002,10 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Locations</value>
   </data>
   <data name="LocationTopologyIntro" xml:space="preserve">
-    <value>Create nested physical locations and assign devices to them. The map keeps each location container layout independently.</value>
+    <value>Create nested physical locations and assign devices to them. The map preserves the physical hierarchy and layout after restart.</value>
   </data>
   <data name="LocationTopologyInteractionHint" xml:space="preserve">
-    <value>Double-click a location to edit it. Delete asks for confirmation. On the map, drag the header to move the frame; Shift+drag moves the frame together with assigned devices.</value>
+    <value>Select a location to view it. Use Edit or double-click to change it; New starts a separate draft. On the map, dragging a location moves its whole physical subtree and assigned devices.</value>
   </data>
   <data name="LocationTopologyClose" xml:space="preserve">
     <value>Close</value>
@@ -1036,6 +1036,9 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   </data>
   <data name="LocationTopologySave" xml:space="preserve">
     <value>Save</value>
+  </data>
+  <data name="LocationTopologyCancel" xml:space="preserve">
+    <value>Cancel</value>
   </data>
   <data name="LocationTopologyDelete" xml:space="preserve">
     <value>Delete</value>
@@ -1097,7 +1100,7 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   <data name="MapLocationToolTip" xml:space="preserve">
     <value>{0}
 {1}
-Drag the header to move the frame. Shift+drag moves assigned devices too.</value>
+Drag the header to move this location together with its child locations and assigned devices.</value>
   </data>
   <data name="MapLocationCollapse" xml:space="preserve">
     <value>Collapse</value>

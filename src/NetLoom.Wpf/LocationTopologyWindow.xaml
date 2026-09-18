@@ -91,13 +91,15 @@
                             <TextBlock x:Name="LocationNameLabelText"
                                        Style="{StaticResource NetLoom.Style.SubsectionLabel}" />
                             <TextBox x:Name="LocationNameTextBox"
-                                     Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+                                     Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                     TextChanged="OnLocationEditorValueChanged" />
 
                             <TextBlock x:Name="LocationParentLabelText"
                                        Style="{StaticResource NetLoom.Style.SubsectionLabel}"
                                        Margin="{DynamicResource NetLoom.Thickness.FieldLabel}" />
                             <ComboBox x:Name="LocationParentComboBox"
-                                      DisplayMemberPath="Text" />
+                                      DisplayMemberPath="Text"
+                                      SelectionChanged="OnLocationEditorValueChanged" />
 
                             <TextBlock x:Name="LocationDescriptionLabelText"
                                        Style="{StaticResource NetLoom.Style.SubsectionLabel}"
@@ -106,18 +108,25 @@
                                      MinHeight="96"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
-                                     VerticalContentAlignment="Top" />
+                                     VerticalContentAlignment="Top"
+                                     TextChanged="OnLocationEditorValueChanged" />
 
                             <StackPanel Orientation="Horizontal"
                                         Margin="{DynamicResource NetLoom.Thickness.StatusTop}">
                                 <Button x:Name="LocationNewButton"
                                         Click="OnNewLocationClick" />
+                                <Button x:Name="LocationEditButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                        Click="OnEditLocationClick" />
                                 <Button x:Name="LocationCreateButton"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnCreateLocationClick" />
                                 <Button x:Name="LocationSaveButton"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnSaveLocationClick" />
+                                <Button x:Name="LocationCancelButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                        Click="OnCancelLocationClick" />
                                 <Button x:Name="LocationDeleteButton"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnDeleteLocationClick" />

@@ -21,8 +21,26 @@ namespace NetLoom.Wpf
         private Guid?
             _editingLocationId;
 
+        private Guid?
+            _browseLocationId;
+
+        private LocationEditorMode
+            _editorMode;
+
         private bool
             _refreshing;
+
+        private bool
+            _settingEditorFields;
+
+        private string
+            _editBaselineName;
+
+        private string
+            _editBaselineDescription;
+
+        private Guid?
+            _editBaselineParentId;
 
         public LocationTopologyWindow(
             ILocationTopologyService service)
@@ -56,7 +74,7 @@ namespace NetLoom.Wpf
             }
             else
             {
-                BeginNewLocation();
+                BeginCreateLocation();
             }
         }
 
@@ -112,6 +130,10 @@ namespace NetLoom.Wpf
                 UiText.Get(
                     "LocationTopologyNew");
 
+            LocationEditButton.Content =
+                UiText.Get(
+                    "LocationTopologyEdit");
+
             LocationCreateButton.Content =
                 UiText.Get(
                     "LocationTopologyCreate");
@@ -119,6 +141,10 @@ namespace NetLoom.Wpf
             LocationSaveButton.Content =
                 UiText.Get(
                     "LocationTopologySave");
+
+            LocationCancelButton.Content =
+                UiText.Get(
+                    "LocationTopologyCancel");
 
             LocationDeleteButton.Content =
                 UiText.Get(
@@ -387,28 +413,116 @@ namespace NetLoom.Wpf
                 names);
         }
 
-        private void BeginNewLocation()
+        private void BeginEmptyBrowse()
         {
+            _editorMode =
+                LocationEditorMode.Browse;
+
+            _editingLocationId = null;
+            _browseLocationId = null;
+
+            _settingEditorFields = true;
+
+            try
+            {
+                LocationsList.SelectedItem = null;
+
+                LocationNameTextBox.Text =
+                    string.Empty;
+
+                LocationDescriptionTextBox.Text =
+                    string.Empty;
+
+                BuildParentOptions(
+                    null);
+
+                SelectLocationOption(
+                    LocationParentComboBox,
+                    null);
+            }
+            finally
+            {
+                _settingEditorFields = false;
+            }
+
+            CaptureEditorBaseline();
+            ApplyEditorMode();
+        }
+
+        private void BeginBrowse(
+            LocationRow row)
+        {
+            if (row == null)
+            {
+                BeginEmptyBrowse();
+                return;
+            }
+
+            _editorMode =
+                LocationEditorMode.Browse;
+
+            _editingLocationId = null;
+            _browseLocationId =
+                row.Item.Id;
+
+            _settingEditorFields = true;
+
+            try
+            {
+                BuildParentOptions(
+                    row.Item.Id);
+
+                LocationNameTextBox.Text =
+                    row.Item.Name;
+
+                LocationDescriptionTextBox.Text =
+                    row.Item.Description ??
+                    string.Empty;
+
+                SelectLocationOption(
+                    LocationParentComboBox,
+                    row.Item.ParentLocationId);
+            }
+            finally
+            {
+                _settingEditorFields = false;
+            }
+
+            CaptureEditorBaseline();
+            ApplyEditorMode();
+        }
+
+        private void BeginCreateLocation()
+        {
+            _editorMode =
+                LocationEditorMode.Create;
+
             _editingLocationId = null;
 
-            LocationsList.SelectedItem = null;
+            _settingEditorFields = true;
 
-            LocationNameTextBox.Text =
-                string.Empty;
+            try
+            {
+                LocationNameTextBox.Text =
+                    string.Empty;
 
-            LocationDescriptionTextBox.Text =
-                string.Empty;
+                LocationDescriptionTextBox.Text =
+                    string.Empty;
 
-            BuildParentOptions(
-                null);
+                BuildParentOptions(
+                    null);
 
-            SelectLocationOption(
-                LocationParentComboBox,
-                null);
+                SelectLocationOption(
+                    LocationParentComboBox,
+                    _browseLocationId);
+            }
+            finally
+            {
+                _settingEditorFields = false;
+            }
 
-            LocationCreateButton.IsEnabled = true;
-            LocationSaveButton.IsEnabled = false;
-            LocationDeleteButton.IsEnabled = false;
+            CaptureEditorBaseline();
+            ApplyEditorMode();
 
             LocationNameTextBox.Focus();
         }
@@ -418,42 +532,159 @@ namespace NetLoom.Wpf
         {
             if (row == null)
             {
-                BeginNewLocation();
                 return;
             }
+
+            _editorMode =
+                LocationEditorMode.Edit;
 
             _editingLocationId =
                 row.Item.Id;
 
-            BuildParentOptions(
-                row.Item.Id);
+            _browseLocationId =
+                row.Item.Id;
 
-            LocationNameTextBox.Text =
-                row.Item.Name;
+            _settingEditorFields = true;
 
-            LocationDescriptionTextBox.Text =
-                row.Item.Description ??
+            try
+            {
+                BuildParentOptions(
+                    row.Item.Id);
+
+                LocationNameTextBox.Text =
+                    row.Item.Name;
+
+                LocationDescriptionTextBox.Text =
+                    row.Item.Description ??
+                    string.Empty;
+
+                SelectLocationOption(
+                    LocationParentComboBox,
+                    row.Item.ParentLocationId);
+            }
+            finally
+            {
+                _settingEditorFields = false;
+            }
+
+            CaptureEditorBaseline();
+            ApplyEditorMode();
+        }
+
+        private void CaptureEditorBaseline()
+        {
+            _editBaselineName =
+                LocationNameTextBox.Text ??
                 string.Empty;
 
-            SelectLocationOption(
-                LocationParentComboBox,
-                row.Item.ParentLocationId);
+            _editBaselineDescription =
+                LocationDescriptionTextBox.Text ??
+                string.Empty;
 
-            LocationCreateButton.IsEnabled = false;
-            LocationSaveButton.IsEnabled = true;
-            LocationDeleteButton.IsEnabled = true;
+            _editBaselineParentId =
+                SelectedLocationOption(
+                    LocationParentComboBox);
+        }
+
+        private bool IsEditorDirty()
+        {
+            return !string.Equals(
+                       _editBaselineName,
+                       LocationNameTextBox.Text ??
+                           string.Empty,
+                       StringComparison.Ordinal) ||
+                   !string.Equals(
+                       _editBaselineDescription,
+                       LocationDescriptionTextBox.Text ??
+                           string.Empty,
+                       StringComparison.Ordinal) ||
+                   _editBaselineParentId !=
+                       SelectedLocationOption(
+                           LocationParentComboBox);
+        }
+
+        private void ApplyEditorMode()
+        {
+            var browse =
+                _editorMode ==
+                LocationEditorMode.Browse;
+
+            var creating =
+                _editorMode ==
+                LocationEditorMode.Create;
+
+            var editing =
+                _editorMode ==
+                LocationEditorMode.Edit;
+
+            var hasSelection =
+                _browseLocationId.HasValue;
+
+            LocationsList.IsEnabled =
+                browse;
+
+            DevicesTab.IsEnabled =
+                browse;
+
+            LocationNameTextBox.IsReadOnly =
+                browse;
+
+            LocationDescriptionTextBox.IsReadOnly =
+                browse;
+
+            LocationParentComboBox.IsEnabled =
+                !browse;
+
+            LocationNewButton.IsEnabled =
+                browse;
+
+            LocationEditButton.IsEnabled =
+                browse &&
+                hasSelection;
+
+            LocationCreateButton.IsEnabled =
+                creating;
+
+            LocationSaveButton.IsEnabled =
+                editing &&
+                IsEditorDirty();
+
+            LocationCancelButton.IsEnabled =
+                creating ||
+                editing;
+
+            LocationDeleteButton.IsEnabled =
+                browse &&
+                hasSelection;
+        }
+
+        private void OnLocationEditorValueChanged(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (_settingEditorFields ||
+                LocationSaveButton == null ||
+                LocationCancelButton == null)
+            {
+                return;
+            }
+
+            ApplyEditorMode();
         }
 
         private void OnLocationSelectionChanged(
             object sender,
             SelectionChangedEventArgs e)
         {
-            if (_refreshing)
+            if (_refreshing ||
+                _settingEditorFields ||
+                _editorMode !=
+                    LocationEditorMode.Browse)
             {
                 return;
             }
 
-            BeginLocationEdit(
+            BeginBrowse(
                 LocationsList.SelectedItem
                     as LocationRow);
         }
@@ -462,6 +693,13 @@ namespace NetLoom.Wpf
             object sender,
             MouseButtonEventArgs e)
         {
+            if (_editorMode !=
+                LocationEditorMode.Browse)
+            {
+                e.Handled = true;
+                return;
+            }
+
             var item =
                 ItemsControl.ContainerFromElement(
                     LocationsList,
@@ -480,6 +718,12 @@ namespace NetLoom.Wpf
             object sender,
             MouseButtonEventArgs e)
         {
+            if (_editorMode !=
+                LocationEditorMode.Browse)
+            {
+                return;
+            }
+
             var row =
                 LocationsList.SelectedItem
                     as LocationRow;
@@ -500,7 +744,9 @@ namespace NetLoom.Wpf
             object sender,
             KeyEventArgs e)
         {
-            if (e.Key != Key.Delete)
+            if (_editorMode !=
+                    LocationEditorMode.Browse ||
+                e.Key != Key.Delete)
             {
                 return;
             }
@@ -522,20 +768,64 @@ namespace NetLoom.Wpf
             object sender,
             RoutedEventArgs e)
         {
-            DeleteSelectedLocation();
+            if (_editorMode ==
+                LocationEditorMode.Browse)
+            {
+                DeleteSelectedLocation();
+            }
         }
 
         private void OnNewLocationClick(
             object sender,
             RoutedEventArgs e)
         {
-            BeginNewLocation();
+            if (_editorMode ==
+                LocationEditorMode.Browse)
+            {
+                BeginCreateLocation();
+            }
+        }
+
+        private void OnEditLocationClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (_editorMode !=
+                LocationEditorMode.Browse)
+            {
+                return;
+            }
+
+            BeginLocationEdit(
+                LocationsList.SelectedItem
+                    as LocationRow);
+        }
+
+        private void OnCancelLocationClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (_browseLocationId.HasValue)
+            {
+                SelectLocation(
+                    _browseLocationId.Value);
+            }
+            else
+            {
+                BeginEmptyBrowse();
+            }
         }
 
         private void OnCreateLocationClick(
             object sender,
             RoutedEventArgs e)
         {
+            if (_editorMode !=
+                LocationEditorMode.Create)
+            {
+                return;
+            }
+
             var name =
                 LocationNameTextBox.Text == null
                     ? string.Empty
@@ -577,7 +867,10 @@ namespace NetLoom.Wpf
             object sender,
             RoutedEventArgs e)
         {
-            if (!_editingLocationId.HasValue)
+            if (_editorMode !=
+                    LocationEditorMode.Edit ||
+                !_editingLocationId.HasValue ||
+                !IsEditorDirty())
             {
                 return;
             }
@@ -626,7 +919,11 @@ namespace NetLoom.Wpf
             object sender,
             RoutedEventArgs e)
         {
-            DeleteSelectedLocation();
+            if (_editorMode ==
+                LocationEditorMode.Browse)
+            {
+                DeleteSelectedLocation();
+            }
         }
 
         private void DeleteSelectedLocation()
@@ -634,18 +931,6 @@ namespace NetLoom.Wpf
             var row =
                 LocationsList.SelectedItem
                     as LocationRow;
-
-            if (row == null &&
-                _editingLocationId.HasValue)
-            {
-                row =
-                    (LocationsList.ItemsSource
-                        as IEnumerable<LocationRow>)
-                    ?.FirstOrDefault(
-                        item =>
-                            item.Item.Id ==
-                            _editingLocationId.Value);
-            }
 
             if (row == null)
             {
@@ -676,9 +961,10 @@ namespace NetLoom.Wpf
                     row.Item.Id);
 
                 HasChanges = true;
+                _browseLocationId = null;
 
                 RefreshSnapshot();
-                BeginNewLocation();
+                BeginEmptyBrowse();
 
                 LocationTopologyStatusText.Text =
                     UiText.Get(
@@ -859,7 +1145,7 @@ namespace NetLoom.Wpf
                 LocationsList.ScrollIntoView(
                     row);
 
-                BeginLocationEdit(
+                BeginBrowse(
                     row);
             }
         }
@@ -922,6 +1208,13 @@ namespace NetLoom.Wpf
                     item =>
                         item.LocationId ==
                         locationId);
+        }
+
+        private enum LocationEditorMode
+        {
+            Browse = 0,
+            Create = 1,
+            Edit = 2
         }
 
         private sealed class LocationRow

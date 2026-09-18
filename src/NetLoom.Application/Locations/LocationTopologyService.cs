@@ -80,6 +80,10 @@ namespace NetLoom.Application.Locations
         {
             var id = Guid.NewGuid();
 
+            ValidateParentLocation(
+                id,
+                parentLocationId);
+
             _locationRepository.Save(
                 new Location(
                     id,
@@ -106,6 +110,10 @@ namespace NetLoom.Application.Locations
                     "Location does not exist.");
             }
 
+            ValidateParentLocation(
+                locationId,
+                parentLocationId);
+
             _locationRepository.Save(
                 new Location(
                     locationId,
@@ -125,6 +133,17 @@ namespace NetLoom.Application.Locations
             {
                 throw new InvalidOperationException(
                     "Location does not exist.");
+            }
+
+            if (_locationRepository
+                .GetAll()
+                .Any(
+                    item =>
+                        item.ParentLocationId ==
+                        locationId))
+            {
+                throw new InvalidOperationException(
+                    "Location with child locations cannot be deleted.");
             }
 
             if (_topologyRepository
@@ -190,6 +209,66 @@ namespace NetLoom.Application.Locations
                     existing.DiscoveredName,
                     existing.LldpChassisId,
                     existing.ManagementAddress));
+        }
+
+
+        private void ValidateParentLocation(
+            Guid locationId,
+            Guid? parentLocationId)
+        {
+            if (!parentLocationId.HasValue)
+            {
+                return;
+            }
+
+            if (parentLocationId.Value ==
+                locationId)
+            {
+                throw new InvalidOperationException(
+                    "Location cannot be its own parent.");
+            }
+
+            var locations =
+                _locationRepository
+                    .GetAll()
+                    .ToDictionary(
+                        item => item.Id);
+
+            var currentId =
+                parentLocationId;
+
+            var visited =
+                new System.Collections.Generic.HashSet<Guid>();
+
+            while (currentId.HasValue)
+            {
+                if (currentId.Value ==
+                    locationId)
+                {
+                    throw new InvalidOperationException(
+                        "Location hierarchy cycle is not allowed.");
+                }
+
+                if (!visited.Add(
+                        currentId.Value))
+                {
+                    throw new InvalidOperationException(
+                        "Existing location hierarchy contains a cycle.");
+                }
+
+                Location current;
+
+                if (!locations.TryGetValue(
+                        currentId.Value,
+                        out current))
+                {
+                    throw new InvalidOperationException(
+                        "Parent location does not exist.");
+                }
+
+                currentId =
+                    current.ParentLocationId;
+            }
         }
 
         private static string DisplayName(
