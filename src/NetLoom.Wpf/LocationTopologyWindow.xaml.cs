@@ -792,8 +792,17 @@ namespace NetLoom.Wpf
             object sender,
             RoutedEventArgs e)
         {
-            if (_editorMode !=
-                LocationEditorMode.Browse)
+            var browse =
+                _editorMode ==
+                LocationEditorMode.Browse;
+
+            var pristineCreate =
+                _editorMode ==
+                    LocationEditorMode.Create &&
+                !IsEditorDirty();
+
+            if (!browse &&
+                !pristineCreate)
             {
                 return;
             }

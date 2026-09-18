@@ -650,6 +650,9 @@ public partial class MainWindow
             return;
         }
 
+        var targetOpacity =
+            element.Opacity;
+
         var duration =
             MapMotionPolicy.Duration(
                 _motionMode,
@@ -657,11 +660,13 @@ public partial class MainWindow
 
         if (duration == TimeSpan.Zero)
         {
-            element.Opacity = 1.0;
+            element.Opacity =
+                targetOpacity;
             return;
         }
 
         var start =
+            targetOpacity *
             MapMotionPolicy.PulseOpacity(
                 _motionMode);
 
@@ -670,7 +675,7 @@ public partial class MainWindow
         var animation =
             new DoubleAnimation(
                 start,
-                1.0,
+                targetOpacity,
                 new Duration(duration));
 
         animation.Completed +=
@@ -680,7 +685,8 @@ public partial class MainWindow
                     UIElement.OpacityProperty,
                     null);
 
-                element.Opacity = 1.0;
+                element.Opacity =
+                    targetOpacity;
             };
 
         element.BeginAnimation(
@@ -735,7 +741,8 @@ public partial class MainWindow
 
     private void AnimatePulse(
         UIElement element,
-        MapMotionKind kind)
+        MapMotionKind kind,
+        double targetOpacity = 1.0)
     {
         if (element == null)
         {
@@ -749,7 +756,8 @@ public partial class MainWindow
 
         if (duration == TimeSpan.Zero)
         {
-            element.Opacity = 1.0;
+            element.Opacity =
+                targetOpacity;
             return;
         }
 
@@ -759,11 +767,15 @@ public partial class MainWindow
                     1L,
                     duration.Ticks / 2L));
 
+        var pulseOpacity =
+            targetOpacity *
+            MapMotionPolicy.PulseOpacity(
+                _motionMode);
+
         var animation =
             new DoubleAnimation(
-                1.0,
-                MapMotionPolicy.PulseOpacity(
-                    _motionMode),
+                targetOpacity,
+                pulseOpacity,
                 new Duration(
                     halfDuration))
             {
@@ -777,7 +789,8 @@ public partial class MainWindow
                     UIElement.OpacityProperty,
                     null);
 
-                element.Opacity = 1.0;
+                element.Opacity =
+                    targetOpacity;
             };
 
         element.BeginAnimation(
@@ -803,6 +816,19 @@ public partial class MainWindow
 
             StopMotion(
                 visual.Label);
+
+            if (visual.LastFreshness.HasValue)
+            {
+                var opacity =
+                    LinkFreshnessOpacity(
+                        visual.LastFreshness.Value);
+
+                visual.Line.Opacity =
+                    opacity;
+
+                visual.Label.Opacity =
+                    opacity;
+            }
         }
 
         StopMotion(

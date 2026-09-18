@@ -50,10 +50,7 @@ namespace NetLoom.Tests.Unit
                 "DiagnosticSnapshot");
 
             var mainWindow =
-                ReadRepositoryFile(
-                    "src",
-                    "NetLoom.Wpf",
-                    "MainWindow.xaml.cs");
+                ReadMainWindowCode();
 
             StringAssert.Contains(
                 mainWindow,
@@ -128,6 +125,32 @@ namespace NetLoom.Tests.Unit
                         required);
                 }
             }
+        }
+
+        private static string ReadMainWindowCode()
+        {
+            var mainWindowPath =
+                FindRepositoryPath(
+                    "src",
+                    "NetLoom.Wpf",
+                    "MainWindow.xaml.cs");
+
+            var directory =
+                Path.GetDirectoryName(
+                    mainWindowPath);
+
+            return string.Join(
+                Environment.NewLine,
+                Directory
+                    .GetFiles(
+                        directory,
+                        "MainWindow*.cs",
+                        SearchOption.TopDirectoryOnly)
+                    .OrderBy(
+                        path => path,
+                        StringComparer.Ordinal)
+                    .Select(
+                        File.ReadAllText));
         }
 
         private static string ReadRepositoryFile(

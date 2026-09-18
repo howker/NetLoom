@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NetLoom.Application.Alerts;
 using NetLoom.Contracts.Alerts;
+using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.MapInteraction;
 
 namespace NetLoom.Wpf;
 

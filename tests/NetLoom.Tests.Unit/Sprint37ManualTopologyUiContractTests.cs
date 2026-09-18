@@ -17,8 +17,7 @@ namespace NetLoom.Tests.Unit
                     "src/NetLoom.Wpf/MainWindow.xaml");
 
             var mainCode =
-                ReadRepositoryFile(
-                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+                ReadMainWindowCode();
 
             var editorXaml =
                 ReadRepositoryFile(
@@ -216,8 +215,7 @@ namespace NetLoom.Tests.Unit
                     "src/NetLoom.Wpf/ManualTopologyWindow.xaml.cs");
 
             var mainCode =
-                ReadRepositoryFile(
-                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+                ReadMainWindowCode();
 
             StringAssert.Contains(
                 editorXaml,
@@ -273,8 +271,7 @@ namespace NetLoom.Tests.Unit
         public void ManualTopologyMainMapOperatorInteractionContractIsPresent()
         {
             var mainCode =
-                ReadRepositoryFile(
-                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+                ReadMainWindowCode();
 
             var editorCode =
                 ReadRepositoryFile(
@@ -369,8 +366,7 @@ namespace NetLoom.Tests.Unit
             Pass4UsesObservedInterfaceIdentityAndExplicitSavePrompt()
         {
             var mainCode =
-                ReadRepositoryFile(
-                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+                ReadMainWindowCode();
 
             var editorCode =
                 ReadRepositoryFile(
@@ -403,6 +399,30 @@ namespace NetLoom.Tests.Unit
             StringAssert.Contains(
                 editorCode,
                 "MessageBoxButton.YesNo");
+        }
+
+        private static string ReadMainWindowCode()
+        {
+            var mainWindowPath =
+                FindRepositoryFile(
+                    "src/NetLoom.Wpf/MainWindow.xaml.cs");
+
+            var directory =
+                Path.GetDirectoryName(
+                    mainWindowPath);
+
+            return string.Join(
+                Environment.NewLine,
+                Directory
+                    .GetFiles(
+                        directory,
+                        "MainWindow*.cs",
+                        SearchOption.TopDirectoryOnly)
+                    .OrderBy(
+                        path => path,
+                        StringComparer.Ordinal)
+                    .Select(
+                        File.ReadAllText));
         }
 
         private static string ReadRepositoryFile(

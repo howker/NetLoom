@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace NetLoom.Tests.Unit
@@ -42,11 +43,7 @@ namespace NetLoom.Tests.Unit
                         "MainWindow.xaml"));
 
             var code =
-                ReadRepositoryFile(
-                    Path.Combine(
-                        "src",
-                        "NetLoom.Wpf",
-                        "MainWindow.xaml.cs"));
+                ReadMainWindowCode();
 
             var motion =
                 ReadRepositoryFile(
@@ -240,6 +237,33 @@ namespace NetLoom.Tests.Unit
                 code.Contains(
                     "NetLoom.Persistence.Sqlite"),
                 "WPF must not depend on SQLite persistence directly.");
+        }
+
+        private static string ReadMainWindowCode()
+        {
+            var mainWindowPath =
+                FindRepositoryFile(
+                    Path.Combine(
+                        "src",
+                        "NetLoom.Wpf",
+                        "MainWindow.xaml.cs"));
+
+            var directory =
+                Path.GetDirectoryName(
+                    mainWindowPath);
+
+            return string.Join(
+                Environment.NewLine,
+                Directory
+                    .GetFiles(
+                        directory,
+                        "MainWindow*.cs",
+                        SearchOption.TopDirectoryOnly)
+                    .OrderBy(
+                        path => path,
+                        StringComparer.Ordinal)
+                    .Select(
+                        File.ReadAllText));
         }
 
         private static string ReadRepositoryFile(

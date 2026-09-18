@@ -2120,6 +2120,26 @@ public partial class MainWindow
             visual.LastFreshness.Value !=
                 link.Freshness;
 
+        var operationalOpacity =
+            LinkFreshnessOpacity(
+                link.Freshness);
+
+        var confidenceDashPattern =
+            LinkConfidenceDashPattern(
+                link.Confidence);
+
+        visual.Line.StrokeDashArray =
+            confidenceDashPattern == null
+                ? null
+                : new DoubleCollection(
+                    confidenceDashPattern);
+
+        visual.Line.Opacity =
+            operationalOpacity;
+
+        visual.Label.Opacity =
+            operationalOpacity;
+
         var x1 =
             NodeLeft(source) +
             (_nodeWidth / 2.0);
@@ -2193,15 +2213,59 @@ public partial class MainWindow
         {
             AnimatePulse(
                 visual.Line,
-                MapMotionKind.FreshnessChange);
+                MapMotionKind.FreshnessChange,
+                operationalOpacity);
 
             AnimatePulse(
                 visual.Label,
-                MapMotionKind.FreshnessChange);
+                MapMotionKind.FreshnessChange,
+                operationalOpacity);
         }
 
         visual.LastFreshness =
             link.Freshness;
+    }
+
+    private static double[] LinkConfidenceDashPattern(
+        MapConfidence confidence)
+    {
+        switch (confidence)
+        {
+            case MapConfidence.High:
+                return null;
+
+            case MapConfidence.Medium:
+                return new[]
+                {
+                    6.0,
+                    3.0
+                };
+
+            case MapConfidence.Low:
+            default:
+                return new[]
+                {
+                    2.0,
+                    2.0
+                };
+        }
+    }
+
+    private static double LinkFreshnessOpacity(
+        MapFreshness freshness)
+    {
+        switch (freshness)
+        {
+            case MapFreshness.Fresh:
+                return 1.0;
+
+            case MapFreshness.Aging:
+                return 0.72;
+
+            case MapFreshness.Stale:
+            default:
+                return 0.45;
+        }
     }
 
     private void PlaceLinkLabel(
