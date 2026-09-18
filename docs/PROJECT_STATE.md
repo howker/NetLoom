@@ -6,7 +6,7 @@
 
 ## Текущее состояние
 
-Sprint 38 — Locations on the map — is technically complete and operator-accepted. The retained notification-delivery path remains supported but is not the active product priority. The accepted architecture redesign head is `8e98f4f174b6caa6a7d0d88b09f68feda0f20db0`; the focused operator-remediation head is `9a8127715ffaf2a19091d1903d02251e8ef8df01`.
+Sprint 38 — Locations on the map — is technically complete and operator-accepted, and the pre-Sprint-39 `MainWindow` decomposition preparation is also technically accepted. The retained notification-delivery path remains supported but is not the active product priority. The accepted Sprint 38 architecture redesign head is `8e98f4f174b6caa6a7d0d88b09f68feda0f20db0`; the focused operator-remediation head is `9a8127715ffaf2a19091d1903d02251e8ef8df01`; the completed decomposition heads are `f4fce6b55ca2cfbd92760ddaeeb3354d4d361073`, `e85e1f896c230f8e8684d8072e9f0cc6343bd830`, and `c8201f1cedb46ede574d85bb975d9c744a148626`.
 
 The WPF map now represents hierarchical physical Locations with persistent movable/resizable/collapsible/lockable containers. Containment is defined by `ParentLocationId`; child movement and parent resizing preserve that containment, moving a Location carries its physical subtree, and persisted hierarchy/layout survives Desktop restart. The editor keeps Browse read-only until explicit Edit, supports repeated Create and reparent in one open window, and the Application service rejects missing parents, cycles and non-leaf deletion.
 
@@ -14,7 +14,7 @@ Holistic operator acceptance found two workflow defects after the first redesign
 
 Sprint 38 adds no database migration; `Migration020InterfaceIdentityAndManagementAddress` remains the current schema migration. No Sprint 38 product change remains open.
 
-The next gate is a preparation task, not a product Sprint: mechanically split the oversized `MainWindow.xaml.cs` by responsibility without changing behavior, schema, localization or dependencies. After that preparation is accepted, the first unchecked product item in the existing `Committed sequence` remains Sprint 39 — visual language of the map; Sprint 40 remains subsequent. No product-Sprint reorder is introduced.
+The pre-Sprint-39 preparation gate is complete. `MainWindow.xaml.cs` was mechanically decomposed into focused diagnostics, lookup, alerts and `MainWindow.Map.*` partial files without behavior, schema, localization or dependency changes; the original monolith was reduced from roughly 8.5k lines to roughly 0.9k lines. The first unchecked product item in the existing `Committed sequence` is now Sprint 39 — visual language of the map; Sprint 40 remains subsequent. No product-Sprint reorder was introduced.
 
 ## Основа проекта
 

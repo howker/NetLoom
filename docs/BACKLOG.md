@@ -141,7 +141,7 @@
 
 ## Execution map after Sprint 38
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, and Sprint 38 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, and persistent hierarchical Location containers. Sprint 38 passed focused operator reacceptance after remediation of the two observed location-editor/startup-viewport defects. Before Sprint 39, the committed sequence now has one preparation task: mechanically split `MainWindow.xaml.cs` by responsibility without changing behavior.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, and the pre-Sprint-39 `MainWindow` decomposition preparation are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, and persistent hierarchical Location containers. Sprint 38 passed focused operator reacceptance after remediation of the two observed location-editor/startup-viewport defects. The oversized `MainWindow.xaml.cs` was then mechanically split without behavior change, so Sprint 39 is now the first unchecked product item.
 
 ### Completed
 
@@ -194,11 +194,11 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Completed editor/service behavior: Browse is read-only until explicit Edit; repeated Create works in one open editor; `Create → Create → Edit` remains valid; reparent is supported; missing parent, cycles and non-leaf deletion are rejected by the Application service.
   - Startup remediation: after the initial refresh the existing `FitTopologyToViewport()` establishes a useful viewport, so restart does not require a manual `Show all` just to find the configured topology.
   - Acceptance: architecture redesign commit `8e98f4f174b6caa6a7d0d88b09f68feda0f20db0`; operator-remediation commit `9a8127715ffaf2a19091d1903d02251e8ef8df01`. RED evidence covered the real Create button path and stale startup viewport; forced build, targeted Sprint 38 Unit/Integration, full regression, text-integrity and exact repository-boundary/blob proofs passed. Focused operator reacceptance then passed both original observations.
-- [ ] MainWindow decomposition — preparation task, not a Sprint.
-  - Preparation outcome: keep current WPF behavior unchanged while making the next map work reviewable and locally understandable.
-  - Mechanically separate the existing `MainWindow.xaml.cs` responsibilities into focused partial files/areas for map interaction/rendering, diagnostics/selection panel, lookup/search, and alerts/refresh orchestration.
-  - Do not change UI behavior, XAML contracts, persistence/schema, localization semantics, monitoring semantics or dependencies as part of the split.
-  - Acceptance requires unchanged observable behavior, existing targeted tests and full regression green, text-integrity green, and a reviewable mechanical diff before Sprint 39 begins.
+- [x] MainWindow decomposition — preparation task, not a Sprint.
+  - Preparation outcome: current WPF behavior is unchanged while the next map work is reviewable and locally understandable.
+  - Completed split: diagnostics/selection panel and lookup/search moved to focused partial files in `f4fce6b55ca2cfbd92760ddaeeb3354d4d361073`; alerts moved in `e85e1f896c230f8e8684d8072e9f0cc6343bd830`; map/viewport/input/rendering moved to `MainWindow.Map.*` partial files in `c8201f1cedb46ede574d85bb975d9c744a148626`.
+  - `MainWindow.xaml.cs` was reduced from roughly 8.5k lines to roughly 0.9k lines without changing UI behavior, XAML contracts, persistence/schema, localization semantics, monitoring semantics or dependencies.
+  - Acceptance: each step used forced build, full regression, text-integrity, exact source-boundary/blob proof and diff review; the final map split was verified as a byte-for-byte move-only decomposition of the original map block.
 - [ ] Sprint 39 — visual language of the map.
   - Operator outcome: understand at a glance what is trustworthy, stale, blocked, degraded or risky.
   - Make information hierarchy, node/link styling and map modes visually consistent for physical topology, active STP tree, confidence, freshness, degradation, rings and failure boundaries.
