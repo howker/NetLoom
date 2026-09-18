@@ -515,10 +515,10 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        RestoreViewportOffsets();
         _refreshTimer.Start();
 
         await RefreshTopologyAsync();
+        FitTopologyToViewport();
     }
 
     private void OnWindowClosed(
@@ -2081,8 +2081,8 @@ public partial class MainWindow : Window
                 item => item.Id);
 
         // Сначала увеличиваем только размер контейнеров снизу вверх.
-        // Их позиция при этом остаётся стабильной: иерархия не должна
-        // самопроизвольно перетаскивать родителя к ошибочно сохранённому ребёнку.
+        // Позиция родителя остаётся стабильной.
+        // Иерархия не должна тянуть его к ошибочно сохранённому ребёнку.
         foreach (var location in
             locations
                 .OrderByDescending(
@@ -2208,9 +2208,8 @@ public partial class MainWindow : Window
             }
         }
 
-        // Затем сверху вниз возвращаем каждый дочерний контейнер и устройство
-        // внутрь физического родителя. Если приходится сдвинуть Location,
-        // вместе с ним движется всё его поддерево, а не только рамка.
+        // Затем сверху вниз возвращаем каждый дочерний контейнер и устройство внутрь физического родителя.
+        // При сдвиге Location перемещается всё его поддерево, а не только рамка.
         foreach (var location in
             locations
                 .OrderBy(

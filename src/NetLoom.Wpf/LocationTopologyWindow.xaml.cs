@@ -639,8 +639,10 @@ namespace NetLoom.Wpf
                 browse;
 
             LocationEditButton.IsEnabled =
-                browse &&
-                hasSelection;
+                hasSelection &&
+                (browse ||
+                 (creating &&
+                  !IsEditorDirty()));
 
             LocationCreateButton.IsEnabled =
                 creating;
@@ -851,6 +853,7 @@ namespace NetLoom.Wpf
                 RefreshSnapshot();
                 SelectLocation(
                     locationId);
+                BeginCreateLocation();
 
                 LocationTopologyStatusText.Text =
                     UiText.Get(
