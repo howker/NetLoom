@@ -668,6 +668,30 @@
   <data name="MapSettingsHint" xml:space="preserve">
     <value>Настройки отображения карты.</value>
   </data>
+  <data name="MapOperationalFocusSettings" xml:space="preserve">
+    <value>Фокус по состоянию</value>
+  </data>
+  <data name="MapOperationalFocusAllProblems" xml:space="preserve">
+    <value>Все проблемные элементы</value>
+  </data>
+  <data name="MapOperationalFocusCriticalLinks" xml:space="preserve">
+    <value>Критические линии</value>
+  </data>
+  <data name="MapOperationalFocusDegradedLinks" xml:space="preserve">
+    <value>Деградированные линии</value>
+  </data>
+  <data name="MapOperationalFocusBlockedLinks" xml:space="preserve">
+    <value>Заблокированные линии</value>
+  </data>
+  <data name="MapOperationalFocusTransitionLinks" xml:space="preserve">
+    <value>Переходные линии</value>
+  </data>
+  <data name="MapOperationalFocusDegradedNodes" xml:space="preserve">
+    <value>Деградированные узлы</value>
+  </data>
+  <data name="MapOperationalFocusClear" xml:space="preserve">
+    <value>Сбросить фокус</value>
+  </data>
   <data name="MapMotionSettings" xml:space="preserve">
     <value>Анимация изменений</value>
   </data>

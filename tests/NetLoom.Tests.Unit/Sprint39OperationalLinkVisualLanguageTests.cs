@@ -38,7 +38,7 @@ namespace NetLoom.Tests.Unit
                     StpTreePortState.Learning));
 
             Assert.AreEqual(
-                "Normal",
+                "Forwarding",
                 StpState(
                     StpTreePortState.Forwarding,
                     StpTreePortState.Unknown));
@@ -75,12 +75,16 @@ namespace NetLoom.Tests.Unit
                 BrushForState("Degraded"));
 
             Assert.AreEqual(
-                "NetLoom.Brush.Warning",
+                "NetLoom.Brush.AccentHover",
                 BrushForState("Transition"));
 
             Assert.AreEqual(
-                "NetLoom.Brush.Accent",
+                "NetLoom.Brush.AccentPressed",
                 BrushForState("Blocked"));
+
+            Assert.AreEqual(
+                "NetLoom.Brush.Success",
+                BrushForState("Forwarding"));
 
             Assert.IsNull(
                 BrushForState("Normal"));

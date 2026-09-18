@@ -180,17 +180,25 @@ public partial class MainWindow
         var viewportHeight =
             MapScrollViewer.ViewportHeight;
 
-        var logicalCenterX =
-            (_zoom <= 0.0)
-                ? 0.0
-                : (MapScrollViewer.HorizontalOffset +
-                   (viewportWidth / 2.0)) / _zoom;
+        double logicalCenterX;
+        double logicalCenterY;
 
-        var logicalCenterY =
-            (_zoom <= 0.0)
-                ? 0.0
-                : (MapScrollViewer.VerticalOffset +
-                   (viewportHeight / 2.0)) / _zoom;
+        if (!TryGetSelectedMapLogicalCenter(
+                out logicalCenterX,
+                out logicalCenterY))
+        {
+            logicalCenterX =
+                (_zoom <= 0.0)
+                    ? 0.0
+                    : (MapScrollViewer.HorizontalOffset +
+                       (viewportWidth / 2.0)) / _zoom;
+
+            logicalCenterY =
+                (_zoom <= 0.0)
+                    ? 0.0
+                    : (MapScrollViewer.VerticalOffset +
+                       (viewportHeight / 2.0)) / _zoom;
+        }
 
         _zoom = next;
         ApplyZoomTransform();
@@ -219,6 +227,92 @@ public partial class MainWindow
                 }));
     }
 
+    private bool TryGetSelectedMapLogicalCenter(
+        out double logicalCenterX,
+        out double logicalCenterY)
+    {
+        logicalCenterX = 0.0;
+        logicalCenterY = 0.0;
+
+        if (_selectedDeviceId.HasValue)
+        {
+            var node =
+                _nodeVisualsByIdentity.Values
+                    .FirstOrDefault(
+                        item =>
+                            item.DeviceId.HasValue &&
+                            item.DeviceId.Value ==
+                                _selectedDeviceId.Value);
+
+            if (node != null)
+            {
+                var bounds =
+                    NodeBounds(
+                        node);
+
+                logicalCenterX =
+                    bounds.Left +
+                    (bounds.Width / 2.0);
+
+                logicalCenterY =
+                    bounds.Top +
+                    (bounds.Height / 2.0);
+
+                return true;
+            }
+        }
+
+        if (_selectedPhysicalLinkId.HasValue)
+        {
+            var link =
+                _linkVisualsByIdentity.Values
+                    .FirstOrDefault(
+                        item =>
+                            item.Line.Tag is Guid &&
+                            (Guid)item.Line.Tag ==
+                                _selectedPhysicalLinkId.Value);
+
+            if (link != null)
+            {
+                logicalCenterX =
+                    (link.Line.X1 +
+                     link.Line.X2) / 2.0;
+
+                logicalCenterY =
+                    (link.Line.Y1 +
+                     link.Line.Y2) / 2.0;
+
+                return true;
+            }
+        }
+
+        if (_selectedLocationId.HasValue)
+        {
+            var location =
+                LocationVisual(
+                    _selectedLocationId.Value);
+
+            if (location != null)
+            {
+                var bounds =
+                    LocationVisibleBounds(
+                        location);
+
+                logicalCenterX =
+                    bounds.Left +
+                    (bounds.Width / 2.0);
+
+                logicalCenterY =
+                    bounds.Top +
+                    (bounds.Height / 2.0);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void FitTopologyToViewport()
     {
         var bounds =
@@ -243,6 +337,19 @@ public partial class MainWindow
                             Visibility.Visible)
                 .Select(
                     LocationVisibleBounds));
+
+        FitMapBoundsToViewport(
+            bounds);
+    }
+
+    private void FitMapBoundsToViewport(
+        IReadOnlyList<Rect> bounds)
+    {
+        if (bounds == null)
+        {
+            throw new ArgumentNullException(
+                nameof(bounds));
+        }
 
         if (bounds.Count == 0)
         {
@@ -549,6 +656,12 @@ public partial class MainWindow
 
         settingsMenu.Items.Add(
             motionMenu);
+
+        settingsMenu.Items.Add(
+            new Separator());
+
+        settingsMenu.Items.Add(
+            CreateOperationalFocusMenu());
 
         MapSettingsButton.ContextMenu =
             settingsMenu;
@@ -927,6 +1040,8 @@ public partial class MainWindow
 
         _lastMapSnapshot =
             snapshot;
+
+        RefreshOperationalFocusTargets();
 
         var nodes =
             snapshot.Nodes.ToDictionary(

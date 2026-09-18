@@ -475,7 +475,11 @@ namespace NetLoom.Tests.Unit
             var motionMenu =
                 settingsMenu.Items
                     .OfType<MenuItem>()
-                    .SingleOrDefault();
+                    .SingleOrDefault(
+                        item =>
+                            item.Items
+                                .OfType<MenuItem>()
+                                .Count() == 3);
 
             Assert.IsNotNull(
                 motionMenu);

@@ -668,6 +668,30 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   <data name="MapSettingsHint" xml:space="preserve">
     <value>Map display preferences.</value>
   </data>
+  <data name="MapOperationalFocusSettings" xml:space="preserve">
+    <value>Operational focus</value>
+  </data>
+  <data name="MapOperationalFocusAllProblems" xml:space="preserve">
+    <value>All problem elements</value>
+  </data>
+  <data name="MapOperationalFocusCriticalLinks" xml:space="preserve">
+    <value>Critical links</value>
+  </data>
+  <data name="MapOperationalFocusDegradedLinks" xml:space="preserve">
+    <value>Degraded links</value>
+  </data>
+  <data name="MapOperationalFocusBlockedLinks" xml:space="preserve">
+    <value>Blocked links</value>
+  </data>
+  <data name="MapOperationalFocusTransitionLinks" xml:space="preserve">
+    <value>Transition links</value>
+  </data>
+  <data name="MapOperationalFocusDegradedNodes" xml:space="preserve">
+    <value>Degraded nodes</value>
+  </data>
+  <data name="MapOperationalFocusClear" xml:space="preserve">
+    <value>Clear focus</value>
+  </data>
   <data name="MapMotionSettings" xml:space="preserve">
     <value>Change animation</value>
   </data>

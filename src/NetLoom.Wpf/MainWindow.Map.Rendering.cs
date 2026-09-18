@@ -2051,6 +2051,10 @@ public partial class MainWindow
                 visual,
                 node.DeviceId);
         }
+
+        ApplyNodeOperationalFocusPresentation(
+            visual,
+            node.DeviceId);
     }
 
     private MapLinkVisual
@@ -2119,7 +2123,8 @@ public partial class MainWindow
                 link.Freshness;
 
         var operationalOpacity =
-            LinkFreshnessOpacity(
+            LinkPresentationOpacity(
+                link.PhysicalLinkId,
                 link.Freshness);
 
         var confidenceDashPattern =
@@ -2181,12 +2186,16 @@ public partial class MainWindow
                 "NetLoom.Brush.Selection");
 
             visual.Line.StrokeThickness =
-                GetDoubleResource(
-                    "NetLoom.Map.LinkSelectedStrokeThickness");
+                LinkSelectedStrokeThickness(
+                    LinkOperationalState(
+                        link.PhysicalLinkId));
 
             visual.Label.SetResourceReference(
                 TextBlock.ForegroundProperty,
                 "NetLoom.Brush.Selection");
+
+            visual.Label.FontWeight =
+                FontWeights.Bold;
         }
         else
         {
