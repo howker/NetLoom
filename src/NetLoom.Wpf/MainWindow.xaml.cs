@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -1990,7 +1990,7 @@ public partial class MainWindow : Window
                     visual,
                     layout);
             }
-            else if (created)
+            else
             {
                 layout =
                     CreateDefaultLocationLayout(
@@ -2388,6 +2388,53 @@ public partial class MainWindow : Window
             visual);
     }
 
+    private bool TryGetExpandedLocationBounds(
+        Guid locationId,
+        out Rect bounds)
+    {
+        MapLocationVisual visual;
+
+        if (_locationVisualsById.TryGetValue(
+                locationId,
+                out visual))
+        {
+            bounds =
+                ExpandedLocationBounds(
+                    visual);
+
+            return true;
+        }
+
+        MapLocationLayout layout;
+
+        if (_persistedLocationLayouts.TryGetValue(
+                locationId,
+                out layout))
+        {
+            bounds =
+                new Rect(
+                    MapVirtualWorkspace
+                        .ToCanvasCoordinate(
+                            layout.X,
+                            _virtualOriginX),
+                    MapVirtualWorkspace
+                        .ToCanvasCoordinate(
+                            layout.Y,
+                            _virtualOriginY),
+                    Math.Max(
+                        _locationMinWidth,
+                        layout.Width),
+                    Math.Max(
+                        _locationMinHeight,
+                        layout.Height));
+
+            return true;
+        }
+
+        bounds = Rect.Empty;
+        return false;
+    }
+
     private MapLocationLayout CreateDefaultLocationLayout(
         MapLocation location,
         int order,
@@ -2484,6 +2531,65 @@ public partial class MainWindow : Window
                 height,
                 false,
                 false);
+        }
+
+        if (location.ParentLocationId.HasValue)
+        {
+            Rect parentBounds;
+
+            if (TryGetExpandedLocationBounds(
+                    location.ParentLocationId.Value,
+                    out parentBounds))
+            {
+                var availableWidth =
+                    Math.Max(
+                        _locationMinWidth,
+                        parentBounds.Width -
+                        (2.0 *
+                         _locationContentPadding));
+
+                var availableHeight =
+                    Math.Max(
+                        _locationMinHeight,
+                        parentBounds.Height -
+                        _locationHeaderHeight -
+                        (2.0 *
+                         _locationContentPadding));
+
+                var width =
+                    Math.Min(
+                        _locationDefaultWidth,
+                        availableWidth);
+
+                var height =
+                    Math.Min(
+                        _locationDefaultHeight,
+                        availableHeight);
+
+                var left =
+                    parentBounds.Left +
+                    _locationContentPadding;
+
+                var top =
+                    parentBounds.Top +
+                    _locationHeaderHeight +
+                    _locationContentPadding;
+
+                return new MapLocationLayout(
+                    location.Id,
+                    MapVirtualWorkspace
+                        .ToLogicalCoordinate(
+                            left,
+                            _virtualOriginX),
+                    MapVirtualWorkspace
+                        .ToLogicalCoordinate(
+                            top,
+                            _virtualOriginY),
+                    width,
+                    height,
+                    false,
+                    false);
+            }
         }
 
         var column =

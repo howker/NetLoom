@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -196,6 +196,164 @@ namespace NetLoom.Tests.Unit
                                 .Contains(
                                     Bounds(inner)),
                             "A parent location must be derived around its child location when no persisted layout exists.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void IncrementalEmptyChildLocationStartsInsideExistingParent()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var parentId =
+                        Guid.NewGuid();
+
+                    var childId =
+                        Guid.NewGuid();
+
+                    var window =
+                        new MainWindow();
+
+                    try
+                    {
+                        window.ShowMap(
+                            new MapSnapshot(
+                                Now,
+                                new MapNode[0],
+                                new MapLink[0],
+                                new[]
+                                {
+                                    new MapLocation(
+                                        parentId,
+                                        null,
+                                        "Building",
+                                        null)
+                                }));
+
+                        window.ShowMap(
+                            new MapSnapshot(
+                                Now,
+                                new MapNode[0],
+                                new MapLink[0],
+                                new[]
+                                {
+                                    new MapLocation(
+                                        parentId,
+                                        null,
+                                        "Building",
+                                        null),
+                                    new MapLocation(
+                                        childId,
+                                        parentId,
+                                        "Room",
+                                        null)
+                                }));
+
+                        var canvas =
+                            MapCanvas(
+                                window);
+
+                        var parentBounds =
+                            Bounds(
+                                LocationBorder(
+                                    canvas,
+                                    parentId));
+
+                        var childBounds =
+                            Bounds(
+                                LocationBorder(
+                                    canvas,
+                                    childId));
+
+                        Assert.IsTrue(
+                            parentBounds.Contains(
+                                childBounds),
+                            "An incrementally created child location must remain visually inside its existing parent.");
+
+                        Assert.IsTrue(
+                            childBounds.Left >
+                            parentBounds.Left &&
+                            childBounds.Top >
+                            parentBounds.Top,
+                            "An empty child location must be inset from the parent instead of overlapping the parent frame.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void EmptyChildLocationUsesPersistedParentBoundsAfterRestart()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var parentId =
+                        Guid.NewGuid();
+
+                    var childId =
+                        Guid.NewGuid();
+
+                    var store =
+                        new RecordingMapLayoutStore(
+                            new MapLocationLayout(
+                                parentId,
+                                1200.0,
+                                900.0,
+                                800.0,
+                                600.0,
+                                false,
+                                false));
+
+                    var window =
+                        new MainWindow(
+                            new EmptyRefreshProvider(),
+                            new EmptyLookupReader(),
+                            store);
+
+                    try
+                    {
+                        window.ShowMap(
+                            new MapSnapshot(
+                                Now,
+                                new MapNode[0],
+                                new MapLink[0],
+                                new[]
+                                {
+                                    new MapLocation(
+                                        parentId,
+                                        null,
+                                        "Building",
+                                        null),
+                                    new MapLocation(
+                                        childId,
+                                        parentId,
+                                        "Room",
+                                        null)
+                                }));
+
+                        var canvas =
+                            MapCanvas(
+                                window);
+
+                        Assert.IsTrue(
+                            Bounds(
+                                LocationBorder(
+                                    canvas,
+                                    parentId))
+                                .Contains(
+                                    Bounds(
+                                        LocationBorder(
+                                            canvas,
+                                            childId))),
+                            "A child without its own persisted layout must start inside the persisted parent after restart.");
                     }
                     finally
                     {
@@ -413,6 +571,21 @@ namespace NetLoom.Tests.Unit
         }
 
         private static Border LocationBorder(
+            Canvas canvas,
+            Guid locationId)
+        {
+            return canvas.Children
+                .OfType<Border>()
+                .Single(
+                    item =>
+                        Panel.GetZIndex(
+                            item) < 0 &&
+                        item.Tag is Guid &&
+                        (Guid)item.Tag ==
+                        locationId);
+        }
+
+        private static Border LocationBorder(
             Canvas canvas)
         {
             var location =
@@ -463,6 +636,17 @@ namespace NetLoom.Tests.Unit
             IMapLayoutStore,
             IMapLocationLayoutStore
         {
+            private readonly MapLocationLayout[]
+                _locations;
+
+            public RecordingMapLayoutStore(
+                params MapLocationLayout[] locations)
+            {
+                _locations =
+                    locations ??
+                    new MapLocationLayout[0];
+            }
+
             public MapLocationLayout LastLocation { get; private set; }
 
             public MapLayoutSnapshot Load(
@@ -475,7 +659,7 @@ namespace NetLoom.Tests.Unit
                         0.0,
                         0.0),
                     new MapDeviceLayout[0],
-                    new MapLocationLayout[0]);
+                    _locations);
             }
 
             public void SaveViewport(
