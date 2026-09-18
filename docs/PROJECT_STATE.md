@@ -6,17 +6,15 @@
 
 ## Текущее состояние
 
-The realistic stand gate, Sprint 33A/33B, Sprint 34A through Sprint 34K, the UI foundation task, Sprint 35, Sprint 36, and Sprint 37 are complete. The retained notification-delivery path remains supported but is not the active product priority.
+Sprint 38 — Locations on the map — is technically complete and operator-accepted. The retained notification-delivery path remains supported but is not the active product priority. The accepted architecture redesign head is `8e98f4f174b6caa6a7d0d88b09f68feda0f20db0`; the focused operator-remediation head is `9a8127715ffaf2a19091d1903d02251e8ef8df01`.
 
-Sprint 37 — manual topology from the UI — is technically complete and operator-accepted. The accepted Sprint 37 implementation head is `e94538d173c4bea4fa5bf4c3a650a270b8e65906`. The localized WPF editor creates/edits/removes manual devices, virtual ports and manual cables through the Application command boundary; automatic topology can be selected as a cable endpoint but is read-only there. Successful writes use the existing coherent refresh path, and accepted manual topology survives full Desktop close/reopen.
+The WPF map now represents hierarchical physical Locations with persistent movable/resizable/collapsible/lockable containers. Containment is defined by `ParentLocationId`; child movement and parent resizing preserve that containment, moving a Location carries its physical subtree, and persisted hierarchy/layout survives Desktop restart. The editor keeps Browse read-only until explicit Edit, supports repeated Create and reparent in one open window, and the Application service rejects missing parents, cycles and non-leaf deletion.
 
-The final operator-remediation removed several misleading presentation behaviors instead of documenting workarounds. Device cards grow from measured content rather than a fixed height; cable selection preserves viewport position; destructive deletion is explicit and only real cable references block it; leaving a new/edited device for the Links tab requires an explicit save decision. Automatic interface diagnostics now use observed IF-MIB `ifName`, `ifAlias`, `ifIndex` and `ifType` without inventing vendor-specific prefixes, and management address is displayed as observed metadata rather than identity.
+Holistic operator acceptance found two workflow defects after the first redesign: creating the next Location required reopening the editor, and restart could leave all configured topology off-screen. The remediation added real operator-path regression evidence, preserved the existing `Create → Create → Edit` lifecycle, and uses the existing `FitTopologyToViewport()` after the initial refresh. Forced build, targeted Sprint 38 Unit/Integration, full regression, text-integrity and exact repository-boundary/blob proofs passed; focused operator reacceptance then passed both original scenarios.
 
-`Migration020InterfaceIdentityAndManagementAddress` is now the current schema migration. It adds nullable `devices.management_address` and `interfaces.if_type`; the shared manual-topology tables themselves remain unchanged. Management IP remains observation/materialization metadata and is never DeviceId. High-frequency monitoring counters remain outside this topology metadata migration.
+Sprint 38 adds no database migration; `Migration020InterfaceIdentityAndManagementAddress` remains the current schema migration. No Sprint 38 product change remains open.
 
-Technical acceptance for the final Sprint 37 remediation included forced solution build, cause-oriented targeted tests, full modern/legacy/integration/snapshot regression, exact repository-boundary/blob proof and push. Focused operator re-test then passed. No further Sprint 37 product change is open.
-
-The next product work is fixed by the existing `Committed sequence`: Sprint 38 — Locations on the map. Its operator outcome is to read the physical object by site/building/room/rack boundaries instead of a flat graph. Sprint 39 and Sprint 40 remain subsequent committed items; no reorder has been approved.
+The next gate is a preparation task, not a product Sprint: mechanically split the oversized `MainWindow.xaml.cs` by responsibility without changing behavior, schema, localization or dependencies. After that preparation is accepted, the first unchecked product item in the existing `Committed sequence` remains Sprint 39 — visual language of the map; Sprint 40 remains subsequent. No product-Sprint reorder is introduced.
 
 ## Основа проекта
 

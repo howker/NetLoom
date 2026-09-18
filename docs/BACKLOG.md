@@ -139,9 +139,9 @@
 - [x] Run a realistic 3-5 device SNMP/snmpsim stand acceptance. Use the WPF client as a real working session and add only observed operational friction to `FRICTION_LOG.md`.
 - [x] Review `FRICTION_LOG.md` after stand acceptance and choose exactly one next product Sprint. Do not start topology snapshots / time-machine work automatically.
 
-## Execution map after Sprint 37
+## Execution map after Sprint 38
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, and Sprint 37 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, and operator-managed manual devices/ports/cables that share the same materialized graph as discovered topology. Sprint 37 passed focused operator acceptance after remediation of the observed editor/map friction. Product priority now advances to the first unchecked committed item: Sprint 38 — Locations on the map.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, and Sprint 38 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, and persistent hierarchical Location containers. Sprint 38 passed focused operator reacceptance after remediation of the two observed location-editor/startup-viewport defects. Before Sprint 39, the committed sequence now has one preparation task: mechanically split `MainWindow.xaml.cs` by responsibility without changing behavior.
 
 ### Completed
 
@@ -188,9 +188,17 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Persistence: the manual graph itself still reuses the existing materialized topology tables and Migration019 layout state. Final operator-remediation adds `Migration020InterfaceIdentityAndManagementAddress`, which adds nullable `devices.management_address` and `interfaces.if_type` so truthful observed identity/address data can reach map diagnostics.
   - Scope boundary: Location-container editing remains Sprint 38; broader map visual-language work remains Sprint 39; monitoring controls remain Sprint 40.
   - Acceptance: backend implementation `dce375ff0c7e35a520ad31aeb5bd95fa105f580a`; initial WPF editor `2f8c7a9439749e9209cb1a06ec340e3b24bb6a6a`; final root-cause remediation `e94538d173c4bea4fa5bf4c3a650a270b8e65906`. The pass-4 repository runner completed forced build, cause-oriented targeted checks, full regression, exact boundary/blob proof and push; focused operator acceptance then passed on the realistic stand, including restart persistence and the previously failed interaction/diagnostic scenarios.
-- [ ] Sprint 38 — Locations on the map.
+- [x] Sprint 38 — Locations on the map.
   - Operator outcome: read the physical object by site/building/room/rack boundaries instead of a flat graph.
-  - Render movable/resizable/collapsible/lockable Location containers and preserve their layout.
+  - Completed hierarchy behavior: `ParentLocationId` defines containment; moving a Location carries its physical subtree, child drag and parent resize preserve containment, collapse hides the subtree, and lock/collapse/layout state survives restart.
+  - Completed editor/service behavior: Browse is read-only until explicit Edit; repeated Create works in one open editor; `Create → Create → Edit` remains valid; reparent is supported; missing parent, cycles and non-leaf deletion are rejected by the Application service.
+  - Startup remediation: after the initial refresh the existing `FitTopologyToViewport()` establishes a useful viewport, so restart does not require a manual `Show all` just to find the configured topology.
+  - Acceptance: architecture redesign commit `8e98f4f174b6caa6a7d0d88b09f68feda0f20db0`; operator-remediation commit `9a8127715ffaf2a19091d1903d02251e8ef8df01`. RED evidence covered the real Create button path and stale startup viewport; forced build, targeted Sprint 38 Unit/Integration, full regression, text-integrity and exact repository-boundary/blob proofs passed. Focused operator reacceptance then passed both original observations.
+- [ ] MainWindow decomposition — preparation task, not a Sprint.
+  - Preparation outcome: keep current WPF behavior unchanged while making the next map work reviewable and locally understandable.
+  - Mechanically separate the existing `MainWindow.xaml.cs` responsibilities into focused partial files/areas for map interaction/rendering, diagnostics/selection panel, lookup/search, and alerts/refresh orchestration.
+  - Do not change UI behavior, XAML contracts, persistence/schema, localization semantics, monitoring semantics or dependencies as part of the split.
+  - Acceptance requires unchanged observable behavior, existing targeted tests and full regression green, text-integrity green, and a reviewable mechanical diff before Sprint 39 begins.
 - [ ] Sprint 39 — visual language of the map.
   - Operator outcome: understand at a glance what is trustworthy, stale, blocked, degraded or risky.
   - Make information hierarchy, node/link styling and map modes visually consistent for physical topology, active STP tree, confidence, freshness, degradation, rings and failure boundaries.
