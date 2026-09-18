@@ -263,4 +263,53 @@
         <Setter Property="Padding"
                 Value="{DynamicResource NetLoom.Thickness.MapLinkLabelPadding}" />
     </Style>
+
+    <Style x:Key="NetLoom.Style.MapLocationContainer"
+           TargetType="{x:Type Border}">
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource NetLoom.Brush.BorderStrong}" />
+        <Setter Property="BorderThickness"
+                Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+        <Setter Property="CornerRadius"
+                Value="{DynamicResource NetLoom.Radius.MapLocation}" />
+        <Setter Property="ClipToBounds"
+                Value="True" />
+        <Setter Property="Opacity"
+                Value="0.88" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapLocationTitle"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.SectionTitle}" />
+        <Setter Property="FontWeight"
+                Value="SemiBold" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="TextTrimming"
+                Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapLocationDescription"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.Caption}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapLocationLockBadge"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.InlineGap}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.Accent}" />
+        <Setter Property="FontWeight"
+                Value="SemiBold" />
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.Caption}" />
+    </Style>
+
 </ResourceDictionary>

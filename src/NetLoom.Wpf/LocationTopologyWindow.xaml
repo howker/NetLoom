@@ -1,0 +1,173 @@
+<Window x:Class="NetLoom.Wpf.LocationTopologyWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Height="{DynamicResource NetLoom.Window.Height}"
+        Width="{DynamicResource NetLoom.Window.Width}"
+        MinHeight="{DynamicResource NetLoom.Window.MinHeight}"
+        MinWidth="{DynamicResource NetLoom.Window.MinWidth}"
+        FontFamily="{DynamicResource NetLoom.FontFamily.Ui}"
+        FontSize="{DynamicResource NetLoom.FontSize.Body}"
+        Background="{DynamicResource NetLoom.Brush.Window}"
+        Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+        WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/DesignTokens.xaml" />
+                <ResourceDictionary Source="Themes/Light.xaml" />
+                <ResourceDictionary Source="Themes/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top"
+                Style="{StaticResource NetLoom.Style.Panel}"
+                Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
+                BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
+            <StackPanel>
+                <TextBlock x:Name="LocationTopologyTitleText"
+                           Style="{StaticResource NetLoom.Style.WindowTitle}" />
+                <TextBlock x:Name="LocationTopologyIntroText"
+                           Style="{StaticResource NetLoom.Style.MutedText}"
+                           Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                           TextWrapping="Wrap" />
+                <TextBlock x:Name="LocationTopologyInteractionHintText"
+                           Style="{StaticResource NetLoom.Style.MutedText}"
+                           Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                           TextWrapping="Wrap" />
+                <TextBlock x:Name="LocationTopologyStatusText"
+                           Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                           Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom"
+                Style="{StaticResource NetLoom.Style.Panel}"
+                Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
+                BorderThickness="{DynamicResource NetLoom.Thickness.BorderTop}">
+            <Button x:Name="LocationTopologyCloseButton"
+                    HorizontalAlignment="Right"
+                    Click="OnCloseClick" />
+        </Border>
+
+        <TabControl x:Name="LocationTopologyTabs"
+                    Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+            <TabItem x:Name="LocationsTab">
+                <Grid Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="3*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock x:Name="LocationsListLabelText"
+                                   Style="{StaticResource NetLoom.Style.SubsectionLabel}" />
+                        <ListBox x:Name="LocationsList"
+                                 Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                 DisplayMemberPath="Summary"
+                                 SelectionChanged="OnLocationSelectionChanged"
+                                 MouseDoubleClick="OnLocationListDoubleClick"
+                                 PreviewMouseRightButtonDown="OnLocationListPreviewMouseRightButtonDown"
+                                 KeyDown="OnLocationListKeyDown">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem x:Name="LocationContextEdit"
+                                              Click="OnLocationContextEditClick" />
+                                    <Separator />
+                                    <MenuItem x:Name="LocationContextDelete"
+                                              Click="OnLocationContextDeleteClick" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+                            Style="{StaticResource NetLoom.Style.Panel}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderLeft}"
+                            Padding="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                        <StackPanel>
+                            <TextBlock x:Name="LocationNameLabelText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}" />
+                            <TextBox x:Name="LocationNameTextBox"
+                                     Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+
+                            <TextBlock x:Name="LocationParentLabelText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.FieldLabel}" />
+                            <ComboBox x:Name="LocationParentComboBox"
+                                      DisplayMemberPath="Text" />
+
+                            <TextBlock x:Name="LocationDescriptionLabelText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.FieldLabel}" />
+                            <TextBox x:Name="LocationDescriptionTextBox"
+                                     MinHeight="96"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top" />
+
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="{DynamicResource NetLoom.Thickness.StatusTop}">
+                                <Button x:Name="LocationNewButton"
+                                        Click="OnNewLocationClick" />
+                                <Button x:Name="LocationCreateButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                        Click="OnCreateLocationClick" />
+                                <Button x:Name="LocationSaveButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                        Click="OnSaveLocationClick" />
+                                <Button x:Name="LocationDeleteButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                        Click="OnDeleteLocationClick" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem x:Name="DevicesTab">
+                <Grid Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="3*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock x:Name="LocationDevicesListLabelText"
+                                   Style="{StaticResource NetLoom.Style.SubsectionLabel}" />
+                        <ListBox x:Name="LocationDevicesList"
+                                 Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                 DisplayMemberPath="Summary"
+                                 SelectionChanged="OnDeviceSelectionChanged" />
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+                            Style="{StaticResource NetLoom.Style.Panel}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderLeft}"
+                            Padding="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                        <StackPanel>
+                            <TextBlock x:Name="LocationDeviceTitleText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}" />
+                            <TextBlock x:Name="LocationDeviceNameText"
+                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock x:Name="LocationDeviceLocationLabelText"
+                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.FieldLabel}" />
+                            <ComboBox x:Name="LocationDeviceLocationComboBox"
+                                      DisplayMemberPath="Text" />
+
+                            <Button x:Name="LocationDeviceAssignButton"
+                                    Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
+                                    HorizontalAlignment="Left"
+                                    Click="OnAssignDeviceClick" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

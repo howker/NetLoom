@@ -14,6 +14,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using NetLoom.Application.Alerts;
+using NetLoom.Application.Locations;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.MapLayout;
 using NetLoom.Application.Topology;
@@ -43,6 +44,13 @@ public partial class MainWindow : Window
     private readonly double _fitPadding;
     private readonly double _virtualOriginX;
     private readonly double _virtualOriginY;
+    private readonly double _locationDefaultWidth;
+    private readonly double _locationDefaultHeight;
+    private readonly double _locationMinWidth;
+    private readonly double _locationMinHeight;
+    private readonly double _locationHeaderHeight;
+    private readonly double _locationContentPadding;
+    private readonly double _locationResizeThumbSize;
 
     private readonly TopologyRefreshCoordinator
         _topologyRefreshCoordinator;
@@ -68,6 +76,12 @@ public partial class MainWindow : Window
     private readonly IManualTopologyService
         _manualTopologyService;
 
+    private readonly ILocationTopologyService
+        _locationTopologyService;
+
+    private readonly IMapLocationLayoutStore
+        _mapLocationLayoutStore;
+
     private readonly Guid
         _mapLayoutId =
             MapLayoutScope.PhysicalTopologyMapId;
@@ -75,6 +89,14 @@ public partial class MainWindow : Window
     private readonly Dictionary<Guid, MapDeviceLayout>
         _persistedDeviceLayouts =
             new Dictionary<Guid, MapDeviceLayout>();
+
+    private readonly Dictionary<Guid, MapLocationLayout>
+        _persistedLocationLayouts =
+            new Dictionary<Guid, MapLocationLayout>();
+
+    private readonly Dictionary<Guid, MapLocationVisual>
+        _locationVisualsById =
+            new Dictionary<Guid, MapLocationVisual>();
 
     private readonly CancellationTokenSource
         _lifetimeCancellation =
@@ -119,6 +141,22 @@ public partial class MainWindow : Window
 
     private bool _dragMoved;
 
+    private MapLocationVisual _dragLocationVisual;
+
+    private Point _locationDragStartPoint;
+
+    private double _locationDragStartLeft;
+
+    private double _locationDragStartTop;
+
+    private bool _locationDragMoved;
+
+    private bool _locationDragMovesDevices;
+
+    private readonly Dictionary<MapNodeVisual, Point>
+        _locationDragDeviceStarts =
+            new Dictionary<MapNodeVisual, Point>();
+
     private bool _isPanning;
 
     private Point _panStartPoint;
@@ -132,6 +170,8 @@ public partial class MainWindow : Window
     private Guid? _selectedDeviceId;
 
     private Guid? _selectedPhysicalLinkId;
+
+    private Guid? _selectedLocationId;
 
     private MapSnapshot _lastMapSnapshot;
 
@@ -204,6 +244,25 @@ public partial class MainWindow : Window
         IMacIpLookupReader lookupReader,
         IMapLayoutStore mapLayoutStore,
         IManualTopologyService manualTopologyService)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            mapLayoutStore,
+            manualTopologyService,
+            new EmptyLocationTopologyService(),
+            mapLayoutStore
+                as IMapLocationLayoutStore ??
+                new EmptyMapLocationLayoutStore())
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMapLayoutStore mapLayoutStore,
+        IManualTopologyService manualTopologyService,
+        ILocationTopologyService locationTopologyService,
+        IMapLocationLayoutStore mapLocationLayoutStore)
     {
         InitializeComponent();
 
@@ -247,6 +306,34 @@ public partial class MainWindow : Window
             GetDoubleResource(
                 "NetLoom.Map.VirtualOriginY");
 
+        _locationDefaultWidth =
+            GetDoubleResource(
+                "NetLoom.Map.LocationDefaultWidth");
+
+        _locationDefaultHeight =
+            GetDoubleResource(
+                "NetLoom.Map.LocationDefaultHeight");
+
+        _locationMinWidth =
+            GetDoubleResource(
+                "NetLoom.Map.LocationMinWidth");
+
+        _locationMinHeight =
+            GetDoubleResource(
+                "NetLoom.Map.LocationMinHeight");
+
+        _locationHeaderHeight =
+            GetDoubleResource(
+                "NetLoom.Map.LocationHeaderHeight");
+
+        _locationContentPadding =
+            GetDoubleResource(
+                "NetLoom.Map.LocationContentPadding");
+
+        _locationResizeThumbSize =
+            GetDoubleResource(
+                "NetLoom.Map.LocationResizeThumbSize");
+
         _mapLayoutStore =
             mapLayoutStore ??
             throw new ArgumentNullException(
@@ -256,6 +343,16 @@ public partial class MainWindow : Window
             manualTopologyService ??
             throw new ArgumentNullException(
                 nameof(manualTopologyService));
+
+        _locationTopologyService =
+            locationTopologyService ??
+            throw new ArgumentNullException(
+                nameof(locationTopologyService));
+
+        _mapLocationLayoutStore =
+            mapLocationLayoutStore ??
+            throw new ArgumentNullException(
+                nameof(mapLocationLayoutStore));
 
         LoadPersistedMapLayout();
 
@@ -317,6 +414,12 @@ public partial class MainWindow : Window
 
         ManualTopologyButton.ToolTip =
             UiText.Get("ManualTopologyHint");
+
+        LocationsButton.Content =
+            UiText.Get("LocationTopologyAction");
+
+        LocationsButton.ToolTip =
+            UiText.Get("LocationTopologyMapHint");
 
         MapHelpButton.Content =
             UiText.Get("MapHelpAction");
@@ -629,6 +732,14 @@ public partial class MainWindow : Window
                 _persistedDeviceLayouts[item.DeviceId] =
                     item;
             }
+
+            _persistedLocationLayouts.Clear();
+
+            foreach (var item in snapshot.Locations)
+            {
+                _persistedLocationLayouts[item.LocationId] =
+                    item;
+            }
         }
         catch (Exception error)
         {
@@ -639,6 +750,7 @@ public partial class MainWindow : Window
             _pendingPanX = 0.0;
             _pendingPanY = 0.0;
             _persistedDeviceLayouts.Clear();
+            _persistedLocationLayouts.Clear();
         }
     }
 
@@ -755,16 +867,30 @@ public partial class MainWindow : Window
 
     private void FitTopologyToViewport()
     {
-        var visuals =
+        var bounds =
+            new List<Rect>();
+
+        bounds.AddRange(
             _nodeVisualsByIdentity.Values
                 .Where(
                     visual =>
                         visual != null &&
                         visual.Border.Visibility ==
                             Visibility.Visible)
-                .ToArray();
+                .Select(
+                    NodeBounds));
 
-        if (visuals.Length == 0)
+        bounds.AddRange(
+            _locationVisualsById.Values
+                .Where(
+                    visual =>
+                        visual != null &&
+                        visual.Border.Visibility ==
+                            Visibility.Visible)
+                .Select(
+                    LocationVisibleBounds));
+
+        if (bounds.Count == 0)
         {
             return;
         }
@@ -782,27 +908,20 @@ public partial class MainWindow : Window
         }
 
         var minX =
-            visuals.Min(
-                NodeLeft);
+            bounds.Min(
+                item => item.Left);
 
         var minY =
-            visuals.Min(
-                NodeTop);
+            bounds.Min(
+                item => item.Top);
 
         var maxX =
-            visuals.Max(
-                visual =>
-                    NodeLeft(
-                        visual) +
-                    _nodeWidth);
+            bounds.Max(
+                item => item.Right);
 
         var maxY =
-            visuals.Max(
-                visual =>
-                    NodeTop(
-                        visual) +
-                    NodeVisualHeight(
-                        visual));
+            bounds.Max(
+                item => item.Bottom);
 
         var contentWidth =
             Math.Max(
@@ -949,6 +1068,58 @@ public partial class MainWindow : Window
         }
     }
 
+    private void TrySaveLocationLayout(
+        MapLocationVisual visual)
+    {
+        if (visual == null ||
+            visual.LocationId == Guid.Empty)
+        {
+            return;
+        }
+
+        var layout =
+            new MapLocationLayout(
+                visual.LocationId,
+                MapVirtualWorkspace
+                    .ToLogicalCoordinate(
+                        LocationLeft(
+                            visual),
+                        _virtualOriginX),
+                MapVirtualWorkspace
+                    .ToLogicalCoordinate(
+                        LocationTop(
+                            visual),
+                        _virtualOriginY),
+                Math.Max(
+                    _locationMinWidth,
+                    visual.ExpandedWidth),
+                Math.Max(
+                    _locationMinHeight,
+                    visual.ExpandedHeight),
+                visual.IsCollapsed,
+                visual.IsLocked);
+
+        try
+        {
+            _mapLocationLayoutStore.SaveLocation(
+                _mapLayoutId,
+                layout);
+
+            _persistedLocationLayouts[
+                layout.LocationId] =
+                layout;
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                error.ToString());
+
+            MapStatusText.Text =
+                UiText.Get(
+                    "MapLayoutSaveFailed");
+        }
+    }
+
     private void InitializeMapSettingsMenu()
     {
         _motionNormalMenuItem =
@@ -1075,6 +1246,22 @@ public partial class MainWindow : Window
 
         try
         {
+            if (_selectedLocationId.HasValue)
+            {
+                var locationVisual =
+                    LocationVisual(
+                        _selectedLocationId.Value);
+
+                MapLockSelectedCheckBox.IsEnabled =
+                    locationVisual != null;
+
+                MapLockSelectedCheckBox.IsChecked =
+                    locationVisual != null &&
+                    locationVisual.IsLocked;
+
+                return;
+            }
+
             MapNodeVisual visual = null;
 
             if (_selectedDeviceId.HasValue)
@@ -1552,13 +1739,18 @@ public partial class MainWindow : Window
             snapshot.Nodes,
             locations);
 
+        ReconcileLocations(
+            snapshot.Locations,
+            snapshot.Nodes);
+
         ReconcileLinks(
             snapshot.Links,
             nodes);
 
         UpdateSelectedLayoutControl();
 
-        if (snapshot.Nodes.Count == 0)
+        if (snapshot.Nodes.Count == 0 &&
+            snapshot.Locations.Count == 0)
         {
             MapStatusText.Text =
                 UiText.Get("MapNotLoaded");
@@ -1732,6 +1924,843 @@ public partial class MainWindow : Window
                     node.DeviceId.Value] =
                     visual.Border;
             }
+        }
+    }
+
+    private void ReconcileLocations(
+        IReadOnlyList<MapLocation> locations,
+        IReadOnlyList<MapNode> nodes)
+    {
+        var desiredIds =
+            new HashSet<Guid>(
+                locations.Select(
+                    item => item.Id));
+
+        var byId =
+            locations.ToDictionary(
+                item => item.Id);
+
+        var ordered =
+            locations
+                .OrderByDescending(
+                    item =>
+                        LocationDepth(
+                            item,
+                            byId))
+                .ThenBy(
+                    item => item.Name,
+                    StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(item => item.Id)
+                .ToArray();
+
+        for (var index = 0;
+             index < ordered.Length;
+             index++)
+        {
+            var location =
+                ordered[index];
+
+            MapLocationVisual visual;
+            var created = false;
+
+            if (!_locationVisualsById.TryGetValue(
+                    location.Id,
+                    out visual))
+            {
+                visual =
+                    CreateLocationVisual();
+
+                created = true;
+
+                _locationVisualsById.Add(
+                    location.Id,
+                    visual);
+
+                MapCanvas.Children.Add(
+                    visual.Border);
+            }
+
+            MapLocationLayout layout = null;
+
+            if (_persistedLocationLayouts.TryGetValue(
+                    location.Id,
+                    out layout))
+            {
+                ApplyLocationLayout(
+                    visual,
+                    layout);
+            }
+            else if (created)
+            {
+                layout =
+                    CreateDefaultLocationLayout(
+                        location,
+                        index,
+                        nodes,
+                        locations);
+
+                ApplyLocationLayout(
+                    visual,
+                    layout);
+            }
+
+            Panel.SetZIndex(
+                visual.Border,
+                -100 +
+                LocationDepth(
+                    location,
+                    byId));
+
+            UpdateLocationVisual(
+                visual,
+                location,
+                byId);
+
+            if (created)
+            {
+                AnimateAppearance(
+                    visual.Border);
+            }
+        }
+
+        foreach (var locationId in
+            _locationVisualsById.Keys
+                .Where(
+                    id =>
+                        !desiredIds.Contains(
+                            id))
+                .ToArray())
+        {
+            var visual =
+                _locationVisualsById[
+                    locationId];
+
+            _locationVisualsById.Remove(
+                locationId);
+
+            AnimateRemoval(
+                visual.Border,
+                () =>
+                    MapCanvas.Children.Remove(
+                        visual.Border));
+        }
+
+        if (_selectedLocationId.HasValue &&
+            !desiredIds.Contains(
+                _selectedLocationId.Value))
+        {
+            _selectedLocationId = null;
+        }
+
+        UpdateLocationSelectionPresentation();
+    }
+
+    private MapLocationVisual CreateLocationVisual()
+    {
+        var title =
+            new TextBlock
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapLocationTitle"),
+                VerticalAlignment =
+                    VerticalAlignment.Center
+            };
+
+        var lockBadge =
+            new TextBlock
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapLocationLockBadge"),
+                VerticalAlignment =
+                    VerticalAlignment.Center
+            };
+
+        var collapseButton =
+            new Button
+            {
+                MinWidth = 28.0,
+                MinHeight = 24.0,
+                Padding = new Thickness(
+                    4.0,
+                    0.0,
+                    4.0,
+                    0.0),
+                Focusable = false,
+                VerticalAlignment =
+                    VerticalAlignment.Center
+            };
+
+        collapseButton.Click +=
+            OnMapLocationCollapseClick;
+
+        var headerGrid =
+            new Grid
+            {
+                Height = _locationHeaderHeight,
+                Cursor = Cursors.SizeAll
+            };
+
+        headerGrid.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    new GridLength(
+                        1.0,
+                        GridUnitType.Star)
+            });
+
+        headerGrid.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width = GridLength.Auto
+            });
+
+        headerGrid.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width = GridLength.Auto
+            });
+
+        Grid.SetColumn(
+            title,
+            0);
+
+        Grid.SetColumn(
+            lockBadge,
+            1);
+
+        Grid.SetColumn(
+            collapseButton,
+            2);
+
+        headerGrid.Children.Add(
+            title);
+
+        headerGrid.Children.Add(
+            lockBadge);
+
+        headerGrid.Children.Add(
+            collapseButton);
+
+        var header =
+            new Border
+            {
+                Background =
+                    FindResource(
+                        "NetLoom.Brush.AccentSoft")
+                        as Brush,
+                Padding =
+                    GetThicknessResource(
+                        "NetLoom.Thickness.MapLocationHeader"),
+                Child = headerGrid
+            };
+
+        var description =
+            new TextBlock
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapLocationDescription"),
+                Margin =
+                    GetThicknessResource(
+                        "NetLoom.Thickness.MapLocationDescription"),
+                TextWrapping =
+                    TextWrapping.Wrap
+            };
+
+        var resizeThumb =
+            new Thumb
+            {
+                Width =
+                    _locationResizeThumbSize,
+                Height =
+                    _locationResizeThumbSize,
+                HorizontalAlignment =
+                    HorizontalAlignment.Right,
+                VerticalAlignment =
+                    VerticalAlignment.Bottom,
+                Cursor =
+                    Cursors.SizeNWSE,
+                Focusable = false
+            };
+
+        resizeThumb.DragDelta +=
+            OnMapLocationResizeDragDelta;
+
+        resizeThumb.DragCompleted +=
+            OnMapLocationResizeDragCompleted;
+
+        var root =
+            new Grid();
+
+        root.RowDefinitions.Add(
+            new RowDefinition
+            {
+                Height = GridLength.Auto
+            });
+
+        root.RowDefinitions.Add(
+            new RowDefinition
+            {
+                Height =
+                    new GridLength(
+                        1.0,
+                        GridUnitType.Star)
+            });
+
+        Grid.SetRow(
+            header,
+            0);
+
+        Grid.SetRow(
+            description,
+            1);
+
+        Grid.SetRowSpan(
+            resizeThumb,
+            2);
+
+        root.Children.Add(
+            header);
+
+        root.Children.Add(
+            description);
+
+        root.Children.Add(
+            resizeThumb);
+
+        var border =
+            new Border
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapLocationContainer"),
+                Child = root,
+                Focusable = false
+            };
+
+        border.ContextMenu =
+            CreateLocationContextMenu(
+                border);
+
+        header.MouseLeftButtonDown +=
+            OnMapLocationMouseLeftButtonDown;
+
+        header.MouseMove +=
+            OnMapLocationMouseMove;
+
+        header.MouseLeftButtonUp +=
+            OnMapLocationMouseLeftButtonUp;
+
+        header.MouseRightButtonDown +=
+            OnMapLocationMouseRightButtonDown;
+
+        border.MouseLeftButtonDown +=
+            OnMapLocationBodyMouseLeftButtonDown;
+
+        return new MapLocationVisual(
+            border,
+            header,
+            title,
+            description,
+            collapseButton,
+            lockBadge,
+            resizeThumb);
+    }
+
+    private ContextMenu CreateLocationContextMenu(
+        Border target)
+    {
+        var menu =
+            new ContextMenu
+            {
+                Tag = target
+            };
+
+        var edit =
+            new MenuItem
+            {
+                Tag = target
+            };
+
+        edit.Click +=
+            OnMapLocationContextEditClick;
+
+        var collapse =
+            new MenuItem
+            {
+                Tag = target
+            };
+
+        collapse.Click +=
+            OnMapLocationContextCollapseClick;
+
+        var lockItem =
+            new MenuItem
+            {
+                Tag = target
+            };
+
+        lockItem.Click +=
+            OnMapLocationContextLockClick;
+
+        var delete =
+            new MenuItem
+            {
+                Tag = target
+            };
+
+        delete.Click +=
+            OnMapLocationContextDeleteClick;
+
+        menu.Items.Add(
+            edit);
+
+        menu.Items.Add(
+            new Separator());
+
+        menu.Items.Add(
+            collapse);
+
+        menu.Items.Add(
+            lockItem);
+
+        menu.Items.Add(
+            new Separator());
+
+        menu.Items.Add(
+            delete);
+
+        menu.Opened +=
+            OnMapLocationContextMenuOpened;
+
+        return menu;
+    }
+
+    private void UpdateLocationVisual(
+        MapLocationVisual visual,
+        MapLocation location,
+        IReadOnlyDictionary<Guid, MapLocation> locations)
+    {
+        visual.LocationId =
+            location.Id;
+
+        visual.ParentLocationId =
+            location.ParentLocationId;
+
+        visual.Title.Text =
+            location.Name;
+
+        visual.Description.Text =
+            string.IsNullOrWhiteSpace(
+                location.Description)
+                ? UiText.Get(
+                    "MapLocationNoDescription")
+                : location.Description;
+
+        visual.Border.Tag =
+            location.Id;
+
+        visual.Header.Tag =
+            location.Id;
+
+        visual.CollapseButton.Tag =
+            location.Id;
+
+        visual.ResizeThumb.Tag =
+            location.Id;
+
+        visual.Border.ToolTip =
+            UiText.Format(
+                "MapLocationToolTip",
+                BuildLocationPath(
+                    location,
+                    locations),
+                string.IsNullOrWhiteSpace(
+                    location.Description)
+                    ? UiText.Get(
+                        "MapLocationNoDescription")
+                    : location.Description);
+
+        UpdateLocationVisualState(
+            visual);
+    }
+
+    private MapLocationLayout CreateDefaultLocationLayout(
+        MapLocation location,
+        int order,
+        IReadOnlyList<MapNode> nodes,
+        IReadOnlyList<MapLocation> locations)
+    {
+        var bounds =
+            new List<Rect>();
+
+        foreach (var node in nodes)
+        {
+            if (node.LocationId !=
+                location.Id)
+            {
+                continue;
+            }
+
+            MapNodeVisual nodeVisual;
+
+            if (_nodeVisualsByIdentity.TryGetValue(
+                    NodeIdentity(node),
+                    out nodeVisual))
+            {
+                bounds.Add(
+                    NodeBounds(
+                        nodeVisual));
+            }
+        }
+
+        foreach (var child in locations)
+        {
+            if (child.ParentLocationId !=
+                location.Id)
+            {
+                continue;
+            }
+
+            MapLocationVisual childVisual;
+
+            if (_locationVisualsById.TryGetValue(
+                    child.Id,
+                    out childVisual))
+            {
+                bounds.Add(
+                    ExpandedLocationBounds(
+                        childVisual));
+            }
+        }
+
+        if (bounds.Count > 0)
+        {
+            var left =
+                bounds.Min(
+                    item => item.Left) -
+                _locationContentPadding;
+
+            var top =
+                bounds.Min(
+                    item => item.Top) -
+                _locationContentPadding -
+                _locationHeaderHeight;
+
+            var right =
+                bounds.Max(
+                    item => item.Right) +
+                _locationContentPadding;
+
+            var bottom =
+                bounds.Max(
+                    item => item.Bottom) +
+                _locationContentPadding;
+
+            var width =
+                Math.Max(
+                    _locationMinWidth,
+                    right - left);
+
+            var height =
+                Math.Max(
+                    _locationMinHeight,
+                    bottom - top);
+
+            return new MapLocationLayout(
+                location.Id,
+                MapVirtualWorkspace
+                    .ToLogicalCoordinate(
+                        left,
+                        _virtualOriginX),
+                MapVirtualWorkspace
+                    .ToLogicalCoordinate(
+                        top,
+                        _virtualOriginY),
+                width,
+                height,
+                false,
+                false);
+        }
+
+        var column =
+            order % 3;
+
+        var row =
+            order / 3;
+
+        return new MapLocationLayout(
+            location.Id,
+            (column *
+                (_locationDefaultWidth + 56.0)) -
+                (_locationDefaultWidth / 2.0),
+            (row *
+                (_locationDefaultHeight + 56.0)) -
+                (_locationDefaultHeight / 2.0),
+            _locationDefaultWidth,
+            _locationDefaultHeight,
+            false,
+            false);
+    }
+
+    private static int LocationDepth(
+        MapLocation location,
+        IReadOnlyDictionary<Guid, MapLocation> locations)
+    {
+        var depth = 0;
+        var parentId =
+            location.ParentLocationId;
+
+        var visited =
+            new HashSet<Guid>();
+
+        while (parentId.HasValue &&
+               visited.Add(
+                   parentId.Value))
+        {
+            MapLocation parent;
+
+            if (!locations.TryGetValue(
+                    parentId.Value,
+                    out parent))
+            {
+                break;
+            }
+
+            depth++;
+            parentId =
+                parent.ParentLocationId;
+        }
+
+        return depth;
+    }
+
+    private static string BuildLocationPath(
+        MapLocation location,
+        IReadOnlyDictionary<Guid, MapLocation> locations)
+    {
+        var names =
+            new List<string>();
+
+        var current =
+            location;
+
+        var visited =
+            new HashSet<Guid>();
+
+        while (current != null &&
+               visited.Add(
+                   current.Id))
+        {
+            names.Add(
+                current.Name);
+
+            if (!current.ParentLocationId.HasValue)
+            {
+                break;
+            }
+
+            MapLocation parent;
+
+            if (!locations.TryGetValue(
+                    current.ParentLocationId.Value,
+                    out parent))
+            {
+                break;
+            }
+
+            current = parent;
+        }
+
+        names.Reverse();
+
+        return string.Join(
+            " / ",
+            names);
+    }
+
+    private void ApplyLocationLayout(
+        MapLocationVisual visual,
+        MapLocationLayout layout)
+    {
+        visual.IsCollapsed =
+            layout.IsCollapsed;
+
+        visual.IsLocked =
+            layout.IsLocked;
+
+        visual.ExpandedWidth =
+            Math.Max(
+                _locationMinWidth,
+                layout.Width);
+
+        visual.ExpandedHeight =
+            Math.Max(
+                _locationMinHeight,
+                layout.Height);
+
+        Canvas.SetLeft(
+            visual.Border,
+            MapVirtualWorkspace
+                .ToCanvasCoordinate(
+                    layout.X,
+                    _virtualOriginX));
+
+        Canvas.SetTop(
+            visual.Border,
+            MapVirtualWorkspace
+                .ToCanvasCoordinate(
+                    layout.Y,
+                    _virtualOriginY));
+
+        visual.Border.Width =
+            visual.ExpandedWidth;
+
+        visual.Border.Height =
+            visual.IsCollapsed
+                ? _locationHeaderHeight
+                : visual.ExpandedHeight;
+    }
+
+    private Rect ExpandedLocationBounds(
+        MapLocationVisual visual)
+    {
+        return new Rect(
+            LocationLeft(
+                visual),
+            LocationTop(
+                visual),
+            Math.Max(
+                _locationMinWidth,
+                visual.ExpandedWidth),
+            Math.Max(
+                _locationMinHeight,
+                visual.ExpandedHeight));
+    }
+
+    private Rect LocationVisibleBounds(
+        MapLocationVisual visual)
+    {
+        return new Rect(
+            LocationLeft(
+                visual),
+            LocationTop(
+                visual),
+            Math.Max(
+                _locationMinWidth,
+                visual.Border.Width),
+            Math.Max(
+                _locationHeaderHeight,
+                visual.Border.Height));
+    }
+
+    private static double LocationLeft(
+        MapLocationVisual visual)
+    {
+        var value =
+            Canvas.GetLeft(
+                visual.Border);
+
+        return double.IsNaN(value)
+            ? 0.0
+            : value;
+    }
+
+    private static double LocationTop(
+        MapLocationVisual visual)
+    {
+        var value =
+            Canvas.GetTop(
+                visual.Border);
+
+        return double.IsNaN(value)
+            ? 0.0
+            : value;
+    }
+
+    private void UpdateLocationVisualState(
+        MapLocationVisual visual)
+    {
+        visual.Border.Width =
+            Math.Max(
+                _locationMinWidth,
+                visual.ExpandedWidth);
+
+        visual.Border.Height =
+            visual.IsCollapsed
+                ? _locationHeaderHeight
+                : Math.Max(
+                    _locationMinHeight,
+                    visual.ExpandedHeight);
+
+        visual.Description.Visibility =
+            visual.IsCollapsed
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+        visual.ResizeThumb.Visibility =
+            !visual.IsCollapsed &&
+            !visual.IsLocked
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        visual.Header.Cursor =
+            visual.IsLocked
+                ? Cursors.Hand
+                : Cursors.SizeAll;
+
+        visual.CollapseButton.Content =
+            visual.IsCollapsed
+                ? "+"
+                : "−";
+
+        visual.CollapseButton.ToolTip =
+            UiText.Get(
+                visual.IsCollapsed
+                    ? "MapLocationExpand"
+                    : "MapLocationCollapse");
+
+        visual.LockBadge.Text =
+            visual.IsLocked
+                ? UiText.Get(
+                    "MapLocationLockedBadge")
+                : string.Empty;
+
+        UpdateLocationSelectionPresentation();
+    }
+
+    private void UpdateLocationSelectionPresentation()
+    {
+        var selectionBrush =
+            FindResource(
+                "NetLoom.Brush.Selection")
+                as Brush;
+
+        var normalBrush =
+            FindResource(
+                "NetLoom.Brush.BorderStrong")
+                as Brush;
+
+        foreach (var visual in
+            _locationVisualsById.Values)
+        {
+            var selected =
+                _selectedLocationId.HasValue &&
+                visual.LocationId ==
+                    _selectedLocationId.Value;
+
+            visual.Border.BorderBrush =
+                selected
+                    ? selectionBrush
+                    : normalBrush;
+
+            visual.Border.BorderThickness =
+                selected
+                    ? new Thickness(3.0)
+                    : new Thickness(1.0);
         }
     }
 
@@ -2123,6 +3152,9 @@ public partial class MainWindow : Window
 
         visual.DeviceId =
             node.DeviceId;
+
+        visual.LocationId =
+            node.LocationId;
 
         visual.IsManual =
             node.Origin ==
@@ -2651,6 +3683,8 @@ public partial class MainWindow : Window
         _selectedPhysicalLinkId =
             null;
 
+        _selectedLocationId =
+            null;
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -2801,6 +3835,16 @@ public partial class MainWindow : Window
             e.OriginalSource is TextBoxBase ||
             e.OriginalSource is PasswordBox)
         {
+            return;
+        }
+
+        if (_selectedLocationId.HasValue)
+        {
+            e.Handled = true;
+
+            await DeleteLocationFromMapAsync(
+                _selectedLocationId.Value);
+
             return;
         }
 
@@ -3032,6 +4076,788 @@ public partial class MainWindow : Window
         if (editor.HasChanges)
         {
             await RefreshTopologyAsync();
+        }
+    }
+
+    private async void OnLocationsClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        await OpenLocationTopologyEditorAsync(
+            null);
+    }
+
+    private async Task OpenLocationTopologyEditorAsync(
+        Guid? initialLocationId)
+    {
+        var editor =
+            new LocationTopologyWindow(
+                _locationTopologyService,
+                initialLocationId)
+            {
+                Owner = this
+            };
+
+        editor.ShowDialog();
+
+        if (editor.HasChanges)
+        {
+            await RefreshTopologyAsync();
+        }
+    }
+
+    private MapLocationVisual LocationVisual(
+        Guid locationId)
+    {
+        MapLocationVisual visual;
+
+        return _locationVisualsById.TryGetValue(
+            locationId,
+            out visual)
+            ? visual
+            : null;
+    }
+
+    private Guid? LocationIdFromElement(
+        object sender)
+    {
+        var element =
+            sender as FrameworkElement;
+
+        return element != null &&
+               element.Tag is Guid
+            ? (Guid?)((Guid)element.Tag)
+            : null;
+    }
+
+    private Guid? LocationIdFromMenuItem(
+        object sender)
+    {
+        var menuItem =
+            sender as MenuItem;
+
+        var target =
+            menuItem == null
+                ? null
+                : menuItem.Tag
+                    as FrameworkElement;
+
+        return target != null &&
+               target.Tag is Guid
+            ? (Guid?)((Guid)target.Tag)
+            : null;
+    }
+
+    private void SelectLocation(
+        Guid locationId)
+    {
+        _highlightedDeviceId = null;
+        _selectedDeviceId = null;
+        _selectedPhysicalLinkId = null;
+        _selectedLocationId =
+            locationId;
+
+        UpdateLocationSelectionPresentation();
+        ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
+    }
+
+    private async void OnMapLocationMouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var locationId =
+            LocationIdFromElement(
+                sender);
+
+        if (!locationId.HasValue)
+        {
+            return;
+        }
+
+        var visual =
+            LocationVisual(
+                locationId.Value);
+
+        if (visual == null)
+        {
+            return;
+        }
+
+        SelectLocation(
+            locationId.Value);
+
+        if (e.ClickCount >= 2)
+        {
+            _dragLocationVisual = null;
+            _locationDragMoved = false;
+
+            if (visual.Header.IsMouseCaptured)
+            {
+                visual.Header.ReleaseMouseCapture();
+            }
+
+            e.Handled = true;
+
+            await OpenLocationTopologyEditorAsync(
+                locationId.Value);
+
+            return;
+        }
+
+        if (visual.IsLocked)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        _dragLocationVisual =
+            visual;
+
+        _locationDragStartPoint =
+            e.GetPosition(
+                MapCanvas);
+
+        _locationDragStartLeft =
+            LocationLeft(
+                visual);
+
+        _locationDragStartTop =
+            LocationTop(
+                visual);
+
+        _locationDragMoved = false;
+
+        _locationDragMovesDevices =
+            (Keyboard.Modifiers &
+             ModifierKeys.Shift) ==
+            ModifierKeys.Shift;
+
+        _locationDragDeviceStarts.Clear();
+
+        if (_locationDragMovesDevices)
+        {
+            CaptureLocationDeviceStarts(
+                locationId.Value);
+        }
+
+        visual.Header.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private async void OnMapLocationBodyMouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var locationId =
+            LocationIdFromElement(
+                sender);
+
+        if (!locationId.HasValue)
+        {
+            return;
+        }
+
+        SelectLocation(
+            locationId.Value);
+
+        if (e.ClickCount >= 2)
+        {
+            await OpenLocationTopologyEditorAsync(
+                locationId.Value);
+        }
+
+        e.Handled = true;
+    }
+
+    private void OnMapLocationMouseRightButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var locationId =
+            LocationIdFromElement(
+                sender);
+
+        if (!locationId.HasValue)
+        {
+            return;
+        }
+
+        SelectLocation(
+            locationId.Value);
+    }
+
+    private void OnMapLocationMouseMove(
+        object sender,
+        MouseEventArgs e)
+    {
+        var visual =
+            _dragLocationVisual;
+
+        if (visual == null ||
+            e.LeftButton !=
+                MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        var current =
+            e.GetPosition(
+                MapCanvas);
+
+        var deltaX =
+            current.X -
+            _locationDragStartPoint.X;
+
+        var deltaY =
+            current.Y -
+            _locationDragStartPoint.Y;
+
+        if (!_locationDragMoved &&
+            Math.Abs(deltaX) <
+                SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(deltaY) <
+                SystemParameters.MinimumVerticalDragDistance)
+        {
+            return;
+        }
+
+        _locationDragMoved = true;
+
+        var canvasWidth =
+            MapCanvas.ActualWidth > 0.0
+                ? MapCanvas.ActualWidth
+                : MapCanvas.Width;
+
+        var canvasHeight =
+            MapCanvas.ActualHeight > 0.0
+                ? MapCanvas.ActualHeight
+                : MapCanvas.Height;
+
+        var left =
+            Math.Max(
+                0.0,
+                Math.Min(
+                    Math.Max(
+                        0.0,
+                        canvasWidth -
+                        visual.Border.Width),
+                    _locationDragStartLeft +
+                    deltaX));
+
+        var top =
+            Math.Max(
+                0.0,
+                Math.Min(
+                    Math.Max(
+                        0.0,
+                        canvasHeight -
+                        visual.Border.Height),
+                    _locationDragStartTop +
+                    deltaY));
+
+        var actualDeltaX =
+            left -
+            _locationDragStartLeft;
+
+        var actualDeltaY =
+            top -
+            _locationDragStartTop;
+
+        Canvas.SetLeft(
+            visual.Border,
+            left);
+
+        Canvas.SetTop(
+            visual.Border,
+            top);
+
+        if (_locationDragMovesDevices)
+        {
+            foreach (var pair in
+                _locationDragDeviceStarts)
+            {
+                Canvas.SetLeft(
+                    pair.Key.Border,
+                    pair.Value.X +
+                    actualDeltaX);
+
+                Canvas.SetTop(
+                    pair.Key.Border,
+                    pair.Value.Y +
+                    actualDeltaY);
+            }
+
+            UpdateLinksForCurrentNodePositions();
+        }
+
+        e.Handled = true;
+    }
+
+    private void OnMapLocationMouseLeftButtonUp(
+        object sender,
+        MouseButtonEventArgs e)
+    {
+        var visual =
+            _dragLocationVisual;
+
+        if (visual == null)
+        {
+            return;
+        }
+
+        _dragLocationVisual = null;
+
+        if (visual.Header.IsMouseCaptured)
+        {
+            visual.Header.ReleaseMouseCapture();
+        }
+
+        if (_locationDragMoved)
+        {
+            TrySaveLocationLayout(
+                visual);
+
+            if (_locationDragMovesDevices)
+            {
+                foreach (var node in
+                    _locationDragDeviceStarts.Keys)
+                {
+                    TrySaveDeviceLayout(
+                        node);
+                }
+            }
+        }
+
+        _locationDragMoved = false;
+        _locationDragMovesDevices = false;
+        _locationDragDeviceStarts.Clear();
+
+        e.Handled = true;
+    }
+
+    private void CaptureLocationDeviceStarts(
+        Guid locationId)
+    {
+        if (_lastMapSnapshot == null)
+        {
+            return;
+        }
+
+        var includedLocations =
+            DescendantLocationIds(
+                locationId);
+
+        includedLocations.Add(
+            locationId);
+
+        foreach (var node in
+            _lastMapSnapshot.Nodes)
+        {
+            if (!node.DeviceId.HasValue ||
+                !node.LocationId.HasValue ||
+                !includedLocations.Contains(
+                    node.LocationId.Value))
+            {
+                continue;
+            }
+
+            MapNodeVisual visual;
+
+            if (!_nodeVisualsByIdentity.TryGetValue(
+                    NodeIdentity(node),
+                    out visual) ||
+                visual.IsLocked)
+            {
+                continue;
+            }
+
+            _locationDragDeviceStarts[
+                visual] =
+                new Point(
+                    NodeLeft(
+                        visual),
+                    NodeTop(
+                        visual));
+        }
+    }
+
+    private HashSet<Guid> DescendantLocationIds(
+        Guid locationId)
+    {
+        var result =
+            new HashSet<Guid>();
+
+        if (_lastMapSnapshot == null)
+        {
+            return result;
+        }
+
+        var pending =
+            new Queue<Guid>();
+
+        pending.Enqueue(
+            locationId);
+
+        while (pending.Count > 0)
+        {
+            var parentId =
+                pending.Dequeue();
+
+            foreach (var child in
+                _lastMapSnapshot.Locations
+                    .Where(
+                        item =>
+                            item.ParentLocationId ==
+                            parentId))
+            {
+                if (result.Add(
+                        child.Id))
+                {
+                    pending.Enqueue(
+                        child.Id);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private void OnMapLocationResizeDragDelta(
+        object sender,
+        DragDeltaEventArgs e)
+    {
+        var locationId =
+            LocationIdFromElement(
+                sender);
+
+        if (!locationId.HasValue)
+        {
+            return;
+        }
+
+        var visual =
+            LocationVisual(
+                locationId.Value);
+
+        if (visual == null ||
+            visual.IsLocked ||
+            visual.IsCollapsed)
+        {
+            return;
+        }
+
+        visual.ExpandedWidth =
+            Math.Max(
+                _locationMinWidth,
+                visual.ExpandedWidth +
+                e.HorizontalChange);
+
+        visual.ExpandedHeight =
+            Math.Max(
+                _locationMinHeight,
+                visual.ExpandedHeight +
+                e.VerticalChange);
+
+        UpdateLocationVisualState(
+            visual);
+
+        e.Handled = true;
+    }
+
+    private void OnMapLocationResizeDragCompleted(
+        object sender,
+        DragCompletedEventArgs e)
+    {
+        var locationId =
+            LocationIdFromElement(
+                sender);
+
+        if (!locationId.HasValue)
+        {
+            return;
+        }
+
+        var visual =
+            LocationVisual(
+                locationId.Value);
+
+        if (visual != null &&
+            !visual.IsLocked &&
+            !visual.IsCollapsed)
+        {
+            TrySaveLocationLayout(
+                visual);
+        }
+
+        e.Handled = true;
+    }
+
+    private void OnMapLocationCollapseClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var locationId =
+            LocationIdFromElement(
+                sender);
+
+        if (!locationId.HasValue)
+        {
+            return;
+        }
+
+        ToggleLocationCollapsed(
+            locationId.Value);
+
+        e.Handled = true;
+    }
+
+    private void ToggleLocationCollapsed(
+        Guid locationId)
+    {
+        var visual =
+            LocationVisual(
+                locationId);
+
+        if (visual == null)
+        {
+            return;
+        }
+
+        visual.IsCollapsed =
+            !visual.IsCollapsed;
+
+        UpdateLocationVisualState(
+            visual);
+
+        TrySaveLocationLayout(
+            visual);
+    }
+
+    private void ToggleLocationLocked(
+        Guid locationId,
+        bool? locked = null)
+    {
+        var visual =
+            LocationVisual(
+                locationId);
+
+        if (visual == null)
+        {
+            return;
+        }
+
+        visual.IsLocked =
+            locked ??
+            !visual.IsLocked;
+
+        UpdateLocationVisualState(
+            visual);
+
+        TrySaveLocationLayout(
+            visual);
+
+        UpdateSelectedLayoutControl();
+    }
+
+    private void OnMapLocationContextMenuOpened(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var menu =
+            sender as ContextMenu;
+
+        var target =
+            menu == null
+                ? null
+                : menu.Tag
+                    as FrameworkElement;
+
+        if (target == null ||
+            !(target.Tag is Guid) ||
+            menu.Items.Count < 6)
+        {
+            return;
+        }
+
+        var visual =
+            LocationVisual(
+                (Guid)target.Tag);
+
+        if (visual == null)
+        {
+            return;
+        }
+
+        var edit =
+            menu.Items[0]
+                as MenuItem;
+
+        var collapse =
+            menu.Items[2]
+                as MenuItem;
+
+        var lockItem =
+            menu.Items[3]
+                as MenuItem;
+
+        var delete =
+            menu.Items[5]
+                as MenuItem;
+
+        if (edit != null)
+        {
+            edit.Header =
+                UiText.Get(
+                    "MapLocationEdit");
+        }
+
+        if (collapse != null)
+        {
+            collapse.Header =
+                UiText.Get(
+                    visual.IsCollapsed
+                        ? "MapLocationExpand"
+                        : "MapLocationCollapse");
+        }
+
+        if (lockItem != null)
+        {
+            lockItem.Header =
+                UiText.Get(
+                    visual.IsLocked
+                        ? "MapLocationUnlock"
+                        : "MapLocationLock");
+        }
+
+        if (delete != null)
+        {
+            delete.Header =
+                UiText.Get(
+                    "LocationTopologyDelete");
+        }
+    }
+
+    private async void OnMapLocationContextEditClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var locationId =
+            LocationIdFromMenuItem(
+                sender);
+
+        if (locationId.HasValue)
+        {
+            await OpenLocationTopologyEditorAsync(
+                locationId.Value);
+        }
+    }
+
+    private void OnMapLocationContextCollapseClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var locationId =
+            LocationIdFromMenuItem(
+                sender);
+
+        if (locationId.HasValue)
+        {
+            ToggleLocationCollapsed(
+                locationId.Value);
+        }
+    }
+
+    private void OnMapLocationContextLockClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var locationId =
+            LocationIdFromMenuItem(
+                sender);
+
+        if (locationId.HasValue)
+        {
+            ToggleLocationLocked(
+                locationId.Value);
+        }
+    }
+
+    private async void OnMapLocationContextDeleteClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var locationId =
+            LocationIdFromMenuItem(
+                sender);
+
+        if (locationId.HasValue)
+        {
+            await DeleteLocationFromMapAsync(
+                locationId.Value);
+        }
+    }
+
+    private async Task DeleteLocationFromMapAsync(
+        Guid locationId)
+    {
+        var location =
+            _lastMapSnapshot == null
+                ? null
+                : _lastMapSnapshot.Locations
+                    .FirstOrDefault(
+                        item =>
+                            item.Id ==
+                            locationId);
+
+        if (location == null)
+        {
+            return;
+        }
+
+        var answer =
+            MessageBox.Show(
+                this,
+                UiText.Format(
+                    "LocationTopologyDeleteConfirm",
+                    location.Name),
+                UiText.Get(
+                    "LocationTopologyWindowTitle"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No);
+
+        if (answer !=
+            MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            _locationTopologyService.DeleteLocation(
+                locationId);
+
+            _selectedLocationId = null;
+            _persistedLocationLayouts.Remove(
+                locationId);
+
+            await RefreshTopologyAsync();
+        }
+        catch (Exception error)
+        {
+            Trace.TraceError(
+                "LOCATION_MAP_DELETE_FAILED " +
+                error);
+
+            MessageBox.Show(
+                this,
+                UiText.Get(
+                    "LocationTopologyDeleteBlocked"),
+                UiText.Get(
+                    "LocationTopologyWindowTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 
@@ -3371,8 +5197,22 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        if (_suppressLockSelectedChange ||
-            !_selectedDeviceId.HasValue)
+        if (_suppressLockSelectedChange)
+        {
+            return;
+        }
+
+        if (_selectedLocationId.HasValue)
+        {
+            ToggleLocationLocked(
+                _selectedLocationId.Value,
+                MapLockSelectedCheckBox.IsChecked ==
+                    true);
+
+            return;
+        }
+
+        if (!_selectedDeviceId.HasValue)
         {
             return;
         }
@@ -3521,6 +5361,7 @@ public partial class MainWindow : Window
         _selectedPhysicalLinkId =
             physicalLinkId;
 
+        _selectedLocationId = null;
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -3560,6 +5401,7 @@ public partial class MainWindow : Window
         _selectedPhysicalLinkId =
             (Guid)element.Tag;
 
+        _selectedLocationId = null;
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -3664,6 +5506,7 @@ public partial class MainWindow : Window
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
         _selectedPhysicalLinkId = null;
+        _selectedLocationId = null;
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
@@ -3672,6 +5515,17 @@ public partial class MainWindow : Window
 
     private void ShowSelectedDiagnostic()
     {
+        if (_selectedLocationId.HasValue)
+        {
+            if (ShowLocationDiagnostic(
+                    _selectedLocationId.Value))
+            {
+                return;
+            }
+
+            _selectedLocationId = null;
+        }
+
         if (_lastDiagnosticSnapshot == null)
         {
             ClearDiagnosticPanel(
@@ -3723,6 +5577,126 @@ public partial class MainWindow : Window
 
         ClearDiagnosticPanel(
             "DiagnosticNothingSelected");
+    }
+
+    private bool ShowLocationDiagnostic(
+        Guid locationId)
+    {
+        if (_lastMapSnapshot == null)
+        {
+            return false;
+        }
+
+        var location =
+            _lastMapSnapshot.Locations
+                .FirstOrDefault(
+                    item =>
+                        item.Id ==
+                        locationId);
+
+        if (location == null)
+        {
+            return false;
+        }
+
+        var byId =
+            _lastMapSnapshot.Locations
+                .ToDictionary(
+                    item => item.Id);
+
+        var visual =
+            LocationVisual(
+                locationId);
+
+        var directDevices =
+            _lastMapSnapshot.Nodes.Count(
+                item =>
+                    item.LocationId ==
+                    locationId);
+
+        var childLocations =
+            _lastMapSnapshot.Locations.Count(
+                item =>
+                    item.ParentLocationId ==
+                    locationId);
+
+        DiagnosticStatusText.Text =
+            UiText.Get(
+                "MapLocationSelectedStatus");
+
+        DiagnosticElementTitleText.Text =
+            location.Name;
+
+        DiagnosticElementSubtitleText.Text =
+            BuildLocationPath(
+                location,
+                byId);
+
+        DiagnosticPrimaryTitleText.Text =
+            UiText.Get(
+                "MapLocationDetailsTitle");
+
+        var fields =
+            new List<DiagnosticFieldRow>
+            {
+                new DiagnosticFieldRow(
+                    UiText.Get(
+                        "MapLocationDeviceCount"),
+                    directDevices.ToString(
+                        CultureInfo.CurrentCulture)),
+                new DiagnosticFieldRow(
+                    UiText.Get(
+                        "MapLocationChildCount"),
+                    childLocations.ToString(
+                        CultureInfo.CurrentCulture))
+            };
+
+        if (visual != null)
+        {
+            fields.Add(
+                new DiagnosticFieldRow(
+                    UiText.Get(
+                        "MapLocationState"),
+                    UiText.Get(
+                        visual.IsCollapsed
+                            ? "MapLocationStateCollapsed"
+                            : "MapLocationStateExpanded")));
+
+            fields.Add(
+                new DiagnosticFieldRow(
+                    UiText.Get(
+                        "MapLocationLockState"),
+                    UiText.Get(
+                        visual.IsLocked
+                            ? "MapLocationStateLocked"
+                            : "MapLocationStateUnlocked")));
+        }
+
+        DiagnosticFieldsList.ItemsSource =
+            fields;
+
+        DiagnosticSecondaryTitleText.Text =
+            UiText.Get(
+                "MapLocationDescriptionTitle");
+
+        DiagnosticSecondaryList.ItemsSource =
+            new[]
+            {
+                new DiagnosticTextRow(
+                    string.IsNullOrWhiteSpace(
+                        location.Description)
+                        ? UiText.Get(
+                            "MapLocationNoDescription")
+                        : location.Description)
+            };
+
+        DiagnosticTertiaryTitleText.Text =
+            string.Empty;
+
+        DiagnosticTertiaryList.ItemsSource =
+            new DiagnosticTextRow[0];
+
+        return true;
     }
 
     private void ClearDiagnosticPanel(
@@ -5126,6 +7100,53 @@ public partial class MainWindow : Window
         }
     }
 
+    private sealed class MapLocationVisual
+    {
+        public MapLocationVisual(
+            Border border,
+            FrameworkElement header,
+            TextBlock title,
+            TextBlock description,
+            Button collapseButton,
+            TextBlock lockBadge,
+            Thumb resizeThumb)
+        {
+            Border = border;
+            Header = header;
+            Title = title;
+            Description = description;
+            CollapseButton = collapseButton;
+            LockBadge = lockBadge;
+            ResizeThumb = resizeThumb;
+        }
+
+        public Border Border { get; }
+
+        public FrameworkElement Header { get; }
+
+        public TextBlock Title { get; }
+
+        public TextBlock Description { get; }
+
+        public Button CollapseButton { get; }
+
+        public TextBlock LockBadge { get; }
+
+        public Thumb ResizeThumb { get; }
+
+        public Guid LocationId { get; set; }
+
+        public Guid? ParentLocationId { get; set; }
+
+        public bool IsCollapsed { get; set; }
+
+        public bool IsLocked { get; set; }
+
+        public double ExpandedWidth { get; set; }
+
+        public double ExpandedHeight { get; set; }
+    }
+
     private sealed class MapNodeVisual
     {
         public MapNodeVisual(
@@ -5161,6 +7182,8 @@ public partial class MainWindow : Window
         public TextBlock LockBadge { get; }
 
         public Guid? DeviceId { get; set; }
+
+        public Guid? LocationId { get; set; }
 
         public bool IsManual { get; set; }
 
@@ -5399,6 +7422,61 @@ public partial class MainWindow : Window
         {
             throw new InvalidOperationException(
                 "Manual topology service is not configured.");
+        }
+    }
+
+    private sealed class EmptyLocationTopologyService :
+        ILocationTopologyService
+    {
+        public LocationTopologySnapshot GetSnapshot()
+        {
+            return new LocationTopologySnapshot(
+                new LocationTopologyLocation[0],
+                new LocationTopologyDevice[0]);
+        }
+
+        public Guid CreateLocation(
+            Guid? parentLocationId,
+            string name,
+            string description)
+        {
+            throw new InvalidOperationException(
+                "Location topology service is not configured.");
+        }
+
+        public void UpdateLocation(
+            Guid locationId,
+            Guid? parentLocationId,
+            string name,
+            string description)
+        {
+            throw new InvalidOperationException(
+                "Location topology service is not configured.");
+        }
+
+        public void DeleteLocation(
+            Guid locationId)
+        {
+            throw new InvalidOperationException(
+                "Location topology service is not configured.");
+        }
+
+        public void AssignDevice(
+            Guid deviceId,
+            Guid? locationId)
+        {
+            throw new InvalidOperationException(
+                "Location topology service is not configured.");
+        }
+    }
+
+    private sealed class EmptyMapLocationLayoutStore :
+        IMapLocationLayoutStore
+    {
+        public void SaveLocation(
+            Guid mapId,
+            MapLocationLayout locationLayout)
+        {
         }
     }
 

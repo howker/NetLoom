@@ -989,4 +989,168 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   <data name="ManualTopologySaveBeforeLeavingDevice" xml:space="preserve">
     <value>The device has unsaved changes. Save them before switching to Ports or Links?</value>
   </data>
+  <data name="LocationTopologyAction" xml:space="preserve">
+    <value>Locations</value>
+  </data>
+  <data name="LocationTopologyMapHint" xml:space="preserve">
+    <value>Create and arrange site/building/room/rack boundaries on the map.</value>
+  </data>
+  <data name="LocationTopologyWindowTitle" xml:space="preserve">
+    <value>Locations</value>
+  </data>
+  <data name="LocationTopologyTitle" xml:space="preserve">
+    <value>Locations</value>
+  </data>
+  <data name="LocationTopologyIntro" xml:space="preserve">
+    <value>Create nested physical locations and assign devices to them. The map keeps each location container layout independently.</value>
+  </data>
+  <data name="LocationTopologyInteractionHint" xml:space="preserve">
+    <value>Double-click a location to edit it. Delete asks for confirmation. On the map, drag the header to move the frame; Shift+drag moves the frame together with assigned devices.</value>
+  </data>
+  <data name="LocationTopologyClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="LocationTopologyLocationsTab" xml:space="preserve">
+    <value>Locations</value>
+  </data>
+  <data name="LocationTopologyDevicesTab" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="LocationTopologyLocationsList" xml:space="preserve">
+    <value>Location hierarchy</value>
+  </data>
+  <data name="LocationTopologyName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="LocationTopologyParent" xml:space="preserve">
+    <value>Parent location</value>
+  </data>
+  <data name="LocationTopologyDescription" xml:space="preserve">
+    <value>Comment / description</value>
+  </data>
+  <data name="LocationTopologyNew" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="LocationTopologyCreate" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="LocationTopologySave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="LocationTopologyDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="LocationTopologyEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="LocationTopologyDevicesList" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="LocationTopologySelectedDevice" xml:space="preserve">
+    <value>Selected device</value>
+  </data>
+  <data name="LocationTopologyDeviceLocation" xml:space="preserve">
+    <value>Primary location</value>
+  </data>
+  <data name="LocationTopologyAssign" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="LocationTopologyNoParent" xml:space="preserve">
+    <value>No parent</value>
+  </data>
+  <data name="LocationTopologyUnassigned" xml:space="preserve">
+    <value>Not assigned</value>
+  </data>
+  <data name="LocationTopologyNoDeviceSelected" xml:space="preserve">
+    <value>Select a device.</value>
+  </data>
+  <data name="LocationTopologyStatusReady" xml:space="preserve">
+    <value>Ready.</value>
+  </data>
+  <data name="LocationTopologyCreated" xml:space="preserve">
+    <value>Location created.</value>
+  </data>
+  <data name="LocationTopologySaved" xml:space="preserve">
+    <value>Location saved.</value>
+  </data>
+  <data name="LocationTopologyDeleted" xml:space="preserve">
+    <value>Location deleted.</value>
+  </data>
+  <data name="LocationTopologyDeviceAssigned" xml:space="preserve">
+    <value>Device location updated.</value>
+  </data>
+  <data name="LocationTopologyValidationName" xml:space="preserve">
+    <value>Enter a location name.</value>
+  </data>
+  <data name="LocationTopologyOperationFailed" xml:space="preserve">
+    <value>The location operation could not be completed. Details were written to the log.</value>
+  </data>
+  <data name="LocationTopologyDeleteBlocked" xml:space="preserve">
+    <value>The location cannot be deleted while it has child locations or assigned devices.</value>
+  </data>
+  <data name="LocationTopologyDeleteConfirm" xml:space="preserve">
+    <value>Delete location “{0}”?</value>
+  </data>
+  <data name="MapLocationNoDescription" xml:space="preserve">
+    <value>No description</value>
+  </data>
+  <data name="MapLocationToolTip" xml:space="preserve">
+    <value>{0}
+{1}
+Drag the header to move the frame. Shift+drag moves assigned devices too.</value>
+  </data>
+  <data name="MapLocationCollapse" xml:space="preserve">
+    <value>Collapse</value>
+  </data>
+  <data name="MapLocationExpand" xml:space="preserve">
+    <value>Expand</value>
+  </data>
+  <data name="MapLocationLock" xml:space="preserve">
+    <value>Lock position</value>
+  </data>
+  <data name="MapLocationUnlock" xml:space="preserve">
+    <value>Unlock position</value>
+  </data>
+  <data name="MapLocationEdit" xml:space="preserve">
+    <value>Edit location</value>
+  </data>
+  <data name="MapLocationLockedBadge" xml:space="preserve">
+    <value>Locked</value>
+  </data>
+  <data name="MapLocationSelectedStatus" xml:space="preserve">
+    <value>Location selected.</value>
+  </data>
+  <data name="MapLocationDetailsTitle" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="MapLocationDeviceCount" xml:space="preserve">
+    <value>Direct devices</value>
+  </data>
+  <data name="MapLocationChildCount" xml:space="preserve">
+    <value>Child locations</value>
+  </data>
+  <data name="MapLocationState" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="MapLocationLockState" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="MapLocationStateCollapsed" xml:space="preserve">
+    <value>Collapsed</value>
+  </data>
+  <data name="MapLocationStateExpanded" xml:space="preserve">
+    <value>Expanded</value>
+  </data>
+  <data name="MapLocationStateLocked" xml:space="preserve">
+    <value>Locked</value>
+  </data>
+  <data name="MapLocationStateUnlocked" xml:space="preserve">
+    <value>Unlocked</value>
+  </data>
+  <data name="MapLocationDescriptionTitle" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="LocationTopologyDeviceSummary" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
 </root>

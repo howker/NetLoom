@@ -35,6 +35,8 @@
     <Thickness x:Key="NetLoom.Thickness.ListRow">0,2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodeMeta">0,4,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodeSecondary">0,5,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapLocationHeader">10,4</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapLocationDescription">12,8,20,12</Thickness>
 
     <Thickness x:Key="NetLoom.Thickness.BorderThin">1</Thickness>
     <Thickness x:Key="NetLoom.Thickness.BorderFocus">3</Thickness>
@@ -45,6 +47,7 @@
     <CornerRadius x:Key="NetLoom.Radius.Control">4</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.Panel">6</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.MapNode">6</CornerRadius>
+    <CornerRadius x:Key="NetLoom.Radius.MapLocation">8</CornerRadius>
 
     <sys:Double x:Key="NetLoom.Control.MinHeight">30</sys:Double>
     <sys:Double x:Key="NetLoom.Window.Width">1100</sys:Double>
@@ -59,6 +62,13 @@
     <sys:Double x:Key="NetLoom.Map.VirtualOriginY">500000</sys:Double>
     <sys:Double x:Key="NetLoom.Map.NodeWidth">190</sys:Double>
     <sys:Double x:Key="NetLoom.Map.NodeHeight">108</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationDefaultWidth">560</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationDefaultHeight">360</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationMinWidth">240</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationMinHeight">140</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationHeaderHeight">36</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationContentPadding">48</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationResizeThumbSize">16</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomMin">0.01</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomMax">5.0</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomStep">0.1</sys:Double>

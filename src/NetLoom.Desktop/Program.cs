@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using NetLoom.Application.Locations;
 using NetLoom.Application.Topology;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
@@ -67,11 +68,18 @@ namespace NetLoom.Desktop
                     new SqliteStpObservationStore(
                         connectionFactory);
 
+                var locationRepository =
+                    new SqliteLocationRepository(
+                        connectionFactory);
+
+                var mapLayoutStore =
+                    new SqliteMapLayoutStore(
+                        connectionFactory);
+
                 var mapProvider =
                     new MaterializedMapSnapshotProvider(
                         topologyRepository,
-                        new SqliteLocationRepository(
-                            connectionFactory),
+                        locationRepository,
                         new MaterializedTopologyMapProjector());
 
                 var alertProvider =
@@ -95,12 +103,15 @@ namespace NetLoom.Desktop
                             refreshProvider,
                             new SqliteMacIpLookupReader(
                                 connectionFactory),
-                            new SqliteMapLayoutStore(
-                                connectionFactory),
+                            mapLayoutStore,
                             new ManualTopologyService(
                                 topologyRepository,
                                 new SqliteManualTopologyAuditStore(
-                                    connectionFactory))));
+                                    connectionFactory)),
+                            new LocationTopologyService(
+                                locationRepository,
+                                topologyRepository),
+                            mapLayoutStore));
 
                 hostLog.Info(
                     "HOST_STOPPED exitCode=" +
