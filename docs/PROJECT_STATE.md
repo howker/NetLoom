@@ -6,23 +6,25 @@
 
 ## Текущее состояние
 
-Sprint 40 is closed and pushed through documentation commit `4f2e2e566cb6bdda2d94645a1d9994409e431cb1`. The monitoring-control path is technically regressed and operator-accepted; `NetLoom.Engine` remains the only polling/scheduling host and the repository was clean at closure.
+Sprint 41 is closed and pushed. The glance-readable topology outcome is technically regressed and operator-accepted on the isolated 8-device / 7-link stand; the repository was clean after the accepted visual-fixup commit.
 
-On 2026-09-19 the user explicitly approved the next committed product sequence, recorded in `BACKLOG.md` and ADR-071:
+The accepted map-card grammar is now compact and semantic: 160x56 node cards show the full wrapped name and a vector icon for the real NetLoom device category, while detailed metadata stays in the diagnostic panel. A left stripe shows only evidence-backed node degradation state; unknown/incomplete evidence remains neutral. Selection is explicitly separate from state: the selected node uses a blue stripe plus a full blue outline.
 
-1. Sprint 41 — glance-readable topology.
-2. Sprint 42 — safe operator-driven network discovery.
+The same operator acceptance also closed link-readability friction that appeared only after the first Sprint 41 implementation was exercised at the normal 66% zoom. Neutral links are now thicker, higher-contrast and rounded, while the Sprint 39 confidence dash, freshness opacity and evidence-backed operational-state colors remain intact. No generic online/offline semantics, directed arrows, schema migration or new dependency were introduced.
+
+The committed product sequence remains unchanged:
+
+1. Sprint 41 — glance-readable topology — complete.
+2. Sprint 42 — safe operator-driven network discovery — next.
 3. Sprint 43 — multi-target monitoring inside one Engine process.
 4. Sprint 44 — PNG + CSV export.
 5. Sprint 45 — full acceptance/hardening on the author's real network.
 
-The sequence reflects two pieces of real evidence rather than speculative scale assumptions: repeated card-title readability friction is already recorded, and the author's operational network is substantially larger than ten devices, so Sprint 40 single-target monitoring is insufficient for the eventual real-network workflow. Sprint 43 therefore preserves one Desktop-owned Engine process and moves multi-target scheduling inside Engine; it does not create one process per device.
+Optical degradation is still parallel evidence gathering rather than committed product work. Existing hardware confirms optics but not trustworthy DDM telemetry: MikroTik CSS106 exposes SFP identity while current Rx/Tx/temperature readings remain unconfirmed; MOXA PT-7728 exposes SNMP/LLDP but no DDM surface has yet been found; EDS-408A-SS-SC uses fixed optical ports; unmanaged media converters do not provide their own management telemetry.
 
-Optical degradation is not in the committed sequence yet. Existing hardware confirms optics but not trustworthy DDM telemetry: MikroTik CSS106 exposes SFP identity while current Rx/Tx/temperature readings remain unconfirmed; MOXA PT-7728 exposes SNMP/LLDP but no DDM surface has yet been found; EDS-408A-SS-SC uses fixed optical ports; unmanaged media converters do not provide their own management telemetry. A read-only/offline hardware capability audit may continue in parallel and can promote optical degradation only after real sensor/identity evidence exists.
+MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on all known MOXA devices at the current site.
 
-MOXA Turbo Ring/Turbo Chain is not a current-site requirement: it is disabled on all known MOXA devices at the site. No Turbo Ring adapter is planned in the current sequence.
-
-Next gate: commit the accepted sequence/ADR, then begin Sprint 41.
+Next gate: begin Sprint 42 from the existing discovery implementation and first audit its actual Engine/Application boundaries, credential-profile iteration, progress/cancellation shape and rate-limiting gaps before changing product code.
 
 ## Основа проекта
 
