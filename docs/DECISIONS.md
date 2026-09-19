@@ -1035,3 +1035,44 @@ This persistence is bounded current topology/diagnostic metadata, not metric/tim
 - management IP can be shown without violating the rule that IP is not DeviceId;
 - the materialized schema advances to Migration020 for two nullable metadata columns only;
 - future presentation layers inherit the same evidence rule and must not repair missing protocol facts with vendor-name heuristics.
+
+## ADR-071 — post-Sprint-40 sequence and one-Engine multi-target boundary
+
+**Status:** Accepted.
+
+**Date:** 2026-09-19.
+
+### Context
+
+Sprint 40 closed the single-target monitoring-control workflow and the previous committed sequence is exhausted. Operator acceptance also repeated a real map-card readability problem: long device names can be ellipsized and similar nodes become harder to distinguish.
+
+The author's operational network is substantially larger than ten devices. Therefore single-target monitoring is sufficient as the Sprint 40 control foundation but is not sufficient for a complete real-network deployment/acceptance workflow. The next sequence must include multi-target monitoring before the full real-network acceptance step.
+
+The author's site also contains optical links and real MikroTik/MOXA equipment, but current evidence does not yet prove trustworthy Rx/Tx/temperature DDM values through the management plane. MOXA Turbo Ring/Turbo Chain is disabled on all known MOXA devices at the current site.
+
+### Decision
+
+The next committed sequence is:
+
+1. Sprint 41 — glance-readable topology;
+2. Sprint 42 — safe operator-driven network discovery;
+3. Sprint 43 — multi-target monitoring;
+4. Sprint 44 — PNG + CSV export;
+5. Sprint 45 — full acceptance/hardening on the author's real network.
+
+Sprint 43 preserves the Sprint 40 host/process boundary: one Desktop-owned `NetLoom.Engine` process is the monitoring host for many targets. Desktop must not launch one Engine process per device. The Engine scheduler will own the target set and provide bounded concurrency, per-device cadence, startup jitter, backpressure/cancellation, and protection against overlapping polls of the same target. Concrete concurrency defaults are selected conservatively and validated on the real network; maximum parallelism is not itself a product goal.
+
+Sprint 42 keeps discovery in Engine, exposes progressive/cancellable results to Desktop, rate-limits probing, and uses one explicit SNMP profile by default. Discovery must not guess/iterate credentials and must not create `PhysicalLink` directly.
+
+Optical capability investigation remains parallel evidence gathering, not a numbered Sprint and not a gate for Sprints 41–45. Optical degradation can be promoted only after real hardware demonstrates trustworthy sensor values plus sufficient port/transceiver identity to avoid false time-series continuity after hardware replacement.
+
+No MOXA Turbo Ring/Turbo Chain adapter is planned for the current site while that protection is disabled. Industrial protection protocol work requires new real deployment evidence.
+
+### Consequences
+
+- Sprint 41 is the next product Sprint and closes already-recorded visual friction before larger discovery/monitoring work.
+- Sprint 42 makes the existing discovery capability operator-usable without introducing credential guessing or uncontrolled scanning.
+- Sprint 43 is a scheduler/core change under one operator outcome; internal implementation work does not receive lettered/half Sprint numbers.
+- Sprint 44 completes the assess-and-hand-off workflow before the real-network acceptance run.
+- Sprint 45 exercises the complete workflow once; subsequent committed work is selected from real `FRICTION_LOG.md` evidence.
+- optical degradation and industrial protection adapters remain evidence-driven candidates rather than promises.

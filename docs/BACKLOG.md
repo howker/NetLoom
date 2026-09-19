@@ -54,11 +54,11 @@
 
 - [ ] Topology snapshots / машина времени.
 - [ ] Diff карты до/после инцидента.
-- [ ] SFP/DDM optical health.
+- [ ] SFP/DDM optical health — candidate after the parallel real-hardware capability audit; not part of the current committed sequence.
 - [ ] SNMP trap ingestion.
 - [ ] Syslog ingestion.
-- [ ] Экспорт схемы объекта в PNG/PDF.
-- [ ] Инвентаризация и экспорт CSV.
+- [ ] Export site diagram — PNG is committed in Sprint 44; PDF remains a later candidate only on real request.
+- [ ] Inventory and CSV export — committed in Sprint 44.
 - [ ] Выявление вероятного unmanaged switch по нескольким MAC за портом.
 
 ## Product readiness — дёшево сейчас
@@ -97,7 +97,7 @@
 - [x] Surface raw-expired evidence state in localized evidence UI when that detail panel is implemented — completed in Sprint 35 selected-element diagnostics.
 - [ ] Configurable SNMP WALK varbind limit with explicit step failure before unbounded memory growth.
 - [ ] Propagate CancellationToken into the active poll/collector path; cancellation must not become a failed protocol step.
-- [ ] Multi-device scheduler: bounded parallelism, per-device cadence and startup jitter.
+- [ ] Multi-device scheduler — committed as Sprint 43 below: one Engine multi-target host with bounded parallelism, per-device cadence, startup jitter and backpressure.
 - [x] Clarify/rename fundamental cycle-basis primitive before exposing user-facing named rings.
 ## P0 - Desktop operational reliability before the next product feature
 
@@ -220,13 +220,49 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Acceptance: monitoring-control foundation `375f036d04947e83c89ab180bcb74f912a069085`; Desktop process adapter `30563b44fda3253f5f101934616b4f97ad7898d5`; WPF monitoring controls `2df981f6766de0864ce6021eff60ca6f700d1c42`. Closure regression passed Modern 135/135, Unit 304/304, Integration 111/111 and Snapshots 7/7, repository text-integrity, `linux-x64` publish and a real WSL `runtime-smoke`. Operator acceptance on an isolated 8-device / 7-link stand passed Start, Poll now, selection changes without active-target drift, topology refresh, Stop, manual-address polling for a device without observed `management_address`, session-only reset after restart, and Desktop-close orphan prevention.
   - No schema migration was added. A repeated UI-friction observation remains open: long device names can be ellipsized in map cards; it is recorded for the `Glance-readable topology` candidate and does not invalidate the accepted monitoring outcome.
 
+- [ ] Sprint 41 — glance-readable topology.
+  - Operator outcome: identify the device category and distinguish long device names at a glance without reading a dense card.
+  - Fix the repeated long-title ellipsis friction first; reduce card content to the name and only a genuinely useful short secondary line, leaving detailed evidence in the existing diagnostic panel.
+  - Add scalable WPF vector iconography for the categories NetLoom actually knows: `Unknown`, `MediaConverter`, `UnmanagedSwitch`, `OpticalConverter`, and `PassiveNetworkEquipment`. Unknown remains visually neutral; category is never guessed from name, MAC count, ports, vendor, or other heuristics.
+  - Reuse existing evidence-backed operational semantics for border/status emphasis. Do not invent generic online/offline health, directed-link arrows, per-card shadow effects, or new topology semantics.
+  - Acceptance includes measure/layout behavior for long names and operator acceptance on the 8-device stand where similar long names are distinguishable without hover.
+
+- [ ] Sprint 42 — safe operator-driven network discovery.
+  - Operator outcome: enter an authorized address range, watch devices appear as they are discovered, see progress, and stop discovery at any time.
+  - `NetLoom.Engine` remains the discovery host; WPF does not gain a second discovery/runtime path. Discovery reports incremental progress/candidates instead of returning only one final list.
+  - Add cancellation and conservative rate limiting with an explicit operator-visible scan summary/warning. Default behavior uses one explicit SNMP profile and must not guess or iterate credentials; any future multi-profile behavior requires separate explicit operator approval semantics.
+  - Live map assembly consumes discovered candidates incrementally through existing stable identity/reconciliation paths. Discovery does not create `PhysicalLink` directly; links remain LLDP/CDP/manual evidence.
+  - Keep the default TCP probe set bounded and management-oriented; do not turn discovery into a general port scanner.
+
+- [ ] Sprint 43 — multi-target monitoring in one Engine.
+  - Operator outcome: NetLoom continuously monitors all enabled/pollable devices instead of only one selected target.
+  - Preserve the Sprint 40 process boundary: Desktop owns one Engine monitoring process. Do not launch one Engine process per device.
+  - Extend the Engine scheduler to a target set with bounded concurrency, per-device cadence, startup jitter, backpressure, cancellation, and no overlapping poll for the same target. `async`/task usage is an implementation choice, not the acceptance metric.
+  - Start with conservative concurrency and measure on the author's real network; SNMP/UDP loss and timeout behavior take precedence over maximum throughput.
+  - Preserve stable `DeviceId` identity and existing credential/configuration boundaries; this Sprint is not a secrets/profile redesign.
+
+- [ ] Sprint 44 — export the site diagram and inventory.
+  - Operator outcome: export a readable site diagram and equipment list that can be handed to a colleague/customer after an assessment.
+  - Export the existing map to PNG at print-readable resolution and export inventory/interface data to CSV from the same coherent read-set used by the product.
+  - CSV is UTF-8 with BOM for reliable Excel use on Russian Windows. PNG/CSV are in scope; PDF is not.
+  - Export must not create a second topology interpretation or invent evidence absent from the map/diagnostic read path.
+
+- [ ] Sprint 45 — full acceptance on the author's real network.
+  - Operator outcome: run the complete workflow on the real network — discover, observe the map building, monitor many devices, diagnose, and export — without development-only workarounds.
+  - This is an acceptance/hardening Sprint, not speculative feature expansion. All real friction is recorded in `FRICTION_LOG.md`; fixes required to achieve the one accepted outcome remain inside Sprint 45 until operator acceptance passes.
+  - The next committed sequence is chosen only after this real-network evidence is reviewed.
+
+### Parallel evidence gathering — not a Sprint and not a gate for Sprints 41–45
+
+- Optical capability audit on existing hardware: MikroTik CSS106 confirms SFP identity but has not yet confirmed Rx/Tx/temperature DDM; MOXA PT-7728 confirms SNMP/LLDP but no DDM surface has yet been found; MOXA EDS-408A-SS-SC uses fixed optical ports; unmanaged optical/copper converters are not expected to expose their own SNMP sensors. Use a small offline/read-only audit utility from the development machine if deeper private-MIB inspection is needed.
+- Promote optical degradation into a future committed sequence only after real hardware exposes trustworthy sensor values and transceiver/port identity that can support a non-misleading time series.
+- MOXA Turbo Ring/Turbo Chain is explicitly not planned for the current site: it is disabled on all known MOXA devices there. Revisit industrial protection adapters only if a real deployment enables such protection or another evidenced need appears.
+
 ### Next candidates — not commitments
 
-- [ ] Glance-readable topology: fix repeated long-title/card readability friction, then add honest OT category iconography for the categories NetLoom actually knows (`Unknown`, `MediaConverter`, `UnmanagedSwitch`, `OpticalConverter`, `PassiveNetworkEquipment`). Extend existing evidence-backed operational styling rather than inventing online/offline health, and prefer inexpensive contrast/border depth over per-card shadow effects.
-- [ ] Live topology assembly: make first discovery/monitoring visibly incremental so nodes and links appear as evidence arrives, without introducing a second polling/runtime path in WPF.
 - [ ] Link evidence panel: from a selected physical link, show the concrete discovery evidence, endpoints/ports, freshness and repeated-observation context already present in the model/read path.
-- [ ] Optical degradation: collect and retain transceiver sensor history through a standard sensor path first, keep measured values/trends distinct from failure-date predictions, and isolate any vendor-private MIB support behind optional adapters driven by real hardware/client evidence.
-- [ ] Industrial protection adapters: evaluate standard MRP first; keep vendor-specific ring protocols outside the core and add them only from real deployment demand/equipment evidence.
+- [ ] Optical degradation after hardware evidence: retain trustworthy transceiver sensor history only after the parallel audit confirms real Rx/Tx/temperature data plus stable port/transceiver identity; keep measured trends distinct from failure-date predictions and isolate vendor-private MIB support behind optional adapters.
+- [ ] Industrial protection adapters only from real deployment evidence. Current-site MOXA Turbo Ring/Turbo Chain is disabled on all known devices, so no MOXA ring adapter is planned now; MRP or vendor-specific protection enters a future sequence only when actually enabled/needed.
 - [ ] External operator validation: after the realistic stand is stable, run at least one usability/acceptance session with an engineer who did not build NetLoom; keep internal operator acceptance and external validation as distinct evidence.
 - [ ] Persist operator monitoring preferences (target-address override and polling policy) across Desktop restarts after Sprint 40 acceptance establishes the final control surface; choose an application-configuration boundary without reclassifying manually entered addresses as observed topology metadata.
 - [ ] Extend the existing Sprint 36 calm semantic motion to one-shot operational/degradation state transitions only when a state actually changes. Preserve `Normal` / `Reduced` / `Off`, avoid perpetual/decorative animation, and keep direct pan/zoom immediate.

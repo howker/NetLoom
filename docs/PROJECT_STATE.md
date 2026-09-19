@@ -6,17 +6,23 @@
 
 ## Текущее состояние
 
-Sprint 40 — monitoring control from the UI — is technically complete and operator-accepted. The accepted implementation is represented by monitoring-control foundation commit `375f036d04947e83c89ab180bcb74f912a069085`, Desktop Engine-process adapter commit `30563b44fda3253f5f101934616b4f97ad7898d5`, and WPF monitoring-controls commit `2df981f6766de0864ce6021eff60ca6f700d1c42`.
+Sprint 40 is closed and pushed through documentation commit `4f2e2e566cb6bdda2d94645a1d9994409e431cb1`. The monitoring-control path is technically regressed and operator-accepted; `NetLoom.Engine` remains the only polling/scheduling host and the repository was clean at closure.
 
-`NetLoom.Engine` remains the only polling/scheduling host. WPF consumes the transport-neutral `NetLoom.Application` monitoring-control contract; `NetLoom.Desktop` owns the child Engine process, controls it through documented ASCII/invariant stdin/stdout markers and protects abrupt Desktop shutdown with a Windows kill-on-close Job Object. `Refresh topology` still uses the existing coherent `TopologyRefreshCoordinator` read path rather than a second Engine command.
+On 2026-09-19 the user explicitly approved the next committed product sequence, recorded in `BACKLOG.md` and ADR-071:
 
-The monitoring panel exposes the selected stable `DeviceId`, editable target address, active target, monitoring state, last successful Engine poll, last successful topology refresh and the existing polling-policy knobs. Observed `management_address` pre-fills the target when available, but a manual address can be used for the first poll or a session override without being persisted as observed topology metadata. A running monitoring session retains its active target when map selection changes. Policy values and manual target overrides intentionally remain session-only after restart.
+1. Sprint 41 — glance-readable topology.
+2. Sprint 42 — safe operator-driven network discovery.
+3. Sprint 43 — multi-target monitoring inside one Engine process.
+4. Sprint 44 — PNG + CSV export.
+5. Sprint 45 — full acceptance/hardening on the author's real network.
 
-Sprint 40 closure evidence is green: Modern 135/135, Unit 304/304, Integration 111/111 and Snapshots 7/7; repository text-integrity; `linux-x64` Engine publish; and a real WSL `runtime-smoke`. Focused operator acceptance on an isolated synthetic 8-device / 7-link topology passed Start, Poll now, selection changes without active-target drift, Refresh topology, Stop, manual-address polling for a device without observed `management_address`, session-only reset after restart, and Desktop-close orphan prevention. No Sprint 40 schema migration was added; `Migration020InterfaceIdentityAndManagementAddress` remains the current schema migration.
+The sequence reflects two pieces of real evidence rather than speculative scale assumptions: repeated card-title readability friction is already recorded, and the author's operational network is substantially larger than ten devices, so Sprint 40 single-target monitoring is insufficient for the eventual real-network workflow. Sprint 43 therefore preserves one Desktop-owned Engine process and moves multi-target scheduling inside Engine; it does not create one process per device.
 
-One UI-friction observation remains intentionally outside the accepted monitoring outcome: long device names can be ellipsized in map cards. The same class of card-text readability friction has now recurred in real operator use and is recorded in `docs/FRICTION_LOG.md`; `Glance-readable topology` is therefore a prominent next candidate, but no new Sprint is committed automatically.
+Optical degradation is not in the committed sequence yet. Existing hardware confirms optics but not trustworthy DDM telemetry: MikroTik CSS106 exposes SFP identity while current Rx/Tx/temperature readings remain unconfirmed; MOXA PT-7728 exposes SNMP/LLDP but no DDM surface has yet been found; EDS-408A-SS-SC uses fixed optical ports; unmanaged media converters do not provide their own management telemetry. A read-only/offline hardware capability audit may continue in parallel and can promote optical degradation only after real sensor/identity evidence exists.
 
-The previously discussed post-Sprint directions are now recorded under `Next candidates` in `docs/BACKLOG.md`: glance-readable OT category iconography/readability, live topology assembly, a link-evidence panel, optical-degradation history with standard-first/vendor-adapter boundaries, industrial protection/MRP adapters, external operator validation, and persistence of monitoring preferences. The committed sequence is exhausted after Sprint 40; selecting the next product Sprint requires an explicit user decision.
+MOXA Turbo Ring/Turbo Chain is not a current-site requirement: it is disabled on all known MOXA devices at the site. No Turbo Ring adapter is planned in the current sequence.
+
+Next gate: commit the accepted sequence/ADR, then begin Sprint 41.
 
 ## Основа проекта
 
