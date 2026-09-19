@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Threading;
 using NetLoom.Application.Discovery;
 
 namespace NetLoom.Protocols.Snmp.Discovery
@@ -12,7 +13,8 @@ namespace NetLoom.Protocols.Snmp.Discovery
     {
         public bool IsIcmpReachable(
             IPAddress address,
-            int timeoutMilliseconds)
+            int timeoutMilliseconds,
+            CancellationToken cancellationToken)
         {
             if (address == null)
             {
@@ -25,6 +27,8 @@ namespace NetLoom.Protocols.Snmp.Discovery
                     nameof(timeoutMilliseconds));
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             try
             {
                 using (var ping = new Ping())
@@ -32,6 +36,8 @@ namespace NetLoom.Protocols.Snmp.Discovery
                     var reply = ping.Send(
                         address,
                         timeoutMilliseconds);
+
+                    cancellationToken.ThrowIfCancellationRequested();
 
                     return reply != null &&
                         reply.Status == IPStatus.Success;
@@ -46,7 +52,8 @@ namespace NetLoom.Protocols.Snmp.Discovery
         public IReadOnlyList<int> FindOpenTcpPorts(
             IPAddress address,
             IReadOnlyList<int> ports,
-            int timeoutMilliseconds)
+            int timeoutMilliseconds,
+            CancellationToken cancellationToken)
         {
             if (address == null)
             {
@@ -68,6 +75,8 @@ namespace NetLoom.Protocols.Snmp.Discovery
 
             foreach (var port in ports)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (port < 1 || port > 65535)
                 {
                     throw new ArgumentOutOfRangeException(nameof(ports));
@@ -76,7 +85,8 @@ namespace NetLoom.Protocols.Snmp.Discovery
                 if (CanConnect(
                     address,
                     port,
-                    timeoutMilliseconds))
+                    timeoutMilliseconds,
+                    cancellationToken))
                 {
                     result.Add(port);
                 }
@@ -88,7 +98,8 @@ namespace NetLoom.Protocols.Snmp.Discovery
         private static bool CanConnect(
             IPAddress address,
             int port,
-            int timeoutMilliseconds)
+            int timeoutMilliseconds,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -105,8 +116,22 @@ namespace NetLoom.Protocols.Snmp.Discovery
                     using (var waitHandle =
                         asyncResult.AsyncWaitHandle)
                     {
-                        if (!waitHandle.WaitOne(
-                            timeoutMilliseconds))
+                        var signaled =
+                            WaitHandle.WaitAny(
+                                new[]
+                                {
+                                    waitHandle,
+                                    cancellationToken.WaitHandle
+                                },
+                                timeoutMilliseconds);
+
+                        if (signaled == 1)
+                        {
+                            throw new OperationCanceledException(
+                                cancellationToken);
+                        }
+
+                        if (signaled == WaitHandle.WaitTimeout)
                         {
                             client.Close();
                             return false;

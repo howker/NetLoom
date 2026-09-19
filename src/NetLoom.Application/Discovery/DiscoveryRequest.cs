@@ -11,9 +11,10 @@ namespace NetLoom.Application.Discovery
             IEnumerable<IPAddress> addresses,
             IEnumerable<IPAddress> exclusions,
             IEnumerable<int> tcpPorts,
-            IEnumerable<DiscoverySnmpProfile> snmpProfiles,
+            DiscoverySnmpProfile snmpProfile,
             int icmpTimeoutMilliseconds,
-            int tcpTimeoutMilliseconds)
+            int tcpTimeoutMilliseconds,
+            int interAddressDelayMilliseconds)
         {
             if (addresses == null)
             {
@@ -30,10 +31,8 @@ namespace NetLoom.Application.Discovery
                 throw new ArgumentNullException(nameof(tcpPorts));
             }
 
-            if (snmpProfiles == null)
-            {
-                throw new ArgumentNullException(nameof(snmpProfiles));
-            }
+            SnmpProfile = snmpProfile ??
+                throw new ArgumentNullException(nameof(snmpProfile));
 
             if (icmpTimeoutMilliseconds < 1)
             {
@@ -45,6 +44,12 @@ namespace NetLoom.Application.Discovery
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(tcpTimeoutMilliseconds));
+            }
+
+            if (interAddressDelayMilliseconds < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(interAddressDelayMilliseconds));
             }
 
             var addressArray = addresses
@@ -69,9 +74,10 @@ namespace NetLoom.Application.Discovery
             Addresses = addressArray;
             Exclusions = exclusionArray;
             TcpPorts = portArray;
-            SnmpProfiles = snmpProfiles.ToArray();
             IcmpTimeoutMilliseconds = icmpTimeoutMilliseconds;
             TcpTimeoutMilliseconds = tcpTimeoutMilliseconds;
+            InterAddressDelayMilliseconds =
+                interAddressDelayMilliseconds;
         }
 
         public IReadOnlyList<IPAddress> Addresses { get; }
@@ -80,10 +86,12 @@ namespace NetLoom.Application.Discovery
 
         public IReadOnlyList<int> TcpPorts { get; }
 
-        public IReadOnlyList<DiscoverySnmpProfile> SnmpProfiles { get; }
+        public DiscoverySnmpProfile SnmpProfile { get; }
 
         public int IcmpTimeoutMilliseconds { get; }
 
         public int TcpTimeoutMilliseconds { get; }
+
+        public int InterAddressDelayMilliseconds { get; }
     }
 }

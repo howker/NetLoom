@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Discovery;
 using NetLoom.Protocols.Snmp.Discovery;
@@ -79,7 +80,8 @@ namespace NetLoom.Tests.Unit
                 var ports = probe.FindOpenTcpPorts(
                     IPAddress.Loopback,
                     new[] { endpoint.Port },
-                    1000);
+                    1000,
+                    CancellationToken.None);
 
                 Assert.AreEqual(1, ports.Count);
                 Assert.AreEqual(
@@ -93,6 +95,34 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
+        public void TcpProbeHonorsCancellationBeforeConnect()
+        {
+            var probe =
+                new SystemNetworkDiscoveryProbe();
+
+            using (var cancellation =
+                new CancellationTokenSource())
+            {
+                cancellation.Cancel();
+
+                try
+                {
+                    probe.FindOpenTcpPorts(
+                        IPAddress.Loopback,
+                        new[] { 443 },
+                        1000,
+                        cancellation.Token);
+
+                    Assert.Fail(
+                        "Cancelled TCP probe must not start a connection attempt.");
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            }
+        }
+
+        [TestMethod]
         public void IcmpProbeCanReachLoopback()
         {
             var probe =
@@ -101,7 +131,8 @@ namespace NetLoom.Tests.Unit
             Assert.IsTrue(
                 probe.IsIcmpReachable(
                     IPAddress.Loopback,
-                    1000));
+                    1000,
+                    CancellationToken.None));
         }
     }
 }
