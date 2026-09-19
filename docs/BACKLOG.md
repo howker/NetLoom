@@ -216,6 +216,14 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 - [ ] Sprint 40 — monitoring control from the UI.
   - Operator outcome: start, stop, poll now and refresh topology without leaving the main window.
   - Expose current monitoring state, last successful poll/update time and the existing scheduling/policy controls through the operator UI.
+  - Architecture plan: keep `NetLoom.Engine` as the only polling/scheduling host. WPF receives a transport-neutral monitoring-control contract from `NetLoom.Application`; `NetLoom.Desktop` adapts that contract to a child Engine process rather than composing `MonitoringRuntime` or SNMP collectors inside WPF.
+  - Engine control plan: extend the existing `schedule` command with an opt-in stdin control channel. `POLL_NOW` interrupts only the scheduler delay and triggers the next cycle; `STOP` requests cancellation; stdin EOF also stops the schedule so a Desktop crash cannot intentionally leave an orphaned UI-owned Engine process. The normal CLI path remains unchanged when control stdin is not enabled.
+  - Target semantics: Start uses the currently selected device's stable `DeviceId` and observed `management_address`; devices without a management address are not pollable from this UI surface. While a schedule is running, Poll now applies to the active monitoring target rather than silently switching to another selected device.
+  - Policy surface: expose the existing Engine polling knobs for the session — interval, SNMP version, port, timeout, retries, max repetitions, enabled poll kinds, and optional interface error/discard rate thresholds. Credentials continue to use the existing `NETLOOM_SNMP_*` environment contract; Sprint 40 does not add secret editing, a new credential store, or target/profile resolution semantics.
+  - Refresh semantics: Refresh topology continues to invoke the existing coherent `TopologyRefreshCoordinator` read path and is not implemented as a second Engine command.
+  - Status semantics: show Stopped / Starting / Running / Polling / Stopping / Faulted, the active target, last successful Engine poll time, and the existing last successful topology-refresh time. Engine stdout is treated as host telemetry only for the documented `POLL: success=... failed=...` and control-ready markers; it is not a replacement for topology data.
+  - Verification plan: behavioral tests cover policy validation, command construction, Engine CLI parsing and stdin-control behavior. WPF click/selection interaction that cannot be tested reliably without a live window remains operator acceptance; no source-text pseudo-contract assertions are permitted.
+  - Scope boundary: no database migration, no second monitoring runtime in Desktop/WPF, no AccessProfile/secret redesign, no multi-target scheduler, no Windows Service work, and no promotion of the separate semantic-motion candidate.
 
 ### Next candidates — not commitments
 

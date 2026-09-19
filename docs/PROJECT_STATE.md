@@ -22,6 +22,20 @@ Sprint 39 adds no database migration; `Migration020InterfaceIdentityAndManagemen
 
 The next committed product Sprint is Sprint 40 — monitoring control from the UI: start/stop/poll-now/refresh from the main window together with current monitoring state, last successful poll/update time and the existing scheduling/policy controls. The motion-extension candidate remains separate unless an explicit later priority decision promotes it.
 
+### Sprint 40 implementation plan — accepted architecture before code
+
+A read-only audit of the current Engine/Desktop/WPF boundaries showed that `MainWindow` is a presentation/read client: it reads the materialized SQLite topology through `ITopologyRefreshSnapshotProvider`, owns the existing 5-second coherent refresh timer, and already tracks last successful topology refresh through `TopologyRefreshStateTracker`. The real SNMP composition, `MonitoringRuntime`, `MonitoringScheduler`, retention and degradation-delivery path remain in the canonical `NetLoom.Engine` host.
+
+Sprint 40 therefore must not construct `MonitoringRuntime`, `SharpSnmpTransport` or polling collectors inside WPF/Desktop. A transport-neutral monitoring-control contract belongs in `NetLoom.Application`; `NetLoom.Desktop` implements that contract by controlling a child canonical Engine process. The Engine's existing `schedule` command will receive an opt-in stdin control channel: `POLL_NOW` interrupts the current scheduler delay so the next existing cycle runs immediately, `STOP` requests cancellation, and stdin EOF also requests cancellation. Without the opt-in flag, current CLI/scheduler behavior remains unchanged.
+
+The operator target is the selected diagnostic device's stable `DeviceId` plus its observed `management_address`. A device without an observed management address cannot be started/polled from this surface. A running schedule keeps its active target; `Poll now` while running acts on that target and does not silently switch because selection changed. `Poll now` while stopped may execute one canonical Engine `poll-once` for the selected valid target.
+
+The session policy surface mirrors the Engine knobs that already exist: schedule interval, SNMP version, UDP port, timeout, retry count, max repetitions, enabled poll kinds, and optional interface error/discard-rate-per-minute thresholds. Sprint 40 intentionally keeps the existing `NETLOOM_SNMP_*` environment credential contract. It does not add secret editing, profile-to-target resolution, a new configuration database, or production secret-management semantics.
+
+`Refresh topology` remains the existing WPF coherent read refresh (`TopologyRefreshCoordinator`) rather than becoming another Engine command. UI status will expose monitoring state (`Stopped`, `Starting`, `Running`, `Polling`, `Stopping`, `Faulted`), active target, last successful Engine poll time, and the already tracked last successful topology-refresh time. The Desktop adapter may consume only documented Engine control/summary output needed for control state; topology truth continues to come from the database read model.
+
+Verification follows the post-Sprint-39 test-semantics rule: behavioral tests for policy validation, Engine command construction/parsing and stdin-control effects; existing scheduler/runtime tests remain authoritative for polling semantics. Live WPF click/selection behavior is operator acceptance, not source-text substring coverage. Sprint 40 adds no schema migration and does not include multi-target scheduling, Service deployment, AccessProfile redesign, or the separate semantic-motion candidate.
+
 ## Основа проекта
 
 - решение из 14 проектов;
