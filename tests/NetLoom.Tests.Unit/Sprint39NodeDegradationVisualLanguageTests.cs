@@ -34,10 +34,10 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
-            MissingOrUnknownEvidenceDoesNotInventNodeHealthOrFailure()
+            NodeStripeSeparatesProvenHealthyFromUnknownEvidence()
         {
             Assert.AreEqual(
-                "Normal",
+                "Unknown",
                 Classify());
 
             Assert.AreEqual(
@@ -46,18 +46,30 @@ namespace NetLoom.Tests.Unit
                     DiagnosticDegradationStatus.Healthy));
 
             Assert.AreEqual(
-                "Normal",
+                "Unknown",
                 Classify(
                     DiagnosticDegradationStatus.Unknown));
 
             Assert.AreEqual(
-                "Normal",
+                "Unknown",
+                Classify(
+                    DiagnosticDegradationStatus.Healthy,
+                    DiagnosticDegradationStatus.Unknown));
+
+            Assert.AreEqual(
+                "Unknown",
                 Classify(
                     (DiagnosticDegradationStatus)999));
 
-            Assert.IsNull(
+            Assert.AreEqual(
+                "NetLoom.Brush.Success",
                 BrushForState(
                     "Normal"));
+
+            Assert.AreEqual(
+                "NetLoom.Brush.TextDisabled",
+                BrushForState(
+                    "Unknown"));
         }
 
         private static string Classify(

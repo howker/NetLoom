@@ -22,8 +22,9 @@
     <Thickness x:Key="NetLoom.Thickness.ControlPadding">10,6</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ButtonPadding">14,6</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ListItemPadding">8,6</Thickness>
-    <Thickness x:Key="NetLoom.Thickness.MapNodePadding">10</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNodePadding">8</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodeIcon">0,0,8,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNodeStateStripe">1,1,0,1</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapLinkLabelPadding">4,2</Thickness>
 
     <Thickness x:Key="NetLoom.Thickness.GapXsTop">0,4,0,0</Thickness>
@@ -48,6 +49,7 @@
     <CornerRadius x:Key="NetLoom.Radius.Control">4</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.Panel">6</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.MapNode">6</CornerRadius>
+    <CornerRadius x:Key="NetLoom.Radius.MapNodeStateStripe">5,0,0,5</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.MapLocation">8</CornerRadius>
 
     <sys:Double x:Key="NetLoom.Control.MinHeight">30</sys:Double>
@@ -61,9 +63,10 @@
     <sys:Double x:Key="NetLoom.Map.CanvasHeight">1000000</sys:Double>
     <sys:Double x:Key="NetLoom.Map.VirtualOriginX">500000</sys:Double>
     <sys:Double x:Key="NetLoom.Map.VirtualOriginY">500000</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.NodeWidth">190</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.NodeHeight">64</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.NodeIconSize">28</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeWidth">160</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeHeight">56</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeIconSize">24</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeStateStripeWidth">5</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationDefaultWidth">560</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationDefaultHeight">360</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationMinWidth">240</sys:Double>
@@ -75,8 +78,8 @@
     <sys:Double x:Key="NetLoom.Map.ZoomMax">5.0</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomStep">0.1</sys:Double>
     <sys:Double x:Key="NetLoom.Map.FitPadding">48</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">2</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">4</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">3</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">5</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelPlacementStep">24</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelCollisionMargin">8</sys:Double>
 </ResourceDictionary>

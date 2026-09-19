@@ -234,11 +234,13 @@ namespace NetLoom.Tests.Unit
                             nextLabel);
 
                         Assert.AreEqual(
-                            295,
+                            Canvas.GetLeft(firstBorder) +
+                                (firstBorder.Width / 2.0),
                             nextLine.X1);
 
                         Assert.AreEqual(
-                            595,
+                            Canvas.GetLeft(secondBorder) +
+                                (secondBorder.Width / 2.0),
                             nextLine.X2);
 
                         StringAssert.Contains(

@@ -1862,7 +1862,18 @@ public partial class MainWindow
             {
                 Style =
                     GetStyleResource(
-                        "NetLoom.Style.MapNodeSecondary")
+                        "NetLoom.Style.MapNodeSecondary"),
+                Visibility =
+                    Visibility.Collapsed
+            };
+
+        var stateStripe =
+            new Border
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeStateStripe"),
+                IsHitTestVisible = false
             };
 
         var lockBadge =
@@ -1937,13 +1948,55 @@ public partial class MainWindow
         content.Children.Add(
             textContent);
 
+        var body =
+            new Border
+            {
+                Padding =
+                    GetThicknessResource(
+                        "NetLoom.Thickness.MapNodePadding"),
+                Child = content
+            };
+
+        var cardContent =
+            new Grid();
+
+        cardContent.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    GridLength.Auto
+            });
+
+        cardContent.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    new GridLength(
+                        1.0,
+                        GridUnitType.Star)
+            });
+
+        Grid.SetColumn(
+            stateStripe,
+            0);
+
+        Grid.SetColumn(
+            body,
+            1);
+
+        cardContent.Children.Add(
+            stateStripe);
+
+        cardContent.Children.Add(
+            body);
+
         var border =
             new Border
             {
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapNodeCard"),
-                Child = content,
+                Child = cardContent,
                 Cursor = Cursors.Hand,
                 Focusable = false
             };
@@ -1969,6 +2022,7 @@ public partial class MainWindow
 
         return new MapNodeVisual(
             border,
+            stateStripe,
             title,
             secondary,
             categoryIcon,
@@ -1985,16 +2039,10 @@ public partial class MainWindow
                 node);
 
         visual.Secondary.Text =
-            string.IsNullOrWhiteSpace(
-                node.SecondaryText)
-                ? string.Empty
-                : node.SecondaryText;
+            string.Empty;
 
         visual.Secondary.Visibility =
-            string.IsNullOrWhiteSpace(
-                visual.Secondary.Text)
-                ? Visibility.Collapsed
-                : Visibility.Visible;
+            Visibility.Collapsed;
 
         visual.CategoryIcon.Data =
             FindResource(
@@ -2051,6 +2099,10 @@ public partial class MainWindow
               node.DeviceId.Value ==
                   _selectedDeviceId.Value));
 
+        ApplyNodeDegradationPresentation(
+            visual,
+            node.DeviceId);
+
         if (isHighlighted)
         {
             visual.Border.BorderThickness =
@@ -2060,12 +2112,18 @@ public partial class MainWindow
             visual.Border.SetResourceReference(
                 Border.BorderBrushProperty,
                 "NetLoom.Brush.Selection");
+
+            visual.StateStripe.SetResourceReference(
+                Border.BackgroundProperty,
+                "NetLoom.Brush.Selection");
         }
         else
         {
-            ApplyNodeDegradationPresentation(
-                visual,
-                node.DeviceId);
+            visual.Border.ClearValue(
+                Border.BorderThicknessProperty);
+
+            visual.Border.ClearValue(
+                Border.BorderBrushProperty);
         }
 
         ApplyNodeOperationalFocusPresentation(

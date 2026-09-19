@@ -25,6 +25,6 @@
     <SolidColorBrush x:Key="NetLoom.Brush.Warning" Color="#E6B45C" />
     <SolidColorBrush x:Key="NetLoom.Brush.Critical" Color="#F07772" />
 
-    <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#8EA2B5" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#9DB2C6" />
     <SolidColorBrush x:Key="NetLoom.Brush.Selection" Color="#6EA8FF" />
 </ResourceDictionary>

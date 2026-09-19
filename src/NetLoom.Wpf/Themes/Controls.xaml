@@ -186,8 +186,6 @@
                 Value="{DynamicResource NetLoom.Map.NodeWidth}" />
         <Setter Property="MinHeight"
                 Value="{DynamicResource NetLoom.Map.NodeHeight}" />
-        <Setter Property="Padding"
-                Value="{DynamicResource NetLoom.Thickness.MapNodePadding}" />
         <Setter Property="Background"
                 Value="{DynamicResource NetLoom.Brush.Surface}" />
         <Setter Property="BorderBrush"
@@ -196,6 +194,20 @@
                 Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
         <Setter Property="CornerRadius"
                 Value="{DynamicResource NetLoom.Radius.MapNode}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapNodeStateStripe"
+           TargetType="{x:Type Border}">
+        <Setter Property="Width"
+                Value="{DynamicResource NetLoom.Map.NodeStateStripeWidth}" />
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.MapNodeStateStripe}" />
+        <Setter Property="CornerRadius"
+                Value="{DynamicResource NetLoom.Radius.MapNodeStateStripe}" />
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+        <Setter Property="VerticalAlignment"
+                Value="Stretch" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MapNodeTitle"
@@ -280,6 +292,10 @@
                 Value="{DynamicResource NetLoom.Brush.Link}" />
         <Setter Property="StrokeThickness"
                 Value="{DynamicResource NetLoom.Map.LinkStrokeThickness}" />
+        <Setter Property="StrokeStartLineCap"
+                Value="Round" />
+        <Setter Property="StrokeEndLineCap"
+                Value="Round" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MapLinkLabel"

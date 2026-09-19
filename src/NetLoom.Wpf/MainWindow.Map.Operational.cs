@@ -683,8 +683,9 @@ public partial class MainWindow
 
     private enum MapNodeDegradationState
     {
-        Normal = 0,
-        Degraded = 1
+        Unknown = 0,
+        Normal = 1,
+        Degraded = 2
     }
 
     private void ApplyNodeDegradationPresentation(
@@ -699,23 +700,8 @@ public partial class MainWindow
             NodeDegradationBrushKey(
                 state);
 
-        if (brushKey == null)
-        {
-            visual.Border.ClearValue(
-                System.Windows.Controls.Border.BorderThicknessProperty);
-
-            visual.Border.ClearValue(
-                System.Windows.Controls.Border.BorderBrushProperty);
-
-            return;
-        }
-
-        visual.Border.BorderThickness =
-            GetThicknessResource(
-                "NetLoom.Thickness.BorderFocus");
-
-        visual.Border.SetResourceReference(
-            System.Windows.Controls.Border.BorderBrushProperty,
+        visual.StateStripe.SetResourceReference(
+            System.Windows.Controls.Border.BackgroundProperty,
             brushKey);
     }
 
@@ -726,7 +712,7 @@ public partial class MainWindow
         if (!deviceId.HasValue ||
             _lastDiagnosticSnapshot == null)
         {
-            return MapNodeDegradationState.Normal;
+            return MapNodeDegradationState.Unknown;
         }
 
         foreach (var device in
@@ -752,7 +738,7 @@ public partial class MainWindow
                 statuses);
         }
 
-        return MapNodeDegradationState.Normal;
+        return MapNodeDegradationState.Unknown;
     }
 
     private static MapNodeDegradationState
@@ -765,16 +751,30 @@ public partial class MainWindow
                 nameof(statuses));
         }
 
+        var hasHealthy = false;
+        var hasUnknown = false;
+
         foreach (var status in statuses)
         {
-            if (status ==
-                DiagnosticDegradationStatus.Degraded)
+            switch (status)
             {
-                return MapNodeDegradationState.Degraded;
+                case DiagnosticDegradationStatus.Degraded:
+                    return MapNodeDegradationState.Degraded;
+
+                case DiagnosticDegradationStatus.Healthy:
+                    hasHealthy = true;
+                    break;
+
+                case DiagnosticDegradationStatus.Unknown:
+                default:
+                    hasUnknown = true;
+                    break;
             }
         }
 
-        return MapNodeDegradationState.Normal;
+        return hasHealthy && !hasUnknown
+            ? MapNodeDegradationState.Normal
+            : MapNodeDegradationState.Unknown;
     }
 
     private static string NodeDegradationBrushKey(
@@ -786,8 +786,11 @@ public partial class MainWindow
                 return "NetLoom.Brush.Warning";
 
             case MapNodeDegradationState.Normal:
+                return "NetLoom.Brush.Success";
+
+            case MapNodeDegradationState.Unknown:
             default:
-                return null;
+                return "NetLoom.Brush.TextDisabled";
         }
     }
 

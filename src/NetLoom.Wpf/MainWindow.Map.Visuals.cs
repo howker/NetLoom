@@ -82,12 +82,14 @@ public partial class MainWindow
     {
         public MapNodeVisual(
             Border border,
+            Border stateStripe,
             TextBlock title,
             TextBlock secondary,
             Path categoryIcon,
             TextBlock lockBadge)
         {
             Border = border;
+            StateStripe = stateStripe;
             Title = title;
             Secondary = secondary;
             CategoryIcon = categoryIcon;
@@ -95,6 +97,8 @@ public partial class MainWindow
         }
 
         public Border Border { get; }
+
+        public Border StateStripe { get; }
 
         public TextBlock Title { get; }
 

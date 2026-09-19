@@ -5,7 +5,13 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Input;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using NetLoom.Application.Lookup;
+using NetLoom.Application.TopologyRefresh;
+using NetLoom.Contracts.Alerts;
+using NetLoom.Contracts.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf;
@@ -61,6 +67,16 @@ namespace NetLoom.Tests.Unit
                             card,
                             "Production map card was not created.");
 
+                        Assert.AreEqual(
+                            160.0,
+                            card.Width,
+                            "The accepted glance-readable card width is 160 px.");
+
+                        Assert.AreEqual(
+                            56.0,
+                            card.MinHeight,
+                            "The accepted glance-readable card base height is 56 px.");
+
                         card.Measure(
                             new Size(
                                 card.Width,
@@ -96,14 +112,13 @@ namespace NetLoom.Tests.Unit
                         CollectionAssert.AreEquivalent(
                             new[]
                             {
-                                "Центральный коммутатор A",
-                                "MOXA PT-7728"
+                                "Центральный коммутатор A"
                             },
                             textBlocks
                                 .Select(
                                     item => item.Text)
                                 .ToArray(),
-                            "The glance-readable card must keep only the name and useful short secondary line visible.");
+                            "The glance-readable card must keep the name only; type is carried by the icon and details stay in diagnostics.");
 
                         Assert.IsFalse(
                             textBlocks.Any(
@@ -217,6 +232,192 @@ namespace NetLoom.Tests.Unit
                 });
         }
 
+        [TestMethod]
+        public void
+            NodeStateIsAColoredLeftStripeAndSelectionAddsFullBlueOutline()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var healthyId =
+                        Guid.NewGuid();
+
+                    var degradedId =
+                        Guid.NewGuid();
+
+                    var unknownId =
+                        Guid.NewGuid();
+
+                    var provider =
+                        new FixedRefreshProvider(
+                            StatusSnapshot(
+                                healthyId,
+                                degradedId,
+                                unknownId));
+
+                    var window =
+                        new MainWindow(
+                            provider,
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceCard(
+                                    window,
+                                    healthyId) != null &&
+                                provider.ReadCount > 0);
+
+                        var healthy =
+                            DeviceCard(
+                                window,
+                                healthyId);
+
+                        var degraded =
+                            DeviceCard(
+                                window,
+                                degradedId);
+
+                        var unknown =
+                            DeviceCard(
+                                window,
+                                unknownId);
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Success"),
+                            StateStripe(healthy).Background,
+                            "Only proven healthy diagnostic evidence may render the green state stripe.");
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Warning"),
+                            StateStripe(degraded).Background,
+                            "Confirmed degradation must render the warning state stripe.");
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.TextDisabled"),
+                            StateStripe(unknown).Background,
+                            "Unknown evidence must remain neutral rather than pretending the node is healthy.");
+
+                        SelectDevice(
+                            window,
+                            degradedId);
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Selection"),
+                            degraded.BorderBrush,
+                            "Selection must be explicit through a full blue card outline.");
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Selection"),
+                            StateStripe(degraded).Background,
+                            "Selection must also override the left stripe with blue so it cannot be confused with health state.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            BasePhysicalLinkIsVisiblyWeightedAndUsesRoundedEnds()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var sourceId =
+                        Guid.NewGuid();
+
+                    var targetId =
+                        Guid.NewGuid();
+
+                    var window =
+                        new MainWindow();
+
+                    try
+                    {
+                        window.Show();
+
+                        window.ShowMap(
+                            new MapSnapshot(
+                                DateTime.UtcNow,
+                                new[]
+                                {
+                                    MapNodeFixture(
+                                        "source",
+                                        sourceId,
+                                        100.0,
+                                        100.0),
+                                    MapNodeFixture(
+                                        "target",
+                                        targetId,
+                                        360.0,
+                                        100.0)
+                                },
+                                new[]
+                                {
+                                    new MapLink(
+                                        "link:source-target",
+                                        "source",
+                                        "target",
+                                        "Gi0/1",
+                                        "Gi0/2",
+                                        MapConfidence.High,
+                                        MapFreshness.Fresh,
+                                        new MapEvidenceItem[0],
+                                        Guid.NewGuid())
+                                }));
+
+                        var canvas =
+                            (Canvas)window.FindName(
+                                "MapCanvas");
+
+                        var line =
+                            canvas.Children
+                                .OfType<Line>()
+                                .Single();
+
+                        var baseThickness =
+                            (double)window.FindResource(
+                                "NetLoom.Map.LinkStrokeThickness");
+
+                        var selectedThickness =
+                            (double)window.FindResource(
+                                "NetLoom.Map.LinkSelectedStrokeThickness");
+
+                        Assert.AreEqual(
+                            baseThickness,
+                            line.StrokeThickness,
+                            "A normal physical link must use the production visual-weight token.");
+
+                        Assert.IsTrue(
+                            selectedThickness > baseThickness,
+                            "Selected links must remain more prominent than normal links.");
+
+                        Assert.AreEqual(
+                            PenLineCap.Round,
+                            line.StrokeStartLineCap);
+
+                        Assert.AreEqual(
+                            PenLineCap.Round,
+                            line.StrokeEndLineCap);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
         private static CategoryTestFixture CategoryFixture(
             MapNodeCategory category,
             string label)
@@ -284,6 +485,269 @@ namespace NetLoom.Tests.Unit
                 {
                     yield return nested;
                 }
+            }
+        }
+
+        private static Border StateStripe(
+            Border card)
+        {
+            Assert.IsNotNull(card);
+
+            var stripe =
+                Descendants<Border>(card)
+                    .SingleOrDefault(
+                        item =>
+                            Math.Abs(item.Width - 5.0) < 0.001);
+
+            Assert.IsNotNull(
+                stripe,
+                "Production card state stripe was not found.");
+
+            return stripe;
+        }
+
+        private static void SelectDevice(
+            MainWindow window,
+            Guid deviceId)
+        {
+            var border =
+                DeviceCard(
+                    window,
+                    deviceId);
+
+            Assert.IsNotNull(border);
+
+            border.RaiseEvent(
+                new MouseButtonEventArgs(
+                    Mouse.PrimaryDevice,
+                    Environment.TickCount,
+                    MouseButton.Left)
+                {
+                    RoutedEvent =
+                        UIElement.MouseLeftButtonDownEvent,
+                    Source = border
+                });
+
+            border.RaiseEvent(
+                new MouseButtonEventArgs(
+                    Mouse.PrimaryDevice,
+                    Environment.TickCount,
+                    MouseButton.Left)
+                {
+                    RoutedEvent =
+                        UIElement.MouseLeftButtonUpEvent,
+                    Source = border
+                });
+
+            PumpDispatcher();
+        }
+
+        private static TopologyRefreshSnapshot StatusSnapshot(
+            Guid healthyId,
+            Guid degradedId,
+            Guid unknownId)
+        {
+            var now =
+                DateTime.UtcNow;
+
+            var nodes =
+                new[]
+                {
+                    MapNodeFixture(
+                        "healthy",
+                        healthyId,
+                        100.0,
+                        100.0),
+                    MapNodeFixture(
+                        "degraded",
+                        degradedId,
+                        320.0,
+                        100.0),
+                    MapNodeFixture(
+                        "unknown",
+                        unknownId,
+                        540.0,
+                        100.0)
+                };
+
+            var diagnostics =
+                new[]
+                {
+                    DiagnosticDevice(
+                        healthyId,
+                        DiagnosticDegradationStatus.Healthy,
+                        now),
+                    DiagnosticDevice(
+                        degradedId,
+                        DiagnosticDegradationStatus.Degraded,
+                        now),
+                    DiagnosticDevice(
+                        unknownId,
+                        DiagnosticDegradationStatus.Unknown,
+                        now)
+                };
+
+            return new TopologyRefreshSnapshot(
+                new MapSnapshot(
+                    now,
+                    nodes,
+                    new MapLink[0]),
+                new TopologyAlertSnapshot(
+                    now,
+                    "cist",
+                    new TopologyAlert[0]),
+                new NetworkDiagnosticSnapshot(
+                    now,
+                    diagnostics,
+                    new PhysicalLinkDiagnostic[0]));
+        }
+
+        private static MapNode MapNodeFixture(
+            string key,
+            Guid deviceId,
+            double x,
+            double y)
+        {
+            return new MapNode(
+                key,
+                key,
+                null,
+                x,
+                y,
+                null,
+                MapNodeOrigin.Automatic,
+                MapMonitoringCapability.Unknown,
+                MapNodeCategory.UnmanagedSwitch,
+                deviceId,
+                null);
+        }
+
+        private static DeviceDiagnostic DiagnosticDevice(
+            Guid deviceId,
+            DiagnosticDegradationStatus status,
+            DateTime now)
+        {
+            return new DeviceDiagnostic(
+                deviceId,
+                deviceId.ToString("D"),
+                null,
+                null,
+                now,
+                now,
+                new[]
+                {
+                    new InterfaceDiagnostic(
+                        Guid.NewGuid(),
+                        deviceId,
+                        1,
+                        "Gi0/1",
+                        null,
+                        "up",
+                        "up",
+                        1000000000L,
+                        now,
+                        NetLoom.Contracts.StpTree.StpTreePortState.Unknown,
+                        status,
+                        now,
+                        status == DiagnosticDegradationStatus.Degraded
+                            ? new[]
+                              {
+                                  DiagnosticDegradationReason.ErrorRateThresholdExceeded
+                              }
+                            : new DiagnosticDegradationReason[0])
+                });
+        }
+
+        private static void WaitForCondition(
+            Func<bool> condition)
+        {
+            var deadline =
+                DateTime.UtcNow +
+                TimeSpan.FromSeconds(5);
+
+            while (!condition())
+            {
+                if (DateTime.UtcNow >= deadline)
+                {
+                    Assert.Fail(
+                        "The expected WPF state was not reached.");
+                }
+
+                PumpDispatcher();
+                Thread.Sleep(10);
+            }
+
+            PumpDispatcher();
+        }
+
+        private static void PumpDispatcher()
+        {
+            var frame =
+                new DispatcherFrame();
+
+            Dispatcher.CurrentDispatcher.BeginInvoke(
+                DispatcherPriority.Background,
+                new DispatcherOperationCallback(
+                    state =>
+                    {
+                        ((DispatcherFrame)state)
+                            .Continue = false;
+                        return null;
+                    }),
+                frame);
+
+            Dispatcher.PushFrame(
+                frame);
+        }
+
+        private sealed class FixedRefreshProvider :
+            ITopologyRefreshSnapshotProvider
+        {
+            private readonly TopologyRefreshSnapshot
+                _snapshot;
+
+            private int _readCount;
+
+            public FixedRefreshProvider(
+                TopologyRefreshSnapshot snapshot)
+            {
+                _snapshot = snapshot;
+            }
+
+            public int ReadCount =>
+                Volatile.Read(
+                    ref _readCount);
+
+            public TopologyRefreshSnapshot GetSnapshot(
+                string stpInstanceId)
+            {
+                Interlocked.Increment(
+                    ref _readCount);
+                return _snapshot;
+            }
+        }
+
+        private sealed class EmptyLookupReader :
+            IMacIpLookupReader
+        {
+            public MacIpLookupResult FindByMac(
+                string macAddress,
+                int maxCandidates)
+            {
+                return new MacIpLookupResult(
+                    MacIpLookupKind.Mac,
+                    macAddress,
+                    new MacIpLookupCandidate[0]);
+            }
+
+            public MacIpLookupResult FindByIp(
+                string ipAddress,
+                int maxCandidates)
+            {
+                return new MacIpLookupResult(
+                    MacIpLookupKind.Ip,
+                    ipAddress,
+                    new MacIpLookupCandidate[0]);
             }
         }
 
