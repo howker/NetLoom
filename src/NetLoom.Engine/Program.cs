@@ -329,6 +329,10 @@ namespace NetLoom.Engine
                 CreateRuntime(
                     options);
 
+            EngineMachineOutput
+                .WritePollStarted(
+                    Console.Out);
+
             var result =
                 runtime.PollOnce(
                     CreateRequest(
@@ -337,6 +341,11 @@ namespace NetLoom.Engine
             WritePollResult(
                 result,
                 hostLog);
+
+            EngineMachineOutput
+                .WritePollCompleted(
+                    Console.Out,
+                    result);
 
             RunObservationRetention(
                 options,
@@ -374,10 +383,6 @@ namespace NetLoom.Engine
                 CreateRuntime(
                     options);
 
-            var scheduler =
-                new MonitoringScheduler(
-                    runtime);
-
             var request =
                 CreateRequest(
                     options);
@@ -385,6 +390,36 @@ namespace NetLoom.Engine
             using (var cancellation =
                 new CancellationTokenSource())
             {
+                EngineScheduleStdinControl control = null;
+
+                if (options.ControlStdin)
+                {
+                    control =
+                        new EngineScheduleStdinControl(
+                            cancellation,
+                            Console.In,
+                            Console.Out);
+
+                    EngineMachineOutput
+                        .WriteControlReady(
+                            Console.Out);
+
+                    control.StartReading();
+                }
+
+                var scheduler =
+                    options.ControlStdin
+                        ? new MonitoringScheduler(
+                            runtime,
+                            (interval, token) =>
+                            {
+                                control.Wait(
+                                    interval,
+                                    token);
+                            })
+                        : new MonitoringScheduler(
+                            runtime);
+
                 ConsoleCancelEventHandler handler =
                     (sender, eventArgs) =>
                     {
@@ -405,6 +440,14 @@ namespace NetLoom.Engine
                         "SCHEDULER: started intervalSeconds=" +
                         options.IntervalSeconds);
 
+                    if (options.ControlStdin)
+                    {
+                        EngineMachineOutput
+                            .WriteScheduleStarted(
+                                Console.Out,
+                                options.IntervalSeconds);
+                    }
+
                     var result =
                         scheduler.Run(
                             request,
@@ -417,6 +460,14 @@ namespace NetLoom.Engine
                                     pollResult,
                                     hostLog);
 
+                                if (options.ControlStdin)
+                                {
+                                    EngineMachineOutput
+                                        .WritePollCompleted(
+                                            Console.Out,
+                                            pollResult);
+                                }
+
                                 RunObservationRetention(
                                     options,
                                     hostLog);
@@ -424,6 +475,15 @@ namespace NetLoom.Engine
                                 RunInterfaceDegradationDelivery(
                                     options,
                                     hostLog);
+                            },
+                            () =>
+                            {
+                                if (options.ControlStdin)
+                                {
+                                    EngineMachineOutput
+                                        .WritePollStarted(
+                                            Console.Out);
+                                }
                             });
 
                     hostLog.Info(
@@ -433,6 +493,14 @@ namespace NetLoom.Engine
                     Console.WriteLine(
                         "SCHEDULER: stopped cycles=" +
                         result.CompletedCycles);
+
+                    if (options.ControlStdin)
+                    {
+                        EngineMachineOutput
+                            .WriteScheduleStopped(
+                                Console.Out,
+                                result.CompletedCycles);
+                    }
 
                     return 0;
                 }

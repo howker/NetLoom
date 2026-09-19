@@ -26,7 +26,8 @@ namespace NetLoom.Application.Monitoring
             MonitoringPollRequest request,
             TimeSpan interval,
             CancellationToken cancellationToken,
-            Action<MonitoringPollResult> onCycleCompleted = null)
+            Action<MonitoringPollResult> onCycleCompleted = null,
+            Action onCycleStarting = null)
         {
             if (request == null)
             {
@@ -44,6 +45,11 @@ namespace NetLoom.Application.Monitoring
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                if (onCycleStarting != null)
+                {
+                    onCycleStarting();
+                }
+
                 lastResult =
                     _runtime.PollOnce(
                         request);

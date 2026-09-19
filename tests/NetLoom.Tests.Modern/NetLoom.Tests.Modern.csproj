@@ -28,6 +28,8 @@
              Link="Shared\TopologyRefreshCoordinatorTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\TopologyRefreshStateTrackerTests.cs"
              Link="Shared\TopologyRefreshStateTrackerTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\MonitoringSchedulerTests.cs"
+             Link="Shared\MonitoringSchedulerTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\Sprint34AInterfaceCounterDeltaTests.cs"
              Link="Shared\Sprint34AInterfaceCounterDeltaTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint34BInterfaceCounterBaselineContractTests.cs"
@@ -88,6 +90,10 @@
              Link="Shared\Sprint38MapLocationLayoutStoreTests.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineCommandLine.cs"
              Link="Engine\EngineCommandLine.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineMachineOutput.cs"
+             Link="Engine\EngineMachineOutput.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineScheduleStdinControl.cs"
+             Link="Engine\EngineScheduleStdinControl.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineSmtpConfiguration.cs"
              Link="Engine\EngineSmtpConfiguration.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\SmtpInterfaceDegradationDeliveryAdapter.cs"

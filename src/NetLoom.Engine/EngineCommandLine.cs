@@ -36,6 +36,8 @@ namespace NetLoom.Engine
 
         public int DeliveryStatusLimit { get; private set; }
 
+        public bool ControlStdin { get; private set; }
+
         public double? InterfaceErrorRatePerMinuteThreshold
         {
             get;
@@ -155,6 +157,7 @@ namespace NetLoom.Engine
                         "max-repetitions",
                         "kinds",
                         "interval-seconds",
+                        "control-stdin",
                         "interface-error-rate-per-minute",
                         "interface-discard-rate-per-minute"
                     });
@@ -164,6 +167,13 @@ namespace NetLoom.Engine
             {
                 throw Invalid(
                     "INTERVAL_ONLY_VALID_FOR_SCHEDULE");
+            }
+
+            if (command == "poll-once" &&
+                Get(values, "control-stdin") != null)
+            {
+                throw Invalid(
+                    "CONTROL_STDIN_ONLY_VALID_FOR_SCHEDULE");
             }
 
             var addressText =
@@ -221,6 +231,10 @@ namespace NetLoom.Engine
                     1,
                     int.MaxValue,
                     "INVALID_INTERVAL_SECONDS"),
+                ControlStdin = ParseBoolean(
+                    Get(values, "control-stdin"),
+                    false,
+                    "INVALID_CONTROL_STDIN"),
                 InterfaceErrorRatePerMinuteThreshold =
                     ParseOptionalPositiveDouble(
                         Get(
@@ -381,6 +395,28 @@ namespace NetLoom.Engine
                     out parsed) ||
                 parsed < minimum ||
                 parsed > maximum)
+            {
+                throw Invalid(errorCode);
+            }
+
+            return parsed;
+        }
+
+        private static bool ParseBoolean(
+            string value,
+            bool defaultValue,
+            string errorCode)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return defaultValue;
+            }
+
+            bool parsed;
+
+            if (!bool.TryParse(
+                value,
+                out parsed))
             {
                 throw Invalid(errorCode);
             }
