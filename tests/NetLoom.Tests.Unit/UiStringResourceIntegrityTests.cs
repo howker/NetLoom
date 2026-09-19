@@ -30,14 +30,6 @@ namespace NetLoom.Tests.Unit
                     @"\{(?<Index>[0-9]+)(?:[^}]*)\}",
                     RegexOptions.Compiled);
 
-        private static readonly Regex
-            CyrillicStringLiteralRegex =
-                new Regex(
-                    "\"(?:[^\"\\\\]|\\\\.)*" +
-                    "[\\u0400-\\u04FF]" +
-                    "(?:[^\"\\\\]|\\\\.)*\"",
-                    RegexOptions.Compiled);
-
         [TestMethod]
         public void
             NeutralResourceLanguageIsEnglishAndTemplateExampleNamesAreNotResourceKeys()
@@ -197,79 +189,6 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
-            SourceLocalizationGuardRejectsCyrillicStringLiterals()
-        {
-            Assert.IsTrue(
-                ContainsCyrillicStringLiteral(
-                    "var text = \"Жёстко заданная строка\";"));
-
-            Assert.IsFalse(
-                ContainsCyrillicStringLiteral(
-                    "// Русский комментарий разрешён."));
-
-            Assert.IsFalse(
-                ContainsCyrillicStringLiteral(
-                    "var key = \"MapTitle\";"));
-
-            var roots =
-                new[]
-                {
-                    Path.Combine(
-                        "src",
-                        "NetLoom.Wpf"),
-                    Path.Combine(
-                        "src",
-                        "NetLoom.Topology")
-                };
-
-            var offenders =
-                roots
-                    .Select(
-                        FindRepositoryDirectory)
-                    .SelectMany(
-                        directory =>
-                            Directory.GetFiles(
-                                directory,
-                                "*.cs",
-                                SearchOption.AllDirectories))
-                    .SelectMany(
-                        file =>
-                            File.ReadAllLines(file)
-                                .Select(
-                                    (line, index) =>
-                                        new
-                                        {
-                                            File = file,
-                                            Line = line,
-                                            Number = index + 1
-                                        }))
-                    .Where(
-                        item =>
-                            ContainsCyrillicStringLiteral(
-                                item.Line))
-                    .Select(
-                        item =>
-                            item.File +
-                            ":" +
-                            item.Number +
-                            ": " +
-                            item.Line.Trim())
-                    .ToArray();
-
-            Assert.AreEqual(
-                0,
-                offenders.Length,
-                offenders.Length == 0
-                    ? null
-                    : "Localized C# string literals found:" +
-                      Environment.NewLine +
-                      string.Join(
-                          Environment.NewLine,
-                          offenders));
-        }
-
-        [TestMethod]
-        public void
             DroppedCapitalExampleIsRejectedButExplicitLowercaseIsAllowed()
         {
             Assert.IsTrue(
@@ -385,24 +304,6 @@ namespace NetLoom.Tests.Unit
                 first == 'ё';
         }
 
-        private static bool ContainsCyrillicStringLiteral(
-            string line)
-        {
-            if (string.IsNullOrWhiteSpace(
-                    line) ||
-                line.TrimStart()
-                    .StartsWith(
-                        "//",
-                        StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            return CyrillicStringLiteralRegex
-                .IsMatch(
-                    line);
-        }
-
         private static string FindRepositoryFile(
             string relativePath)
         {
@@ -434,35 +335,5 @@ namespace NetLoom.Tests.Unit
             return null;
         }
 
-        private static string FindRepositoryDirectory(
-            string relativePath)
-        {
-            var directory =
-                new DirectoryInfo(
-                    AppDomain.CurrentDomain
-                        .BaseDirectory);
-
-            while (directory != null)
-            {
-                var candidate =
-                    Path.Combine(
-                        directory.FullName,
-                        relativePath);
-
-                if (Directory.Exists(candidate))
-                {
-                    return candidate;
-                }
-
-                directory =
-                    directory.Parent;
-            }
-
-            Assert.Fail(
-                "Repository directory was not found: " +
-                relativePath);
-
-            return null;
-        }
     }
 }

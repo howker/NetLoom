@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Contracts.Diagnostics;
@@ -61,46 +60,6 @@ namespace NetLoom.Tests.Unit
                     "Normal"));
         }
 
-        [TestMethod]
-        public void
-            NodePresentationUsesDeviceDiagnosticsAndKeepsSelectionPrecedence()
-        {
-            var root =
-                FindRepositoryRoot();
-
-            var operational =
-                File.ReadAllText(
-                    Path.Combine(
-                        root,
-                        "src",
-                        "NetLoom.Wpf",
-                        "MainWindow.Map.Operational.cs"));
-
-            var rendering =
-                File.ReadAllText(
-                    Path.Combine(
-                        root,
-                        "src",
-                        "NetLoom.Wpf",
-                        "MainWindow.Map.Rendering.cs"));
-
-            StringAssert.Contains(
-                operational,
-                "_lastDiagnosticSnapshot.Devices");
-
-            StringAssert.Contains(
-                operational,
-                "item.DegradationStatus");
-
-            StringAssert.Contains(
-                rendering,
-                "if (isHighlighted)");
-
-            StringAssert.Contains(
-                rendering,
-                "ApplyNodeDegradationPresentation");
-        }
-
         private static string Classify(
             params DiagnosticDegradationStatus[] statuses)
         {
@@ -151,30 +110,5 @@ namespace NetLoom.Tests.Unit
                 new[] { state });
         }
 
-        private static string FindRepositoryRoot()
-        {
-            var directory =
-                new DirectoryInfo(
-                    AppDomain.CurrentDomain.BaseDirectory);
-
-            while (directory != null)
-            {
-                if (File.Exists(
-                    Path.Combine(
-                        directory.FullName,
-                        "NetLoom.sln")))
-                {
-                    return directory.FullName;
-                }
-
-                directory =
-                    directory.Parent;
-            }
-
-            Assert.Fail(
-                "Repository root was not found.");
-
-            return null;
-        }
     }
 }

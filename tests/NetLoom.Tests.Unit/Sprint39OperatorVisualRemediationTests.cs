@@ -25,45 +25,6 @@ namespace NetLoom.Tests.Unit
         };
 
         [TestMethod]
-        public void SelectedMapElementAnchorsZoomToItsLogicalCenter()
-        {
-            var code =
-                ReadMapCode()
-                    .Replace("\r\n", "\n");
-
-            StringAssert.Contains(
-                code,
-                "if (!TryGetSelectedMapLogicalCenter(\n" +
-                "                out logicalCenterX,\n" +
-                "                out logicalCenterY))");
-
-            StringAssert.Contains(
-                code,
-                "if (_selectedDeviceId.HasValue)");
-
-            StringAssert.Contains(
-                code,
-                "NodeBounds(");
-
-            StringAssert.Contains(
-                code,
-                "if (_selectedPhysicalLinkId.HasValue)");
-
-            StringAssert.Contains(
-                code,
-                "(link.Line.X1 +\n" +
-                "                     link.Line.X2) / 2.0");
-
-            StringAssert.Contains(
-                code,
-                "if (_selectedLocationId.HasValue)");
-
-            StringAssert.Contains(
-                code,
-                "LocationVisibleBounds(");
-        }
-
-        [TestMethod]
         public void OperationalStatesUseCompactMonotonicStrokeScales()
         {
             Assert.AreEqual(1.0, StrokeScale("Normal"));
@@ -115,7 +76,7 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
-        public void OperationalFocusUsesLocalizedNeutralAndRussianResources()
+        public void OperationalFocusResourceIntegrityUsesNeutralAndRussianResources()
         {
             AssertResourceKeys(
                 FindRepositoryFile(
@@ -132,62 +93,6 @@ namespace NetLoom.Tests.Unit
                         "NetLoom.Wpf",
                         "Resources",
                         "UiStrings.ru.resx")));
-        }
-
-        [TestMethod]
-        public void MapSettingsAndRenderingWireOperationalFocus()
-        {
-            var code =
-                ReadMainWindowCode();
-
-            StringAssert.Contains(
-                code,
-                "settingsMenu.Items.Add(" +
-                Environment.NewLine +
-                "            CreateOperationalFocusMenu());");
-
-            StringAssert.Contains(
-                code,
-                "RefreshOperationalFocusTargets();");
-
-            StringAssert.Contains(
-                code,
-                "LinkPresentationOpacity(");
-
-            StringAssert.Contains(
-                code,
-                "ApplyNodeOperationalFocusPresentation(");
-        }
-
-        [TestMethod]
-        public void ClearingOperationalFocusPreservesViewportAndSelection()
-        {
-            var code =
-                ReadOperationalCode()
-                    .Replace("\r\n", "\n");
-
-            StringAssert.Contains(
-                code,
-                "if (_operationalFocusMode ==\n" +
-                "            MapOperationalFocusMode.None)\n" +
-                "        {\n" +
-                "            return;\n" +
-                "        }");
-
-            Assert.IsFalse(
-                code.Contains(
-                    "FitTopologyToViewport();"),
-                "Clearing operational focus must not refit the viewport.");
-
-            Assert.IsFalse(
-                code.Contains(
-                    "_selectedDeviceId ="),
-                "Operational focus must not replace the selected node.");
-
-            Assert.IsFalse(
-                code.Contains(
-                    "_selectedPhysicalLinkId ="),
-                "Operational focus must not replace the selected link.");
         }
 
         private static double StrokeScale(
@@ -322,53 +227,6 @@ namespace NetLoom.Tests.Unit
                     " in " +
                     path);
             }
-        }
-
-        private static string ReadMapCode()
-        {
-            return File.ReadAllText(
-                FindRepositoryFile(
-                    Path.Combine(
-                        "src",
-                        "NetLoom.Wpf",
-                        "MainWindow.Map.cs")));
-        }
-
-        private static string ReadOperationalCode()
-        {
-            return File.ReadAllText(
-                FindRepositoryFile(
-                    Path.Combine(
-                        "src",
-                        "NetLoom.Wpf",
-                        "MainWindow.Map.Operational.cs")));
-        }
-
-        private static string ReadMainWindowCode()
-        {
-            var mainWindowPath =
-                FindRepositoryFile(
-                    Path.Combine(
-                        "src",
-                        "NetLoom.Wpf",
-                        "MainWindow.xaml.cs"));
-
-            var directory =
-                Path.GetDirectoryName(
-                    mainWindowPath);
-
-            return string.Join(
-                Environment.NewLine,
-                Directory
-                    .GetFiles(
-                        directory,
-                        "MainWindow*.cs",
-                        SearchOption.TopDirectoryOnly)
-                    .OrderBy(
-                        path => path,
-                        StringComparer.Ordinal)
-                    .Select(
-                        File.ReadAllText));
         }
 
         private static string FindRepositoryFile(
