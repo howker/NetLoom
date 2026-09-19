@@ -1840,6 +1840,15 @@ public partial class MainWindow
     private MapNodeVisual
         CreateNodeVisual()
     {
+        var categoryIcon =
+            new Path
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeCategoryIcon"),
+                IsHitTestVisible = false
+            };
+
         var title =
             new TextBlock
             {
@@ -1853,39 +1862,7 @@ public partial class MainWindow
             {
                 Style =
                     GetStyleResource(
-                        "NetLoom.Style.MapNodeSecondary"),
-                TextWrapping =
-                    TextWrapping.Wrap
-            };
-
-        var topologyMetadata =
-            new TextBlock
-            {
-                Style =
-                    GetStyleResource(
-                        "NetLoom.Style.MapNodeMeta"),
-                TextWrapping =
-                    TextWrapping.Wrap
-            };
-
-        var managementAddressText =
-            new TextBlock
-            {
-                Style =
-                    GetStyleResource(
-                        "NetLoom.Style.MapNodeMeta"),
-                TextWrapping =
-                    TextWrapping.Wrap
-            };
-
-        var locationText =
-            new TextBlock
-            {
-                Style =
-                    GetStyleResource(
-                        "NetLoom.Style.MapNodeMeta"),
-                TextWrapping =
-                    TextWrapping.Wrap
+                        "NetLoom.Style.MapNodeSecondary")
             };
 
         var lockBadge =
@@ -1914,14 +1891,51 @@ public partial class MainWindow
         header.Children.Add(
             title);
 
-        var content =
-            new StackPanel();
+        var textContent =
+            new StackPanel
+            {
+                VerticalAlignment =
+                    VerticalAlignment.Center
+            };
 
-        content.Children.Add(header);
-        content.Children.Add(secondary);
-        content.Children.Add(topologyMetadata);
-        content.Children.Add(managementAddressText);
-        content.Children.Add(locationText);
+        textContent.Children.Add(
+            header);
+
+        textContent.Children.Add(
+            secondary);
+
+        var content =
+            new Grid();
+
+        content.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    GridLength.Auto
+            });
+
+        content.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    new GridLength(
+                        1.0,
+                        GridUnitType.Star)
+            });
+
+        Grid.SetColumn(
+            categoryIcon,
+            0);
+
+        Grid.SetColumn(
+            textContent,
+            1);
+
+        content.Children.Add(
+            categoryIcon);
+
+        content.Children.Add(
+            textContent);
 
         var border =
             new Border
@@ -1957,9 +1971,7 @@ public partial class MainWindow
             border,
             title,
             secondary,
-            topologyMetadata,
-            managementAddressText,
-            locationText,
+            categoryIcon,
             lockBadge);
     }
 
@@ -1978,22 +1990,26 @@ public partial class MainWindow
                 ? string.Empty
                 : node.SecondaryText;
 
-        visual.TopologyMetadata.Text =
-            BuildTopologyMetadata(node);
+        visual.Secondary.Visibility =
+            string.IsNullOrWhiteSpace(
+                visual.Secondary.Text)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
 
-        visual.ManagementAddress.Text =
-            UiText.Format(
-                "MapNodeIpAddress",
-                string.IsNullOrWhiteSpace(
-                    node.ManagementAddress)
-                    ? UiText.Get(
-                        "DiagnosticNotAvailable")
-                    : node.ManagementAddress);
+        visual.CategoryIcon.Data =
+            FindResource(
+                NodeCategoryIconGeometryKey(
+                    node.Category))
+                as Geometry;
 
-        visual.Location.Text =
-            BuildLocationText(
-                node,
-                locations);
+        visual.CategoryIcon.SetResourceReference(
+            Path.StrokeProperty,
+            NodeCategoryIconBrushKey(
+                node.Category));
+
+        visual.CategoryIcon.ToolTip =
+            NodeCategoryIconToolTip(
+                node.Category);
 
         visual.DeviceId =
             node.DeviceId;
@@ -2056,6 +2072,7 @@ public partial class MainWindow
             visual,
             node.DeviceId);
     }
+
 
     private MapLinkVisual
         CreateLinkVisual()

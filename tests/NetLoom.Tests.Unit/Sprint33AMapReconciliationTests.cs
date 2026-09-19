@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Shapes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Contracts.TopologyMap;
@@ -425,34 +428,53 @@ namespace NetLoom.Tests.Unit
         private static TextBlock NodeTitle(
             Border border)
         {
-            var content =
-                border.Child as StackPanel;
-
-            Assert.IsNotNull(content);
-
-            var directTitle =
-                content.Children[0]
-                as TextBlock;
-
-            if (directTitle != null)
-            {
-                return directTitle;
-            }
-
-            var header =
-                content.Children[0]
-                as Panel;
-
-            Assert.IsNotNull(header);
-
             var title =
-                header.Children
-                    .OfType<TextBlock>()
-                    .LastOrDefault();
+                DescendantTextBlocks(
+                        border)
+                    .FirstOrDefault(
+                        item =>
+                            item.Visibility ==
+                                Visibility.Visible &&
+                            !string.IsNullOrWhiteSpace(
+                                item.Text));
 
             Assert.IsNotNull(title);
 
             return title;
+        }
+
+        private static IEnumerable<TextBlock>
+            DescendantTextBlocks(
+                DependencyObject root)
+        {
+            var count =
+                VisualTreeHelper.GetChildrenCount(
+                    root);
+
+            for (var index = 0;
+                 index < count;
+                 index++)
+            {
+                var child =
+                    VisualTreeHelper.GetChild(
+                        root,
+                        index);
+
+                var textBlock =
+                    child as TextBlock;
+
+                if (textBlock != null)
+                {
+                    yield return textBlock;
+                }
+
+                foreach (var nested in
+                    DescendantTextBlocks(
+                        child))
+                {
+                    yield return nested;
+                }
+            }
         }
 
         private static void DisableMotion(

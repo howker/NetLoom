@@ -23,6 +23,7 @@
     <Thickness x:Key="NetLoom.Thickness.ButtonPadding">14,6</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ListItemPadding">8,6</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodePadding">10</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNodeIcon">0,0,8,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapLinkLabelPadding">4,2</Thickness>
 
     <Thickness x:Key="NetLoom.Thickness.GapXsTop">0,4,0,0</Thickness>
@@ -61,7 +62,8 @@
     <sys:Double x:Key="NetLoom.Map.VirtualOriginX">500000</sys:Double>
     <sys:Double x:Key="NetLoom.Map.VirtualOriginY">500000</sys:Double>
     <sys:Double x:Key="NetLoom.Map.NodeWidth">190</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.NodeHeight">108</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeHeight">64</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NodeIconSize">28</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationDefaultWidth">560</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationDefaultHeight">360</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationMinWidth">240</sys:Double>

@@ -84,17 +84,13 @@ public partial class MainWindow
             Border border,
             TextBlock title,
             TextBlock secondary,
-            TextBlock topologyMetadata,
-            TextBlock managementAddress,
-            TextBlock location,
+            Path categoryIcon,
             TextBlock lockBadge)
         {
             Border = border;
             Title = title;
             Secondary = secondary;
-            TopologyMetadata = topologyMetadata;
-            ManagementAddress = managementAddress;
-            Location = location;
+            CategoryIcon = categoryIcon;
             LockBadge = lockBadge;
         }
 
@@ -104,11 +100,7 @@ public partial class MainWindow
 
         public TextBlock Secondary { get; }
 
-        public TextBlock TopologyMetadata { get; }
-
-        public TextBlock ManagementAddress { get; }
-
-        public TextBlock Location { get; }
+        public Path CategoryIcon { get; }
 
         public TextBlock LockBadge { get; }
 

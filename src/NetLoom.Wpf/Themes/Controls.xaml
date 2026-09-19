@@ -207,7 +207,35 @@
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
         <Setter Property="TextTrimming"
-                Value="CharacterEllipsis" />
+                Value="None" />
+        <Setter Property="TextWrapping"
+                Value="Wrap" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapNodeCategoryIcon"
+           TargetType="{x:Type Path}">
+        <Setter Property="Width"
+                Value="{DynamicResource NetLoom.Map.NodeIconSize}" />
+        <Setter Property="Height"
+                Value="{DynamicResource NetLoom.Map.NodeIconSize}" />
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.MapNodeIcon}" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
+        <Setter Property="Stretch"
+                Value="Uniform" />
+        <Setter Property="Stroke"
+                Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
+        <Setter Property="StrokeThickness"
+                Value="1.6" />
+        <Setter Property="StrokeStartLineCap"
+                Value="Round" />
+        <Setter Property="StrokeEndLineCap"
+                Value="Round" />
+        <Setter Property="StrokeLineJoin"
+                Value="Round" />
+        <Setter Property="Fill"
+                Value="Transparent" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MapNodeLockBadge"
@@ -227,9 +255,11 @@
         <Setter Property="Margin"
                 Value="{DynamicResource NetLoom.Thickness.MapNodeSecondary}" />
         <Setter Property="Foreground"
-                Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+                Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
         <Setter Property="TextTrimming"
                 Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping"
+                Value="NoWrap" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MapNodeMeta"
