@@ -19,7 +19,9 @@ namespace NetLoom.Application.MonitoringControl
             double? interfaceErrorRatePerMinuteThreshold = null,
             double? interfaceDiscardRatePerMinuteThreshold = null)
         {
-            if (interval <= TimeSpan.Zero)
+            if (interval < TimeSpan.FromSeconds(1) ||
+                interval.TotalSeconds > int.MaxValue ||
+                interval.Ticks % TimeSpan.TicksPerSecond != 0)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(interval));
