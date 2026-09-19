@@ -1180,4 +1180,142 @@
   <data name="LocationTopologyDeviceSummary" xml:space="preserve">
     <value>{0} — {1}</value>
   </data>
+  <data name="MonitoringTitle" xml:space="preserve">
+    <value>Мониторинг</value>
+  </data>
+  <data name="MonitoringStateLabel" xml:space="preserve">
+    <value>Состояние</value>
+  </data>
+  <data name="MonitoringActiveTargetLabel" xml:space="preserve">
+    <value>Активная цель</value>
+  </data>
+  <data name="MonitoringLastPollLabel" xml:space="preserve">
+    <value>Последний успешный опрос</value>
+  </data>
+  <data name="MonitoringLastRefreshLabel" xml:space="preserve">
+    <value>Последнее обновление топологии</value>
+  </data>
+  <data name="MonitoringSelectedDeviceLabel" xml:space="preserve">
+    <value>Выбранное устройство</value>
+  </data>
+  <data name="MonitoringSelectedDeviceValue" xml:space="preserve">
+    <value>{0} • {1}</value>
+  </data>
+  <data name="MonitoringNoDeviceSelected" xml:space="preserve">
+    <value>Выберите устройство на карте.</value>
+  </data>
+  <data name="MonitoringTargetAddressLabel" xml:space="preserve">
+    <value>Адрес цели</value>
+  </data>
+  <data name="MonitoringIntervalLabel" xml:space="preserve">
+    <value>Интервал, с</value>
+  </data>
+  <data name="MonitoringVersionLabel" xml:space="preserve">
+    <value>Версия SNMP</value>
+  </data>
+  <data name="MonitoringPortLabel" xml:space="preserve">
+    <value>Порт</value>
+  </data>
+  <data name="MonitoringTimeoutLabel" xml:space="preserve">
+    <value>Таймаут, мс</value>
+  </data>
+  <data name="MonitoringRetriesLabel" xml:space="preserve">
+    <value>Повторы</value>
+  </data>
+  <data name="MonitoringMaxRepetitionsLabel" xml:space="preserve">
+    <value>Макс. повторений</value>
+  </data>
+  <data name="MonitoringErrorThresholdLabel" xml:space="preserve">
+    <value>Порог ошибок/мин</value>
+  </data>
+  <data name="MonitoringDiscardThresholdLabel" xml:space="preserve">
+    <value>Порог отбросов/мин</value>
+  </data>
+  <data name="MonitoringKindsLabel" xml:space="preserve">
+    <value>Виды опроса</value>
+  </data>
+  <data name="MonitoringKindLldp" xml:space="preserve">
+    <value>LLDP</value>
+  </data>
+  <data name="MonitoringKindCdp" xml:space="preserve">
+    <value>CDP</value>
+  </data>
+  <data name="MonitoringKindFdb" xml:space="preserve">
+    <value>FDB</value>
+  </data>
+  <data name="MonitoringKindArp" xml:space="preserve">
+    <value>ARP</value>
+  </data>
+  <data name="MonitoringKindHealth" xml:space="preserve">
+    <value>Состояние</value>
+  </data>
+  <data name="MonitoringKindInterface" xml:space="preserve">
+    <value>Интерфейсы</value>
+  </data>
+  <data name="MonitoringKindStp" xml:space="preserve">
+    <value>STP</value>
+  </data>
+  <data name="MonitoringStartAction" xml:space="preserve">
+    <value>Запустить мониторинг</value>
+  </data>
+  <data name="MonitoringStopAction" xml:space="preserve">
+    <value>Остановить</value>
+  </data>
+  <data name="MonitoringPollNowAction" xml:space="preserve">
+    <value>Опросить сейчас</value>
+  </data>
+  <data name="MonitoringRefreshTopologyAction" xml:space="preserve">
+    <value>Обновить топологию</value>
+  </data>
+  <data name="MonitoringSessionOnlyHint" xml:space="preserve">
+    <value>Переопределение адреса и параметры опроса действуют только в текущем сеансе Desktop. Учётные данные SNMP берутся из переменных среды NETLOOM_SNMP_*.</value>
+  </data>
+  <data name="MonitoringStateStopped" xml:space="preserve">
+    <value>Остановлен</value>
+  </data>
+  <data name="MonitoringStateStarting" xml:space="preserve">
+    <value>Запускается</value>
+  </data>
+  <data name="MonitoringStateRunning" xml:space="preserve">
+    <value>Работает</value>
+  </data>
+  <data name="MonitoringStatePolling" xml:space="preserve">
+    <value>Выполняется опрос</value>
+  </data>
+  <data name="MonitoringStateStopping" xml:space="preserve">
+    <value>Останавливается</value>
+  </data>
+  <data name="MonitoringStateFaulted" xml:space="preserve">
+    <value>Ошибка</value>
+  </data>
+  <data name="MonitoringActiveTargetValue" xml:space="preserve">
+    <value>{0} • {1}</value>
+  </data>
+  <data name="MonitoringFaultMessage" xml:space="preserve">
+    <value>Диагностика Engine: {0}</value>
+  </data>
+  <data name="MonitoringActionFailed" xml:space="preserve">
+    <value>Не удалось выполнить действие мониторинга: {0}</value>
+  </data>
+  <data name="MonitoringActiveSessionUnavailable" xml:space="preserve">
+    <value>Активный сеанс мониторинга пока недоступен.</value>
+  </data>
+  <data name="MonitoringValidationSelectDevice" xml:space="preserve">
+    <value>Перед запуском или опросом выберите устройство.</value>
+  </data>
+  <data name="MonitoringValidationTargetAddress" xml:space="preserve">
+    <value>Введите корректный IP-адрес цели.</value>
+  </data>
+  <data name="MonitoringValidationInteger" xml:space="preserve">
+    <value>Введите целое число в допустимом диапазоне для поля «{0}».</value>
+  </data>
+  <data name="MonitoringValidationThreshold" xml:space="preserve">
+    <value>Введите положительное число для поля «{0}» или оставьте его пустым.</value>
+  </data>
+  <data name="MonitoringValidationPollKind" xml:space="preserve">
+    <value>Выберите хотя бы один вид опроса.</value>
+  </data>
+  <data name="MonitoringValidationVersion" xml:space="preserve">
+    <value>Выберите версию SNMP.</value>
+  </data>
 </root>

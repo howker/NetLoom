@@ -38,6 +38,8 @@ public partial class MainWindow : Window
             if (ShowLocationDiagnostic(
                     _selectedLocationId.Value))
             {
+                SynchronizeMonitoringSelection(
+                    null);
                 return;
             }
 
@@ -46,6 +48,8 @@ public partial class MainWindow : Window
 
         if (_lastDiagnosticSnapshot == null)
         {
+            SynchronizeMonitoringSelection(
+                null);
             ClearDiagnosticPanel(
                 "DiagnosticNothingSelected");
             return;
@@ -63,17 +67,24 @@ public partial class MainWindow : Window
             if (device == null)
             {
                 _selectedDeviceId = null;
+                SynchronizeMonitoringSelection(
+                    null);
                 ClearDiagnosticPanel(
                     "DiagnosticSelectionMissing");
                 return;
             }
 
+            SynchronizeMonitoringSelection(
+                device);
             ShowDeviceDiagnostic(device);
             return;
         }
 
         if (_selectedPhysicalLinkId.HasValue)
         {
+            SynchronizeMonitoringSelection(
+                null);
+
             var link =
                 _lastDiagnosticSnapshot.Links
                     .FirstOrDefault(
@@ -93,6 +104,8 @@ public partial class MainWindow : Window
             return;
         }
 
+        SynchronizeMonitoringSelection(
+            null);
         ClearDiagnosticPanel(
             "DiagnosticNothingSelected");
     }

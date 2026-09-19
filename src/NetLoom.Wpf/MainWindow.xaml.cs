@@ -17,6 +17,7 @@ using NetLoom.Application.Alerts;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.MapLayout;
+using NetLoom.Application.MonitoringControl;
 using NetLoom.Application.Topology;
 using NetLoom.Application.TopologyMap;
 using NetLoom.Application.TopologyRefresh;
@@ -262,8 +263,47 @@ public partial class MainWindow : Window
         IManualTopologyService manualTopologyService,
         ILocationTopologyService locationTopologyService,
         IMapLocationLayoutStore mapLocationLayoutStore)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            mapLayoutStore,
+            manualTopologyService,
+            locationTopologyService,
+            mapLocationLayoutStore,
+            new EmptyMonitoringControl())
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMonitoringControl monitoringControl)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            new EmptyMapLayoutStore(),
+            new EmptyManualTopologyService(),
+            new EmptyLocationTopologyService(),
+            new EmptyMapLocationLayoutStore(),
+            monitoringControl)
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMapLayoutStore mapLayoutStore,
+        IManualTopologyService manualTopologyService,
+        ILocationTopologyService locationTopologyService,
+        IMapLocationLayoutStore mapLocationLayoutStore,
+        IMonitoringControl monitoringControl)
     {
         InitializeComponent();
+
+        _monitoringControl =
+            monitoringControl ??
+            throw new ArgumentNullException(
+                nameof(monitoringControl));
 
         _nodeWidth =
             GetDoubleResource(
@@ -496,6 +536,8 @@ public partial class MainWindow : Window
         AlertList.ItemsSource =
             new AlertRow[0];
 
+        InitializeMonitoringPanel();
+
         _lastMapSnapshot =
             EmptySnapshot();
 
@@ -528,6 +570,7 @@ public partial class MainWindow : Window
         _topologyRefreshCoordinator.Close();
         _lookupRequestTracker.Close();
         _lifetimeCancellation.Cancel();
+        CloseMonitoringPanel();
     }
 
     private async void OnRefreshTimerTick(
@@ -612,6 +655,8 @@ public partial class MainWindow : Window
             state.Snapshot.MapSnapshot);
 
         ShowSelectedDiagnostic();
+        UpdateMonitoringPresentation(
+            _monitoringControl.Current);
 
         var transition =
             _alertTransitionTracker.Observe(
@@ -633,6 +678,9 @@ public partial class MainWindow : Window
 
         AlertTransitionText.Text =
             string.Empty;
+
+        UpdateMonitoringPresentation(
+            _monitoringControl.Current);
 
         if (state.Kind ==
             TopologyRefreshStateKind.InitialFailure)

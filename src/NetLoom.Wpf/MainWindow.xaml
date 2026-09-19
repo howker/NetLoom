@@ -88,6 +88,148 @@
             </Grid>
         </Border>
 
+        <Expander x:Name="MonitoringExpander"
+                  DockPanel.Dock="Top"
+                  IsExpanded="True">
+            <Expander.Header>
+                <TextBlock x:Name="MonitoringTitleText"
+                           Style="{StaticResource NetLoom.Style.SectionTitle}" />
+            </Expander.Header>
+            <Border Style="{StaticResource NetLoom.Style.Panel}"
+                    Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
+                    BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
+                <StackPanel>
+                    <WrapPanel>
+                        <StackPanel Width="180">
+                            <TextBlock x:Name="MonitoringStateLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="MonitoringStateValueText"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Width="250"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringActiveTargetLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="MonitoringActiveTargetValueText"
+                                       FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Width="210"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringLastPollLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="MonitoringLastPollValueText"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Width="210"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringLastRefreshLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="MonitoringLastRefreshValueText"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </WrapPanel>
+
+                    <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                        <StackPanel Width="270">
+                            <TextBlock x:Name="MonitoringSelectedDeviceLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="MonitoringSelectedDeviceValueText"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Width="170"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringTargetAddressLabelText" />
+                            <TextBox x:Name="MonitoringTargetAddressTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="90"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringIntervalLabelText" />
+                            <TextBox x:Name="MonitoringIntervalTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="95"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringVersionLabelText" />
+                            <ComboBox x:Name="MonitoringVersionComboBox" />
+                        </StackPanel>
+                        <StackPanel Width="80"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringPortLabelText" />
+                            <TextBox x:Name="MonitoringPortTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="100"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringTimeoutLabelText" />
+                            <TextBox x:Name="MonitoringTimeoutTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="85"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringRetriesLabelText" />
+                            <TextBox x:Name="MonitoringRetriesTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="110"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringMaxRepetitionsLabelText" />
+                            <TextBox x:Name="MonitoringMaxRepetitionsTextBox" />
+                        </StackPanel>
+                    </WrapPanel>
+
+                    <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                        <StackPanel Width="180">
+                            <TextBlock x:Name="MonitoringErrorThresholdLabelText" />
+                            <TextBox x:Name="MonitoringErrorThresholdTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="180"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringDiscardThresholdLabelText" />
+                            <TextBox x:Name="MonitoringDiscardThresholdTextBox" />
+                        </StackPanel>
+                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="MonitoringKindsLabelText" />
+                            <WrapPanel>
+                                <CheckBox x:Name="MonitoringKindLldpCheckBox" />
+                                <CheckBox x:Name="MonitoringKindCdpCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                <CheckBox x:Name="MonitoringKindFdbCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                <CheckBox x:Name="MonitoringKindArpCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                <CheckBox x:Name="MonitoringKindHealthCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                <CheckBox x:Name="MonitoringKindInterfaceCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                <CheckBox x:Name="MonitoringKindStpCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </WrapPanel>
+
+                    <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                        <Button x:Name="MonitoringStartButton"
+                                Click="OnMonitoringStartClick" />
+                        <Button x:Name="MonitoringStopButton"
+                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                Click="OnMonitoringStopClick" />
+                        <Button x:Name="MonitoringPollNowButton"
+                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                Click="OnMonitoringPollNowClick" />
+                        <Button x:Name="MonitoringRefreshTopologyButton"
+                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                Click="OnMonitoringRefreshTopologyClick" />
+                    </WrapPanel>
+
+                    <TextBlock x:Name="MonitoringHintText"
+                               Style="{StaticResource NetLoom.Style.MutedText}"
+                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                               TextWrapping="Wrap" />
+                    <TextBlock x:Name="MonitoringMessageText"
+                               Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </Expander>
+
         <Border DockPanel.Dock="Right"
                 Style="{StaticResource NetLoom.Style.Panel}"
                 Width="{DynamicResource NetLoom.Sidebar.Width}"

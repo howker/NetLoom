@@ -1180,4 +1180,142 @@ Drag the header to move this location together with its child locations and assi
   <data name="LocationTopologyDeviceSummary" xml:space="preserve">
     <value>{0} — {1}</value>
   </data>
+  <data name="MonitoringTitle" xml:space="preserve">
+    <value>Monitoring</value>
+  </data>
+  <data name="MonitoringStateLabel" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="MonitoringActiveTargetLabel" xml:space="preserve">
+    <value>Active target</value>
+  </data>
+  <data name="MonitoringLastPollLabel" xml:space="preserve">
+    <value>Last successful poll</value>
+  </data>
+  <data name="MonitoringLastRefreshLabel" xml:space="preserve">
+    <value>Last topology refresh</value>
+  </data>
+  <data name="MonitoringSelectedDeviceLabel" xml:space="preserve">
+    <value>Selected device</value>
+  </data>
+  <data name="MonitoringSelectedDeviceValue" xml:space="preserve">
+    <value>{0} • {1}</value>
+  </data>
+  <data name="MonitoringNoDeviceSelected" xml:space="preserve">
+    <value>Select a device on the map.</value>
+  </data>
+  <data name="MonitoringTargetAddressLabel" xml:space="preserve">
+    <value>Target address</value>
+  </data>
+  <data name="MonitoringIntervalLabel" xml:space="preserve">
+    <value>Interval, s</value>
+  </data>
+  <data name="MonitoringVersionLabel" xml:space="preserve">
+    <value>SNMP version</value>
+  </data>
+  <data name="MonitoringPortLabel" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="MonitoringTimeoutLabel" xml:space="preserve">
+    <value>Timeout, ms</value>
+  </data>
+  <data name="MonitoringRetriesLabel" xml:space="preserve">
+    <value>Retries</value>
+  </data>
+  <data name="MonitoringMaxRepetitionsLabel" xml:space="preserve">
+    <value>Max repetitions</value>
+  </data>
+  <data name="MonitoringErrorThresholdLabel" xml:space="preserve">
+    <value>Error rate/min threshold</value>
+  </data>
+  <data name="MonitoringDiscardThresholdLabel" xml:space="preserve">
+    <value>Discard rate/min threshold</value>
+  </data>
+  <data name="MonitoringKindsLabel" xml:space="preserve">
+    <value>Poll kinds</value>
+  </data>
+  <data name="MonitoringKindLldp" xml:space="preserve">
+    <value>LLDP</value>
+  </data>
+  <data name="MonitoringKindCdp" xml:space="preserve">
+    <value>CDP</value>
+  </data>
+  <data name="MonitoringKindFdb" xml:space="preserve">
+    <value>FDB</value>
+  </data>
+  <data name="MonitoringKindArp" xml:space="preserve">
+    <value>ARP</value>
+  </data>
+  <data name="MonitoringKindHealth" xml:space="preserve">
+    <value>Health</value>
+  </data>
+  <data name="MonitoringKindInterface" xml:space="preserve">
+    <value>Interfaces</value>
+  </data>
+  <data name="MonitoringKindStp" xml:space="preserve">
+    <value>STP</value>
+  </data>
+  <data name="MonitoringStartAction" xml:space="preserve">
+    <value>Start monitoring</value>
+  </data>
+  <data name="MonitoringStopAction" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="MonitoringPollNowAction" xml:space="preserve">
+    <value>Poll now</value>
+  </data>
+  <data name="MonitoringRefreshTopologyAction" xml:space="preserve">
+    <value>Refresh topology</value>
+  </data>
+  <data name="MonitoringSessionOnlyHint" xml:space="preserve">
+    <value>Target override and polling settings apply to this Desktop session only. SNMP credentials come from NETLOOM_SNMP_* environment variables.</value>
+  </data>
+  <data name="MonitoringStateStopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="MonitoringStateStarting" xml:space="preserve">
+    <value>Starting</value>
+  </data>
+  <data name="MonitoringStateRunning" xml:space="preserve">
+    <value>Running</value>
+  </data>
+  <data name="MonitoringStatePolling" xml:space="preserve">
+    <value>Polling</value>
+  </data>
+  <data name="MonitoringStateStopping" xml:space="preserve">
+    <value>Stopping</value>
+  </data>
+  <data name="MonitoringStateFaulted" xml:space="preserve">
+    <value>Faulted</value>
+  </data>
+  <data name="MonitoringActiveTargetValue" xml:space="preserve">
+    <value>{0} • {1}</value>
+  </data>
+  <data name="MonitoringFaultMessage" xml:space="preserve">
+    <value>Engine diagnostic: {0}</value>
+  </data>
+  <data name="MonitoringActionFailed" xml:space="preserve">
+    <value>Monitoring action failed: {0}</value>
+  </data>
+  <data name="MonitoringActiveSessionUnavailable" xml:space="preserve">
+    <value>The active monitoring session is not available yet.</value>
+  </data>
+  <data name="MonitoringValidationSelectDevice" xml:space="preserve">
+    <value>Select a device before starting or polling.</value>
+  </data>
+  <data name="MonitoringValidationTargetAddress" xml:space="preserve">
+    <value>Enter a valid target IP address.</value>
+  </data>
+  <data name="MonitoringValidationInteger" xml:space="preserve">
+    <value>Enter a whole number in the valid range for {0}.</value>
+  </data>
+  <data name="MonitoringValidationThreshold" xml:space="preserve">
+    <value>Enter a positive number for {0}, or leave it blank.</value>
+  </data>
+  <data name="MonitoringValidationPollKind" xml:space="preserve">
+    <value>Select at least one poll kind.</value>
+  </data>
+  <data name="MonitoringValidationVersion" xml:space="preserve">
+    <value>Select an SNMP version.</value>
+  </data>
 </root>

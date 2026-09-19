@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Topology;
+using NetLoom.Desktop.Monitoring;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Locations;
@@ -94,6 +95,12 @@ namespace NetLoom.Desktop
                         mapProvider,
                         alertProvider);
 
+                var monitoringControl =
+                    new DesktopEngineMonitoringControl(
+                        DesktopEngineExecutablePathResolver
+                            .Resolve(),
+                        databasePath);
+
                 var application =
                     new System.Windows.Application();
 
@@ -111,7 +118,8 @@ namespace NetLoom.Desktop
                             new LocationTopologyService(
                                 locationRepository,
                                 topologyRepository),
-                            mapLayoutStore));
+                            mapLayoutStore,
+                            monitoringControl));
 
                 hostLog.Info(
                     "HOST_STOPPED exitCode=" +
