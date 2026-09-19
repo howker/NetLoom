@@ -94,6 +94,10 @@
              Link="Engine\EngineMachineOutput.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineScheduleStdinControl.cs"
              Link="Engine\EngineScheduleStdinControl.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineDiscoveryRunner.cs"
+             Link="Engine\EngineDiscoveryRunner.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineDiscoveryStdinControl.cs"
+             Link="Engine\EngineDiscoveryStdinControl.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Monitoring\IEngineProcessFactory.cs"
              Link="Desktop\Monitoring\IEngineProcessFactory.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Monitoring\EngineMonitoringCommandBuilder.cs"

@@ -38,6 +38,20 @@ namespace NetLoom.Engine
 
         public bool ControlStdin { get; private set; }
 
+        public string DiscoveryCidr { get; private set; }
+
+        public Guid? AccessProfileId { get; private set; }
+
+        public IReadOnlyList<int> DiscoveryTcpPorts { get; private set; }
+
+        public int DiscoveryIcmpTimeoutMilliseconds { get; private set; }
+
+        public int DiscoveryTcpTimeoutMilliseconds { get; private set; }
+
+        public int DiscoveryInterAddressDelayMilliseconds { get; private set; }
+
+        public int DiscoveryMaxAddresses { get; private set; }
+
         public double? InterfaceErrorRatePerMinuteThreshold
         {
             get;
@@ -133,6 +147,111 @@ namespace NetLoom.Engine
                             1,
                             1000,
                             "INVALID_DELIVERY_STATUS_LIMIT")
+                };
+            }
+
+            if (command == "discover")
+            {
+                var discoveryValues =
+                    ParseOptions(
+                        args.Skip(1).ToArray(),
+                        new[]
+                        {
+                            "cidr",
+                            "access-profile-id",
+                            "port",
+                            "version",
+                            "timeout-ms",
+                            "retries",
+                            "max-repetitions",
+                            "icmp-timeout-ms",
+                            "tcp-timeout-ms",
+                            "tcp-ports",
+                            "inter-address-delay-ms",
+                            "max-addresses",
+                            "control-stdin"
+                        });
+
+                return new EngineCommandLine
+                {
+                    Command = command,
+                    DiscoveryCidr =
+                        Required(
+                            discoveryValues,
+                            "cidr"),
+                    AccessProfileId =
+                        ParseRequiredGuid(
+                            Required(
+                                discoveryValues,
+                                "access-profile-id"),
+                            "INVALID_ACCESS_PROFILE_ID"),
+                    Port = ParseInt(
+                        Get(discoveryValues, "port"),
+                        161,
+                        1,
+                        65535,
+                        "INVALID_PORT"),
+                    Version = ParseEnum<SnmpVersion>(
+                        Get(discoveryValues, "version") ?? "V2C",
+                        "INVALID_SNMP_VERSION"),
+                    TimeoutMilliseconds = ParseInt(
+                        Get(discoveryValues, "timeout-ms"),
+                        750,
+                        1,
+                        int.MaxValue,
+                        "INVALID_TIMEOUT"),
+                    RetryCount = ParseInt(
+                        Get(discoveryValues, "retries"),
+                        0,
+                        0,
+                        int.MaxValue,
+                        "INVALID_RETRY_COUNT"),
+                    MaxRepetitions = ParseInt(
+                        Get(discoveryValues, "max-repetitions"),
+                        10,
+                        1,
+                        int.MaxValue,
+                        "INVALID_MAX_REPETITIONS"),
+                    DiscoveryIcmpTimeoutMilliseconds =
+                        ParseInt(
+                            Get(
+                                discoveryValues,
+                                "icmp-timeout-ms"),
+                            500,
+                            1,
+                            int.MaxValue,
+                            "INVALID_ICMP_TIMEOUT"),
+                    DiscoveryTcpTimeoutMilliseconds =
+                        ParseInt(
+                            Get(
+                                discoveryValues,
+                                "tcp-timeout-ms"),
+                            500,
+                            1,
+                            int.MaxValue,
+                            "INVALID_TCP_TIMEOUT"),
+                    DiscoveryTcpPorts = ParsePorts(
+                        Get(discoveryValues, "tcp-ports") ??
+                        "22,80,443"),
+                    DiscoveryInterAddressDelayMilliseconds =
+                        ParseInt(
+                            Get(
+                                discoveryValues,
+                                "inter-address-delay-ms"),
+                            50,
+                            0,
+                            int.MaxValue,
+                            "INVALID_INTER_ADDRESS_DELAY"),
+                    DiscoveryMaxAddresses = ParseInt(
+                        Get(discoveryValues, "max-addresses"),
+                        4096,
+                        1,
+                        65536,
+                        "INVALID_MAX_ADDRESSES"),
+                    ControlStdin = ParseBoolean(
+                        Get(discoveryValues, "control-stdin"),
+                        true,
+                        "INVALID_CONTROL_STDIN")
                 };
             }
 
@@ -348,6 +467,61 @@ namespace NetLoom.Engine
             if (result.Count == 0)
             {
                 throw Invalid("EMPTY_POLL_KIND_SET");
+            }
+
+            return result;
+        }
+
+        private static Guid ParseRequiredGuid(
+            string value,
+            string errorCode)
+        {
+            Guid parsed;
+
+            if (!Guid.TryParse(
+                    value,
+                    out parsed) ||
+                parsed == Guid.Empty)
+            {
+                throw Invalid(errorCode);
+            }
+
+            return parsed;
+        }
+
+        private static IReadOnlyList<int> ParsePorts(
+            string value)
+        {
+            var result =
+                new List<int>();
+
+            foreach (var token in
+                (value ?? string.Empty).Split(
+                    new[] { ',' },
+                    StringSplitOptions.RemoveEmptyEntries))
+            {
+                int port;
+
+                if (!int.TryParse(
+                        token.Trim(),
+                        NumberStyles.Integer,
+                        CultureInfo.InvariantCulture,
+                        out port) ||
+                    port < 1 ||
+                    port > 65535)
+                {
+                    throw Invalid("INVALID_DISCOVERY_TCP_PORTS");
+                }
+
+                if (!result.Contains(port))
+                {
+                    result.Add(port);
+                }
+            }
+
+            if (result.Count == 0)
+            {
+                throw Invalid("EMPTY_DISCOVERY_TCP_PORTS");
             }
 
             return result;

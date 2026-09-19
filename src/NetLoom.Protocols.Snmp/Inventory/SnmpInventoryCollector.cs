@@ -8,6 +8,7 @@ using NetLoom.Application.Snmp;
 namespace NetLoom.Protocols.Snmp.Inventory
 {
     public sealed class SnmpInventoryCollector
+        : IInventoryCollector
     {
         private const string SysDescr =
             "1.3.6.1.2.1.1.1.0";

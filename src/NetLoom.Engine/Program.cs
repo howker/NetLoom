@@ -124,6 +124,14 @@ namespace NetLoom.Engine
                     hostLog);
             }
 
+            if (options.Command ==
+                "discover")
+            {
+                return RunDiscovery(
+                    options,
+                    hostLog);
+            }
+
             return PollOnce(
                 options,
                 hostLog);
@@ -319,6 +327,75 @@ namespace NetLoom.Engine
                     "o",
                     CultureInfo.InvariantCulture)
                 : "none";
+        }
+
+        private static int RunDiscovery(
+            EngineCommandLine options,
+            HostLogManager hostLog)
+        {
+            var engine =
+                EngineDiscoveryComposition
+                    .CreateEngine();
+
+            var request =
+                EngineDiscoveryComposition
+                    .CreateRequest(
+                        options);
+
+            using (var cancellation =
+                new CancellationTokenSource())
+            {
+                if (options.ControlStdin)
+                {
+                    var control =
+                        new EngineDiscoveryStdinControl(
+                            cancellation,
+                            Console.In,
+                            Console.Out);
+
+                    EngineMachineOutput
+                        .WriteDiscoveryControlReady(
+                            Console.Out);
+
+                    control.StartReading();
+                }
+
+                ConsoleCancelEventHandler handler =
+                    (sender, eventArgs) =>
+                    {
+                        eventArgs.Cancel = true;
+                        cancellation.Cancel();
+                    };
+
+                Console.CancelKeyPress +=
+                    handler;
+
+                try
+                {
+                    hostLog.Info(
+                        "DISCOVERY_STARTED cidr=" +
+                        options.DiscoveryCidr);
+
+                    var completed =
+                        EngineDiscoveryRunner.Run(
+                            engine,
+                            request,
+                            cancellation.Token,
+                            Console.Out);
+
+                    hostLog.Info(
+                        completed
+                            ? "DISCOVERY_COMPLETED"
+                            : "DISCOVERY_STOPPED");
+
+                    return 0;
+                }
+                finally
+                {
+                    Console.CancelKeyPress -=
+                        handler;
+                }
+            }
         }
 
         private static int PollOnce(
