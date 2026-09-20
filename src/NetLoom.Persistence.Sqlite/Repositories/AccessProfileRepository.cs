@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using NetLoom.Domain.Access;
 using NetLoom.Persistence.Sqlite.Database;
@@ -88,6 +89,48 @@ WHERE access_profile_id = @id;";
                 command.ExecuteNonQuery();
             }
         }
+
+        public IReadOnlyList<AccessProfile> GetEnabled()
+        {
+            var profiles =
+                new List<AccessProfile>();
+
+            using (var connection = _connectionFactory.OpenConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    access_profile_id,
+    name,
+    snmp_version,
+    snmp_username
+FROM access_profiles
+WHERE is_enabled = 1
+ORDER BY name COLLATE NOCASE, access_profile_id;";
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        profiles.Add(
+                            new AccessProfile(
+                                Guid.Parse(
+                                    reader.GetString(0)),
+                                reader.GetString(1),
+                                true,
+                                (SnmpVersion)Enum.Parse(
+                                    typeof(SnmpVersion),
+                                    reader.GetString(2)),
+                                reader.IsDBNull(3)
+                                    ? null
+                                    : reader.GetString(3)));
+                    }
+                }
+            }
+
+            return profiles;
+        }
+
         public AccessProfile Get(Guid id)
         {
             using (var connection = _connectionFactory.OpenConnection())

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -23,6 +23,8 @@ namespace NetLoom.Desktop.Discovery
 
         private readonly string _engineExecutablePath;
         private readonly IEngineProcessFactory _processFactory;
+        private readonly IDiscoveryProcessEnvironmentProvider
+            _environmentProvider;
 
         private readonly Queue<DiscoveryNotification>
             _pendingNotifications =
@@ -42,13 +44,35 @@ namespace NetLoom.Desktop.Discovery
             string engineExecutablePath)
             : this(
                 engineExecutablePath,
-                new DesktopEngineProcessFactory())
+                new DesktopEngineProcessFactory(),
+                InheritedDiscoveryProcessEnvironmentProvider.Instance)
+        {
+        }
+
+        internal DesktopEngineDiscoveryControl(
+            string engineExecutablePath,
+            IDiscoveryProcessEnvironmentProvider environmentProvider)
+            : this(
+                engineExecutablePath,
+                new DesktopEngineProcessFactory(),
+                environmentProvider)
         {
         }
 
         internal DesktopEngineDiscoveryControl(
             string engineExecutablePath,
             IEngineProcessFactory processFactory)
+            : this(
+                engineExecutablePath,
+                processFactory,
+                InheritedDiscoveryProcessEnvironmentProvider.Instance)
+        {
+        }
+
+        internal DesktopEngineDiscoveryControl(
+            string engineExecutablePath,
+            IEngineProcessFactory processFactory,
+            IDiscoveryProcessEnvironmentProvider environmentProvider)
         {
             if (string.IsNullOrWhiteSpace(engineExecutablePath))
             {
@@ -63,6 +87,11 @@ namespace NetLoom.Desktop.Discovery
                 processFactory ??
                 throw new ArgumentNullException(
                     nameof(processFactory));
+
+            _environmentProvider =
+                environmentProvider ??
+                throw new ArgumentNullException(
+                    nameof(environmentProvider));
 
             _current =
                 Snapshot(
@@ -138,6 +167,7 @@ namespace NetLoom.Desktop.Discovery
             {
                 process =
                     StartProcess(
+                        request,
                         EngineDiscoveryCommandBuilder
                             .BuildTokens(
                                 request),
@@ -272,19 +302,24 @@ namespace NetLoom.Desktop.Discovery
         }
 
         private IEngineProcessSession StartProcess(
+            DiscoveryControlRequest discoveryRequest,
             IReadOnlyList<string> argumentTokens,
             out Task observer)
         {
-            var request =
+            var processRequest =
                 new EngineProcessStartRequest(
                     _engineExecutablePath,
                     EngineDiscoveryCommandBuilder
                         .FormatArguments(
-                            argumentTokens));
+                            argumentTokens),
+                    _environmentProvider
+                        .CreateEnvironment(
+                            discoveryRequest.AccessProfileId,
+                            discoveryRequest.Version));
 
             var process =
                 _processFactory.Start(
-                    request);
+                    processRequest);
 
             process.OutputLineReceived +=
                 OnOutputLineReceived;

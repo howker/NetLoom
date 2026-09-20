@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
@@ -41,6 +41,12 @@ namespace NetLoom.Desktop.Monitoring
                         },
                     EnableRaisingEvents = true
                 };
+
+            foreach (var pair in request.EnvironmentVariables)
+            {
+                process.StartInfo.EnvironmentVariables[pair.Key] =
+                    pair.Value ?? string.Empty;
+            }
 
             try
             {

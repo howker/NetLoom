@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
@@ -82,6 +82,62 @@ namespace NetLoom.Tests.Modern
                 arguments.IndexOf(
                     "password",
                     StringComparison.OrdinalIgnoreCase));
+        }
+
+
+        [TestMethod]
+        public async Task StartPassesProfileEnvironmentWithoutPuttingSecretInArguments()
+        {
+            var factory =
+                new FakeEngineProcessFactory();
+
+            var environment =
+                new FakeDiscoveryProcessEnvironmentProvider(
+                    "synthetic-community");
+
+            using (var control =
+                new DesktopEngineDiscoveryControl(
+                    "NetLoom.Engine.exe",
+                    factory,
+                    environment))
+            {
+                var start =
+                    control.StartAsync(
+                        DefaultRequest(),
+                        CancellationToken.None);
+
+                var process =
+                    factory.LastSession;
+
+                Assert.IsNotNull(process);
+                Assert.IsNotNull(factory.LastRequest);
+                Assert.AreEqual(
+                    "synthetic-community",
+                    factory.LastRequest.EnvironmentVariables[
+                        "NETLOOM_SNMP_COMMUNITY"]);
+                Assert.AreEqual(
+                    ProfileId,
+                    environment.LastProfileId);
+                Assert.AreEqual(
+                    SnmpVersion.V2C,
+                    environment.LastVersion);
+                Assert.AreEqual(
+                    -1,
+                    factory.LastRequest.Arguments.IndexOf(
+                        "synthetic-community",
+                        StringComparison.Ordinal));
+
+                process.EmitOutput(
+                    StartedMarker(
+                        4));
+
+                await start;
+
+                process.EmitOutput(
+                    "NETLOOM_DISCOVERY state=completed processed=4 total=4 found=0");
+                process.Complete(
+                    0);
+            }
         }
 
         [TestMethod]
@@ -471,6 +527,38 @@ namespace NetLoom.Tests.Modern
                 : Convert.ToBase64String(
                     Encoding.UTF8.GetBytes(
                         value));
+        }
+
+        private sealed class FakeDiscoveryProcessEnvironmentProvider :
+            IDiscoveryProcessEnvironmentProvider
+        {
+            private readonly string _community;
+
+            public FakeDiscoveryProcessEnvironmentProvider(
+                string community)
+            {
+                _community = community;
+            }
+
+            public Guid LastProfileId { get; private set; }
+
+            public SnmpVersion LastVersion { get; private set; }
+
+            public IReadOnlyDictionary<string, string> CreateEnvironment(
+                Guid accessProfileId,
+                SnmpVersion version)
+            {
+                LastProfileId = accessProfileId;
+                LastVersion = version;
+
+                return new Dictionary<string, string>
+                {
+                    {
+                        "NETLOOM_SNMP_COMMUNITY",
+                        _community
+                    }
+                };
+            }
         }
 
         private sealed class FakeEngineProcessFactory :

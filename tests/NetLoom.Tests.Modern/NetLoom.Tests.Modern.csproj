@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -104,6 +104,10 @@
              Link="Desktop\Discovery\EngineDiscoveryMarkerParser.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Discovery\DesktopEngineDiscoveryControl.cs"
              Link="Desktop\Discovery\DesktopEngineDiscoveryControl.cs" />
+    <Compile Include="..\..\src\NetLoom.Desktop\Discovery\IDiscoveryProcessEnvironmentProvider.cs"
+             Link="Desktop\Discovery\IDiscoveryProcessEnvironmentProvider.cs" />
+    <Compile Include="..\..\src\NetLoom.Desktop\Discovery\DesktopDiscoveryProcessEnvironmentProvider.cs"
+             Link="Desktop\Discovery\DesktopDiscoveryProcessEnvironmentProvider.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Monitoring\IEngineProcessFactory.cs"
              Link="Desktop\Monitoring\IEngineProcessFactory.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Monitoring\EngineMonitoringCommandBuilder.cs"
