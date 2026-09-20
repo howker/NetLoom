@@ -373,8 +373,16 @@ namespace NetLoom.Engine
                 try
                 {
                     hostLog.Info(
-                        "DISCOVERY_STARTED cidr=" +
-                        options.DiscoveryCidr);
+                        string.IsNullOrWhiteSpace(
+                            options.DiscoveryCidr)
+                            ? "DISCOVERY_STARTED range=" +
+                                options.DiscoveryStartAddress +
+                                "-" +
+                                options.DiscoveryEndAddress +
+                                " mask=" +
+                                options.DiscoverySubnetMask
+                            : "DISCOVERY_STARTED cidr=" +
+                                options.DiscoveryCidr);
 
                     var completed =
                         EngineDiscoveryRunner.Run(

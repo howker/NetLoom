@@ -174,6 +174,23 @@ public partial class MainWindow
             return;
         }
 
+        ApplyZoomCenteredOnSelection(
+            next,
+            null);
+    }
+
+    private void FocusSelectedMapAtNativeZoom(
+        Action completed)
+    {
+        ApplyZoomCenteredOnSelection(
+            ClampZoom(1.0),
+            completed);
+    }
+
+    private void ApplyZoomCenteredOnSelection(
+        double next,
+        Action completed)
+    {
         var viewportWidth =
             MapScrollViewer.ViewportWidth;
 
@@ -224,6 +241,7 @@ public partial class MainWindow
                                 (viewportHeight / 2.0)));
 
                     TrySaveViewportLayout();
+                    completed?.Invoke();
                 }));
     }
 
@@ -852,10 +870,107 @@ public partial class MainWindow
             HandoffBehavior.SnapshotAndReplace);
     }
 
+    private void AnimateDiscoveryFocus(
+        Guid deviceId)
+    {
+        var visual =
+            _nodeVisualsByIdentity.Values
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId.HasValue &&
+                        item.DeviceId.Value ==
+                            deviceId);
+
+        if (visual == null)
+        {
+            return;
+        }
+
+        var element =
+            visual.Border;
+
+        // Discovery focus должен быть заметен даже на уже выбранном узле.
+        // Пульсируем не только прозрачностью, но и рамкой карточки.
+        element.BeginAnimation(
+            UIElement.OpacityProperty,
+            null);
+
+        element.BeginAnimation(
+            Border.BorderThicknessProperty,
+            null);
+
+        element.Opacity = 1.0;
+
+        var baseThickness =
+            element.BorderThickness;
+
+        var pulseThickness =
+            new Thickness(
+                baseThickness.Left + 4.0,
+                baseThickness.Top + 4.0,
+                baseThickness.Right + 4.0,
+                baseThickness.Bottom + 4.0);
+
+        var duration =
+            new Duration(
+                TimeSpan.FromMilliseconds(
+                    260.0));
+
+        var repeat =
+            new RepeatBehavior(
+                6.0);
+
+        var opacityAnimation =
+            new DoubleAnimation(
+                1.0,
+                0.35,
+                duration)
+            {
+                AutoReverse = true,
+                RepeatBehavior = repeat
+            };
+
+        var borderAnimation =
+            new ThicknessAnimation(
+                baseThickness,
+                pulseThickness,
+                duration)
+            {
+                AutoReverse = true,
+                RepeatBehavior = repeat
+            };
+
+        opacityAnimation.Completed +=
+            (sender, args) =>
+            {
+                element.BeginAnimation(
+                    UIElement.OpacityProperty,
+                    null);
+
+                element.BeginAnimation(
+                    Border.BorderThicknessProperty,
+                    null);
+
+                element.Opacity = 1.0;
+                element.BorderThickness =
+                    baseThickness;
+            };
+
+        element.BeginAnimation(
+            UIElement.OpacityProperty,
+            opacityAnimation,
+            HandoffBehavior.SnapshotAndReplace);
+
+        element.BeginAnimation(
+            Border.BorderThicknessProperty,
+            borderAnimation,
+            HandoffBehavior.SnapshotAndReplace);
+    }
     private void AnimatePulse(
         UIElement element,
         MapMotionKind kind,
-        double targetOpacity = 1.0)
+        double targetOpacity = 1.0,
+        int repeatCount = 1)
     {
         if (element == null)
         {
@@ -892,7 +1007,12 @@ public partial class MainWindow
                 new Duration(
                     halfDuration))
             {
-                AutoReverse = true
+                AutoReverse = true,
+                RepeatBehavior =
+                    new RepeatBehavior(
+                        Math.Max(
+                            1,
+                            repeatCount))
             };
 
         animation.Completed +=

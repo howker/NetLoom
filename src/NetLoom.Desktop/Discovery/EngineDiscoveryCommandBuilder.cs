@@ -18,14 +18,34 @@ namespace NetLoom.Desktop.Discovery
                     nameof(request));
             }
 
+            var scopeTokens =
+                request.UsesAddressRange
+                    ? new[]
+                    {
+                        "--start-address",
+                        request.StartAddress,
+                        "--end-address",
+                        request.EndAddress,
+                        "--subnet-mask",
+                        request.SubnetMask
+                    }
+                    : new[]
+                    {
+                        "--cidr",
+                        request.Cidr
+                    };
+
             return new[]
             {
-                "discover",
-                "--cidr",
-                request.Cidr,
-                "--access-profile-id",
-                request.AccessProfileId.ToString("D"),
-                "--port",
+                "discover"
+            }
+            .Concat(scopeTokens)
+            .Concat(
+                new[]
+                {
+                    "--access-profile-id",
+                    request.AccessProfileId.ToString("D"),
+                    "--port",
                 request.Port.ToString(
                     CultureInfo.InvariantCulture),
                 "--version",
@@ -60,7 +80,8 @@ namespace NetLoom.Desktop.Discovery
                     CultureInfo.InvariantCulture),
                 "--control-stdin",
                 "true"
-            };
+                })
+            .ToArray();
         }
 
         public static string FormatArguments(

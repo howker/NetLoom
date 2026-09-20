@@ -32,9 +32,16 @@ namespace NetLoom.Engine
             }
 
             var addresses =
-                Ipv4CidrExpander.Expand(
-                    options.DiscoveryCidr,
-                    options.DiscoveryMaxAddresses);
+                string.IsNullOrWhiteSpace(
+                    options.DiscoveryCidr)
+                    ? Ipv4RangeExpander.Expand(
+                        options.DiscoveryStartAddress,
+                        options.DiscoveryEndAddress,
+                        options.DiscoverySubnetMask,
+                        options.DiscoveryMaxAddresses)
+                    : Ipv4CidrExpander.Expand(
+                        options.DiscoveryCidr,
+                        options.DiscoveryMaxAddresses);
 
             var profile =
                 new DiscoverySnmpProfile(

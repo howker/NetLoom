@@ -2,12 +2,15 @@ using System;
 using System.Diagnostics;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Topology;
+using NetLoom.Desktop.Discovery;
 using NetLoom.Desktop.Monitoring;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Locations;
 using NetLoom.Persistence.Sqlite.Lookup;
 using NetLoom.Persistence.Sqlite.MapLayout;
+using NetLoom.Persistence.Sqlite.Repositories;
+using NetLoom.Persistence.Sqlite.Security;
 using NetLoom.Persistence.Sqlite.Stp;
 using NetLoom.Persistence.Sqlite.Topology;
 using NetLoom.Topology.Alerts;
@@ -95,11 +98,31 @@ namespace NetLoom.Desktop
                         mapProvider,
                         alertProvider);
 
+                var engineExecutablePath =
+                    DesktopEngineExecutablePathResolver
+                        .Resolve();
+
                 var monitoringControl =
                     new DesktopEngineMonitoringControl(
-                        DesktopEngineExecutablePathResolver
-                            .Resolve(),
+                        engineExecutablePath,
                         databasePath);
+
+                var accessProfileRepository =
+                    new AccessProfileRepository(
+                        connectionFactory);
+
+                var discoveryControl =
+                    new DesktopEngineDiscoveryControl(
+                        engineExecutablePath,
+                        new DesktopDiscoveryProcessEnvironmentProvider(
+                            accessProfileRepository,
+                            new SecretRepository(
+                                connectionFactory,
+                                new DpapiSecretProtector())));
+
+                var discoveryProfiles =
+                    accessProfileRepository
+                        .GetEnabled();
 
                 var application =
                     new System.Windows.Application();
@@ -119,7 +142,11 @@ namespace NetLoom.Desktop
                                 locationRepository,
                                 topologyRepository),
                             mapLayoutStore,
-                            monitoringControl));
+                            monitoringControl,
+                            discoveryControl,
+                            discoveryProfiles,
+                            new DiscoveryCandidateTopologyMaterializer(
+                                topologyRepository)));
 
                 hostLog.Info(
                     "HOST_STOPPED exitCode=" +

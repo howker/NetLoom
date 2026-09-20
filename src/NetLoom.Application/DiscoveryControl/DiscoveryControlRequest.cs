@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetLoom.Application.Discovery;
 using NetLoom.Domain.Access;
 
 namespace NetLoom.Application.DiscoveryControl
@@ -20,6 +21,9 @@ namespace NetLoom.Application.DiscoveryControl
             SnmpVersion version)
             : this(
                 cidr,
+                null,
+                null,
+                null,
                 accessProfileId,
                 version,
                 161,
@@ -47,12 +51,122 @@ namespace NetLoom.Application.DiscoveryControl
             IEnumerable<int> tcpPorts,
             int interAddressDelayMilliseconds,
             int maxAddresses)
+            : this(
+                cidr,
+                null,
+                null,
+                null,
+                accessProfileId,
+                version,
+                port,
+                timeoutMilliseconds,
+                retryCount,
+                maxRepetitions,
+                icmpTimeoutMilliseconds,
+                tcpTimeoutMilliseconds,
+                tcpPorts,
+                interAddressDelayMilliseconds,
+                maxAddresses)
         {
-            if (string.IsNullOrWhiteSpace(cidr))
+        }
+
+        public DiscoveryControlRequest(
+            string startAddress,
+            string endAddress,
+            string subnetMask,
+            Guid accessProfileId,
+            SnmpVersion version)
+            : this(
+                null,
+                startAddress,
+                endAddress,
+                subnetMask,
+                accessProfileId,
+                version,
+                161,
+                750,
+                0,
+                10,
+                500,
+                500,
+                DefaultTcpPorts,
+                50,
+                4096)
+        {
+        }
+
+        public DiscoveryControlRequest(
+            string startAddress,
+            string endAddress,
+            string subnetMask,
+            Guid accessProfileId,
+            SnmpVersion version,
+            int port,
+            int timeoutMilliseconds,
+            int retryCount,
+            int maxRepetitions,
+            int icmpTimeoutMilliseconds,
+            int tcpTimeoutMilliseconds,
+            IEnumerable<int> tcpPorts,
+            int interAddressDelayMilliseconds,
+            int maxAddresses)
+            : this(
+                null,
+                startAddress,
+                endAddress,
+                subnetMask,
+                accessProfileId,
+                version,
+                port,
+                timeoutMilliseconds,
+                retryCount,
+                maxRepetitions,
+                icmpTimeoutMilliseconds,
+                tcpTimeoutMilliseconds,
+                tcpPorts,
+                interAddressDelayMilliseconds,
+                maxAddresses)
+        {
+        }
+
+        private DiscoveryControlRequest(
+            string cidr,
+            string startAddress,
+            string endAddress,
+            string subnetMask,
+            Guid accessProfileId,
+            SnmpVersion version,
+            int port,
+            int timeoutMilliseconds,
+            int retryCount,
+            int maxRepetitions,
+            int icmpTimeoutMilliseconds,
+            int tcpTimeoutMilliseconds,
+            IEnumerable<int> tcpPorts,
+            int interAddressDelayMilliseconds,
+            int maxAddresses)
+        {
+            var hasCidr =
+                !string.IsNullOrWhiteSpace(cidr);
+
+            var hasRangeValue =
+                !string.IsNullOrWhiteSpace(startAddress) ||
+                !string.IsNullOrWhiteSpace(endAddress) ||
+                !string.IsNullOrWhiteSpace(subnetMask);
+
+            if (hasCidr == hasRangeValue)
             {
                 throw new ArgumentException(
-                    "DISCOVERY_CIDR_REQUIRED",
-                    nameof(cidr));
+                    "DISCOVERY_SCOPE_REQUIRED");
+            }
+
+            if (hasRangeValue &&
+                (string.IsNullOrWhiteSpace(startAddress) ||
+                 string.IsNullOrWhiteSpace(endAddress) ||
+                 string.IsNullOrWhiteSpace(subnetMask)))
+            {
+                throw new ArgumentException(
+                    "DISCOVERY_RANGE_FIELDS_REQUIRED");
             }
 
             if (accessProfileId == Guid.Empty)
@@ -140,7 +254,25 @@ namespace NetLoom.Application.DiscoveryControl
                     nameof(maxAddresses));
             }
 
-            Cidr = cidr.Trim();
+            if (hasRangeValue)
+            {
+                Ipv4RangeExpander.Expand(
+                    startAddress,
+                    endAddress,
+                    subnetMask,
+                    maxAddresses);
+            }
+
+            Cidr =
+                hasCidr
+                    ? cidr.Trim()
+                    : null;
+            StartAddress =
+                Normalize(startAddress);
+            EndAddress =
+                Normalize(endAddress);
+            SubnetMask =
+                Normalize(subnetMask);
             AccessProfileId = accessProfileId;
             Version = version;
             Port = port;
@@ -156,6 +288,15 @@ namespace NetLoom.Application.DiscoveryControl
         }
 
         public string Cidr { get; }
+
+        public string StartAddress { get; }
+
+        public string EndAddress { get; }
+
+        public string SubnetMask { get; }
+
+        public bool UsesAddressRange =>
+            StartAddress != null;
 
         public Guid AccessProfileId { get; }
 
@@ -178,5 +319,13 @@ namespace NetLoom.Application.DiscoveryControl
         public int InterAddressDelayMilliseconds { get; }
 
         public int MaxAddresses { get; }
+
+        private static string Normalize(
+            string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? null
+                : value.Trim();
+        }
     }
 }

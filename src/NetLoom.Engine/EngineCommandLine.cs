@@ -40,6 +40,12 @@ namespace NetLoom.Engine
 
         public string DiscoveryCidr { get; private set; }
 
+        public string DiscoveryStartAddress { get; private set; }
+
+        public string DiscoveryEndAddress { get; private set; }
+
+        public string DiscoverySubnetMask { get; private set; }
+
         public Guid? AccessProfileId { get; private set; }
 
         public IReadOnlyList<int> DiscoveryTcpPorts { get; private set; }
@@ -158,6 +164,9 @@ namespace NetLoom.Engine
                         new[]
                         {
                             "cidr",
+                            "start-address",
+                            "end-address",
+                            "subnet-mask",
                             "access-profile-id",
                             "port",
                             "version",
@@ -172,13 +181,79 @@ namespace NetLoom.Engine
                             "control-stdin"
                         });
 
+                var discoveryCidr =
+                    Get(
+                        discoveryValues,
+                        "cidr");
+
+                var discoveryStartAddress =
+                    Get(
+                        discoveryValues,
+                        "start-address");
+
+                var discoveryEndAddress =
+                    Get(
+                        discoveryValues,
+                        "end-address");
+
+                var discoverySubnetMask =
+                    Get(
+                        discoveryValues,
+                        "subnet-mask");
+
+                var hasCidr =
+                    !string.IsNullOrWhiteSpace(
+                        discoveryCidr);
+
+                var hasRangeValue =
+                    !string.IsNullOrWhiteSpace(
+                        discoveryStartAddress) ||
+                    !string.IsNullOrWhiteSpace(
+                        discoveryEndAddress) ||
+                    !string.IsNullOrWhiteSpace(
+                        discoverySubnetMask);
+
+                if (hasCidr && hasRangeValue)
+                {
+                    throw Invalid(
+                        "DISCOVERY_SCOPE_CONFLICT");
+                }
+
+                if (!hasCidr)
+                {
+                    discoveryStartAddress =
+                        Required(
+                            discoveryValues,
+                            "start-address");
+                    discoveryEndAddress =
+                        Required(
+                            discoveryValues,
+                            "end-address");
+                    discoverySubnetMask =
+                        Required(
+                            discoveryValues,
+                            "subnet-mask");
+                }
+
                 return new EngineCommandLine
                 {
                     Command = command,
                     DiscoveryCidr =
-                        Required(
-                            discoveryValues,
-                            "cidr"),
+                        hasCidr
+                            ? discoveryCidr.Trim()
+                            : null,
+                    DiscoveryStartAddress =
+                        hasCidr
+                            ? null
+                            : discoveryStartAddress.Trim(),
+                    DiscoveryEndAddress =
+                        hasCidr
+                            ? null
+                            : discoveryEndAddress.Trim(),
+                    DiscoverySubnetMask =
+                        hasCidr
+                            ? null
+                            : discoverySubnetMask.Trim(),
                     AccessProfileId =
                         ParseRequiredGuid(
                             Required(

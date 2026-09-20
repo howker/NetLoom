@@ -1318,4 +1318,124 @@ Drag the header to move this location together with its child locations and assi
   <data name="MonitoringValidationVersion" xml:space="preserve">
     <value>Select an SNMP version.</value>
   </data>
+  <data name="DiscoveryTitle" xml:space="preserve">
+    <value>Network discovery</value>
+  </data>
+  <data name="DiscoveryStateLabel" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="DiscoveryProgressLabel" xml:space="preserve">
+    <value>Progress</value>
+  </data>
+  <data name="DiscoveryCurrentAddressLabel" xml:space="preserve">
+    <value>Current address</value>
+  </data>
+  <data name="DiscoveryCidrLabel" xml:space="preserve">
+    <value>Network range (IPv4 CIDR)</value>
+  </data>
+  <data name="DiscoveryStartAddressLabel" xml:space="preserve">
+    <value>Start IP</value>
+  </data>
+  <data name="DiscoveryEndAddressLabel" xml:space="preserve">
+    <value>End IP</value>
+  </data>
+  <data name="DiscoverySubnetMaskLabel" xml:space="preserve">
+    <value>Subnet mask</value>
+  </data>
+  <data name="DiscoveryProfileLabel" xml:space="preserve">
+    <value>SNMP profile</value>
+  </data>
+  <data name="DiscoveryStartAction" xml:space="preserve">
+    <value>Start discovery</value>
+  </data>
+  <data name="DiscoveryStopAction" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="DiscoveryWarning" xml:space="preserve">
+    <value>Discovery sends ICMP, TCP connection attempts, and SNMP requests to addresses in the specified range. Run it only on networks you are authorized to scan.</value>
+  </data>
+  <data name="DiscoveryCandidatesLabel" xml:space="preserve">
+    <value>Found devices</value>
+  </data>
+  <data name="DiscoveryNoProfiles" xml:space="preserve">
+    <value>No enabled SNMP profiles are available.</value>
+  </data>
+  <data name="DiscoveryProfileDisplay" xml:space="preserve">
+    <value>{0} • SNMP {1}</value>
+  </data>
+  <data name="DiscoveryProgressPending" xml:space="preserve">
+    <value>Not started</value>
+  </data>
+  <data name="DiscoveryProgressValue" xml:space="preserve">
+    <value>Checked {0} of {1}, found {2}</value>
+  </data>
+  <data name="DiscoveryCandidateSummary" xml:space="preserve">
+    <value>{0} • {1} • SNMP: {2}</value>
+  </data>
+  <data name="DiscoveryUnnamedCandidate" xml:space="preserve">
+    <value>name unavailable</value>
+  </data>
+  <data name="DiscoverySnmpResponded" xml:space="preserve">
+    <value>responded</value>
+  </data>
+  <data name="DiscoverySnmpUnavailable" xml:space="preserve">
+    <value>no response</value>
+  </data>
+  <data name="DiscoveryStateIdle" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="DiscoveryStateStarting" xml:space="preserve">
+    <value>Starting</value>
+  </data>
+  <data name="DiscoveryStateRunning" xml:space="preserve">
+    <value>Running</value>
+  </data>
+  <data name="DiscoveryStateStopping" xml:space="preserve">
+    <value>Stopping</value>
+  </data>
+  <data name="DiscoveryStateCompleted" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="DiscoveryStateStopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="DiscoveryStateFaulted" xml:space="preserve">
+    <value>Faulted</value>
+  </data>
+  <data name="DiscoveryValidationCidrRequired" xml:space="preserve">
+    <value>Enter an IPv4 CIDR range, for example 192.0.2.0/24.</value>
+  </data>
+  <data name="DiscoveryValidationCidrInvalid" xml:space="preserve">
+    <value>Enter a valid IPv4 CIDR range.</value>
+  </data>
+  <data name="DiscoveryValidationRangeRequired" xml:space="preserve">
+    <value>Enter a start IP, end IP, and subnet mask.</value>
+  </data>
+  <data name="DiscoveryValidationRangeInvalid" xml:space="preserve">
+    <value>Enter valid IPv4 addresses and a contiguous subnet mask. The start address must not be greater than the end address.</value>
+  </data>
+  <data name="DiscoveryValidationRangeCrossesSubnet" xml:space="preserve">
+    <value>The start and end IP addresses must belong to the same subnet for the specified mask.</value>
+  </data>
+  <data name="DiscoveryValidationRangeTooLarge" xml:space="preserve">
+    <value>The range is too large. This discovery run allows at most {0} addresses.</value>
+  </data>
+  <data name="DiscoveryValidationProfileRequired" xml:space="preserve">
+    <value>Select one SNMP profile.</value>
+  </data>
+  <data name="DiscoveryProfileCredentialsMissing" xml:space="preserve">
+    <value>The selected SNMP profile does not have a stored community.</value>
+  </data>
+  <data name="DiscoveryV3SecurityUnsupported" xml:space="preserve">
+    <value>This SNMPv3 profile requires authentication or privacy settings that are not yet stored by NetLoom. Use a noAuthNoPriv profile for discovery.</value>
+  </data>
+  <data name="DiscoveryFaultMessage" xml:space="preserve">
+    <value>Engine diagnostic: {0}</value>
+  </data>
+  <data name="DiscoveryActionFailed" xml:space="preserve">
+    <value>Discovery action failed: {0}</value>
+  </data>
+  <data name="DiscoveryMaterializationFailed" xml:space="preserve">
+    <value>Device {0} was found, but could not be added to topology: {1}</value>
+  </data>
 </root>

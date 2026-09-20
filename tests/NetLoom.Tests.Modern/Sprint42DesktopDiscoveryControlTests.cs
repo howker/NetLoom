@@ -86,6 +86,46 @@ namespace NetLoom.Tests.Modern
 
 
         [TestMethod]
+        public void CommandBuilderUsesExplicitStartEndAndMaskForOperatorRange()
+        {
+            var request =
+                new DiscoveryControlRequest(
+                    "192.0.2.10",
+                    "192.0.2.20",
+                    "255.255.255.0",
+                    ProfileId,
+                    SnmpVersion.V2C);
+
+            var tokens =
+                EngineDiscoveryCommandBuilder
+                    .BuildTokens(
+                        request);
+
+            CollectionAssert.Contains(
+                new List<string>(tokens),
+                "--start-address");
+            CollectionAssert.Contains(
+                new List<string>(tokens),
+                "192.0.2.10");
+            CollectionAssert.Contains(
+                new List<string>(tokens),
+                "--end-address");
+            CollectionAssert.Contains(
+                new List<string>(tokens),
+                "192.0.2.20");
+            CollectionAssert.Contains(
+                new List<string>(tokens),
+                "--subnet-mask");
+            CollectionAssert.Contains(
+                new List<string>(tokens),
+                "255.255.255.0");
+            Assert.AreEqual(
+                -1,
+                new List<string>(tokens)
+                    .IndexOf("--cidr"));
+        }
+
+        [TestMethod]
         public async Task StartPassesProfileEnvironmentWithoutPuttingSecretInArguments()
         {
             var factory =

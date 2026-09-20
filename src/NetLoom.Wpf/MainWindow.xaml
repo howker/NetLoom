@@ -231,6 +231,116 @@
             </Border>
         </Expander>
 
+        <Expander x:Name="DiscoveryExpander"
+                  DockPanel.Dock="Top"
+                  IsExpanded="False">
+            <Expander.Header>
+                <TextBlock x:Name="DiscoveryTitleText"
+                           Style="{StaticResource NetLoom.Style.SectionTitle}" />
+            </Expander.Header>
+            <Border Style="{StaticResource NetLoom.Style.Panel}"
+                    Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
+                    BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
+                <StackPanel>
+                    <WrapPanel>
+                        <StackPanel Width="180">
+                            <TextBlock x:Name="DiscoveryStateLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="DiscoveryStateValueText"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Width="270"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="DiscoveryProgressLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="DiscoveryProgressValueText"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Width="210"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="DiscoveryCurrentAddressLabelText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                            <TextBlock x:Name="DiscoveryCurrentAddressValueText"
+                                       FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </WrapPanel>
+
+                    <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                        <StackPanel Width="170">
+                            <TextBlock x:Name="DiscoveryStartAddressLabelText" />
+                            <TextBox x:Name="DiscoveryStartAddressTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="170"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="DiscoveryEndAddressLabelText" />
+                            <TextBox x:Name="DiscoveryEndAddressTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="150"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="DiscoverySubnetMaskLabelText" />
+                            <TextBox x:Name="DiscoverySubnetMaskTextBox" />
+                        </StackPanel>
+                        <StackPanel Width="300"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                            <TextBlock x:Name="DiscoveryProfileLabelText" />
+                            <ComboBox x:Name="DiscoveryProfileComboBox"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+                        <Button x:Name="DiscoveryStartButton"
+                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                VerticalAlignment="Bottom"
+                                Click="OnDiscoveryStartClick" />
+                        <Button x:Name="DiscoveryStopButton"
+                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                VerticalAlignment="Bottom"
+                                Click="OnDiscoveryStopClick" />
+                    </WrapPanel>
+
+                    <TextBlock x:Name="DiscoveryWarningText"
+                               Foreground="{DynamicResource NetLoom.Brush.Warning}"
+                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                               TextWrapping="Wrap" />
+                    <TextBlock x:Name="DiscoveryMessageText"
+                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                               Padding="10,8"
+                               TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource NetLoom.Brush.OnAccent}" />
+                                <Setter Property="Background"
+                                        Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                <Setter Property="FontWeight"
+                                        Value="SemiBold" />
+                                <Style.Triggers>
+                                    <Trigger Property="Text"
+                                             Value="">
+                                        <Setter Property="Visibility"
+                                                Value="Collapsed" />
+                                    </Trigger>
+                                    <Trigger Property="Text"
+                                             Value="{x:Null}">
+                                        <Setter Property="Visibility"
+                                                Value="Collapsed" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <TextBlock x:Name="DiscoveryCandidatesLabelText"
+                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                    <ListBox x:Name="DiscoveryCandidatesList"
+                             MaxHeight="120"
+                             DisplayMemberPath="Summary" />
+                </StackPanel>
+            </Border>
+        </Expander>
+
         <Border DockPanel.Dock="Right"
                 Style="{StaticResource NetLoom.Style.Panel}"
                 Width="{DynamicResource NetLoom.Sidebar.Width}"

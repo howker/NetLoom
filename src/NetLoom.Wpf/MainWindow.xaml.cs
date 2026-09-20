@@ -14,6 +14,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using NetLoom.Application.Alerts;
+using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.MapLayout;
@@ -25,6 +26,7 @@ using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
+using NetLoom.Domain.Access;
 using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.MapInteraction;
 
@@ -297,6 +299,52 @@ public partial class MainWindow : Window
         ILocationTopologyService locationTopologyService,
         IMapLocationLayoutStore mapLocationLayoutStore,
         IMonitoringControl monitoringControl)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            mapLayoutStore,
+            manualTopologyService,
+            locationTopologyService,
+            mapLocationLayoutStore,
+            monitoringControl,
+            new EmptyDiscoveryControl(),
+            new AccessProfile[0],
+            new EmptyDiscoveryCandidateMaterializer())
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMonitoringControl monitoringControl,
+        IDiscoveryControl discoveryControl,
+        IReadOnlyList<AccessProfile> discoveryProfiles,
+        IDiscoveryCandidateMaterializer discoveryCandidateMaterializer)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            new EmptyMapLayoutStore(),
+            new EmptyManualTopologyService(),
+            new EmptyLocationTopologyService(),
+            new EmptyMapLocationLayoutStore(),
+            monitoringControl,
+            discoveryControl,
+            discoveryProfiles,
+            discoveryCandidateMaterializer)
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMapLayoutStore mapLayoutStore,
+        IManualTopologyService manualTopologyService,
+        ILocationTopologyService locationTopologyService,
+        IMapLocationLayoutStore mapLocationLayoutStore,
+        IMonitoringControl monitoringControl,
+        IDiscoveryControl discoveryControl,
+        IReadOnlyList<AccessProfile> discoveryProfiles,
+        IDiscoveryCandidateMaterializer discoveryCandidateMaterializer)
     {
         InitializeComponent();
 
@@ -304,6 +352,22 @@ public partial class MainWindow : Window
             monitoringControl ??
             throw new ArgumentNullException(
                 nameof(monitoringControl));
+
+        _discoveryControl =
+            discoveryControl ??
+            throw new ArgumentNullException(
+                nameof(discoveryControl));
+
+        _discoveryProfiles =
+            (discoveryProfiles ??
+             throw new ArgumentNullException(
+                 nameof(discoveryProfiles)))
+            .ToArray();
+
+        _discoveryCandidateMaterializer =
+            discoveryCandidateMaterializer ??
+            throw new ArgumentNullException(
+                nameof(discoveryCandidateMaterializer));
 
         _nodeWidth =
             GetDoubleResource(
@@ -537,6 +601,7 @@ public partial class MainWindow : Window
             new AlertRow[0];
 
         InitializeMonitoringPanel();
+        InitializeDiscoveryPanel();
 
         _lastMapSnapshot =
             EmptySnapshot();
@@ -571,6 +636,7 @@ public partial class MainWindow : Window
         _lookupRequestTracker.Close();
         _lifetimeCancellation.Cancel();
         CloseMonitoringPanel();
+        CloseDiscoveryPanel();
     }
 
     private async void OnRefreshTimerTick(

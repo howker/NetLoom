@@ -80,6 +80,125 @@ namespace NetLoom.Tests.Modern
         }
 
         [TestMethod]
+        public void DiscoverCommandAcceptsExplicitStartEndAndSubnetMask()
+        {
+            var profileId =
+                Guid.Parse(
+                    "11111111-2222-3333-4444-555555555555");
+
+            var parsed =
+                EngineCommandLine.Parse(
+                    new[]
+                    {
+                        "discover",
+                        "--start-address",
+                        "192.0.2.10",
+                        "--end-address",
+                        "192.0.2.12",
+                        "--subnet-mask",
+                        "255.255.255.0",
+                        "--access-profile-id",
+                        profileId.ToString("D")
+                    });
+
+            Assert.IsNull(
+                parsed.DiscoveryCidr);
+            Assert.AreEqual(
+                "192.0.2.10",
+                parsed.DiscoveryStartAddress);
+            Assert.AreEqual(
+                "192.0.2.12",
+                parsed.DiscoveryEndAddress);
+            Assert.AreEqual(
+                "255.255.255.0",
+                parsed.DiscoverySubnetMask);
+
+        }
+
+        [TestMethod]
+        public void DiscoveryCompositionExpandsExplicitOperatorRange()
+        {
+            var previous =
+                Environment.GetEnvironmentVariable(
+                    "NETLOOM_SNMP_COMMUNITY");
+
+            try
+            {
+                Environment.SetEnvironmentVariable(
+                    "NETLOOM_SNMP_COMMUNITY",
+                    "s42-range-canary");
+
+                var parsed =
+                    EngineCommandLine.Parse(
+                        new[]
+                        {
+                            "discover",
+                            "--start-address",
+                            "192.0.2.10",
+                            "--end-address",
+                            "192.0.2.12",
+                            "--subnet-mask",
+                            "255.255.255.0",
+                            "--access-profile-id",
+                            Guid.NewGuid().ToString("D")
+                        });
+
+                var request =
+                    EngineDiscoveryComposition
+                        .CreateRequest(
+                            parsed);
+
+                CollectionAssert.AreEqual(
+                    new[]
+                    {
+                        IPAddress.Parse("192.0.2.10"),
+                        IPAddress.Parse("192.0.2.11"),
+                        IPAddress.Parse("192.0.2.12")
+                    },
+                    new List<IPAddress>(
+                        request.Addresses));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(
+                    "NETLOOM_SNMP_COMMUNITY",
+                    previous);
+            }
+        }
+
+        [TestMethod]
+        public void DiscoverCommandRejectsConflictingCidrAndRangeScope()
+        {
+            try
+            {
+                EngineCommandLine.Parse(
+                    new[]
+                    {
+                        "discover",
+                        "--cidr",
+                        "192.0.2.0/30",
+                        "--start-address",
+                        "192.0.2.1",
+                        "--end-address",
+                        "192.0.2.2",
+                        "--subnet-mask",
+                        "255.255.255.0",
+                        "--access-profile-id",
+                        Guid.NewGuid().ToString("D")
+                    });
+
+                Assert.Fail(
+                    "Discovery must accept exactly one address-scope form.");
+            }
+            catch (ArgumentException exception)
+            {
+                Assert.AreEqual(
+                    "DISCOVERY_SCOPE_CONFLICT",
+                    exception.Message);
+            }
+        }
+
+        [TestMethod]
         public void DiscoverCommandRejectsMissingProfileAndMonitoringOnlyOptions()
         {
             try

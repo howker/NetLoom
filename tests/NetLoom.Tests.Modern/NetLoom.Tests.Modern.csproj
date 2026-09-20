@@ -98,6 +98,10 @@
              Link="Engine\EngineDiscoveryRunner.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineDiscoveryStdinControl.cs"
              Link="Engine\EngineDiscoveryStdinControl.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineDiscoveryComposition.cs"
+             Link="Engine\EngineDiscoveryComposition.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineSnmpCredentialFactory.cs"
+             Link="Engine\EngineSnmpCredentialFactory.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Discovery\EngineDiscoveryCommandBuilder.cs"
              Link="Desktop\Discovery\EngineDiscoveryCommandBuilder.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Discovery\EngineDiscoveryMarkerParser.cs"
