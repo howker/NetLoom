@@ -141,7 +141,7 @@
 
 ## Execution map after Sprint 38
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, and Sprint 41 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, persistent hierarchical Location containers, monitoring control, and an operator-accepted glance-readable visual language for category, node state, selection, link confidence/freshness and operational link state. Sprint 41 closed the repeated card-readability friction and a follow-up acceptance finding that ordinary links were too visually weak at the operator's normal zoom. Sprint 42 is now the first unchecked committed product item.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, Sprint 41, and Sprint 42 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, persistent hierarchical Location containers, monitoring control, glance-readable topology semantics, and operator-driven discovery that incrementally materializes discovered devices into the existing map. Sprint 42 closed the discovery workflow with explicit range/subnet/profile input, progress/cancellation, live materialization, automatic focus at a useful scale, and a visible discovery pulse. Sprint 43 is now the first unchecked committed product item.
 
 ### Completed
 
@@ -228,12 +228,15 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Regression evidence covers long-name layout/category icon behavior, truthful node-state presentation and reconciliation using actual card geometry rather than stale fixed-width constants. Operator acceptance on the 8-device / 7-link stand initially rejected the missing state stripe/selection distinction and weak links at 66% zoom; the remediated card and link language was then accepted with no remaining remarks.
   - Closure: forced full solution build, full Modern/Unit/Integration/Snapshot regression, repository text-integrity, `git diff --check`, exact source/index/commit/HEAD-tree proofs and push all passed with `HEAD == origin/main` and a clean worktree. No schema migration or new dependency was added.
 
-- [ ] Sprint 42 — safe operator-driven network discovery.
-  - Operator outcome: enter an authorized address range, watch devices appear as they are discovered, see progress, and stop discovery at any time.
-  - `NetLoom.Engine` remains the discovery host; WPF does not gain a second discovery/runtime path. Discovery reports incremental progress/candidates instead of returning only one final list.
-  - Add cancellation and conservative rate limiting with an explicit operator-visible scan summary/warning. Default behavior uses one explicit SNMP profile and must not guess or iterate credentials; any future multi-profile behavior requires separate explicit operator approval semantics.
-  - Live map assembly consumes discovered candidates incrementally through existing stable identity/reconciliation paths. Discovery does not create `PhysicalLink` directly; links remain LLDP/CDP/manual evidence.
-  - Keep the default TCP probe set bounded and management-oriented; do not turn discovery into a general port scanner.
+- [x] Sprint 42 — safe operator-driven network discovery.
+  - Operator outcome: enter an authorized IPv4 start/end range plus subnet mask, choose one explicit SNMP profile, watch progress and discovered candidates, stop discovery, and see newly discovered devices appear on the live map without restarting the client.
+  - `NetLoom.Engine` remains the only discovery host. WPF uses the existing Desktop discovery-control boundary and receives incremental progress/candidate events; it does not own a second scanner/runtime path.
+  - The operator range is validated as IPv4, ordered, bounded to 4096 addresses, and contained by the entered subnet mask. The Engine retains legacy CIDR support internally, while the accepted WPF surface uses start address / end address / subnet mask.
+  - Discovery keeps the existing conservative defaults: one explicitly selected SNMP profile, no credential guessing or profile iteration, bounded management-oriented TCP probes, cancellation, and inter-address delay/rate limiting with an operator warning.
+  - Discovered candidates are materialized through the existing topology repository. Existing automatic devices are reconciled by observed management address and retain stable `DeviceId`; manual devices are not overwritten. Discovery does not create `PhysicalLink`; links remain LLDP/CDP/manual evidence.
+  - After materialization the existing topology refresh/reconciliation path is reused. The new device is automatically selected, centered at native 100% map scale, and visibly pulses for several seconds; this focus behavior does not add a second viewport/navigation model.
+  - Acceptance: operator acceptance passed on the isolated synthetic discovery stand, including live appearance, automatic selection/focus and visible pulse. Final technical regression passed Modern 156/156, Unit 319/319, Integration 113/113 and Snapshots 7/7. Exact 21-file review/index/commit/blob proofs passed; technical commit `c49cdd306e66b077ab3e44675ce8e79102b97907` is pushed with `HEAD == origin/main` and a clean worktree.
+  - No SQLite migration or new production dependency was added.
 
 - [ ] Sprint 43 — multi-target monitoring in one Engine.
   - Operator outcome: NetLoom continuously monitors all enabled/pollable devices instead of only one selected target.

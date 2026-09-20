@@ -6,25 +6,59 @@
 
 ## Текущее состояние
 
-Sprint 41 is closed and pushed. The glance-readable topology outcome is technically regressed and operator-accepted on the isolated 8-device / 7-link stand; the repository was clean after the accepted visual-fixup commit.
+Sprint 42 is closed and pushed. Safe operator-driven discovery is technically regressed and operator-accepted; technical implementation commit `c49cdd306e66b077ab3e44675ce8e79102b97907` is on `origin/main`, and the technical postflight worktree was clean.
 
-The accepted map-card grammar is now compact and semantic: 160x56 node cards show the full wrapped name and a vector icon for the real NetLoom device category, while detailed metadata stays in the diagnostic panel. A left stripe shows only evidence-backed node degradation state; unknown/incomplete evidence remains neutral. Selection is explicitly separate from state: the selected node uses a blue stripe plus a full blue outline.
+The accepted discovery workflow uses explicit IPv4 start address, end address, subnet mask, and one selected SNMP profile. The range is validated and bounded before launch; credential guessing/profile iteration is not introduced. `NetLoom.Engine` remains the discovery host, while WPF consumes the existing Desktop discovery-control boundary, incremental progress, and candidate events.
 
-The same operator acceptance also closed link-readability friction that appeared only after the first Sprint 41 implementation was exercised at the normal 66% zoom. Neutral links are now thicker, higher-contrast and rounded, while the Sprint 39 confidence dash, freshness opacity and evidence-backed operational-state colors remain intact. No generic online/offline semantics, directed arrows, schema migration or new dependency were introduced.
+Discovered candidates are materialized through the existing topology repository and then through the existing refresh/reconciliation path. Existing automatic devices keep stable `DeviceId` when matched by observed management address, manual devices are not overwritten, and discovery does not create `PhysicalLink`. A newly materialized device is automatically selected, centered at native 100% map scale, and visibly pulsed so the operator can identify it immediately.
 
 The committed product sequence remains unchanged:
 
-1. Sprint 41 — glance-readable topology — complete.
-2. Sprint 42 — safe operator-driven network discovery — next.
-3. Sprint 43 — multi-target monitoring inside one Engine process.
-4. Sprint 44 — PNG + CSV export.
-5. Sprint 45 — full acceptance/hardening on the author's real network.
+1. Sprint 42 — safe operator-driven network discovery — complete.
+2. Sprint 43 — multi-target monitoring inside one Engine process — next.
+3. Sprint 44 — PNG + CSV export.
+4. Sprint 45 — full acceptance/hardening on the author's real network.
 
 Optical degradation is still parallel evidence gathering rather than committed product work. Existing hardware confirms optics but not trustworthy DDM telemetry: MikroTik CSS106 exposes SFP identity while current Rx/Tx/temperature readings remain unconfirmed; MOXA PT-7728 exposes SNMP/LLDP but no DDM surface has yet been found; EDS-408A-SS-SC uses fixed optical ports; unmanaged media converters do not provide their own management telemetry.
 
 MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on all known MOXA devices at the current site.
 
-Next gate: begin Sprint 42 from the existing discovery implementation and first audit its actual Engine/Application boundaries, credential-profile iteration, progress/cancellation shape and rate-limiting gaps before changing product code.
+Next gate: begin Sprint 43 by auditing the current Sprint 40 single-target Engine process/scheduler boundary and the existing stable device/profile inputs, then extend that one Engine host to a bounded multi-target target set without launching one process per device.
+
+## Sprint 42 closure — 2026-09-20
+
+Sprint 42 — safe operator-driven network discovery — is complete.
+
+Implementation:
+- `NetLoom.Engine` remains the discovery host and the WPF client continues to use the transport-neutral Desktop discovery-control boundary rather than owning a second scanner/runtime;
+- the accepted WPF scope uses explicit IPv4 start address, end address, subnet mask, and one selected SNMP profile;
+- `Ipv4RangeExpander` validates IPv4 addresses/mask, start/end ordering, same-subnet containment, and the existing bounded maximum of 4096 addresses;
+- the Engine command path accepts the range/mask scope while retaining legacy CIDR support internally;
+- discovery progress, current address, candidate count and candidate events are surfaced incrementally, and the existing stop/cancellation path remains available;
+- one explicit SNMP profile is used per run; no credential guessing or implicit profile iteration was introduced;
+- existing conservative management-oriented probe/rate defaults are retained, including bounded TCP probes and inter-address delay;
+- `DiscoveryCandidateTopologyMaterializer` reconciles existing automatic devices by observed management address, preserves their stable `DeviceId`, does not overwrite manual devices, and creates new automatic devices when needed;
+- discovery does not create `PhysicalLink`; link truth remains LLDP/CDP/manual evidence;
+- after each materialized candidate, WPF uses the existing topology refresh/reconciliation path so the device appears without client restart;
+- the discovered device is automatically selected, centered through the existing selected-node zoom/viewport mechanism at native 100% scale, and given a temporary visible opacity/border pulse;
+- discovery validation/action/materialization failures use the dedicated visible critical message surface already added to the discovery panel;
+- no SQLite migration and no new production dependency were added.
+
+Verification and acceptance:
+- the final technical review covered exactly 21 changed source/test files;
+- forced solution build passed before closure;
+- full regression passed: Modern 156/156, Unit 319/319, Integration 113/113, Snapshots 7/7;
+- repository text-integrity and `git diff --check` passed;
+- operator acceptance on the isolated synthetic discovery stand confirmed live materialization, automatic selection, useful centering/scale, and the visible discovery pulse;
+- exact staged/index/actual-commit/HEAD-tree blob proofs passed;
+- technical implementation commit `c49cdd306e66b077ab3e44675ce8e79102b97907` (`Sprint 42: add operator network discovery`) is pushed with `HEAD == origin/main`; technical postflight worktree was clean.
+
+Next committed product Sprint:
+- Sprint 43 — multi-target monitoring in one Engine;
+- preserve the Sprint 40 process boundary: Desktop owns one Engine monitoring process rather than one process per target;
+- begin with a source audit of the current scheduler/monitoring-control target boundary before product changes;
+- add bounded concurrency, per-device cadence, startup jitter, backpressure, cancellation, and no overlapping poll for the same target;
+- preserve stable `DeviceId` and existing credential/profile boundaries.
 
 ## Основа проекта
 
