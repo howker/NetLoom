@@ -98,6 +98,12 @@
              Link="Engine\EngineDiscoveryRunner.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineDiscoveryStdinControl.cs"
              Link="Engine\EngineDiscoveryStdinControl.cs" />
+    <Compile Include="..\..\src\NetLoom.Desktop\Discovery\EngineDiscoveryCommandBuilder.cs"
+             Link="Desktop\Discovery\EngineDiscoveryCommandBuilder.cs" />
+    <Compile Include="..\..\src\NetLoom.Desktop\Discovery\EngineDiscoveryMarkerParser.cs"
+             Link="Desktop\Discovery\EngineDiscoveryMarkerParser.cs" />
+    <Compile Include="..\..\src\NetLoom.Desktop\Discovery\DesktopEngineDiscoveryControl.cs"
+             Link="Desktop\Discovery\DesktopEngineDiscoveryControl.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Monitoring\IEngineProcessFactory.cs"
              Link="Desktop\Monitoring\IEngineProcessFactory.cs" />
     <Compile Include="..\..\src\NetLoom.Desktop\Monitoring\EngineMonitoringCommandBuilder.cs"
