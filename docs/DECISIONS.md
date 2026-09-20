@@ -1076,3 +1076,50 @@ No MOXA Turbo Ring/Turbo Chain adapter is planned for the current site while tha
 - Sprint 44 completes the assess-and-hand-off workflow before the real-network acceptance run.
 - Sprint 45 exercises the complete workflow once; subsequent committed work is selected from real `FRICTION_LOG.md` evidence.
 - optical degradation and industrial protection adapters remain evidence-driven candidates rather than promises.
+
+## ADR-072 — shell/navigation work follows real navigation evidence
+
+**Status:** Accepted.
+
+**Date:** 2026-09-20.
+
+### Context
+
+The current WPF client has accumulated permanent controls in the top area and uses dedicated editor windows for manual topology and Locations. Reworking the shell before the complete real-network workflow is exercised would make navigation choices from assumptions rather than operator evidence.
+
+### Decision
+
+No new permanent feature/editor `Window` is added before the shell rework; new product surfaces use panels or modes inside `MainWindow` unless the operation is genuinely modal (for example, a system file/folder picker or a short atomic confirmation/dialog). The existing top toolbar is not extended with new permanent controls.
+
+Sprint 46 follows Sprint 45. Its rail/breadcrumb/selected-element-panel mockup is a design direction only. Sprint 45 records navigation friction, and that evidence decides the final shell information architecture.
+
+Sprint 44 export is not implemented by rendering the live virtual map Canvas. Export uses a separate bounded visual built from actual topology/Location bounds. Exported content represents the canonical full site topology rather than temporary viewport/focus/selection state.
+
+### Consequences
+
+- Sprint 43/44 cannot make the current shell debt worse by adding another permanent editor window or toolbar strip.
+- Sprint 45 produces the evidence needed to choose the Sprint 46 navigation structure.
+- Sprint 46 remains a recomposition of existing product behavior rather than a reason to invent new topology semantics.
+- system dialogs remain available where a truly modal OS/application operation requires them.
+
+## ADR-073 — licensing direction does not count mass endpoints by default
+
+**Status:** Accepted direction; implementation deferred.
+
+**Date:** 2026-09-20.
+
+### Context
+
+NetLoom targets networks where a relatively small set of managed infrastructure devices may support a much larger population of endpoints such as cameras, printers, controllers or workstations. Counting every visible endpoint as a billable unit would couple price to topology size rather than to the managed network infrastructure that creates most monitoring/configuration value.
+
+### Decision
+
+Managed infrastructure devices are the potential licensing unit. Mass endpoints do not automatically increase the license count merely because they are discovered, displayed or monitored.
+
+The exact commercial classes, limits, editions and prices are deliberately not fixed before real sales evidence exists. No licensing implementation starts solely because this direction is documented.
+
+### Consequences
+
+- future licensing design must distinguish infrastructure from endpoints explicitly rather than using total Device count;
+- category edge cases are resolved from real commercial/deployment evidence;
+- this ADR does not change current product behavior, schema, discovery or monitoring.

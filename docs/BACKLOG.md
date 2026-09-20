@@ -247,14 +247,21 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 
 - [ ] Sprint 44 — export the site diagram and inventory.
   - Operator outcome: export a readable site diagram and equipment list that can be handed to a colleague/customer after an assessment.
-  - Export the existing map to PNG at print-readable resolution and export inventory/interface data to CSV from the same coherent read-set used by the product.
-  - CSV is UTF-8 with BOM for reliable Excel use on Russian Windows. PNG/CSV are in scope; PDF is not.
+  - Export PNG from a separate bounded export visual using the actual topology/Location bounds plus margin; never render the live 1,000,000 × 1,000,000 virtual map Canvas. Cap final pixel dimensions/memory while preserving aspect ratio.
+  - The diagram export represents the canonical full site topology, not the temporary viewport: current pan/zoom, selection, search highlight and Sprint 39 focus/dimming do not change exported content. Collapsed Locations are expanded in the export model without mutating the live/persisted collapse state.
+  - Export inventory/interface data to CSV from the same coherent read-set used by the product. CSV is UTF-8 with BOM for reliable Excel use on Russian Windows. PNG/CSV are in scope; PDF is not.
   - Export must not create a second topology interpretation or invent evidence absent from the map/diagnostic read path.
 
 - [ ] Sprint 45 — full acceptance on the author's real network.
   - Operator outcome: run the complete workflow on the real network — discover, observe the map building, monitor many devices, diagnose, and export — without development-only workarounds.
   - This is an acceptance/hardening Sprint, not speculative feature expansion. All real friction is recorded in `FRICTION_LOG.md`; fixes required to achieve the one accepted outcome remain inside Sprint 45 until operator acceptance passes.
+  - Record navigation friction as well as functional friction: which sections the operator repeatedly switches between, what is hard to find visually, and which existing editor windows are repeatedly opened. These observations are input to Sprint 46.
   - The next committed sequence is chosen only after this real-network evidence is reviewed.
+
+- [ ] Sprint 46 — application shell/navigation rework.
+  - Operator outcome: understand where the operator is and what needs attention without relying on the growing top toolbar or separate feature/editor windows.
+  - The navigation rail / breadcrumbs / selected-element panel concept is a design direction, not a pixel specification. Final information architecture is chosen from Sprint 45 navigation evidence.
+  - Recompose existing functionality rather than inventing new topology/monitoring semantics, data, migrations or time-series features.
 
 ### Parallel evidence gathering — not a Sprint and not a gate for Sprints 41–45
 
@@ -274,6 +281,10 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 - [ ] Dead-letter/escalation policy only if real relay/retry evidence shows a concrete terminal-failure or operator-response need.
 - [ ] Routing by event/kind/severity only when an actual notification-routing need appears.
 - [ ] Production configuration boundary and protected secrets for installed deployments.
+- [ ] Open device from the selected-element panel through an external browser/SSH tool using the observed management address; do not build an embedded terminal without a real need.
+- [ ] Ready-to-use alert presets with conservative defaults so first use does not require building a rule set from scratch.
+- [ ] Device configuration backup with version history and line-by-line diff, only after a trustworthy device-specific configuration retrieval boundary is defined.
+- [ ] Scheduled file reporting as a follow-up to Sprint 44 export when a real delivery/reporting workflow is requested.
 
 ### Roadmap — direction, not scheduled backlog commitment
 
