@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NetLoom.Application.MonitoringControl;
@@ -8,7 +10,7 @@ using NetLoom.Application.MonitoringControl;
 namespace NetLoom.Desktop.Monitoring
 {
     public sealed class DesktopEngineMonitoringControl :
-        IMonitoringControl,
+        IMultiTargetMonitoringControl,
         IDisposable
     {
         private static readonly TimeSpan StartupTimeout =
@@ -34,6 +36,8 @@ namespace NetLoom.Desktop.Monitoring
         private TaskCompletionSource<bool> _scheduleStarted;
         private EngineProcessPurpose _purpose;
         private MonitoringTarget _activeTarget;
+        private string _targetSetFilePath;
+        private int _activeTargetPolls;
         private bool _stopRequested;
         private bool _snapshotNotificationActive;
         private bool _disposed;
@@ -94,6 +98,17 @@ namespace NetLoom.Desktop.Monitoring
             }
         }
 
+        internal string ActiveTargetSetFilePath
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _targetSetFilePath;
+                }
+            }
+        }
+
         public event EventHandler<MonitoringControlSnapshotChangedEventArgs>
             SnapshotChanged;
 
@@ -126,6 +141,8 @@ namespace NetLoom.Desktop.Monitoring
                 EnsureCanStart();
 
                 _activeTarget = target;
+                _targetSetFilePath = null;
+                _activeTargetPolls = 0;
                 _stopRequested = false;
                 _purpose =
                     EngineProcessPurpose.Schedule;
@@ -217,6 +234,144 @@ namespace NetLoom.Desktop.Monitoring
                 "ENGINE_START_FAILED");
         }
 
+        public async Task StartSetAsync(
+            IReadOnlyList<MonitoringTarget> targets,
+            MonitoringSessionPolicy policy,
+            MonitoringTargetSetPolicy targetSetPolicy,
+            CancellationToken cancellationToken)
+        {
+            if (policy == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(policy));
+            }
+
+            if (targetSetPolicy == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(targetSetPolicy));
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var targetSetFilePath =
+                CreateTargetSetFile(
+                    targets);
+
+            TaskCompletionSource<bool> started;
+            IEngineProcessSession process;
+            Task observer;
+
+            try
+            {
+                lock (_gate)
+                {
+                    ThrowIfDisposed();
+                    EnsureCanStart();
+
+                    _activeTarget = null;
+                    _targetSetFilePath =
+                        targetSetFilePath;
+                    _activeTargetPolls = 0;
+                    _stopRequested = false;
+                    _purpose =
+                        EngineProcessPurpose.ScheduleSet;
+                    _scheduleStarted =
+                        NewCompletionSource<bool>();
+                    started =
+                        _scheduleStarted;
+
+                    PublishSnapshotLocked(
+                        Snapshot(
+                            MonitoringControlState.Starting,
+                            null,
+                            null));
+                }
+            }
+            catch
+            {
+                TryDeleteTargetSetFile(
+                    targetSetFilePath);
+                throw;
+            }
+
+            try
+            {
+                process =
+                    StartProcess(
+                        EngineMonitoringCommandBuilder
+                            .BuildScheduleSetTokens(
+                                targetSetFilePath,
+                                policy,
+                                targetSetPolicy,
+                                _databasePath),
+                        out observer);
+            }
+            catch
+            {
+                SetStartFailure(
+                    null);
+                throw;
+            }
+
+            var cancellationCompletion =
+                CancellationTask(
+                    cancellationToken);
+
+            var timeout =
+                Task.Delay(
+                    StartupTimeout);
+
+            var winner =
+                await Task.WhenAny(
+                    started.Task,
+                    observer,
+                    cancellationCompletion,
+                    timeout)
+                .ConfigureAwait(false);
+
+            if (winner == started.Task)
+            {
+                await started.Task
+                    .ConfigureAwait(false);
+                return;
+            }
+
+            if (winner == cancellationCompletion)
+            {
+                await StopOwnedProcessAsync(
+                        CancellationToken.None,
+                        false)
+                    .ConfigureAwait(false);
+
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            if (winner == timeout)
+            {
+                process.Terminate();
+
+                await observer
+                    .ConfigureAwait(false);
+
+                PublishSnapshot(
+                    Snapshot(
+                        MonitoringControlState.Faulted,
+                        null,
+                        "ENGINE_START_TIMEOUT"));
+
+                throw new TimeoutException(
+                    "ENGINE_START_TIMEOUT");
+            }
+
+            await observer
+                .ConfigureAwait(false);
+
+            throw new InvalidOperationException(
+                Current.FaultMessage ??
+                "ENGINE_START_FAILED");
+        }
+
         public Task StopAsync(
             CancellationToken cancellationToken)
         {
@@ -272,6 +427,7 @@ namespace NetLoom.Desktop.Monitoring
         public void Dispose()
         {
             IEngineProcessSession process;
+            string targetSetFilePath;
 
             lock (_gate)
             {
@@ -289,6 +445,10 @@ namespace NetLoom.Desktop.Monitoring
                 _purpose =
                     EngineProcessPurpose.None;
                 _activeTarget = null;
+                targetSetFilePath =
+                    _targetSetFilePath;
+                _targetSetFilePath = null;
+                _activeTargetPolls = 0;
                 _current =
                     Snapshot(
                         MonitoringControlState.Stopped,
@@ -309,6 +469,9 @@ namespace NetLoom.Desktop.Monitoring
 
                 process.Dispose();
             }
+
+            TryDeleteTargetSetFile(
+                targetSetFilePath);
 
             _processFactory.Dispose();
         }
@@ -336,6 +499,8 @@ namespace NetLoom.Desktop.Monitoring
                 EnsureCanStart();
 
                 _activeTarget = target;
+                _targetSetFilePath = null;
+                _activeTargetPolls = 0;
                 _stopRequested = false;
                 _purpose =
                     EngineProcessPurpose.PollOnce;
@@ -522,7 +687,8 @@ namespace NetLoom.Desktop.Monitoring
                 }
             }
 
-            if (purpose == EngineProcessPurpose.Schedule)
+            if (purpose == EngineProcessPurpose.Schedule ||
+                purpose == EngineProcessPurpose.ScheduleSet)
             {
                 try
                 {
@@ -585,6 +751,7 @@ namespace NetLoom.Desktop.Monitoring
             }
 
             MonitoringControlSnapshot next = null;
+            string targetSetFilePath = null;
 
             lock (_gate)
             {
@@ -608,6 +775,10 @@ namespace NetLoom.Desktop.Monitoring
                 _purpose =
                     EngineProcessPurpose.None;
                 _activeTarget = null;
+                targetSetFilePath =
+                    _targetSetFilePath;
+                _targetSetFilePath = null;
+                _activeTargetPolls = 0;
                 _stopRequested = false;
 
                 if (stoppedByRequest ||
@@ -629,6 +800,9 @@ namespace NetLoom.Desktop.Monitoring
                             "ENGINE_PROCESS_EXITED_" +
                             exitCode);
                 }
+
+                TryDeleteTargetSetFile(
+                    targetSetFilePath);
 
                 PublishSnapshotLocked(
                     next);
@@ -666,6 +840,7 @@ namespace NetLoom.Desktop.Monitoring
                 switch (marker.Kind)
                 {
                     case EngineMachineMarkerKind.ScheduleStarted:
+                    case EngineMachineMarkerKind.ScheduleSetStarted:
                         if (!_stopRequested)
                         {
                             next =
@@ -686,6 +861,19 @@ namespace NetLoom.Desktop.Monitoring
                                 Snapshot(
                                     MonitoringControlState.Polling,
                                     _activeTarget,
+                                    null);
+                        }
+                        break;
+
+                    case EngineMachineMarkerKind.TargetPollStarted:
+                        _activeTargetPolls++;
+
+                        if (!_stopRequested)
+                        {
+                            next =
+                                Snapshot(
+                                    MonitoringControlState.Polling,
+                                    null,
                                     null);
                         }
                         break;
@@ -713,6 +901,34 @@ namespace NetLoom.Desktop.Monitoring
                                     lastSuccessful);
                         }
                         break;
+
+                    case EngineMachineMarkerKind.TargetPollCompleted:
+                        var targetLastSuccessful =
+                            _current.LastSuccessfulPollUtc;
+
+                        if (marker.AnySucceeded == true)
+                        {
+                            targetLastSuccessful =
+                                marker.CompletedUtc;
+                        }
+
+                        if (_activeTargetPolls > 0)
+                        {
+                            _activeTargetPolls--;
+                        }
+
+                        if (!_stopRequested)
+                        {
+                            next =
+                                Snapshot(
+                                    _activeTargetPolls > 0
+                                        ? MonitoringControlState.Polling
+                                        : MonitoringControlState.Running,
+                                    null,
+                                    null,
+                                    targetLastSuccessful);
+                        }
+                        break;
                 }
 
                 if (next != null)
@@ -734,6 +950,8 @@ namespace NetLoom.Desktop.Monitoring
         private void SetStartFailure(
             MonitoringTarget target)
         {
+            string targetSetFilePath;
+
             lock (_gate)
             {
                 _process = null;
@@ -742,6 +960,10 @@ namespace NetLoom.Desktop.Monitoring
                 _purpose =
                     EngineProcessPurpose.None;
                 _activeTarget = null;
+                targetSetFilePath =
+                    _targetSetFilePath;
+                _targetSetFilePath = null;
+                _activeTargetPolls = 0;
                 _stopRequested = false;
 
                 PublishSnapshotLocked(
@@ -750,6 +972,9 @@ namespace NetLoom.Desktop.Monitoring
                         target,
                         "ENGINE_PROCESS_START_FAILED"));
             }
+
+            TryDeleteTargetSetFile(
+                targetSetFilePath);
         }
 
         private void EnsureCanStart()
@@ -850,6 +1075,97 @@ namespace NetLoom.Desktop.Monitoring
             }
         }
 
+        private static string CreateTargetSetFile(
+            IReadOnlyList<MonitoringTarget> targets)
+        {
+            if (targets == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(targets));
+            }
+
+            if (targets.Count == 0)
+            {
+                throw new ArgumentException(
+                    "MONITORING_TARGET_SET_REQUIRED",
+                    nameof(targets));
+            }
+
+            var seenDeviceIds =
+                new HashSet<Guid>();
+
+            var path =
+                Path.Combine(
+                    Path.GetTempPath(),
+                    "NetLoom.MonitoringTargets." +
+                    Guid.NewGuid().ToString("N") +
+                    ".tsv");
+
+            try
+            {
+                using (var writer =
+                    new StreamWriter(
+                        path,
+                        false,
+                        new UTF8Encoding(false)))
+                {
+                    foreach (var target in targets)
+                    {
+                        if (target == null)
+                        {
+                            throw new ArgumentException(
+                                "MONITORING_TARGET_REQUIRED",
+                                nameof(targets));
+                        }
+
+                        if (!seenDeviceIds.Add(
+                            target.DeviceId))
+                        {
+                            throw new ArgumentException(
+                                "DUPLICATE_MONITORING_TARGET_DEVICE_ID",
+                                nameof(targets));
+                        }
+
+                        writer.Write(
+                            target.DeviceId.ToString("D"));
+                        writer.Write(
+                            '\t');
+                        writer.WriteLine(
+                            target.TargetAddress.ToString());
+                    }
+                }
+
+                return path;
+            }
+            catch
+            {
+                TryDeleteTargetSetFile(
+                    path);
+                throw;
+            }
+        }
+
+        private static void TryDeleteTargetSetFile(
+            string path)
+        {
+            if (string.IsNullOrWhiteSpace(
+                path))
+            {
+                return;
+            }
+
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch
+            {
+            }
+        }
+
         private void ThrowIfDisposed()
         {
             if (_disposed)
@@ -878,7 +1194,8 @@ namespace NetLoom.Desktop.Monitoring
         {
             None = 0,
             Schedule = 1,
-            PollOnce = 2
+            ScheduleSet = 2,
+            PollOnce = 3
         }
     }
 }

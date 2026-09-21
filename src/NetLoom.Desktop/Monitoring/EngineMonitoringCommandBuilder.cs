@@ -35,6 +35,69 @@ namespace NetLoom.Desktop.Monitoring
             return tokens;
         }
 
+        public static IReadOnlyList<string> BuildScheduleSetTokens(
+            string targetsFilePath,
+            MonitoringSessionPolicy policy,
+            MonitoringTargetSetPolicy targetSetPolicy,
+            string databasePath)
+        {
+            if (string.IsNullOrWhiteSpace(
+                targetsFilePath))
+            {
+                throw new ArgumentException(
+                    "TARGETS_FILE_PATH_REQUIRED",
+                    nameof(targetsFilePath));
+            }
+
+            if (policy == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(policy));
+            }
+
+            if (targetSetPolicy == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(targetSetPolicy));
+            }
+
+            if (targetSetPolicy.StartupJitter >
+                policy.Interval)
+            {
+                throw new ArgumentException(
+                    "STARTUP_JITTER_EXCEEDS_INTERVAL",
+                    nameof(targetSetPolicy));
+            }
+
+            var tokens =
+                BuildPolicyTokens(
+                    "schedule-set",
+                    policy,
+                    databasePath);
+
+            tokens.Add("--targets-file");
+            tokens.Add(targetsFilePath);
+            tokens.Add("--max-concurrency");
+            tokens.Add(
+                targetSetPolicy.MaxConcurrentPolls
+                    .ToString(
+                        CultureInfo.InvariantCulture));
+            tokens.Add("--startup-jitter-seconds");
+            tokens.Add(
+                ((int)targetSetPolicy.StartupJitter.TotalSeconds)
+                    .ToString(
+                        CultureInfo.InvariantCulture));
+            tokens.Add("--interval-seconds");
+            tokens.Add(
+                ((int)policy.Interval.TotalSeconds)
+                    .ToString(
+                        CultureInfo.InvariantCulture));
+            tokens.Add("--control-stdin");
+            tokens.Add("true");
+
+            return tokens;
+        }
+
         public static IReadOnlyList<string> BuildPollOnceTokens(
             MonitoringTarget target,
             MonitoringSessionPolicy policy,
@@ -74,6 +137,27 @@ namespace NetLoom.Desktop.Monitoring
                     nameof(target));
             }
 
+            var tokens =
+                BuildPolicyTokens(
+                    command,
+                    policy,
+                    databasePath);
+
+            tokens.Add("--address");
+            tokens.Add(
+                target.TargetAddress.ToString());
+            tokens.Add("--device-id");
+            tokens.Add(
+                target.DeviceId.ToString("D"));
+
+            return tokens;
+        }
+
+        private static List<string> BuildPolicyTokens(
+            string command,
+            MonitoringSessionPolicy policy,
+            string databasePath)
+        {
             if (policy == null)
             {
                 throw new ArgumentNullException(
@@ -91,12 +175,8 @@ namespace NetLoom.Desktop.Monitoring
                 new List<string>
                 {
                     command,
-                    "--address",
-                    target.TargetAddress.ToString(),
                     "--database",
                     databasePath,
-                    "--device-id",
-                    target.DeviceId.ToString("D"),
                     "--port",
                     policy.Port.ToString(
                         CultureInfo.InvariantCulture),
