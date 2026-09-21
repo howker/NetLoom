@@ -251,6 +251,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - The diagram export represents the canonical full site topology, not the temporary viewport: current pan/zoom, selection, search highlight and Sprint 39 focus/dimming do not change exported content. Collapsed Locations are expanded in the export model without mutating the live/persisted collapse state.
   - Export inventory/interface data to CSV from the same coherent read-set used by the product. CSV is UTF-8 with BOM for reliable Excel use on Russian Windows. PNG/CSV are in scope; PDF is not.
   - Export must not create a second topology interpretation or invent evidence absent from the map/diagnostic read path.
+  - SVG and draw.io are not Sprint 44 acceptance requirements. They are stretch goals only if an implementation-boundary audit proves they are small additions to the same coherent export model; draw.io-to-Visio behavior must be tested in the target Visio version before any compatibility claim.
 
 - [ ] Sprint 45 — full acceptance on the author's real network.
   - Operator outcome: run the complete workflow on the real network — discover, observe the map building, monitor many devices, diagnose, and export — without development-only workarounds.
@@ -271,6 +272,15 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 
 ### Next candidates — not commitments
 
+The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the committed Sprint 43 → 44 → 45 → 46 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
+
+- [ ] Network state surface: present existing analysis in three operator-visible groups — structural risks, active confirmed problems, and insufficient data — without inventing missing evidence or adding the not-yet-implemented multi-MAC hidden-switch heuristic to the first version.
+- [ ] Deterministic demonstration stand after the network-state surface: use controlled `snmpsim` fixtures, including a proven STP-state transition chain from `.snmprec` through observation/materialization/analyzer/alert transition, so the sales scenario also serves as behavioral regression evidence.
+- [ ] Physical-link impact preview: highlight the portion of the known physical topology that becomes separated when a selected link is unavailable; do not present structural graph separation as guaranteed service/IP outage.
+- [ ] Reversible topology change journal with bounded checkpoints, only after an audit proves all mutation paths needed for historical reconstruction. Capture before/after state atomically with the topology mutation; define historical-layout and evidence-history scope before implementation.
+- [ ] Read-only L2 work preview: apply a sequence of planned removals/changes to a copy of the known physical graph and show structural impact conservatively. The first version does not predict STP, does not promise convergence time, and does not model L3 routing/ACL/NAT behavior.
+- [ ] Portable deployment acceptance: verify Engine/Desktop/runtime/native SQLite/write paths and no-admin operation explicitly rather than treating a ZIP-on-USB package as automatically portable.
+- [ ] Documentation-versus-reality comparison starting with structured CSV/device/address input; image/PDF/Visio recognition is a separate later problem.
 - [ ] Link evidence panel: from a selected physical link, show the concrete discovery evidence, endpoints/ports, freshness and repeated-observation context already present in the model/read path.
 - [ ] Optical degradation after hardware evidence: retain trustworthy transceiver sensor history only after the parallel audit confirms real Rx/Tx/temperature data plus stable port/transceiver identity; keep measured trends distinct from failure-date predictions and isolate vendor-private MIB support behind optional adapters.
 - [ ] Industrial protection adapters only from real deployment evidence. Current-site MOXA Turbo Ring/Turbo Chain is disabled on all known devices, so no MOXA ring adapter is planned now; MRP or vendor-specific protection enters a future sequence only when actually enabled/needed.
