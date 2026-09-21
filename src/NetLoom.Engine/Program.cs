@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -114,6 +115,14 @@ namespace NetLoom.Engine
             {
                 return RunDeliveryStatus(
                     options);
+            }
+
+            if (options.Command ==
+                "schedule-set")
+            {
+                return RunScheduledSet(
+                    options,
+                    hostLog);
             }
 
             if (options.Command ==
@@ -460,6 +469,165 @@ namespace NetLoom.Engine
             return 0;
         }
 
+        private static int RunScheduledSet(
+            EngineCommandLine options,
+            HostLogManager hostLog)
+        {
+            var targets =
+                EngineMonitoringTargetSetFile.Read(
+                    options.TargetsFilePath,
+                    (deviceId, address) =>
+                        CreateRequest(
+                            options,
+                            deviceId,
+                            address),
+                    TimeSpan.FromSeconds(
+                        options.IntervalSeconds),
+                    TimeSpan.FromSeconds(
+                        options.StartupJitterSeconds));
+
+            var runtimes =
+                new ConcurrentDictionary<Guid, MonitoringRuntime>();
+
+            using (var cancellation =
+                new CancellationTokenSource())
+            {
+                EngineMultiTargetScheduleStdinControl control = null;
+
+                if (options.ControlStdin)
+                {
+                    control =
+                        new EngineMultiTargetScheduleStdinControl(
+                            cancellation,
+                            Console.In,
+                            Console.Out);
+
+                    EngineMachineOutput
+                        .WriteControlReady(
+                            Console.Out);
+
+                    control.StartReading();
+                }
+
+                Func<MonitoringPollRequest, MonitoringPollResult> poll =
+                    request =>
+                    {
+                        var deviceId =
+                            request.DeviceId.Value;
+
+                        var runtime =
+                            runtimes.GetOrAdd(
+                                deviceId,
+                                ignored =>
+                                    CreateRuntime(
+                                        options));
+
+                        return runtime.PollOnce(
+                            request);
+                    };
+
+                var runner =
+                    control == null
+                        ? new EngineMultiTargetMonitoringRunner(
+                            poll)
+                        : new EngineMultiTargetMonitoringRunner(
+                            poll,
+                            control.WaitAsync);
+
+                ConsoleCancelEventHandler handler =
+                    (sender, eventArgs) =>
+                    {
+                        eventArgs.Cancel = true;
+                        cancellation.Cancel();
+                    };
+
+                Console.CancelKeyPress +=
+                    handler;
+
+                try
+                {
+                    hostLog.Info(
+                        "SCHEDULER_SET_STARTED targets=" +
+                        targets.Count +
+                        " intervalSeconds=" +
+                        options.IntervalSeconds +
+                        " maxConcurrency=" +
+                        options.MaxConcurrentPolls +
+                        " startupJitterSeconds=" +
+                        options.StartupJitterSeconds);
+
+                    Console.WriteLine(
+                        "SCHEDULER-SET: started targets=" +
+                        targets.Count +
+                        " intervalSeconds=" +
+                        options.IntervalSeconds +
+                        " maxConcurrency=" +
+                        options.MaxConcurrentPolls);
+
+                    EngineMachineOutput
+                        .WriteScheduleSetStarted(
+                            Console.Out,
+                            targets.Count,
+                            options.IntervalSeconds,
+                            options.MaxConcurrentPolls,
+                            options.StartupJitterSeconds);
+
+                    var result =
+                        runner.Run(
+                            targets,
+                            new MonitoringConcurrencyPolicy(
+                                options.MaxConcurrentPolls),
+                            cancellation.Token,
+                            Console.Out,
+                            (target, pollResult) =>
+                            {
+                                WritePollResult(
+                                    pollResult,
+                                    hostLog);
+
+                                RunObservationRetention(
+                                    options,
+                                    hostLog);
+
+                                RunInterfaceDegradationDelivery(
+                                    options,
+                                    hostLog);
+                            },
+                            target =>
+                            {
+                                hostLog.Info(
+                                    "SCHEDULER_BACKPRESSURE_SKIPPED deviceId=" +
+                                    target.DeviceId.ToString("D"));
+                            });
+
+                    hostLog.Info(
+                        "SCHEDULER_SET_STOPPED completedPolls=" +
+                        result.CompletedPolls +
+                        " backpressureSkips=" +
+                        result.BackpressureSkips);
+
+                    Console.WriteLine(
+                        "SCHEDULER-SET: stopped polls=" +
+                        result.CompletedPolls +
+                        " skipped=" +
+                        result.BackpressureSkips);
+
+                    EngineMachineOutput
+                        .WriteScheduleSetStopped(
+                            Console.Out,
+                            result.CompletedPolls,
+                            result.BackpressureSkips);
+
+                    return 0;
+                }
+                finally
+                {
+                    Console.CancelKeyPress -=
+                        handler;
+                }
+            }
+        }
+
         private static int RunScheduled(
             EngineCommandLine options,
             HostLogManager hostLog)
@@ -709,12 +877,23 @@ namespace NetLoom.Engine
         private static MonitoringPollRequest CreateRequest(
             EngineCommandLine options)
         {
+            return CreateRequest(
+                options,
+                options.DeviceId,
+                options.Address);
+        }
+
+        private static MonitoringPollRequest CreateRequest(
+            EngineCommandLine options,
+            Guid? deviceId,
+            System.Net.IPAddress address)
+        {
             var credentials =
                 EngineSnmpCredentialFactory.Create(
                     options.Version);
 
             return new MonitoringPollRequest(
-                options.Address,
+                address,
                 options.Port,
                 options.Version,
                 credentials,
@@ -722,7 +901,7 @@ namespace NetLoom.Engine
                 options.RetryCount,
                 options.MaxRepetitions,
                 options.Kinds,
-                options.DeviceId);
+                deviceId);
         }
 
         private static void WritePollResult(

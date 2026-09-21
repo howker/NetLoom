@@ -94,6 +94,12 @@
              Link="Engine\EngineMachineOutput.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineScheduleStdinControl.cs"
              Link="Engine\EngineScheduleStdinControl.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineMonitoringTargetSetFile.cs"
+             Link="Engine\EngineMonitoringTargetSetFile.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineMultiTargetMonitoringRunner.cs"
+             Link="Engine\EngineMultiTargetMonitoringRunner.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EngineMultiTargetScheduleStdinControl.cs"
+             Link="Engine\EngineMultiTargetScheduleStdinControl.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineDiscoveryRunner.cs"
              Link="Engine\EngineDiscoveryRunner.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineDiscoveryStdinControl.cs"

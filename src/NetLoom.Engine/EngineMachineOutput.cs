@@ -137,6 +137,133 @@ namespace NetLoom.Engine
                     : "false"));
         }
 
+        public static void WriteScheduleSetStarted(
+            TextWriter writer,
+            int targetCount,
+            int intervalSeconds,
+            int maxConcurrentPolls,
+            int startupJitterSeconds)
+        {
+            WriteLine(
+                writer,
+                "NETLOOM_SCHEDULE_SET state=started targets=" +
+                targetCount.ToString(
+                    CultureInfo.InvariantCulture) +
+                " intervalSeconds=" +
+                intervalSeconds.ToString(
+                    CultureInfo.InvariantCulture) +
+                " maxConcurrency=" +
+                maxConcurrentPolls.ToString(
+                    CultureInfo.InvariantCulture) +
+                " startupJitterSeconds=" +
+                startupJitterSeconds.ToString(
+                    CultureInfo.InvariantCulture));
+        }
+
+        public static void WriteScheduleSetStopped(
+            TextWriter writer,
+            int completedPolls,
+            int backpressureSkips)
+        {
+            WriteLine(
+                writer,
+                "NETLOOM_SCHEDULE_SET state=stopped completedPolls=" +
+                completedPolls.ToString(
+                    CultureInfo.InvariantCulture) +
+                " backpressureSkips=" +
+                backpressureSkips.ToString(
+                    CultureInfo.InvariantCulture));
+        }
+
+        public static void WriteTargetPollStarted(
+            TextWriter writer,
+            MonitoringScheduleTarget target)
+        {
+            if (target == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(target));
+            }
+
+            WriteLine(
+                writer,
+                "NETLOOM_TARGET_POLL state=started deviceId=" +
+                target.DeviceId.ToString("D") +
+                " address=" +
+                target.Request.Address);
+        }
+
+        public static void WriteTargetPollCompleted(
+            TextWriter writer,
+            MonitoringScheduleTarget target,
+            MonitoringPollResult result)
+        {
+            if (target == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(target));
+            }
+
+            if (result == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(result));
+            }
+
+            var succeeded = 0;
+
+            foreach (var step in result.Steps)
+            {
+                if (step.Succeeded)
+                {
+                    succeeded++;
+                }
+            }
+
+            var failed =
+                result.Steps.Count -
+                succeeded;
+
+            WriteLine(
+                writer,
+                "NETLOOM_TARGET_POLL state=completed deviceId=" +
+                target.DeviceId.ToString("D") +
+                " address=" +
+                target.Request.Address +
+                " completedUtc=" +
+                result.CompletedUtc.ToString(
+                    "o",
+                    CultureInfo.InvariantCulture) +
+                " success=" +
+                succeeded.ToString(
+                    CultureInfo.InvariantCulture) +
+                " failed=" +
+                failed.ToString(
+                    CultureInfo.InvariantCulture) +
+                " anySucceeded=" +
+                (result.AnySucceeded
+                    ? "true"
+                    : "false"));
+        }
+
+        public static void WriteTargetBackpressureSkipped(
+            TextWriter writer,
+            MonitoringScheduleTarget target)
+        {
+            if (target == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(target));
+            }
+
+            WriteLine(
+                writer,
+                "NETLOOM_TARGET_POLL state=skipped reason=backpressure deviceId=" +
+                target.DeviceId.ToString("D") +
+                " address=" +
+                target.Request.Address);
+        }
+
         public static void WriteDiscoveryControlReady(
             TextWriter writer)
         {

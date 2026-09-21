@@ -22,6 +22,12 @@ namespace NetLoom.Engine
 
         public Guid? DeviceId { get; private set; }
 
+        public string TargetsFilePath { get; private set; }
+
+        public int MaxConcurrentPolls { get; private set; }
+
+        public int StartupJitterSeconds { get; private set; }
+
         public int Port { get; private set; }
 
         public SnmpVersion Version { get; private set; }
@@ -331,7 +337,8 @@ namespace NetLoom.Engine
             }
 
             if (command != "poll-once" &&
-                command != "schedule")
+                command != "schedule" &&
+                command != "schedule-set")
             {
                 throw Invalid("UNKNOWN_COMMAND");
             }
@@ -344,6 +351,9 @@ namespace NetLoom.Engine
                         "address",
                         "database",
                         "device-id",
+                        "targets-file",
+                        "max-concurrency",
+                        "startup-jitter-seconds",
                         "port",
                         "version",
                         "timeout-ms",
@@ -370,6 +380,146 @@ namespace NetLoom.Engine
                     "CONTROL_STDIN_ONLY_VALID_FOR_SCHEDULE");
             }
 
+            var version =
+                ParseEnum<SnmpVersion>(
+                    Get(values, "version") ?? "V2C",
+                    "INVALID_SNMP_VERSION");
+
+            var intervalSeconds =
+                ParseInt(
+                    Get(values, "interval-seconds"),
+                    60,
+                    1,
+                    int.MaxValue,
+                    "INVALID_INTERVAL_SECONDS");
+
+            var port =
+                ParseInt(
+                    Get(values, "port"),
+                    161,
+                    1,
+                    65535,
+                    "INVALID_PORT");
+
+            var timeoutMilliseconds =
+                ParseInt(
+                    Get(values, "timeout-ms"),
+                    2000,
+                    1,
+                    int.MaxValue,
+                    "INVALID_TIMEOUT");
+
+            var retryCount =
+                ParseInt(
+                    Get(values, "retries"),
+                    1,
+                    0,
+                    int.MaxValue,
+                    "INVALID_RETRY_COUNT");
+
+            var maxRepetitions =
+                ParseInt(
+                    Get(values, "max-repetitions"),
+                    25,
+                    1,
+                    int.MaxValue,
+                    "INVALID_MAX_REPETITIONS");
+
+            var controlStdin =
+                ParseBoolean(
+                    Get(values, "control-stdin"),
+                    false,
+                    "INVALID_CONTROL_STDIN");
+
+            var errorThreshold =
+                ParseOptionalPositiveDouble(
+                    Get(
+                        values,
+                        "interface-error-rate-per-minute"),
+                    "INVALID_INTERFACE_ERROR_RATE_PER_MINUTE");
+
+            var discardThreshold =
+                ParseOptionalPositiveDouble(
+                    Get(
+                        values,
+                        "interface-discard-rate-per-minute"),
+                    "INVALID_INTERFACE_DISCARD_RATE_PER_MINUTE");
+
+            var kinds =
+                ParseKinds(
+                    Get(values, "kinds"));
+
+            if (command == "schedule-set")
+            {
+                if (Get(values, "address") != null ||
+                    Get(values, "device-id") != null)
+                {
+                    throw Invalid(
+                        "SCHEDULE_SET_REQUIRES_TARGETS_FILE");
+                }
+
+                var maxConcurrency =
+                    ParseInt(
+                        Required(
+                            values,
+                            "max-concurrency"),
+                        1,
+                        1,
+                        64,
+                        "INVALID_MAX_CONCURRENCY");
+
+                var startupJitterSeconds =
+                    ParseInt(
+                        Required(
+                            values,
+                            "startup-jitter-seconds"),
+                        0,
+                        0,
+                        int.MaxValue,
+                        "INVALID_STARTUP_JITTER_SECONDS");
+
+                if (startupJitterSeconds >
+                    intervalSeconds)
+                {
+                    throw Invalid(
+                        "STARTUP_JITTER_EXCEEDS_INTERVAL");
+                }
+
+                return new EngineCommandLine
+                {
+                    Command = command,
+                    DatabasePath = Get(values, "database"),
+                    TargetsFilePath =
+                        Required(
+                            values,
+                            "targets-file").Trim(),
+                    MaxConcurrentPolls = maxConcurrency,
+                    StartupJitterSeconds =
+                        startupJitterSeconds,
+                    Port = port,
+                    Version = version,
+                    TimeoutMilliseconds =
+                        timeoutMilliseconds,
+                    RetryCount = retryCount,
+                    MaxRepetitions = maxRepetitions,
+                    IntervalSeconds = intervalSeconds,
+                    ControlStdin = controlStdin,
+                    InterfaceErrorRatePerMinuteThreshold =
+                        errorThreshold,
+                    InterfaceDiscardRatePerMinuteThreshold =
+                        discardThreshold,
+                    Kinds = kinds
+                };
+            }
+
+            if (Get(values, "targets-file") != null ||
+                Get(values, "max-concurrency") != null ||
+                Get(values, "startup-jitter-seconds") != null)
+            {
+                throw Invalid(
+                    "TARGET_SET_OPTIONS_ONLY_VALID_FOR_SCHEDULE_SET");
+            }
+
             var addressText =
                 Required(values, "address");
 
@@ -382,11 +532,6 @@ namespace NetLoom.Engine
                 throw Invalid("INVALID_ADDRESS");
             }
 
-            var version =
-                ParseEnum<SnmpVersion>(
-                    Get(values, "version") ?? "V2C",
-                    "INVALID_SNMP_VERSION");
-
             return new EngineCommandLine
             {
                 Command = command,
@@ -394,55 +539,19 @@ namespace NetLoom.Engine
                 Address = address,
                 DeviceId = ParseOptionalGuid(
                     Get(values, "device-id")),
-                Port = ParseInt(
-                    Get(values, "port"),
-                    161,
-                    1,
-                    65535,
-                    "INVALID_PORT"),
+                Port = port,
                 Version = version,
-                TimeoutMilliseconds = ParseInt(
-                    Get(values, "timeout-ms"),
-                    2000,
-                    1,
-                    int.MaxValue,
-                    "INVALID_TIMEOUT"),
-                RetryCount = ParseInt(
-                    Get(values, "retries"),
-                    1,
-                    0,
-                    int.MaxValue,
-                    "INVALID_RETRY_COUNT"),
-                MaxRepetitions = ParseInt(
-                    Get(values, "max-repetitions"),
-                    25,
-                    1,
-                    int.MaxValue,
-                    "INVALID_MAX_REPETITIONS"),
-                IntervalSeconds = ParseInt(
-                    Get(values, "interval-seconds"),
-                    60,
-                    1,
-                    int.MaxValue,
-                    "INVALID_INTERVAL_SECONDS"),
-                ControlStdin = ParseBoolean(
-                    Get(values, "control-stdin"),
-                    false,
-                    "INVALID_CONTROL_STDIN"),
+                TimeoutMilliseconds =
+                    timeoutMilliseconds,
+                RetryCount = retryCount,
+                MaxRepetitions = maxRepetitions,
+                IntervalSeconds = intervalSeconds,
+                ControlStdin = controlStdin,
                 InterfaceErrorRatePerMinuteThreshold =
-                    ParseOptionalPositiveDouble(
-                        Get(
-                            values,
-                            "interface-error-rate-per-minute"),
-                        "INVALID_INTERFACE_ERROR_RATE_PER_MINUTE"),
+                    errorThreshold,
                 InterfaceDiscardRatePerMinuteThreshold =
-                    ParseOptionalPositiveDouble(
-                        Get(
-                            values,
-                            "interface-discard-rate-per-minute"),
-                        "INVALID_INTERFACE_DISCARD_RATE_PER_MINUTE"),
-                Kinds = ParseKinds(
-                    Get(values, "kinds"))
+                    discardThreshold,
+                Kinds = kinds
             };
         }
 
