@@ -86,6 +86,8 @@
              Link="Shared\Sprint44TopologyExportSnapshotTests.cs" />
     <Compile Include="..\NetLoom.Tests.Unit\Sprint44InventoryCsvExportTests.cs"
              Link="Shared\Sprint44InventoryCsvExportTests.cs" />
+    <Compile Include="..\NetLoom.Tests.Unit\Sprint44TopologyExportDiagramTests.cs"
+             Link="Shared\Sprint44TopologyExportDiagramTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint36MapLayoutStoreTests.cs"
              Link="Shared\Sprint36MapLayoutStoreTests.cs" />
     <Compile Include="..\NetLoom.Tests.Integration\Sprint38LocationTopologyServiceTests.cs"
