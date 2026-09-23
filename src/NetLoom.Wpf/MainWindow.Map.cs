@@ -335,10 +335,24 @@ public partial class MainWindow
     {
         _startupTopologyFitPending = true;
 
+        MapScrollViewer.SizeChanged -=
+            OnStartupMapViewportSizeChanged;
+
+        MapScrollViewer.SizeChanged +=
+            OnStartupMapViewportSizeChanged;
+
         Dispatcher.BeginInvoke(
             DispatcherPriority.Loaded,
             new Action(
                 TryCompleteStartupTopologyFit));
+    }
+
+    private void StopStartupTopologyFit()
+    {
+        _startupTopologyFitPending = false;
+
+        MapScrollViewer.SizeChanged -=
+            OnStartupMapViewportSizeChanged;
     }
 
     private void OnStartupMapViewportSizeChanged(
@@ -368,21 +382,7 @@ public partial class MainWindow
         MapScrollViewer.UpdateLayout();
         MapCanvas.UpdateLayout();
 
-        if (!TryFitTopologyToViewport())
-        {
-            MapScrollViewer.SizeChanged -=
-                OnStartupMapViewportSizeChanged;
-
-            MapScrollViewer.SizeChanged +=
-                OnStartupMapViewportSizeChanged;
-
-            return;
-        }
-
-        _startupTopologyFitPending = false;
-
-        MapScrollViewer.SizeChanged -=
-            OnStartupMapViewportSizeChanged;
+        TryFitTopologyToViewport();
     }
 
     private void FitTopologyToViewport()

@@ -47,6 +47,8 @@ public partial class MainWindow
         var deviceId =
             (Guid)element.Tag;
 
+        StopStartupTopologyFit();
+
         _highlightedDeviceId = null;
 
         _selectedDeviceId =
@@ -128,6 +130,8 @@ public partial class MainWindow
         {
             return;
         }
+
+        StopStartupTopologyFit();
 
         _highlightedDeviceId = null;
         _selectedDeviceId = (Guid)element.Tag;
@@ -406,6 +410,8 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        StopStartupTopologyFit();
+
         ChangeZoom(
             _zoom -
             _zoomStep);
@@ -415,6 +421,8 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        StopStartupTopologyFit();
+
         ChangeZoom(
             _zoom +
             _zoomStep);
@@ -424,6 +432,7 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        StopStartupTopologyFit();
         FitTopologyToViewport();
     }
 
@@ -529,6 +538,8 @@ public partial class MainWindow
     private void SelectLocation(
         Guid locationId)
     {
+        StopStartupTopologyFit();
+
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
         _selectedPhysicalLinkId = null;
@@ -1265,6 +1276,8 @@ public partial class MainWindow
             return;
         }
 
+        StopStartupTopologyFit();
+
         var minimum =
             MinimumLocationExpandedSize(
                 locationId.Value);
@@ -1978,6 +1991,8 @@ public partial class MainWindow
         object sender,
         MouseWheelEventArgs e)
     {
+        StopStartupTopologyFit();
+
         ChangeZoom(
             _zoom +
             (e.Delta > 0
@@ -1996,6 +2011,8 @@ public partial class MainWindow
         {
             return;
         }
+
+        StopStartupTopologyFit();
 
         _isPanning = true;
         _panStartPoint =
@@ -2089,6 +2106,8 @@ public partial class MainWindow
         var physicalLinkId =
             (Guid)element.Tag;
 
+        StopStartupTopologyFit();
+
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
         _selectedPhysicalLinkId =
@@ -2128,6 +2147,8 @@ public partial class MainWindow
         {
             return;
         }
+
+        StopStartupTopologyFit();
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
@@ -2235,6 +2256,8 @@ public partial class MainWindow
         {
             return;
         }
+
+        StopStartupTopologyFit();
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;

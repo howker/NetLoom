@@ -237,6 +237,155 @@ namespace NetLoom.Tests.Unit
                 });
         }
 
+        [TestMethod]
+        public void StartupKeepsTopologyFittedWhenMapViewportChangesAfterInitialFit()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var locationId =
+                        Guid.NewGuid();
+
+                    var map =
+                        new MapSnapshot(
+                            Now,
+                            new MapNode[0],
+                            new MapLink[0],
+                            new[]
+                            {
+                                new MapLocation(
+                                    locationId,
+                                    null,
+                                    "Room",
+                                    null)
+                            });
+
+                    var store =
+                        new StaleViewportLayoutStore(
+                            locationId);
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                map),
+                            new EmptyLookupReader(),
+                            store)
+                        {
+                            Width = 1400.0,
+                            Height = 900.0
+                        };
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                LocationBorder(
+                                    MapCanvas(
+                                        window),
+                                    locationId) !=
+                                null);
+
+                        var canvas =
+                            MapCanvas(
+                                window);
+
+                        var scroll =
+                            (ScrollViewer)window.FindName(
+                                "MapScrollViewer");
+
+                        var location =
+                            LocationBorder(
+                                canvas,
+                                locationId);
+
+                        Assert.IsNotNull(
+                            location);
+
+                        var scale =
+                            canvas.LayoutTransform
+                                as ScaleTransform;
+
+                        Assert.IsNotNull(
+                            scale);
+
+                        WaitForCondition(
+                            () =>
+                                scroll.ViewportWidth > 0.0 &&
+                                scroll.ViewportHeight > 0.0 &&
+                                IsFullyVisibleInViewport(
+                                    scroll,
+                                    scale,
+                                    location));
+
+                        var initialViewportWidth =
+                            scroll.ViewportWidth;
+
+                        var initialViewportHeight =
+                            scroll.ViewportHeight;
+
+                        scroll.Width =
+                            initialViewportWidth *
+                            0.45;
+
+                        scroll.Height =
+                            initialViewportHeight *
+                            0.45;
+
+                        window.UpdateLayout();
+
+                        WaitForCondition(
+                            () =>
+                                scroll.ViewportWidth > 0.0 &&
+                                scroll.ViewportHeight > 0.0 &&
+                                scroll.ViewportWidth <
+                                    (initialViewportWidth *
+                                     0.75) &&
+                                scroll.ViewportHeight <
+                                    (initialViewportHeight *
+                                     0.75));
+
+                        PumpDispatcher();
+                        PumpDispatcher();
+                        PumpDispatcher();
+
+                        WaitForCondition(
+                            () =>
+                            {
+                                var resizedScale =
+                                    canvas.LayoutTransform
+                                        as ScaleTransform;
+
+                                return resizedScale !=
+                                        null &&
+                                    IsFullyVisibleInViewport(
+                                        scroll,
+                                        resizedScale,
+                                        location);
+                            });
+
+                        var finalScale =
+                            canvas.LayoutTransform
+                                as ScaleTransform;
+
+                        Assert.IsNotNull(
+                            finalScale);
+
+                        Assert.IsTrue(
+                            IsFullyVisibleInViewport(
+                                scroll,
+                                finalScale,
+                                location),
+                            "After the initial startup fit succeeds, a later map viewport resize must refit the visible topology until the operator takes control.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
         private static void Click(
             Button button)
         {
@@ -279,6 +428,44 @@ namespace NetLoom.Tests.Unit
                         item.Tag is Guid &&
                         (Guid)item.Tag ==
                         locationId);
+        }
+
+        private static bool IsFullyVisibleInViewport(
+            ScrollViewer scroll,
+            ScaleTransform scale,
+            FrameworkElement element)
+        {
+            if (scroll.ViewportWidth <= 0.0 ||
+                scroll.ViewportHeight <= 0.0 ||
+                scale.ScaleX <= 0.0 ||
+                scale.ScaleY <= 0.0)
+            {
+                return false;
+            }
+
+            var viewport =
+                new Rect(
+                    scroll.HorizontalOffset /
+                        scale.ScaleX,
+                    scroll.VerticalOffset /
+                        scale.ScaleY,
+                    scroll.ViewportWidth /
+                        scale.ScaleX,
+                    scroll.ViewportHeight /
+                        scale.ScaleY);
+
+            var bounds =
+                Bounds(
+                    element);
+
+            return viewport.Left <=
+                    bounds.Left &&
+                viewport.Top <=
+                    bounds.Top &&
+                viewport.Right >=
+                    bounds.Right &&
+                viewport.Bottom >=
+                    bounds.Bottom;
         }
 
         private static Rect Bounds(
