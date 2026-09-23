@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
@@ -8,6 +8,7 @@ using System.Windows;
 using NetLoom.Application.Monitoring;
 using NetLoom.Application.MonitoringControl;
 using NetLoom.Contracts.Diagnostics;
+using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf.Localization;
 
@@ -17,8 +18,16 @@ namespace NetLoom.Wpf
     {
         private readonly IMonitoringControl _monitoringControl;
 
+        private const int InitialMonitoringMaxConcurrentPolls = 1;
+
+        private static readonly TimeSpan
+            InitialMonitoringStartupJitter =
+                TimeSpan.Zero;
+
         private Guid? _monitoringInputDeviceId;
         private MonitoringSessionPolicy _monitoringActivePolicy;
+        private int _monitoringActiveTargetCount;
+        private bool _monitoringTargetSetSessionActive;
         private bool _monitoringStandalonePollActive;
         private bool _monitoringClosed;
 
@@ -188,31 +197,97 @@ namespace NetLoom.Wpf
             object sender,
             RoutedEventArgs e)
         {
+            var multiTargetControl =
+                _monitoringControl as
+                    IMultiTargetMonitoringControl;
+
+            if (multiTargetControl != null)
+            {
+                IReadOnlyList<MonitoringTarget> targets;
+                MonitoringSessionPolicy policy;
+                string validation;
+
+                if (!TryBuildMonitoringTargetSetRequest(
+                        out targets,
+                        out policy,
+                        out validation))
+                {
+                    MonitoringMessageText.Text =
+                        validation;
+                    return;
+                }
+
+                MonitoringMessageText.Text =
+                    string.Empty;
+                _monitoringActivePolicy =
+                    policy;
+                _monitoringActiveTargetCount =
+                    targets.Count;
+                _monitoringTargetSetSessionActive =
+                    true;
+
+                try
+                {
+                    await multiTargetControl
+                        .StartSetAsync(
+                            targets,
+                            policy,
+                            InitialMonitoringTargetSetPolicy(),
+                            _lifetimeCancellation.Token);
+                }
+                catch (OperationCanceledException)
+                    when (_lifetimeCancellation
+                        .IsCancellationRequested)
+                {
+                }
+                catch (Exception error)
+                {
+                    if (_monitoringControl.Current.State ==
+                            MonitoringControlState.Stopped ||
+                        _monitoringControl.Current.State ==
+                            MonitoringControlState.Faulted)
+                    {
+                        _monitoringTargetSetSessionActive =
+                            false;
+                        _monitoringActiveTargetCount =
+                            0;
+                    }
+
+                    UpdateMonitoringPresentation(
+                        _monitoringControl.Current);
+
+                    ShowMonitoringActionFailure(
+                        error);
+                }
+
+                return;
+            }
+
             MonitoringTarget target;
-            MonitoringSessionPolicy policy;
-            string validation;
+            MonitoringSessionPolicy legacyPolicy;
+            string legacyValidation;
 
             if (!TryBuildMonitoringRequest(
                     out target,
-                    out policy,
-                    out validation))
+                    out legacyPolicy,
+                    out legacyValidation))
             {
                 MonitoringMessageText.Text =
-                    validation;
+                    legacyValidation;
                 return;
             }
 
             MonitoringMessageText.Text =
                 string.Empty;
             _monitoringActivePolicy =
-                policy;
+                legacyPolicy;
 
             try
             {
                 await _monitoringControl
                     .StartAsync(
                         target,
-                        policy,
+                        legacyPolicy,
                         _lifetimeCancellation.Token);
             }
             catch (OperationCanceledException)
@@ -275,19 +350,27 @@ namespace NetLoom.Wpf
 
             if (runningSchedule)
             {
-                target =
-                    snapshot.ActiveTarget;
-
-                policy =
-                    _monitoringActivePolicy;
-
-                if (target == null ||
-                    policy == null)
+                if (_monitoringTargetSetSessionActive)
                 {
-                    MonitoringMessageText.Text =
-                        UiText.Get(
-                            "MonitoringActiveSessionUnavailable");
-                    return;
+                    target = null;
+                    policy = null;
+                }
+                else
+                {
+                    target =
+                        snapshot.ActiveTarget;
+
+                    policy =
+                        _monitoringActivePolicy;
+
+                    if (target == null ||
+                        policy == null)
+                    {
+                        MonitoringMessageText.Text =
+                            UiText.Get(
+                                "MonitoringActiveSessionUnavailable");
+                        return;
+                    }
                 }
             }
             else
@@ -403,6 +486,10 @@ namespace NetLoom.Wpf
             {
                 _monitoringStandalonePollActive = false;
                 _monitoringActivePolicy = null;
+                _monitoringTargetSetSessionActive =
+                    false;
+                _monitoringActiveTargetCount =
+                    0;
             }
 
             MonitoringStateValueText.Text =
@@ -411,15 +498,8 @@ namespace NetLoom.Wpf
                         snapshot.State));
 
             MonitoringActiveTargetValueText.Text =
-                snapshot.ActiveTarget == null
-                    ? UiText.Get(
-                        "DiagnosticNotAvailable")
-                    : UiText.Format(
-                        "MonitoringActiveTargetValue",
-                        snapshot.ActiveTarget
-                            .TargetAddress,
-                        snapshot.ActiveTarget
-                            .DeviceId);
+                MonitoringScopeText(
+                    snapshot);
 
             MonitoringLastPollValueText.Text =
                 LocalMonitoringTime(
@@ -474,9 +554,15 @@ namespace NetLoom.Wpf
             MonitoringKindInterfaceCheckBox.IsEnabled = canEdit;
             MonitoringKindStpCheckBox.IsEnabled = canEdit;
 
+            var multiTargetControl =
+                _monitoringControl as
+                    IMultiTargetMonitoringControl;
+
             MonitoringStartButton.IsEnabled =
                 canEdit &&
-                hasSelectedDevice;
+                (multiTargetControl != null
+                    ? CurrentMonitoringTargetSetCandidateCount() > 0
+                    : hasSelectedDevice);
 
             MonitoringStopButton.IsEnabled =
                 snapshot.State ==
@@ -498,6 +584,190 @@ namespace NetLoom.Wpf
             MonitoringRefreshTopologyButton.IsEnabled =
                 !_lifetimeCancellation
                     .IsCancellationRequested;
+        }
+
+        private bool TryBuildMonitoringTargetSetRequest(
+            out IReadOnlyList<MonitoringTarget> targets,
+            out MonitoringSessionPolicy policy,
+            out string validation)
+        {
+            targets = null;
+            policy = null;
+            validation = null;
+
+            if (!TryBuildMonitoringPolicy(
+                    out policy,
+                    out validation))
+            {
+                return false;
+            }
+
+            var selectedOverrideText =
+                (MonitoringTargetAddressTextBox.Text ??
+                 string.Empty)
+                .Trim();
+
+            var result =
+                new List<MonitoringTarget>();
+
+            var seenDeviceIds =
+                new HashSet<Guid>();
+
+            if (_lastMapSnapshot != null)
+            {
+                foreach (var node in
+                    _lastMapSnapshot.Nodes)
+                {
+                    if (!node.DeviceId.HasValue ||
+                        node.DeviceId.Value ==
+                            Guid.Empty ||
+                        node.MonitoringCapability ==
+                            MapMonitoringCapability.None)
+                    {
+                        continue;
+                    }
+
+                    IPAddress address;
+
+                    if (!IPAddress.TryParse(
+                        node.ManagementAddress,
+                        out address))
+                    {
+                        continue;
+                    }
+
+                    if (_monitoringInputDeviceId ==
+                            node.DeviceId &&
+                        selectedOverrideText.Length > 0 &&
+                        !IPAddress.TryParse(
+                            selectedOverrideText,
+                            out address))
+                    {
+                        validation =
+                            UiText.Get(
+                                "MonitoringValidationTargetAddress");
+                        return false;
+                    }
+
+                    if (!seenDeviceIds.Add(
+                        node.DeviceId.Value))
+                    {
+                        validation =
+                            UiText.Get(
+                                "MonitoringValidationDuplicateDevice");
+                        return false;
+                    }
+
+                    result.Add(
+                        new MonitoringTarget(
+                            node.DeviceId.Value,
+                            address));
+                }
+            }
+
+            if (result.Count == 0)
+            {
+                validation =
+                    UiText.Get(
+                        "MonitoringValidationNoPollableTargets");
+                return false;
+            }
+
+            result.Sort(
+                (left, right) =>
+                    left.DeviceId.CompareTo(
+                        right.DeviceId));
+
+            targets =
+                result;
+
+            return true;
+        }
+
+        private int CurrentMonitoringTargetSetCandidateCount()
+        {
+            if (_lastMapSnapshot == null)
+            {
+                return 0;
+            }
+
+            var deviceIds =
+                new HashSet<Guid>();
+
+            foreach (var node in
+                _lastMapSnapshot.Nodes)
+            {
+                if (!node.DeviceId.HasValue ||
+                    node.DeviceId.Value ==
+                        Guid.Empty ||
+                    node.MonitoringCapability ==
+                        MapMonitoringCapability.None)
+                {
+                    continue;
+                }
+
+                IPAddress address;
+
+                if (IPAddress.TryParse(
+                    node.ManagementAddress,
+                    out address))
+                {
+                    deviceIds.Add(
+                        node.DeviceId.Value);
+                }
+            }
+
+            return deviceIds.Count;
+        }
+
+        private string MonitoringScopeText(
+            MonitoringControlSnapshot snapshot)
+        {
+            if (_monitoringTargetSetSessionActive &&
+                _monitoringActiveTargetCount > 0)
+            {
+                return UiText.Format(
+                    "MonitoringScopeActiveValue",
+                    _monitoringActiveTargetCount);
+            }
+
+            if (snapshot.ActiveTarget != null)
+            {
+                return UiText.Format(
+                    "MonitoringActiveTargetValue",
+                    snapshot.ActiveTarget
+                        .TargetAddress,
+                    snapshot.ActiveTarget
+                        .DeviceId);
+            }
+
+            if (_monitoringControl is
+                IMultiTargetMonitoringControl)
+            {
+                var count =
+                    CurrentMonitoringTargetSetCandidateCount();
+
+                return count == 0
+                    ? UiText.Get(
+                        "MonitoringScopeNoTargets")
+                    : UiText.Format(
+                        "MonitoringScopeReadyValue",
+                        count);
+            }
+
+            return UiText.Get(
+                "DiagnosticNotAvailable");
+        }
+
+        private static MonitoringTargetSetPolicy
+            InitialMonitoringTargetSetPolicy()
+        {
+            // До реальной приёмки Sprint 43 используем
+            // Последовательный безопасный старт. Значение
+            // Меняется только после измерений на целевой сети.
+            return new MonitoringTargetSetPolicy(
+                InitialMonitoringMaxConcurrentPolls,
+                InitialMonitoringStartupJitter);
         }
 
         private bool TryBuildMonitoringRequest(

@@ -1187,7 +1187,7 @@ Drag the header to move this location together with its child locations and assi
     <value>State</value>
   </data>
   <data name="MonitoringActiveTargetLabel" xml:space="preserve">
-    <value>Active target</value>
+    <value>Monitoring scope</value>
   </data>
   <data name="MonitoringLastPollLabel" xml:space="preserve">
     <value>Last successful poll</value>
@@ -1205,7 +1205,7 @@ Drag the header to move this location together with its child locations and assi
     <value>Select a device on the map.</value>
   </data>
   <data name="MonitoringTargetAddressLabel" xml:space="preserve">
-    <value>Target address</value>
+    <value>Selected target override</value>
   </data>
   <data name="MonitoringIntervalLabel" xml:space="preserve">
     <value>Interval, s</value>
@@ -1268,7 +1268,7 @@ Drag the header to move this location together with its child locations and assi
     <value>Refresh topology</value>
   </data>
   <data name="MonitoringSessionOnlyHint" xml:space="preserve">
-    <value>Target override and polling settings apply to this Desktop session only. SNMP credentials come from NETLOOM_SNMP_* environment variables.</value>
+    <value>Continuous monitoring uses every pollable map device with a stable DeviceId and valid management address. For an already pollable selected device, an address override affects only that device in the current Desktop session; when monitoring is stopped, Poll now still polls only the selected device. SNMP credentials come from NETLOOM_SNMP_* environment variables.</value>
   </data>
   <data name="MonitoringStateStopped" xml:space="preserve">
     <value>Stopped</value>
@@ -1290,6 +1290,21 @@ Drag the header to move this location together with its child locations and assi
   </data>
   <data name="MonitoringActiveTargetValue" xml:space="preserve">
     <value>{0} • {1}</value>
+  </data>
+  <data name="MonitoringScopeReadyValue" xml:space="preserve">
+    <value>Pollable devices: {0}</value>
+  </data>
+  <data name="MonitoringScopeActiveValue" xml:space="preserve">
+    <value>Devices being monitored: {0}</value>
+  </data>
+  <data name="MonitoringScopeNoTargets" xml:space="preserve">
+    <value>No devices with a valid management address are available for continuous monitoring.</value>
+  </data>
+  <data name="MonitoringValidationNoPollableTargets" xml:space="preserve">
+    <value>No pollable devices with a valid management address are available.</value>
+  </data>
+  <data name="MonitoringValidationDuplicateDevice" xml:space="preserve">
+    <value>The current topology snapshot contains the same DeviceId more than once. Refresh topology before starting monitoring.</value>
   </data>
   <data name="MonitoringFaultMessage" xml:space="preserve">
     <value>Engine diagnostic: {0}</value>

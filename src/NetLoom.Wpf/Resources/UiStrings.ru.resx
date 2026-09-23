@@ -1187,7 +1187,7 @@
     <value>Состояние</value>
   </data>
   <data name="MonitoringActiveTargetLabel" xml:space="preserve">
-    <value>Активная цель</value>
+    <value>Охват мониторинга</value>
   </data>
   <data name="MonitoringLastPollLabel" xml:space="preserve">
     <value>Последний успешный опрос</value>
@@ -1205,7 +1205,7 @@
     <value>Выберите устройство на карте.</value>
   </data>
   <data name="MonitoringTargetAddressLabel" xml:space="preserve">
-    <value>Адрес цели</value>
+    <value>Переопределение адреса выбранной цели</value>
   </data>
   <data name="MonitoringIntervalLabel" xml:space="preserve">
     <value>Интервал, с</value>
@@ -1268,7 +1268,7 @@
     <value>Обновить топологию</value>
   </data>
   <data name="MonitoringSessionOnlyHint" xml:space="preserve">
-    <value>Переопределение адреса и параметры опроса действуют только в текущем сеансе Desktop. Учётные данные SNMP берутся из переменных среды NETLOOM_SNMP_*.</value>
+    <value>Непрерывный мониторинг использует все доступные для опроса устройства карты со стабильным DeviceId и корректным адресом управления. Для уже доступного к опросу выбранного устройства переопределение адреса действует только для него и только в текущем сеансе Desktop; когда мониторинг остановлен, «Опросить сейчас» по-прежнему опрашивает только выбранное устройство. Учётные данные SNMP берутся из переменных среды NETLOOM_SNMP_*.</value>
   </data>
   <data name="MonitoringStateStopped" xml:space="preserve">
     <value>Остановлен</value>
@@ -1290,6 +1290,21 @@
   </data>
   <data name="MonitoringActiveTargetValue" xml:space="preserve">
     <value>{0} • {1}</value>
+  </data>
+  <data name="MonitoringScopeReadyValue" xml:space="preserve">
+    <value>Доступно для мониторинга: {0}</value>
+  </data>
+  <data name="MonitoringScopeActiveValue" xml:space="preserve">
+    <value>Устройств в мониторинге: {0}</value>
+  </data>
+  <data name="MonitoringScopeNoTargets" xml:space="preserve">
+    <value>Нет устройств с корректным адресом управления для непрерывного мониторинга.</value>
+  </data>
+  <data name="MonitoringValidationNoPollableTargets" xml:space="preserve">
+    <value>Нет доступных для опроса устройств с корректным адресом управления.</value>
+  </data>
+  <data name="MonitoringValidationDuplicateDevice" xml:space="preserve">
+    <value>В текущем снимке топологии один DeviceId встречается более одного раза. Обновите топологию перед запуском мониторинга.</value>
   </data>
   <data name="MonitoringFaultMessage" xml:space="preserve">
     <value>Диагностика Engine: {0}</value>
