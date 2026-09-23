@@ -97,7 +97,7 @@
 - [x] Surface raw-expired evidence state in localized evidence UI when that detail panel is implemented — completed in Sprint 35 selected-element diagnostics.
 - [ ] Configurable SNMP WALK varbind limit with explicit step failure before unbounded memory growth.
 - [ ] Propagate CancellationToken into the active poll/collector path; cancellation must not become a failed protocol step.
-- [ ] Multi-device scheduler — committed as Sprint 43 below: one Engine multi-target host with bounded parallelism, per-device cadence, startup jitter and backpressure.
+- [x] Multi-device scheduler — completed in Sprint 43: one Engine multi-target host with bounded parallelism, per-device cadence, startup jitter and backpressure.
 - [x] Clarify/rename fundamental cycle-basis primitive before exposing user-facing named rings.
 ## P0 - Desktop operational reliability before the next product feature
 
@@ -141,7 +141,7 @@
 
 ## Execution map after Sprint 38
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, Sprint 41, and Sprint 42 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, persistent hierarchical Location containers, monitoring control, glance-readable topology semantics, and operator-driven discovery that incrementally materializes discovered devices into the existing map. Sprint 42 closed the discovery workflow with explicit range/subnet/profile input, progress/cancellation, live materialization, automatic focus at a useful scale, and a visible discovery pulse. Sprint 43 is now the first unchecked committed product item.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, Sprint 41, Sprint 42, and Sprint 43 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, persistent hierarchical Location containers, monitoring control, glance-readable topology semantics, operator-driven discovery, and one-Engine multi-target monitoring. Sprint 43 closed continuous monitoring of the eligible target set with measured bounded concurrency/startup jitter, per-target failure isolation, and startup viewport remediation. Sprint 44 is now the first unchecked committed product item.
 
 ### Completed
 
@@ -238,12 +238,14 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Acceptance: operator acceptance passed on the isolated synthetic discovery stand, including live appearance, automatic selection/focus and visible pulse. Final technical regression passed Modern 156/156, Unit 319/319, Integration 113/113 and Snapshots 7/7. Exact 21-file review/index/commit/blob proofs passed; technical commit `c49cdd306e66b077ab3e44675ce8e79102b97907` is pushed with `HEAD == origin/main` and a clean worktree.
   - No SQLite migration or new production dependency was added.
 
-- [ ] Sprint 43 — multi-target monitoring in one Engine.
-  - Operator outcome: NetLoom continuously monitors all enabled/pollable devices instead of only one selected target.
-  - Preserve the Sprint 40 process boundary: Desktop owns one Engine monitoring process. Do not launch one Engine process per device.
-  - Extend the Engine scheduler to a target set with bounded concurrency, per-device cadence, startup jitter, backpressure, cancellation, and no overlapping poll for the same target. `async`/task usage is an implementation choice, not the acceptance metric.
-  - Start with conservative concurrency and measure on the author's real network; SNMP/UDP loss and timeout behavior take precedence over maximum throughput.
-  - Preserve stable `DeviceId` identity and existing credential/configuration boundaries; this Sprint is not a secrets/profile redesign.
+- [x] Sprint 43 — multi-target monitoring in one Engine.
+  - Operator outcome: NetLoom continuously monitors the eligible target set instead of only one selected target.
+  - Completed process/runtime boundary: Desktop owns one Engine `schedule-set` process; targets retain stable `DeviceId` plus management address, and the scheduler provides per-target cadence, deterministic startup jitter, bounded concurrency, drop-on-busy backpressure, cancellation that stops new scheduling, and no overlapping poll for the same target.
+  - Completed failure isolation: Health is probed first for each scheduled target; timeout/socket failure fast-fails only that target cycle, while other targets continue. Poll-slot release is decoupled from maintenance/delivery work so slow completion work does not hold scheduler concurrency.
+  - Completed WPF behavior: Start monitors all snapshot-eligible targets with stable `DeviceId` and valid management address; Poll now wakes the running target set, while the stopped-state action remains selected-target only. Startup auto-fit remains active across later startup `SizeChanged` events until explicit operator map interaction, so restart no longer requires `Show all` after the viewport settles.
+  - Measured acceptance policy: on the controlled 15-target Sprint 43 stand, `startup-jitter=15s` with concurrency `1` completed 4/15 and skipped 11 for backpressure, concurrency `2` completed 11/15 and skipped 4, and concurrency `4` completed 15/15 with 0 backpressure skips. A control run with concurrency `4` and jitter `0` completed only 4/15 and skipped 11, so the accepted WPF policy is `max-concurrency=4` plus `startup-jitter=15s`. Real-network verification remains part of Sprint 45 rather than being inferred from the synthetic stand.
+  - Acceptance: the 15-target database contained 10 reachable loopback targets and 5 intentionally unavailable TEST-NET targets; the live WPF session remained `Работает`, kept 15 available/active targets, and continued successful polling despite unavailable targets. Startup viewport reacceptance passed after root-cause remediation commit `b1af6437c4c424e4b750fb8da18732e1eed43789`; measured-policy commit `af78cd05a5fa90023f1372d4e679d8c7805c6583` is pushed. Final closure gates passed forced solution build, Modern 173/173, Unit 335/335, Integration 113/113, Snapshots 7/7, repository text-integrity, exact two-file policy boundary/blob proof, `HEAD == origin/main`, and a clean worktree.
+  - No SQLite migration, credential/profile redesign, or new production dependency was added.
 
 - [ ] Sprint 44 — export the site diagram and inventory.
   - Operator outcome: export a readable site diagram and equipment list that can be handed to a colleague/customer after an assessment.
@@ -272,7 +274,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 
 ### Next candidates — not commitments
 
-The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the committed Sprint 43 → 44 → 45 → 46 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
+The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the remaining committed Sprint 44 → 45 → 46 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
 
 - [ ] Network state surface: present existing analysis in three operator-visible groups — structural risks, active confirmed problems, and insufficient data — without inventing missing evidence or adding the not-yet-implemented multi-MAC hidden-switch heuristic to the first version.
 - [ ] Deterministic demonstration stand after the network-state surface: use controlled `snmpsim` fixtures, including a proven STP-state transition chain from `.snmprec` through observation/materialization/analyzer/alert transition, so the sales scenario also serves as behavioral regression evidence.

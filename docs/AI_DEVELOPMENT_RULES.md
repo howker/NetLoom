@@ -65,6 +65,8 @@
 - Если ИИ публикует per-file SHA256 для содержимого архива, пакет должен проверять и их до commit.
 - После распаковки архива, который меняет source/project files, использовать forced build через `dotnet build --no-incremental`, потому что `Expand-Archive` может сохранять timestamps и сделать incremental build недостоверным.
 - После успешного forced build tests предпочтительно запускать с `--no-build`, чтобы тестировались именно проверенные binaries.
+- После любого изменения source/project/test files, которое может изменить compiled binaries, включая любой `.cs` в production или tests, до `dotnet test --no-build` обязателен новый успешный build этих binaries. Запуск `--no-build` после изменения source/test bytes без промежуточного build является недействительным evidence, даже если команда завершается успешно.
+- Если после изменения test source запуск `dotnet test --no-build` неожиданно показывает прежний результат, прежнее число тестов или не воспроизводит ожидаемый RED/GREEN, сначала считать вероятной stale test binary и выполнить build; не диагностировать product behavior по заведомо не пересобранному test assembly.
 - Для docs-only изменения build не нужен, если документы не участвуют в генерации/компиляции; обязательными остаются text-integrity, `git diff --check`, boundary review и status checks.
 - Перед Desktop build нужно проверять/останавливать только действительно оставшийся `NetLoom.Desktop` process, если он блокирует output DLL. Lock от живого Desktop не является code regression.
 - Временные environment overrides для acceptance (`NETLOOM_LOG_*`, SNMP test values и т. п.) всегда восстанавливаются через `finally`.

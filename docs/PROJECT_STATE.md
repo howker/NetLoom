@@ -6,24 +6,52 @@
 
 ## Текущее состояние
 
-Sprint 42 is closed and pushed. Safe operator-driven discovery is technically regressed and operator-accepted; technical implementation commit `c49cdd306e66b077ab3e44675ce8e79102b97907` is on `origin/main`, and the technical postflight worktree was clean.
+Sprint 43 is closed and pushed. NetLoom now monitors the eligible target set through one Desktop-owned Engine process rather than one Engine process per device. The accepted WPF target-set policy is the measured `max-concurrency=4` plus `startup-jitter=15s`; measured-policy commit `af78cd05a5fa90023f1372d4e679d8c7805c6583` is on `origin/main`, and the technical postflight worktree was clean.
 
-The accepted discovery workflow uses explicit IPv4 start address, end address, subnet mask, and one selected SNMP profile. The range is validated and bounded before launch; credential guessing/profile iteration is not introduced. `NetLoom.Engine` remains the discovery host, while WPF consumes the existing Desktop discovery-control boundary, incremental progress, and candidate events.
+The Sprint 43 scheduler keeps stable `DeviceId` identity, per-target cadence, bounded concurrency, startup jitter, drop-on-busy backpressure, cancellation that stops new scheduling, and no same-target overlap. Health timeout/socket failure fast-fails only that target cycle. Desktop still owns exactly one monitoring Engine child process, and WPF starts the complete snapshot-eligible target set rather than coupling continuous monitoring to the selected node.
 
-Discovered candidates are materialized through the existing topology repository and then through the existing refresh/reconciliation path. Existing automatic devices keep stable `DeviceId` when matched by observed management address, manual devices are not overwritten, and discovery does not create `PhysicalLink`. A newly materialized device is automatically selected, centered at native 100% map scale, and visibly pulsed so the operator can identify it immediately.
+Controlled acceptance used 15 database targets: 10 reachable loopback targets and 5 intentionally unavailable TEST-NET targets. With 15 seconds of startup jitter, concurrency 1 completed 4/15 targets with 11 backpressure skips, concurrency 2 completed 11/15 with 4 skips, and concurrency 4 completed 15/15 with 0 skips. Concurrency 4 with zero jitter regressed to 4/15 completed and 11 skips, proving that startup jitter is part of the accepted policy. Real-network verification remains Sprint 45 work.
+
+The repeated startup-viewport friction first seen in Sprint 38 reappeared during Sprint 43 acceptance. Root-cause remediation `b1af6437c4c424e4b750fb8da18732e1eed43789` keeps startup auto-fit active across later viewport `SizeChanged` events until explicit operator map interaction; live reacceptance opened the topology centered and fully visible without manual `Show all`.
 
 The committed product sequence remains unchanged:
 
-1. Sprint 42 — safe operator-driven network discovery — complete.
-2. Sprint 43 — multi-target monitoring inside one Engine process — next.
-3. Sprint 44 — PNG + CSV export.
-4. Sprint 45 — full acceptance/hardening on the author's real network.
+1. Sprint 43 — multi-target monitoring inside one Engine process — complete.
+2. Sprint 44 — PNG + CSV export — next.
+3. Sprint 45 — full acceptance/hardening on the author's real network.
+4. Sprint 46 — application shell/navigation rework.
 
 Optical degradation is still parallel evidence gathering rather than committed product work. Existing hardware confirms optics but not trustworthy DDM telemetry: MikroTik CSS106 exposes SFP identity while current Rx/Tx/temperature readings remain unconfirmed; MOXA PT-7728 exposes SNMP/LLDP but no DDM surface has yet been found; EDS-408A-SS-SC uses fixed optical ports; unmanaged media converters do not provide their own management telemetry.
 
 MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on all known MOXA devices at the current site.
 
-Next gate: begin Sprint 43 by auditing the current Sprint 40 single-target Engine process/scheduler boundary and the existing stable device/profile inputs, then extend that one Engine host to a bounded multi-target target set without launching one process per device.
+Next gate: begin Sprint 44 by auditing the existing coherent topology read-set, current map/Location rendering boundaries, and inventory/interface projection so PNG and UTF-8 BOM CSV export reuse canonical product data without rendering the live virtual Canvas or inventing a second topology interpretation.
+
+## Sprint 43 closure — 2026-09-23
+
+Sprint 43 — multi-target monitoring in one Engine — is complete.
+
+Confirmed result:
+- one Desktop-owned Engine `schedule-set` process monitors the complete eligible target set using stable `DeviceId` identity;
+- the scheduler provides per-target cadence, deterministic startup jitter, bounded concurrency, drop-on-busy backpressure, cancellation that stops new scheduling, and no same-target overlap;
+- per-target Health timeout/socket failure does not stop the remaining target set;
+- WPF continuous monitoring is target-set based rather than selected-device based, while stopped-state Poll now remains selected-target only;
+- startup viewport handling remains in auto-fit mode across later startup resizes until explicit operator interaction.
+
+Acceptance:
+- controlled 15-target measurement selected `max-concurrency=4` plus `startup-jitter=15s` as the smallest tested policy with 15/15 completed targets and 0 backpressure skips;
+- a zero-jitter control with concurrency 4 produced 11 backpressure skips, so jitter remains part of the accepted WPF policy;
+- live operator acceptance confirmed successful polling continues with unavailable targets and confirmed startup opens centered without manual `Show all`;
+- final forced build passed;
+- full regression passed: Modern 173/173, Unit 335/335, Integration 113/113, Snapshots 7/7;
+- repository text-integrity and `git diff --check` passed;
+- startup viewport remediation commit `b1af6437c4c424e4b750fb8da18732e1eed43789` and measured-policy commit `af78cd05a5fa90023f1372d4e679d8c7805c6583` are pushed with `HEAD == origin/main`; technical postflight worktree was clean;
+- no SQLite migration, credential/profile redesign, or new production dependency was added.
+
+Next committed product Sprint:
+- Sprint 44 — export the canonical full site diagram to bounded PNG and export coherent inventory/interface data to UTF-8 BOM CSV;
+- export must be independent of live viewport pan/zoom, selection, search/focus/dimming, and persisted Location collapse state;
+- Sprint 45 remains the real-network acceptance/hardening gate.
 
 ## Sprint 42 closure — 2026-09-20
 
