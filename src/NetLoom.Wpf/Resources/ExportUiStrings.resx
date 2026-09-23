@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SiteExportAction" xml:space="preserve">
+    <value>Export site diagram and inventory...</value>
+  </data>
+  <data name="SiteExportHint" xml:space="preserve">
+    <value>Save the full topology diagram as PNG and the matching equipment/interface inventory as CSV.</value>
+  </data>
+  <data name="SiteExportDialogTitle" xml:space="preserve">
+    <value>Export site diagram and inventory</value>
+  </data>
+  <data name="SiteExportPngFilter" xml:space="preserve">
+    <value>PNG image (*.png)|*.png</value>
+  </data>
+  <data name="SiteExportCsvOverwriteTitle" xml:space="preserve">
+    <value>Replace inventory CSV?</value>
+  </data>
+  <data name="SiteExportCsvOverwritePrompt" xml:space="preserve">
+    <value>The inventory CSV already exists:
+{0}
+
+Replace it together with the PNG?</value>
+  </data>
+  <data name="SiteExportSuccessTitle" xml:space="preserve">
+    <value>Export completed</value>
+  </data>
+  <data name="SiteExportSuccessBody" xml:space="preserve">
+    <value>Site export completed.
+
+Diagram:
+{0}
+
+Inventory:
+{1}</value>
+  </data>
+  <data name="SiteExportFailedTitle" xml:space="preserve">
+    <value>Export failed</value>
+  </data>
+  <data name="SiteExportFailedBody" xml:space="preserve">
+    <value>The site diagram and inventory could not be exported. Details were written to the log.</value>
+  </data>
+</root>

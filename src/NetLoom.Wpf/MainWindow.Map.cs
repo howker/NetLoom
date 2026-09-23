@@ -752,6 +752,26 @@ public partial class MainWindow
         settingsMenu.Items.Add(
             CreateOperationalFocusMenu());
 
+        settingsMenu.Items.Add(
+            new Separator());
+
+        var exportMenuItem =
+            new MenuItem
+            {
+                Header =
+                    ExportUiText.Get(
+                        "SiteExportAction"),
+                ToolTip =
+                    ExportUiText.Get(
+                        "SiteExportHint")
+            };
+
+        exportMenuItem.Click +=
+            OnSiteExportClick;
+
+        settingsMenu.Items.Add(
+            exportMenuItem);
+
         MapSettingsButton.ContextMenu =
             settingsMenu;
 

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SiteExportAction" xml:space="preserve">
+    <value>Экспорт схемы и инвентаризации...</value>
+  </data>
+  <data name="SiteExportHint" xml:space="preserve">
+    <value>Сохранить полную схему топологии в PNG и соответствующий список оборудования и интерфейсов в CSV.</value>
+  </data>
+  <data name="SiteExportDialogTitle" xml:space="preserve">
+    <value>Экспорт схемы и инвентаризации</value>
+  </data>
+  <data name="SiteExportPngFilter" xml:space="preserve">
+    <value>Изображение PNG (*.png)|*.png</value>
+  </data>
+  <data name="SiteExportCsvOverwriteTitle" xml:space="preserve">
+    <value>Заменить CSV инвентаризации?</value>
+  </data>
+  <data name="SiteExportCsvOverwritePrompt" xml:space="preserve">
+    <value>CSV-файл инвентаризации уже существует:
+{0}
+
+Заменить его вместе с PNG?</value>
+  </data>
+  <data name="SiteExportSuccessTitle" xml:space="preserve">
+    <value>Экспорт завершён</value>
+  </data>
+  <data name="SiteExportSuccessBody" xml:space="preserve">
+    <value>Экспорт площадки завершён.
+
+Схема:
+{0}
+
+Инвентаризация:
+{1}</value>
+  </data>
+  <data name="SiteExportFailedTitle" xml:space="preserve">
+    <value>Ошибка экспорта</value>
+  </data>
+  <data name="SiteExportFailedBody" xml:space="preserve">
+    <value>Не удалось экспортировать схему площадки и инвентаризацию. Подробности записаны в журнал.</value>
+  </data>
+</root>

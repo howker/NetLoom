@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using NetLoom.Application.Alerts;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.Export;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.MapLayout;
@@ -443,6 +444,15 @@ public partial class MainWindow : Window
             mapLayoutStore ??
             throw new ArgumentNullException(
                 nameof(mapLayoutStore));
+
+        _topologyExportSnapshotProvider =
+            new TopologyExportSnapshotProvider(
+                topologyRefreshSnapshotProvider ??
+                    throw new ArgumentNullException(
+                        nameof(topologyRefreshSnapshotProvider)),
+                _mapLayoutStore,
+                _mapLayoutId,
+                CurrentStpInstanceId);
 
         _manualTopologyService =
             manualTopologyService ??
