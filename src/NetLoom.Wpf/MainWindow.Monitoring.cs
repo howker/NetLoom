@@ -184,10 +184,8 @@ namespace NetLoom.Wpf
                     device.DeviceId);
 
             MonitoringTargetAddressTextBox.Text =
-                string.IsNullOrWhiteSpace(
-                    device.ManagementAddress)
-                    ? string.Empty
-                    : device.ManagementAddress;
+                MonitoringSelectedAddressText(
+                    device);
 
             UpdateMonitoringControlAvailability(
                 _monitoringControl.Current);
@@ -497,9 +495,24 @@ namespace NetLoom.Wpf
                     MonitoringStateResourceKey(
                         snapshot.State));
 
-            MonitoringActiveTargetValueText.Text =
-                MonitoringScopeText(
-                    snapshot);
+            if (_monitoringControl is
+                    IMultiTargetMonitoringControl)
+            {
+                MonitoringActiveTargetLabelText.Text =
+                    MonitoringAvailableScopeText(
+                        snapshot);
+                MonitoringActiveTargetValueText.Text =
+                    MonitoringActiveScopeText();
+            }
+            else
+            {
+                MonitoringActiveTargetLabelText.Text =
+                    UiText.Get(
+                        "MonitoringActiveTargetLabel");
+                MonitoringActiveTargetValueText.Text =
+                    MonitoringScopeText(
+                        snapshot);
+            }
 
             MonitoringLastPollValueText.Text =
                 LocalMonitoringTime(
@@ -629,24 +642,30 @@ namespace NetLoom.Wpf
 
                     IPAddress address;
 
-                    if (!IPAddress.TryParse(
-                        node.ManagementAddress,
-                        out address))
-                    {
-                        continue;
-                    }
+                    var selectedNode =
+                        _monitoringInputDeviceId ==
+                            node.DeviceId;
 
-                    if (_monitoringInputDeviceId ==
-                            node.DeviceId &&
-                        selectedOverrideText.Length > 0 &&
-                        !IPAddress.TryParse(
-                            selectedOverrideText,
+                    var addressText =
+                        selectedNode &&
+                        selectedOverrideText.Length > 0
+                            ? selectedOverrideText
+                            : node.ManagementAddress;
+
+                    if (!IPAddress.TryParse(
+                            addressText,
                             out address))
                     {
-                        validation =
-                            UiText.Get(
-                                "MonitoringValidationTargetAddress");
-                        return false;
+                        if (selectedNode &&
+                            selectedOverrideText.Length > 0)
+                        {
+                            validation =
+                                UiText.Get(
+                                    "MonitoringValidationTargetAddress");
+                            return false;
+                        }
+
+                        continue;
                     }
 
                     if (!seenDeviceIds.Add(
@@ -720,6 +739,95 @@ namespace NetLoom.Wpf
             return deviceIds.Count;
         }
 
+        private string MonitoringSelectedAddressText(
+            DeviceDiagnostic device)
+        {
+            IPAddress address;
+
+            if (IPAddress.TryParse(
+                    (device.ManagementAddress ??
+                     string.Empty)
+                    .Trim(),
+                    out address))
+            {
+                return address.ToString();
+            }
+
+            return TryGetMapManagementAddress(
+                    device.DeviceId,
+                    out address)
+                ? address.ToString()
+                : string.Empty;
+        }
+
+        private bool TryGetMapManagementAddress(
+            Guid deviceId,
+            out IPAddress address)
+        {
+            address = null;
+
+            if (_lastMapSnapshot == null)
+            {
+                return false;
+            }
+
+            foreach (var node in
+                _lastMapSnapshot.Nodes)
+            {
+                if (!node.DeviceId.HasValue ||
+                    node.DeviceId.Value !=
+                        deviceId)
+                {
+                    continue;
+                }
+
+                return IPAddress.TryParse(
+                    node.ManagementAddress,
+                    out address);
+            }
+
+            return false;
+        }
+
+        private string MonitoringAvailableScopeText(
+            MonitoringControlSnapshot snapshot)
+        {
+            if (!(_monitoringControl is
+                    IMultiTargetMonitoringControl))
+            {
+                return MonitoringScopeText(
+                    snapshot);
+            }
+
+            var count =
+                CurrentMonitoringTargetSetCandidateCount();
+
+            return count == 0
+                ? UiText.Get(
+                    "MonitoringScopeNoTargets")
+                : UiText.Format(
+                    "MonitoringScopeReadyValue",
+                    count);
+        }
+
+        private string MonitoringActiveScopeText()
+        {
+            if (!(_monitoringControl is
+                    IMultiTargetMonitoringControl))
+            {
+                return string.Empty;
+            }
+
+            var count =
+                _monitoringTargetSetSessionActive
+                    ? _monitoringActiveTargetCount
+                    : 0;
+
+            return UiText.Format(
+                "MonitoringScopeActiveValue",
+                count);
+        }
+
         private string MonitoringScopeText(
             MonitoringControlSnapshot snapshot)
         {
@@ -789,11 +897,26 @@ namespace NetLoom.Wpf
 
             IPAddress address;
 
-            if (!IPAddress.TryParse(
-                    (MonitoringTargetAddressTextBox.Text ??
-                     string.Empty)
-                    .Trim(),
-                    out address))
+            var addressText =
+                (MonitoringTargetAddressTextBox.Text ??
+                 string.Empty)
+                .Trim();
+
+            if (addressText.Length == 0)
+            {
+                if (!TryGetMapManagementAddress(
+                        _monitoringInputDeviceId.Value,
+                        out address))
+                {
+                    validation =
+                        UiText.Get(
+                            "MonitoringValidationTargetAddress");
+                    return false;
+                }
+            }
+            else if (!IPAddress.TryParse(
+                         addressText,
+                         out address))
             {
                 validation =
                     UiText.Get(

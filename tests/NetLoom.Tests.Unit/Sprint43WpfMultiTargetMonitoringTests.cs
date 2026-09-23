@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +31,141 @@ namespace NetLoom.Tests.Unit
                 0,
                 0,
                 DateTimeKind.Utc);
+
+        [TestMethod]
+        public void
+            MonitoringScopeShowsAvailableAndActiveCountsAtTheSameTime()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var previousCulture =
+                        CultureInfo.CurrentUICulture;
+
+                    try
+                    {
+                        CultureInfo.CurrentUICulture =
+                            CultureInfo.GetCultureInfo(
+                                "ru-RU");
+
+                        var window =
+                            new MainWindow(
+                                new FixedRefreshProvider(
+                                    Snapshot(
+                                        Device(
+                                            Guid.NewGuid(),
+                                            "Switch A",
+                                            "192.0.2.61",
+                                            MapMonitoringCapability.Unknown),
+                                        Device(
+                                            Guid.NewGuid(),
+                                            "Switch B",
+                                            "192.0.2.62",
+                                            MapMonitoringCapability.Unknown))),
+                                new EmptyLookupReader(),
+                                new RecordingMultiTargetMonitoringControl());
+
+                        try
+                        {
+                            window.Show();
+
+                            WaitForCondition(
+                                () =>
+                                    ((Button)window.FindName(
+                                        "MonitoringStartButton"))
+                                    .IsEnabled);
+
+                            var values =
+                                MonitoringTextValues(
+                                    window);
+
+                            CollectionAssert.Contains(
+                                values.ToArray(),
+                                "Доступно для мониторинга: 2");
+
+                            CollectionAssert.Contains(
+                                values.ToArray(),
+                                "Устройств в мониторинге: 0");
+                        }
+                        finally
+                        {
+                            window.Close();
+                        }
+                    }
+                    finally
+                    {
+                        CultureInfo.CurrentUICulture =
+                            previousCulture;
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            PollNowUsesSelectedMapAddressWhenDiagnosticAddressIsMissing()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var deviceId =
+                        Guid.NewGuid();
+
+                    var control =
+                        new RecordingMultiTargetMonitoringControl();
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                SnapshotWithDiagnosticAddress(
+                                    deviceId,
+                                    "Switch A",
+                                    "192.0.2.71",
+                                    null)),
+                            new EmptyLookupReader(),
+                            control);
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    deviceId) !=
+                                null);
+
+                        SelectDevice(
+                            window,
+                            deviceId);
+
+                        Click(
+                            (Button)window.FindName(
+                                "MonitoringPollNowButton"));
+
+                        Assert.AreEqual(
+                            1,
+                            control.PollNowCallCount);
+
+                        Assert.IsNotNull(
+                            control.PollNowTarget);
+
+                        Assert.AreEqual(
+                            deviceId,
+                            control.PollNowTarget.DeviceId);
+
+                        Assert.AreEqual(
+                            "192.0.2.71",
+                            control.PollNowTarget
+                                .TargetAddress
+                                .ToString());
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
 
         [TestMethod]
         public void
@@ -400,6 +536,53 @@ namespace NetLoom.Tests.Unit
                     new PhysicalLinkDiagnostic[0]));
         }
 
+        private static TopologyRefreshSnapshot
+            SnapshotWithDiagnosticAddress(
+                Guid deviceId,
+                string name,
+                string mapManagementAddress,
+                string diagnosticManagementAddress)
+        {
+            return new TopologyRefreshSnapshot(
+                new MapSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new MapNode(
+                            deviceId.ToString("D"),
+                            name,
+                            null,
+                            100.0,
+                            100.0,
+                            null,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            deviceId,
+                            mapManagementAddress)
+                    },
+                    new MapLink[0]),
+                new TopologyAlertSnapshot(
+                    Now,
+                    "cist",
+                    new TopologyAlert[0]),
+                new NetworkDiagnosticSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new DeviceDiagnostic(
+                            deviceId,
+                            name,
+                            null,
+                            null,
+                            Now,
+                            Now,
+                            new InterfaceDiagnostic[0],
+                            diagnosticManagementAddress)
+                    },
+                    new PhysicalLinkDiagnostic[0]));
+        }
+
         private static DeviceFixture Device(
             Guid deviceId,
             string name,
@@ -411,6 +594,55 @@ namespace NetLoom.Tests.Unit
                 name,
                 managementAddress,
                 monitoringCapability);
+        }
+
+        private static IReadOnlyList<string>
+            MonitoringTextValues(
+                MainWindow window)
+        {
+            var expander =
+                (Expander)window.FindName(
+                    "MonitoringExpander");
+
+            var result =
+                new List<string>();
+
+            CollectTextValues(
+                expander,
+                result);
+
+            return result;
+        }
+
+        private static void CollectTextValues(
+            DependencyObject root,
+            ICollection<string> result)
+        {
+            var text =
+                root as TextBlock;
+
+            if (text != null &&
+                !string.IsNullOrWhiteSpace(
+                    text.Text))
+            {
+                result.Add(
+                    text.Text);
+            }
+
+            foreach (var child in
+                LogicalTreeHelper.GetChildren(
+                    root))
+            {
+                var dependencyObject =
+                    child as DependencyObject;
+
+                if (dependencyObject != null)
+                {
+                    CollectTextValues(
+                        dependencyObject,
+                        result);
+                }
+            }
         }
 
         private static void SelectDevice(
