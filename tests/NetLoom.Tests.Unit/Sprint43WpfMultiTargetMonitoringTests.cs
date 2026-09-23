@@ -319,13 +319,13 @@ namespace NetLoom.Tests.Unit
                                 .ToArray());
 
                         Assert.AreEqual(
-                            1,
+                            4,
                             control.StartSetPolicy
                                 .MaxConcurrentPolls,
-                            "The first WPF policy is intentionally sequential until real-network Sprint 43 acceptance measures a safe higher value.");
+                            "The WPF policy must use the Sprint 43 measured target-set concurrency.");
 
                         Assert.AreEqual(
-                            TimeSpan.Zero,
+                            TimeSpan.FromSeconds(15),
                             control.StartSetPolicy
                                 .StartupJitter);
 

@@ -18,11 +18,11 @@ namespace NetLoom.Wpf
     {
         private readonly IMonitoringControl _monitoringControl;
 
-        private const int InitialMonitoringMaxConcurrentPolls = 1;
+        private const int InitialMonitoringMaxConcurrentPolls = 4;
 
         private static readonly TimeSpan
             InitialMonitoringStartupJitter =
-                TimeSpan.Zero;
+                TimeSpan.FromSeconds(15);
 
         private Guid? _monitoringInputDeviceId;
         private MonitoringSessionPolicy _monitoringActivePolicy;
@@ -870,9 +870,9 @@ namespace NetLoom.Wpf
         private static MonitoringTargetSetPolicy
             InitialMonitoringTargetSetPolicy()
         {
-            // До реальной приёмки Sprint 43 используем
-            // Последовательный безопасный старт. Значение
-            // Меняется только после измерений на целевой сети.
+            // По результатам приёмочного стенда Sprint 43 используем
+            // 4 параллельных опроса и startup jitter 15 с: 15/15 целей
+            // Завершают первую волну без backpressure skips.
             return new MonitoringTargetSetPolicy(
                 InitialMonitoringMaxConcurrentPolls,
                 InitialMonitoringStartupJitter);
