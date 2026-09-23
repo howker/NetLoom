@@ -129,6 +129,8 @@ public partial class MainWindow : Window
 
     private double _pendingPanY;
 
+    private bool _startupTopologyFitPending;
+
     private bool _suppressLockSelectedChange;
 
     private MapNodeVisual _dragNodeVisual;
@@ -622,13 +624,17 @@ public partial class MainWindow : Window
         _refreshTimer.Start();
 
         await RefreshTopologyAsync();
-        FitTopologyToViewport();
+        ScheduleStartupTopologyFit();
     }
 
     private void OnWindowClosed(
         object sender,
         EventArgs e)
     {
+        _startupTopologyFitPending = false;
+        MapScrollViewer.SizeChanged -=
+            OnStartupMapViewportSizeChanged;
+
         TrySaveViewportLayout();
         _refreshTimer.Stop();
 

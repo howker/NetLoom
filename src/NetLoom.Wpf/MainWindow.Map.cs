@@ -331,7 +331,66 @@ public partial class MainWindow
         return false;
     }
 
+    private void ScheduleStartupTopologyFit()
+    {
+        _startupTopologyFitPending = true;
+
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(
+                TryCompleteStartupTopologyFit));
+    }
+
+    private void OnStartupMapViewportSizeChanged(
+        object sender,
+        SizeChangedEventArgs e)
+    {
+        if (!_startupTopologyFitPending)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(
+                TryCompleteStartupTopologyFit));
+    }
+
+    private void TryCompleteStartupTopologyFit()
+    {
+        if (!_startupTopologyFitPending ||
+            _lifetimeCancellation
+                .IsCancellationRequested)
+        {
+            return;
+        }
+
+        MapScrollViewer.UpdateLayout();
+        MapCanvas.UpdateLayout();
+
+        if (!TryFitTopologyToViewport())
+        {
+            MapScrollViewer.SizeChanged -=
+                OnStartupMapViewportSizeChanged;
+
+            MapScrollViewer.SizeChanged +=
+                OnStartupMapViewportSizeChanged;
+
+            return;
+        }
+
+        _startupTopologyFitPending = false;
+
+        MapScrollViewer.SizeChanged -=
+            OnStartupMapViewportSizeChanged;
+    }
+
     private void FitTopologyToViewport()
+    {
+        TryFitTopologyToViewport();
+    }
+
+    private bool TryFitTopologyToViewport()
     {
         var bounds =
             new List<Rect>();
@@ -356,11 +415,18 @@ public partial class MainWindow
                 .Select(
                     LocationVisibleBounds));
 
-        FitMapBoundsToViewport(
+        return TryFitMapBoundsToViewport(
             bounds);
     }
 
     private void FitMapBoundsToViewport(
+        IReadOnlyList<Rect> bounds)
+    {
+        TryFitMapBoundsToViewport(
+            bounds);
+    }
+
+    private bool TryFitMapBoundsToViewport(
         IReadOnlyList<Rect> bounds)
     {
         if (bounds == null)
@@ -371,8 +437,11 @@ public partial class MainWindow
 
         if (bounds.Count == 0)
         {
-            return;
+            return false;
         }
+
+        MapScrollViewer.UpdateLayout();
+        MapCanvas.UpdateLayout();
 
         var viewportWidth =
             MapScrollViewer.ViewportWidth;
@@ -383,7 +452,7 @@ public partial class MainWindow
         if (viewportWidth <= 0.0 ||
             viewportHeight <= 0.0)
         {
-            return;
+            return false;
         }
 
         var minX =
@@ -468,6 +537,8 @@ public partial class MainWindow
 
                     TrySaveViewportLayout();
                 }));
+
+        return true;
     }
 
     private void TrySaveViewportLayout()

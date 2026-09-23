@@ -34,6 +34,73 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            StartupFitRetriesWhenMapViewportBecomesMeasured()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.NewGuid();
+
+                    var secondId =
+                        Guid.NewGuid();
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                FarSnapshot(
+                                    firstId,
+                                    secondId)),
+                            new EmptyLookupReader(),
+                            new RecordingMultiTargetMonitoringControl());
+
+                    var viewer =
+                        (ScrollViewer)window.FindName(
+                            "MapScrollViewer");
+
+                    viewer.Visibility =
+                        Visibility.Collapsed;
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    firstId) !=
+                                null);
+
+                        Assert.IsTrue(
+                            viewer.ViewportWidth <= 0.0 ||
+                            viewer.ViewportHeight <= 0.0,
+                            "The RED setup requires startup fit to observe an unmeasured map viewport.");
+
+                        viewer.Visibility =
+                            Visibility.Visible;
+
+                        window.UpdateLayout();
+
+                        WaitForCondition(
+                            () =>
+                                viewer.ViewportWidth > 0.0 &&
+                                viewer.ViewportHeight > 0.0);
+
+                        WaitForCondition(
+                            () =>
+                                viewer.HorizontalOffset > 0.0 &&
+                                viewer.VerticalOffset > 0.0);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             MonitoringScopeShowsAvailableAndActiveCountsAtTheSameTime()
         {
             RunOnSta(
@@ -478,6 +545,71 @@ namespace NetLoom.Tests.Unit
                         window.Close();
                     }
                 });
+        }
+
+        private static TopologyRefreshSnapshot FarSnapshot(
+            Guid firstId,
+            Guid secondId)
+        {
+            return new TopologyRefreshSnapshot(
+                new MapSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new MapNode(
+                            firstId.ToString("D"),
+                            "Far switch A",
+                            null,
+                            100000.0,
+                            100000.0,
+                            null,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            firstId,
+                            "192.0.2.81"),
+                        new MapNode(
+                            secondId.ToString("D"),
+                            "Far switch B",
+                            null,
+                            101200.0,
+                            100800.0,
+                            null,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            secondId,
+                            "192.0.2.82")
+                    },
+                    new MapLink[0]),
+                new TopologyAlertSnapshot(
+                    Now,
+                    "cist",
+                    new TopologyAlert[0]),
+                new NetworkDiagnosticSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new DeviceDiagnostic(
+                            firstId,
+                            "Far switch A",
+                            null,
+                            null,
+                            Now,
+                            Now,
+                            new InterfaceDiagnostic[0],
+                            "192.0.2.81"),
+                        new DeviceDiagnostic(
+                            secondId,
+                            "Far switch B",
+                            null,
+                            null,
+                            Now,
+                            Now,
+                            new InterfaceDiagnostic[0],
+                            "192.0.2.82")
+                    },
+                    new PhysicalLinkDiagnostic[0]));
         }
 
         private static TopologyRefreshSnapshot Snapshot(
