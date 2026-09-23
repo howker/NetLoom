@@ -30,12 +30,19 @@ namespace NetLoom.Engine
             InterfaceDegradationPolicy
                 interfaceDegradationPolicy = null)
         {
-            if (string.IsNullOrWhiteSpace(databasePath))
-            {
-                throw new ArgumentException(
-                    "DATABASE_PATH_REQUIRED",
-                    nameof(databasePath));
-            }
+            InitializeDatabase(
+                databasePath);
+
+            return CreateForInitializedDatabase(
+                databasePath,
+                interfaceDegradationPolicy);
+        }
+
+        public static void InitializeDatabase(
+            string databasePath)
+        {
+            ValidateDatabasePath(
+                databasePath);
 
             var connectionFactory =
                 new SqliteConnectionFactory(
@@ -44,6 +51,19 @@ namespace NetLoom.Engine
             new DatabaseInitializer(
                 connectionFactory)
                 .Initialize();
+        }
+
+        public static MonitoringRuntime CreateForInitializedDatabase(
+            string databasePath,
+            InterfaceDegradationPolicy
+                interfaceDegradationPolicy = null)
+        {
+            ValidateDatabasePath(
+                databasePath);
+
+            var connectionFactory =
+                new SqliteConnectionFactory(
+                    databasePath);
 
             IObservationStore rawStore =
                 new SqliteObservationStore(
@@ -108,6 +128,18 @@ namespace NetLoom.Engine
                 interfaceDegradationTransitionProcessor:
                     new SqliteInterfaceDegradationTransitionProcessor(
                         connectionFactory));
+        }
+
+        private static void ValidateDatabasePath(
+            string databasePath)
+        {
+            if (string.IsNullOrWhiteSpace(
+                databasePath))
+            {
+                throw new ArgumentException(
+                    "DATABASE_PATH_REQUIRED",
+                    nameof(databasePath));
+            }
         }
     }
 }

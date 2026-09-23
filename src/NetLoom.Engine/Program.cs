@@ -22,6 +22,10 @@ namespace NetLoom.Engine
         private const int
             RawObservationRetentionBatchSize = 8;
 
+        private static readonly TimeSpan
+            MultiTargetMaintenanceInterval =
+                TimeSpan.FromSeconds(30);
+
         private static int Main(
             string[] args)
         {
@@ -486,6 +490,18 @@ namespace NetLoom.Engine
                     TimeSpan.FromSeconds(
                         options.StartupJitterSeconds));
 
+            var databasePath =
+                EngineDatabasePathResolver.Resolve(
+                    options.DatabasePath);
+
+            EngineMonitoringComposition
+                .InitializeDatabase(
+                    databasePath);
+
+            var interfaceDegradationPolicy =
+                CreateInterfaceDegradationPolicy(
+                    options);
+
             var runtimes =
                 new ConcurrentDictionary<Guid, MonitoringRuntime>();
 
@@ -519,8 +535,10 @@ namespace NetLoom.Engine
                             runtimes.GetOrAdd(
                                 deviceId,
                                 ignored =>
-                                    CreateRuntime(
-                                        options));
+                                    EngineMonitoringComposition
+                                        .CreateForInitializedDatabase(
+                                            databasePath,
+                                            interfaceDegradationPolicy));
 
                         return runtime.PollOnce(
                             request);
@@ -584,7 +602,15 @@ namespace NetLoom.Engine
                                 WritePollResult(
                                     pollResult,
                                     hostLog);
-
+                            },
+                            target =>
+                            {
+                                hostLog.Info(
+                                    "SCHEDULER_BACKPRESSURE_SKIPPED deviceId=" +
+                                    target.DeviceId.ToString("D"));
+                            },
+                            () =>
+                            {
                                 RunObservationRetention(
                                     options,
                                     hostLog);
@@ -593,12 +619,7 @@ namespace NetLoom.Engine
                                     options,
                                     hostLog);
                             },
-                            target =>
-                            {
-                                hostLog.Info(
-                                    "SCHEDULER_BACKPRESSURE_SKIPPED deviceId=" +
-                                    target.DeviceId.ToString("D"));
-                            });
+                            MultiTargetMaintenanceInterval);
 
                     hostLog.Info(
                         "SCHEDULER_SET_STOPPED completedPolls=" +

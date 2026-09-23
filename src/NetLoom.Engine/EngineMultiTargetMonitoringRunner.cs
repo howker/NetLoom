@@ -15,12 +15,17 @@ namespace NetLoom.Engine
         private readonly Func<TimeSpan, CancellationToken, Task>
             _delay;
 
+        private readonly Func<TimeSpan, CancellationToken, Task>
+            _maintenanceDelay;
+
         private readonly object _outputGate;
         private readonly object _completionGate;
 
         public EngineMultiTargetMonitoringRunner(
             Func<MonitoringPollRequest, MonitoringPollResult> poll,
-            Func<TimeSpan, CancellationToken, Task> delay = null)
+            Func<TimeSpan, CancellationToken, Task> delay = null,
+            Func<TimeSpan, CancellationToken, Task>
+                maintenanceDelay = null)
         {
             _poll =
                 poll ??
@@ -28,6 +33,10 @@ namespace NetLoom.Engine
                     nameof(poll));
 
             _delay = delay;
+
+            _maintenanceDelay =
+                maintenanceDelay ??
+                Delay;
 
             _outputGate =
                 new object();
@@ -44,7 +53,9 @@ namespace NetLoom.Engine
             Action<MonitoringScheduleTarget, MonitoringPollResult>
                 onPollCompleted = null,
             Action<MonitoringScheduleTarget>
-                onBackpressureSkipped = null)
+                onBackpressureSkipped = null,
+            Action periodicMaintenance = null,
+            TimeSpan? maintenanceInterval = null)
         {
             if (writer == null)
             {
@@ -60,60 +71,175 @@ namespace NetLoom.Engine
                         _poll,
                         _delay);
 
-            return scheduler.Run(
-                targets,
-                concurrency,
-                cancellationToken,
-                target =>
-                {
-                    lock (_outputGate)
-                    {
-                        EngineMachineOutput
-                            .WriteTargetPollStarted(
-                                writer,
-                                target);
-                    }
-                },
-                (target, result) =>
-                {
-                    lock (_outputGate)
-                    {
-                        EngineMachineOutput
-                            .WriteTargetPollCompleted(
-                                writer,
-                                target,
-                                result);
-                    }
+            ValidateMaintenance(
+                periodicMaintenance,
+                maintenanceInterval);
 
-                    if (onPollCompleted != null)
-                    {
-                        lock (_completionGate)
+            using (var maintenanceCancellation =
+                CancellationTokenSource
+                    .CreateLinkedTokenSource(
+                        cancellationToken))
+            {
+                Task maintenanceTask =
+                    periodicMaintenance == null
+                        ? null
+                        : Task.Run(
+                            () =>
+                                RunPeriodicMaintenanceAsync(
+                                    periodicMaintenance,
+                                    maintenanceInterval.Value,
+                                    maintenanceCancellation.Token));
+
+                try
+                {
+                    return scheduler.Run(
+                        targets,
+                        concurrency,
+                        cancellationToken,
+                        target =>
                         {
-                            onPollCompleted(
-                                target,
-                                result);
+                            lock (_outputGate)
+                            {
+                                EngineMachineOutput
+                                    .WriteTargetPollStarted(
+                                        writer,
+                                        target);
+                            }
+                        },
+                        (target, result) =>
+                        {
+                            lock (_outputGate)
+                            {
+                                EngineMachineOutput
+                                    .WriteTargetPollCompleted(
+                                        writer,
+                                        target,
+                                        result);
+                            }
+
+                            if (onPollCompleted != null)
+                            {
+                                lock (_completionGate)
+                                {
+                                    onPollCompleted(
+                                        target,
+                                        result);
+                                }
+                            }
+                        },
+                        target =>
+                        {
+                            lock (_outputGate)
+                            {
+                                EngineMachineOutput
+                                    .WriteTargetBackpressureSkipped(
+                                        writer,
+                                        target);
+                            }
+
+                            if (onBackpressureSkipped != null)
+                            {
+                                lock (_completionGate)
+                                {
+                                    onBackpressureSkipped(
+                                        target);
+                                }
+                            }
+                        });
+                }
+                finally
+                {
+                    maintenanceCancellation.Cancel();
+
+                    if (maintenanceTask != null)
+                    {
+                        try
+                        {
+                            maintenanceTask
+                                .GetAwaiter()
+                                .GetResult();
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            if (!maintenanceCancellation
+                                .IsCancellationRequested)
+                            {
+                                throw;
+                            }
                         }
                     }
-                },
-                target =>
+                }
+            }
+        }
+
+        private async Task RunPeriodicMaintenanceAsync(
+            Action periodicMaintenance,
+            TimeSpan maintenanceInterval,
+            CancellationToken cancellationToken)
+        {
+            while (!cancellationToken
+                .IsCancellationRequested)
+            {
+                try
                 {
-                    lock (_outputGate)
+                    await _maintenanceDelay(
+                            maintenanceInterval,
+                            cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    if (!cancellationToken
+                        .IsCancellationRequested)
                     {
-                        EngineMachineOutput
-                            .WriteTargetBackpressureSkipped(
-                                writer,
-                                target);
+                        throw;
                     }
 
-                    if (onBackpressureSkipped != null)
-                    {
-                        lock (_completionGate)
-                        {
-                            onBackpressureSkipped(
-                                target);
-                        }
-                    }
-                });
+                    return;
+                }
+
+                if (cancellationToken
+                    .IsCancellationRequested)
+                {
+                    return;
+                }
+
+                periodicMaintenance();
+            }
+        }
+
+        private static void ValidateMaintenance(
+            Action periodicMaintenance,
+            TimeSpan? maintenanceInterval)
+        {
+            if (periodicMaintenance == null)
+            {
+                if (maintenanceInterval.HasValue)
+                {
+                    throw new ArgumentException(
+                        "MAINTENANCE_ACTION_REQUIRED",
+                        nameof(periodicMaintenance));
+                }
+
+                return;
+            }
+
+            if (!maintenanceInterval.HasValue ||
+                maintenanceInterval.Value <=
+                TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(maintenanceInterval));
+            }
+        }
+
+        private static Task Delay(
+            TimeSpan delay,
+            CancellationToken cancellationToken)
+        {
+            return Task.Delay(
+                delay,
+                cancellationToken);
         }
     }
 }

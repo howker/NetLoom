@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -129,6 +129,8 @@ namespace NetLoom.Application.Monitoring
                         continue;
                     }
 
+                    MonitoringPollResult result;
+
                     try
                     {
                         if (cancellation
@@ -140,20 +142,20 @@ namespace NetLoom.Application.Monitoring
                         onPollStarting?.Invoke(
                             target);
 
-                        var result =
+                        result =
                             _poll(
                                 target.Request);
 
                         recordCompleted();
-
-                        onPollCompleted?.Invoke(
-                            target,
-                            result);
                     }
                     finally
                     {
                         pollSlots.Release();
                     }
+
+                    onPollCompleted?.Invoke(
+                        target,
+                        result);
 
                     if (!await WaitForAsync(
                             target.Cadence,

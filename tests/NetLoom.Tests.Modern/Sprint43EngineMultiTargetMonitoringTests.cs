@@ -409,6 +409,112 @@ namespace NetLoom.Tests.Modern
         }
 
         [TestMethod]
+        public void RunnerExecutesPeriodicMaintenanceOnOneIndependentWorker()
+        {
+            var firstId =
+                Guid.Parse(
+                    "66666666-6666-6666-6666-666666666666");
+
+            var secondId =
+                Guid.Parse(
+                    "77777777-7777-7777-7777-777777777777");
+
+            using (var maintenanceRan =
+                new ManualResetEvent(false))
+            using (var cancellation =
+                new CancellationTokenSource())
+            {
+                var pollCount = 0;
+                var maintenanceCount = 0;
+                var maintenanceDelayCount = 0;
+
+                var output =
+                    new StringWriter(
+                        CultureInfo.InvariantCulture);
+
+                var runner =
+                    new EngineMultiTargetMonitoringRunner(
+                        request =>
+                        {
+                            Assert.IsTrue(
+                                maintenanceRan.WaitOne(
+                                    TimeSpan.FromSeconds(2)),
+                                "Periodic maintenance should run independently of poll completion callbacks.");
+
+                            var count =
+                                Interlocked.Increment(
+                                    ref pollCount);
+
+                            if (count == 2)
+                            {
+                                cancellation.Cancel();
+                            }
+
+                            return Result(
+                                request.Address);
+                        },
+                        (delay, token) =>
+                            Task.Delay(
+                                Timeout.Infinite,
+                                token),
+                        (delay, token) =>
+                        {
+                            var count =
+                                Interlocked.Increment(
+                                    ref maintenanceDelayCount);
+
+                            if (count == 1)
+                            {
+                                return Task.CompletedTask;
+                            }
+
+                            return Task.Delay(
+                                Timeout.Infinite,
+                                token);
+                        });
+
+                var result =
+                    runner.Run(
+                        new[]
+                        {
+                            Target(
+                                firstId,
+                                "192.0.2.43"),
+                            Target(
+                                secondId,
+                                "192.0.2.44")
+                        },
+                        new MonitoringConcurrencyPolicy(
+                            2),
+                        cancellation.Token,
+                        output,
+                        periodicMaintenance:
+                            () =>
+                            {
+                                Interlocked.Increment(
+                                    ref maintenanceCount);
+
+                                maintenanceRan.Set();
+                            },
+                        maintenanceInterval:
+                            TimeSpan.FromSeconds(30));
+
+                Assert.AreEqual(
+                    2,
+                    result.CompletedPolls);
+                Assert.AreEqual(
+                    2,
+                    pollCount);
+                Assert.AreEqual(
+                    1,
+                    maintenanceCount,
+                    "Maintenance must be periodic and single-worker, not once per completed target poll.");
+                Assert.IsTrue(
+                    result.CancellationRequested);
+            }
+        }
+
+        [TestMethod]
         public void TargetSetOptionsRemainExclusiveToScheduleSet()
         {
             try

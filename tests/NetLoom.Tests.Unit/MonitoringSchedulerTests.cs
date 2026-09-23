@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
@@ -445,6 +445,103 @@ namespace NetLoom.Tests.Unit
 
                 Assert.IsTrue(
                     result.CancellationRequested);
+            }
+        }
+
+        [TestMethod]
+        public void MultiTargetSchedulerReleasesPollSlotBeforeCompletionCallback()
+        {
+            using (var completionEntered =
+                new ManualResetEvent(false))
+            using (var releaseCompletion =
+                new ManualResetEvent(false))
+            using (var secondPollStarted =
+                new ManualResetEvent(false))
+            using (var cancellation =
+                new CancellationTokenSource())
+            {
+                var callbackCount = 0;
+
+                var scheduler =
+                    new MultiTargetMonitoringScheduler(
+                        request =>
+                        {
+                            if (request.Address.Equals(
+                                IPAddress.Parse(
+                                    "192.0.2.29")))
+                            {
+                                secondPollStarted.Set();
+                                cancellation.Cancel();
+                            }
+
+                            return null;
+                        },
+                        (delay, token) =>
+                        {
+                            if (delay ==
+                                TimeSpan.FromSeconds(1))
+                            {
+                                return Task.Run(
+                                    () =>
+                                    {
+                                        completionEntered.WaitOne();
+                                    });
+                            }
+
+                            return Task.Delay(
+                                Timeout.Infinite,
+                                token);
+                        });
+
+                var run =
+                    Task.Run(
+                        () =>
+                            scheduler.Run(
+                                new[]
+                                {
+                                    ScheduledTarget(
+                                        "77777777-7777-7777-7777-777777777777",
+                                        "192.0.2.28"),
+                                    ScheduledTarget(
+                                        "88888888-8888-8888-8888-888888888888",
+                                        "192.0.2.29",
+                                        5,
+                                        1)
+                                },
+                                new MonitoringConcurrencyPolicy(
+                                    1),
+                                cancellation.Token,
+                                onPollCompleted:
+                                    (target, result) =>
+                                    {
+                                        if (Interlocked.Increment(
+                                                ref callbackCount) == 1)
+                                        {
+                                            completionEntered.Set();
+                                            releaseCompletion.WaitOne();
+                                        }
+                                    }));
+
+                try
+                {
+                    Assert.IsTrue(
+                        completionEntered.WaitOne(
+                            TimeSpan.FromSeconds(2)),
+                        "The first completion callback should be reached.");
+
+                    Assert.IsTrue(
+                        secondPollStarted.WaitOne(
+                            TimeSpan.FromSeconds(2)),
+                        "A completed poll must release its scheduler slot before completion callback work blocks.");
+                }
+                finally
+                {
+                    cancellation.Cancel();
+                    releaseCompletion.Set();
+                }
+
+                run.GetAwaiter()
+                    .GetResult();
             }
         }
 
