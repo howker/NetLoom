@@ -6,27 +6,52 @@
 
 ## Текущее состояние
 
-Sprint 43 is closed and pushed. NetLoom now monitors the eligible target set through one Desktop-owned Engine process rather than one Engine process per device. The accepted WPF target-set policy is the measured `max-concurrency=4` plus `startup-jitter=15s`; measured-policy commit `af78cd05a5fa90023f1372d4e679d8c7805c6583` is on `origin/main`, and the technical postflight worktree was clean.
+Sprint 44 is closed and pushed. NetLoom now exports the canonical full site diagram and the matching equipment/interface inventory through one operator action in Map settings. The final technical commit is `834f0eba9db6ead0a7daa64a59ec4e322f7caa44`; `HEAD == origin/main` and the technical postflight worktree was clean.
+The export path captures one `TopologyExportSnapshot` and feeds that same immutable snapshot to the bounded PNG renderer and UTF-8 BOM CSV exporter. The PNG is built from a separate bounded export visual rather than the live 1,000,000 x 1,000,000 virtual Canvas, and temporary viewport/selection/search/focus state does not redefine exported topology.
+Operator acceptance produced a readable 1730x950 PNG plus the matching CSV in one action. The visual matched the current WPF map, including already-existing card overlaps rather than introducing a separate export-layout defect. The supplied CSV contained 22 columns, 23 data rows and 17 unique devices. Existing-file handling is explicit: the PNG save dialog prompts for overwrite and an existing sibling CSV has a separate Yes/No confirmation before export writes either file.
 
-The Sprint 43 scheduler keeps stable `DeviceId` identity, per-target cadence, bounded concurrency, startup jitter, drop-on-busy backpressure, cancellation that stops new scheduling, and no same-target overlap. Health timeout/socket failure fast-fails only that target cycle. Desktop still owns exactly one monitoring Engine child process, and WPF starts the complete snapshot-eligible target set rather than coupling continuous monitoring to the selected node.
+The committed product sequence is now:
+  1. Sprint 43 - multi-target monitoring inside one Engine process - complete.
+  2. Sprint 44 - PNG + CSV export - complete.
+  3. Sprint 45 - full acceptance/hardening on the author's real network - next.
+  4. Sprint 46 - application shell/navigation rework, informed by Sprint 45 evidence.
+Optical degradation remains parallel evidence gathering rather than committed product work. MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on the known current-site devices.
 
-Controlled acceptance used 15 database targets: 10 reachable loopback targets and 5 intentionally unavailable TEST-NET targets. With 15 seconds of startup jitter, concurrency 1 completed 4/15 targets with 11 backpressure skips, concurrency 2 completed 11/15 with 4 skips, and concurrency 4 completed 15/15 with 0 skips. Concurrency 4 with zero jitter regressed to 4/15 completed and 11 skips, proving that startup jitter is part of the accepted policy. Real-network verification remains Sprint 45 work.
+Next gate: begin Sprint 45 as an acceptance/hardening Sprint on the author's real network. Run the complete discover -> live map -> multi-target monitor -> diagnose -> export workflow without development-only workarounds; record every functional and navigation friction observation in `FRICTION_LOG.md`; keep required fixes inside Sprint 45 until operator acceptance passes. Do not add speculative product features before that evidence is reviewed.
+## Sprint 44 closure — 2026-09-23
 
-The repeated startup-viewport friction first seen in Sprint 38 reappeared during Sprint 43 acceptance. Root-cause remediation `b1af6437c4c424e4b750fb8da18732e1eed43789` keeps startup auto-fit active across later viewport `SizeChanged` events until explicit operator map interaction; live reacceptance opened the topology centered and fully visible without manual `Show all`.
+Sprint 44 - export the site diagram and inventory - is complete.
 
-The committed product sequence remains unchanged:
+Confirmed result:
+  * TopologyExportSnapshot is the canonical one-snapshot boundary shared by diagram and inventory export;
+  * TopologyInventoryCsvExporter emits coherent device/interface inventory as UTF-8 with BOM;
+  * TopologyExportDiagram plans a bounded full-site visual from canonical topology plus persisted layout without rendering the live virtual Canvas;
+  * TopologyPngExporter produces a real WPF PNG within the pixel/memory budget while preserving aspect ratio;
+  * TopologySiteExportService obtains exactly one snapshot and uses it for both PNG and CSV;
+  * WPF exposes one localized action under Map settings rather than adding a permanent toolbar control;
+  * save/overwrite behavior protects both sibling output files before writing.
 
-1. Sprint 43 — multi-target monitoring inside one Engine process — complete.
-2. Sprint 44 — PNG + CSV export — next.
-3. Sprint 45 — full acceptance/hardening on the author's real network.
-4. Sprint 46 — application shell/navigation rework.
+Acceptance:
+  * technical commits: snapshot boundary 701824d, CSV export 9163d3b, PNG renderer 122c8375dba51551e2b3a865c270adc914daa1a4, operator surface 834f0eba9db6ead0a7daa64a59ec4e322f7caa44;
+  * deterministic RED proved the one-snapshot site-export contract before GREEN;
+  * final targeted site-export GREEN passed 2/2;
+  * full final regression passed Modern 183/183, Unit 349/349, Integration 113/113 and Snapshots 7/7;
+  * repository text-integrity, git diff --check, exact file boundaries, index/HEAD blob proofs, push and clean postflight passed;
+  * operator acceptance produced a readable 1730x950 PNG and matching UTF-8 BOM CSV from the same WPF action; the visual matched the current map, including pre-existing overlaps rather than creating a new export-specific defect;
+  * the supplied CSV contained 22 columns, 23 data rows and 17 unique devices;
+  * no SQLite migration or new production dependency was added.
 
-Optical degradation is still parallel evidence gathering rather than committed product work. Existing hardware confirms optics but not trustworthy DDM telemetry: MikroTik CSS106 exposes SFP identity while current Rx/Tx/temperature readings remain unconfirmed; MOXA PT-7728 exposes SNMP/LLDP but no DDM surface has yet been found; EDS-408A-SS-SC uses fixed optical ports; unmanaged media converters do not provide their own management telemetry.
+Scope deliberately deferred:
+  * PDF is not part of Sprint 44;
+  * SVG/draw.io are not accepted requirements;
+  * scheduled reporting/delivery remains a later candidate only on real need;
+  * Sprint 44 does not redesign the live map layout.
 
-MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on all known MOXA devices at the current site.
-
-Next gate: begin Sprint 44 by auditing the existing coherent topology read-set, current map/Location rendering boundaries, and inventory/interface projection so PNG and UTF-8 BOM CSV export reuse canonical product data without rendering the live virtual Canvas or inventing a second topology interpretation.
-
+Next committed product Sprint:
+  * Sprint 45 - full acceptance/hardening on the author's real network;
+  * run discovery, observe live map construction, monitor many devices, diagnose selected elements and export without development-only workarounds;
+  * record functional and navigation friction in FRICTION_LOG.md;
+  * keep required remediation inside Sprint 45 until operator acceptance passes, then choose the next committed sequence from evidence.
 ## Sprint 43 closure — 2026-09-23
 
 Sprint 43 — multi-target monitoring in one Engine — is complete.

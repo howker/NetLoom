@@ -57,8 +57,8 @@
 - [ ] SFP/DDM optical health — candidate after the parallel real-hardware capability audit; not part of the current committed sequence.
 - [ ] SNMP trap ingestion.
 - [ ] Syslog ingestion.
-- [ ] Export site diagram — PNG is committed in Sprint 44; PDF remains a later candidate only on real request.
-- [ ] Inventory and CSV export — committed in Sprint 44.
+- [x] Export site diagram — PNG completed in Sprint 44; PDF remains a later candidate only on real request.
+- [x] Inventory and CSV export — completed in Sprint 44.
 - [ ] Выявление вероятного unmanaged switch по нескольким MAC за портом.
 
 ## Product readiness — дёшево сейчас
@@ -141,8 +141,9 @@
 
 ## Execution map after Sprint 38
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, Sprint 41, Sprint 42, and Sprint 43 are complete. The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, persistent hierarchical Location containers, monitoring control, glance-readable topology semantics, operator-driven discovery, and one-Engine multi-target monitoring. Sprint 43 closed continuous monitoring of the eligible target set with measured bounded concurrency/startup jitter, per-target failure isolation, and startup viewport remediation. Sprint 44 is now the first unchecked committed product item.
-
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, Sprint 41, Sprint 42, Sprint 43, and Sprint 44 are complete.
+The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, persistent hierarchical Location containers, monitoring control, glance-readable topology semantics, operator-driven discovery, one-Engine multi-target monitoring, and coherent operator export of the full site diagram plus inventory.
+Sprint 44 closed bounded PNG plus UTF-8 BOM CSV export from one canonical `TopologyExportSnapshot`, with the operator action inside existing Map settings. Sprint 45 is now the first unchecked committed product item.
 ### Completed
 
 - [x] Sprint 33A — incremental WPF map reconciliation keyed by stable `DeviceId` / `PhysicalLinkId`; retained WPF visual identity and node Canvas position across refresh, with existing lookup highlight/viewport behavior preserved. Sprint 33A did not add new zoom/pin UX that the current client does not yet expose.
@@ -247,14 +248,15 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Acceptance: the 15-target database contained 10 reachable loopback targets and 5 intentionally unavailable TEST-NET targets; the live WPF session remained `Работает`, kept 15 available/active targets, and continued successful polling despite unavailable targets. Startup viewport reacceptance passed after root-cause remediation commit `b1af6437c4c424e4b750fb8da18732e1eed43789`; measured-policy commit `af78cd05a5fa90023f1372d4e679d8c7805c6583` is pushed. Final closure gates passed forced solution build, Modern 173/173, Unit 335/335, Integration 113/113, Snapshots 7/7, repository text-integrity, exact two-file policy boundary/blob proof, `HEAD == origin/main`, and a clean worktree.
   - No SQLite migration, credential/profile redesign, or new production dependency was added.
 
-- [ ] Sprint 44 — export the site diagram and inventory.
-  - Operator outcome: export a readable site diagram and equipment list that can be handed to a colleague/customer after an assessment.
-  - Export PNG from a separate bounded export visual using the actual topology/Location bounds plus margin; never render the live 1,000,000 × 1,000,000 virtual map Canvas. Cap final pixel dimensions/memory while preserving aspect ratio.
-  - The diagram export represents the canonical full site topology, not the temporary viewport: current pan/zoom, selection, search highlight and Sprint 39 focus/dimming do not change exported content. Collapsed Locations are expanded in the export model without mutating the live/persisted collapse state.
-  - Export inventory/interface data to CSV from the same coherent read-set used by the product. CSV is UTF-8 with BOM for reliable Excel use on Russian Windows. PNG/CSV are in scope; PDF is not.
-  - Export must not create a second topology interpretation or invent evidence absent from the map/diagnostic read path.
-  - SVG and draw.io are not Sprint 44 acceptance requirements. They are stretch goals only if an implementation-boundary audit proves they are small additions to the same coherent export model; draw.io-to-Visio behavior must be tested in the target Visio version before any compatibility claim.
-
+- [x] Sprint 44 — export the site diagram and inventory.
+  - Operator outcome: export a readable site diagram and equipment/interface list that can be handed to a colleague/customer after an assessment.
+  - Completed coherent boundary: PNG and CSV are generated from one `TopologyExportSnapshot`; the export uses canonical topology/diagnostic data plus persisted map/Location layout rather than the live virtual Canvas or a second topology interpretation.
+  - Completed PNG behavior: render a separate bounded full-site diagram from actual topology/Location bounds plus margin, preserve aspect ratio, cap final pixel/memory budget, ignore temporary viewport pan/zoom/selection/search/focus layers, and expand collapsed Locations only in the export model.
+  - Completed CSV behavior: export device/interface inventory as UTF-8 with BOM for Russian Windows/Excel use from the same snapshot used by PNG.
+  - Completed operator surface: `Map settings -> Export site diagram and inventory...` saves sibling `.png` and `.csv` files with one basename; no permanent toolbar control was added. PNG overwrite uses the save dialog prompt, and an existing sibling CSV receives its own Yes/No overwrite confirmation before either file is written.
+  - Technical acceptance: canonical snapshot boundary `701824d`, CSV exporter `9163d3b`, bounded PNG renderer `122c8375dba51551e2b3a865c270adc914daa1a4`, and operator export surface `834f0eba9db6ead0a7daa64a59ec4e322f7caa44` are pushed. Final regression passed Modern 183/183, Unit 349/349, Integration 113/113, Snapshots 7/7; text-integrity, exact boundaries, index/HEAD blob proofs, push, `HEAD == origin/main`, and clean postflight passed.
+  - Operator acceptance: a real WPF export produced a readable 1730x950 PNG plus matching UTF-8 BOM CSV in one action. The exported visual matched the current map presentation; pre-existing on-map card overlaps were not introduced by export. The supplied CSV contained 22 columns, 23 data rows and 17 unique devices.
+  - No SQLite migration or new production dependency was added. PDF, SVG and draw.io remain outside Sprint 44 acceptance.
 - [ ] Sprint 45 — full acceptance on the author's real network.
   - Operator outcome: run the complete workflow on the real network — discover, observe the map building, monitor many devices, diagnose, and export — without development-only workarounds.
   - This is an acceptance/hardening Sprint, not speculative feature expansion. All real friction is recorded in `FRICTION_LOG.md`; fixes required to achieve the one accepted outcome remain inside Sprint 45 until operator acceptance passes.
@@ -274,7 +276,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 
 ### Next candidates — not commitments
 
-The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the remaining committed Sprint 44 → 45 → 46 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
+The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the remaining committed Sprint 45 → 46 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
 
 - [ ] Network state surface: present existing analysis in three operator-visible groups — structural risks, active confirmed problems, and insufficient data — without inventing missing evidence or adding the not-yet-implemented multi-MAC hidden-switch heuristic to the first version.
 - [ ] Deterministic demonstration stand after the network-state surface: use controlled `snmpsim` fixtures, including a proven STP-state transition chain from `.snmprec` through observation/materialization/analyzer/alert transition, so the sales scenario also serves as behavioral regression evidence.
