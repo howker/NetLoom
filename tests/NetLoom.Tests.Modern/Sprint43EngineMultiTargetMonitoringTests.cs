@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Net;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -164,6 +165,75 @@ namespace NetLoom.Tests.Modern
                         first[index].InitialDelay,
                         second[index].InitialDelay);
                 }
+            }
+            finally
+            {
+                File.Delete(
+                    path);
+            }
+        }
+
+        [TestMethod]
+        public void TargetSetFilePrioritizesHealthBeforeOtherSelectedKinds()
+        {
+            var deviceId =
+                Guid.Parse(
+                    "88888888-8888-8888-8888-888888888888");
+
+            var path =
+                Path.GetTempFileName();
+
+            try
+            {
+                File.WriteAllLines(
+                    path,
+                    new[]
+                    {
+                        deviceId.ToString("D") +
+                        "\t192.0.2.35"
+                    });
+
+                var targets =
+                    EngineMonitoringTargetSetFile.Read(
+                        path,
+                        (id, address) =>
+                            new MonitoringPollRequest(
+                                address,
+                                161,
+                                SnmpVersion.V2C,
+                                new SnmpCommunityCredentials(
+                                    new byte[]
+                                    {
+                                        4,
+                                        5,
+                                        6
+                                    }),
+                                1000,
+                                1,
+                                10,
+                                new[]
+                                {
+                                    MonitoringPollKind.Lldp,
+                                    MonitoringPollKind.Arp,
+                                    MonitoringPollKind.Health,
+                                    MonitoringPollKind.Interface
+                                },
+                                id),
+                        TimeSpan.FromSeconds(60),
+                        TimeSpan.Zero);
+
+                CollectionAssert.AreEqual(
+                    new[]
+                    {
+                        MonitoringPollKind.Health,
+                        MonitoringPollKind.Lldp,
+                        MonitoringPollKind.Arp,
+                        MonitoringPollKind.Interface
+                    },
+                    targets[0]
+                        .Request
+                        .Kinds
+                        .ToArray());
             }
             finally
             {

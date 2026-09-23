@@ -8,6 +8,7 @@ using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Observations.Fdb;
 using NetLoom.Application.Observations.Lldp;
 using NetLoom.Application.Observations.Stp;
+using NetLoom.Application.Snmp;
 using NetLoom.Domain.Observations.Lldp;
 
 namespace NetLoom.Application.Monitoring
@@ -168,10 +169,23 @@ namespace NetLoom.Application.Monitoring
 
             foreach (var kind in request.Kinds)
             {
-                steps.Add(
+                SnmpTransportFailure? transportFailure;
+
+                var step =
                     Execute(
                         kind,
-                        request));
+                        request,
+                        out transportFailure);
+
+                steps.Add(
+                    step);
+
+                if (kind == MonitoringPollKind.Health &&
+                    IsTargetWideTransportFailure(
+                        transportFailure))
+                {
+                    break;
+                }
             }
 
             var completedUtc = NowUtc();
@@ -185,8 +199,11 @@ namespace NetLoom.Application.Monitoring
 
         private MonitoringPollStepResult Execute(
             MonitoringPollKind kind,
-            MonitoringPollRequest request)
+            MonitoringPollRequest request,
+            out SnmpTransportFailure? transportFailure)
         {
+            transportFailure = null;
+
             try
             {
                 switch (kind)
@@ -444,6 +461,17 @@ namespace NetLoom.Application.Monitoring
                     null,
                     null);
             }
+            catch (SnmpTransportException exception)
+            {
+                transportFailure =
+                    exception.Failure;
+
+                return new MonitoringPollStepResult(
+                    kind,
+                    false,
+                    exception.GetType().Name,
+                    exception.Message);
+            }
             catch (Exception exception)
             {
                 return new MonitoringPollStepResult(
@@ -452,6 +480,15 @@ namespace NetLoom.Application.Monitoring
                     exception.GetType().Name,
                     exception.Message);
             }
+        }
+
+        private static bool IsTargetWideTransportFailure(
+            SnmpTransportFailure? failure)
+        {
+            return failure ==
+                    SnmpTransportFailure.Timeout ||
+                failure ==
+                    SnmpTransportFailure.Socket;
         }
 
         private IReadOnlyList<InterfaceCounterEvaluation>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -155,6 +155,117 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
+        public void HealthTransportTimeoutStopsLaterProtocolStep()
+        {
+            var calls =
+                new List<string>();
+
+            var runtime =
+                new MonitoringRuntime(
+                    new NoopLldpCollector(),
+                    new NoopCdpCollector(),
+                    new NoopFdbCollector(),
+                    new RecordingArpCollector(
+                        calls),
+                    new ThrowingHealthCollector(
+                        SnmpTransportFailure.Timeout),
+                    () => T1);
+
+            var result =
+                runtime.PollOnce(
+                    Request(
+                        null,
+                        MonitoringPollKind.Health,
+                        MonitoringPollKind.Arp));
+
+            Assert.AreEqual(
+                1,
+                result.Steps.Count);
+
+            Assert.IsFalse(
+                result.Steps[0].Succeeded);
+
+            Assert.AreEqual(
+                0,
+                calls.Count);
+        }
+
+        [TestMethod]
+        public void HealthTransportSocketFailureStopsLaterProtocolStep()
+        {
+            var calls =
+                new List<string>();
+
+            var runtime =
+                new MonitoringRuntime(
+                    new NoopLldpCollector(),
+                    new NoopCdpCollector(),
+                    new NoopFdbCollector(),
+                    new RecordingArpCollector(
+                        calls),
+                    new ThrowingHealthCollector(
+                        SnmpTransportFailure.Socket),
+                    () => T1);
+
+            var result =
+                runtime.PollOnce(
+                    Request(
+                        null,
+                        MonitoringPollKind.Health,
+                        MonitoringPollKind.Arp));
+
+            Assert.AreEqual(
+                1,
+                result.Steps.Count);
+
+            Assert.AreEqual(
+                0,
+                calls.Count);
+        }
+
+        [TestMethod]
+        public void HealthProtocolFailureDoesNotStopLaterProtocolStep()
+        {
+            var calls =
+                new List<string>();
+
+            var runtime =
+                new MonitoringRuntime(
+                    new NoopLldpCollector(),
+                    new NoopCdpCollector(),
+                    new NoopFdbCollector(),
+                    new RecordingArpCollector(
+                        calls),
+                    new ThrowingHealthCollector(
+                        SnmpTransportFailure.Protocol),
+                    () => T1);
+
+            var result =
+                runtime.PollOnce(
+                    Request(
+                        null,
+                        MonitoringPollKind.Health,
+                        MonitoringPollKind.Arp));
+
+            Assert.AreEqual(
+                2,
+                result.Steps.Count);
+
+            Assert.IsFalse(
+                result.Steps[0].Succeeded);
+
+            Assert.IsTrue(
+                result.Steps[1].Succeeded);
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "Arp"
+                },
+                calls);
+        }
+
+        [TestMethod]
         public void RequestRejectsEmptyDeviceId()
         {
             try
@@ -228,6 +339,27 @@ namespace NetLoom.Tests.Unit
                     T1,
                     HealthStatus.Up,
                     TimeSpan.FromSeconds(42));
+            }
+        }
+
+        private sealed class ThrowingHealthCollector :
+            IHealthCollector
+        {
+            private readonly SnmpTransportFailure _failure;
+
+            public ThrowingHealthCollector(
+                SnmpTransportFailure failure)
+            {
+                _failure = failure;
+            }
+
+            public HealthSnapshot Collect(
+                HealthCollectionRequest request)
+            {
+                throw new SnmpTransportException(
+                    _failure,
+                    "test transport failure",
+                    null);
             }
         }
 

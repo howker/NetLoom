@@ -136,7 +136,8 @@ namespace NetLoom.Engine
 
                 result.Add(
                     new MonitoringScheduleTarget(
-                        request,
+                        PrioritizeHealth(
+                            request),
                         cadence,
                         CalculateInitialDelay(
                             deviceId,
@@ -150,6 +151,43 @@ namespace NetLoom.Engine
             }
 
             return result;
+        }
+
+        private static MonitoringPollRequest PrioritizeHealth(
+            MonitoringPollRequest request)
+        {
+            var kinds =
+                new List<MonitoringPollKind>();
+
+            foreach (var kind in request.Kinds)
+            {
+                if (kind == MonitoringPollKind.Health)
+                {
+                    kinds.Add(
+                        MonitoringPollKind.Health);
+                    break;
+                }
+            }
+
+            foreach (var kind in request.Kinds)
+            {
+                if (kind != MonitoringPollKind.Health)
+                {
+                    kinds.Add(
+                        kind);
+                }
+            }
+
+            return new MonitoringPollRequest(
+                request.Address,
+                request.Port,
+                request.Version,
+                request.Credentials,
+                request.TimeoutMilliseconds,
+                request.RetryCount,
+                request.MaxRepetitions,
+                kinds,
+                request.DeviceId);
         }
 
         internal static TimeSpan CalculateInitialDelay(
