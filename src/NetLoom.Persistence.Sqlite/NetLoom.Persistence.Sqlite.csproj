@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageReference Include="SourceGear.sqlite3" Version="3.53.4" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.4" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" Condition="'$(TargetFramework)' == 'net8.0'" />
   </ItemGroup>
   <PropertyGroup>
     <TargetFrameworks>net48;net8.0</TargetFrameworks>
@@ -16,6 +17,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-    <Compile Remove="Security\DpapiSecretProtector.cs" />
+    <!-- DpapiSecretProtector is compiled for both targets; net8 uses ProtectedData package above. -->
   </ItemGroup>
 </Project>
