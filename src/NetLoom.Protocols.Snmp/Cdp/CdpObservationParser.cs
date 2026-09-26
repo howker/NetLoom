@@ -6,6 +6,7 @@ using NetLoom.Application.Observations;
 using NetLoom.Application.Observations.Cdp;
 using NetLoom.Application.Snmp;
 using NetLoom.Domain.Observations.Cdp;
+using NetLoom.Protocols.Snmp;
 
 namespace NetLoom.Protocols.Snmp.Cdp
 {
@@ -77,77 +78,80 @@ namespace NetLoom.Protocols.Snmp.Cdp
                     AddressType,
                     builders,
                     (builder, value) =>
-                        builder.AddressType = ParseInt(value));
+                        builder.AddressType = ParseInt(
+                            value.DisplayValue));
 
                 Apply(
                     variable,
                     Address,
                     builders,
                     (builder, value) =>
-                        builder.Address = value);
+                        builder.AddressVariable = value);
 
                 Apply(
                     variable,
                     Version,
                     builders,
                     (builder, value) =>
-                        builder.Version = value);
+                        builder.Version = value.DisplayValue);
 
                 Apply(
                     variable,
                     DeviceId,
                     builders,
                     (builder, value) =>
-                        builder.DeviceId = value);
+                        builder.DeviceId = value.DisplayValue);
 
                 Apply(
                     variable,
                     DevicePort,
                     builders,
                     (builder, value) =>
-                        builder.DevicePort = value);
+                        builder.DevicePort = value.DisplayValue);
 
                 Apply(
                     variable,
                     Platform,
                     builders,
                     (builder, value) =>
-                        builder.Platform = value);
+                        builder.Platform = value.DisplayValue);
 
                 Apply(
                     variable,
                     Capabilities,
                     builders,
                     (builder, value) =>
-                        builder.Capabilities = value);
+                        builder.Capabilities = value.DisplayValue);
 
                 Apply(
                     variable,
                     NativeVlan,
                     builders,
                     (builder, value) =>
-                        builder.NativeVlan = ParseInt(value));
+                        builder.NativeVlan = ParseInt(
+                            value.DisplayValue));
 
                 Apply(
                     variable,
                     Duplex,
                     builders,
                     (builder, value) =>
-                        builder.Duplex = ParseInt(value));
+                        builder.Duplex = ParseInt(
+                            value.DisplayValue));
 
                 Apply(
                     variable,
                     SysName,
                     builders,
                     (builder, value) =>
-                        builder.SystemName = value);
+                        builder.SystemName = value.DisplayValue);
 
                 Apply(
                     variable,
                     SysObjectId,
                     builders,
                     (builder, value) =>
-                        builder.SystemObjectId = value);
+                        builder.SystemObjectId = value.DisplayValue);
 
                 Apply(
                     variable,
@@ -155,28 +159,31 @@ namespace NetLoom.Protocols.Snmp.Cdp
                     builders,
                     (builder, value) =>
                         builder.PrimaryManagementAddressType =
-                            ParseInt(value));
+                            ParseInt(
+                                value.DisplayValue));
 
                 Apply(
                     variable,
                     PrimaryMgmtAddr,
                     builders,
                     (builder, value) =>
-                        builder.PrimaryManagementAddress = value);
+                        builder.PrimaryManagementAddressVariable =
+                            value);
 
                 Apply(
                     variable,
                     PhysLocation,
                     builders,
                     (builder, value) =>
-                        builder.PhysicalLocation = value);
+                        builder.PhysicalLocation = value.DisplayValue);
 
                 Apply(
                     variable,
                     LastChange,
                     builders,
                     (builder, value) =>
-                        builder.LastChange = ParseLong(value));
+                        builder.LastChange = ParseLong(
+                            value.DisplayValue));
             }
 
             var neighbors = builders
@@ -195,7 +202,7 @@ namespace NetLoom.Protocols.Snmp.Cdp
             SnmpVariable variable,
             string rootOid,
             IDictionary<CdpKey, Builder> builders,
-            Action<Builder, string> apply)
+            Action<Builder, SnmpVariable> apply)
         {
             CdpKey key;
 
@@ -215,7 +222,7 @@ namespace NetLoom.Protocols.Snmp.Cdp
                 builders.Add(key, builder);
             }
 
-            apply(builder, variable.DisplayValue);
+            apply(builder, variable);
         }
 
         private static bool TryParseIndex(
@@ -345,7 +352,7 @@ namespace NetLoom.Protocols.Snmp.Cdp
         private sealed class Builder
         {
             public int? AddressType { get; set; }
-            public string Address { get; set; }
+            public SnmpVariable AddressVariable { get; set; }
             public string Version { get; set; }
             public string DeviceId { get; set; }
             public string DevicePort { get; set; }
@@ -362,7 +369,7 @@ namespace NetLoom.Protocols.Snmp.Cdp
                 set;
             }
 
-            public string PrimaryManagementAddress
+            public SnmpVariable PrimaryManagementAddressVariable
             {
                 get;
                 set;
@@ -377,7 +384,9 @@ namespace NetLoom.Protocols.Snmp.Cdp
                     key.CacheIfIndex,
                     key.DeviceIndex,
                     AddressType,
-                    Address,
+                    SnmpBinaryValue.ReadCiscoNetworkAddress(
+                        AddressVariable,
+                        AddressType),
                     Version,
                     DeviceId,
                     DevicePort,
@@ -388,7 +397,9 @@ namespace NetLoom.Protocols.Snmp.Cdp
                     SystemName,
                     SystemObjectId,
                     PrimaryManagementAddressType,
-                    PrimaryManagementAddress,
+                    SnmpBinaryValue.ReadCiscoNetworkAddress(
+                        PrimaryManagementAddressVariable,
+                        PrimaryManagementAddressType),
                     PhysicalLocation,
                     LastChange);
             }

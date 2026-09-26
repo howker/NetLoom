@@ -7,6 +7,7 @@ using NetLoom.Application.Observations;
 using NetLoom.Application.Observations.Arp;
 using NetLoom.Application.Snmp;
 using NetLoom.Domain.Observations.Arp;
+using NetLoom.Protocols.Snmp;
 
 namespace NetLoom.Protocols.Snmp.Arp
 {
@@ -333,76 +334,17 @@ namespace NetLoom.Protocols.Snmp.Arp
         {
             byte[] payload;
 
-            if (TryReadBerPayload(
-                variable.GetEncodedValue(),
+            if (SnmpBinaryValue.TryReadPayload(
+                variable,
                 out payload) &&
                 payload.Length > 0)
             {
-                return FormatHex(payload);
+                return SnmpBinaryValue.FormatColonHex(
+                    payload);
             }
 
             return NormalizeDisplayedAddress(
                 variable.DisplayValue);
-        }
-
-        private static bool TryReadBerPayload(
-            byte[] encoded,
-            out byte[] payload)
-        {
-            payload = null;
-
-            if (encoded == null || encoded.Length < 2)
-            {
-                return false;
-            }
-
-            var position = 1;
-            var firstLength = encoded[position++];
-            int length;
-
-            if ((firstLength & 0x80) == 0)
-            {
-                length = firstLength;
-            }
-            else
-            {
-                var lengthBytes =
-                    firstLength & 0x7F;
-
-                if (lengthBytes < 1 ||
-                    lengthBytes > 4 ||
-                    encoded.Length <
-                        position + lengthBytes)
-                {
-                    return false;
-                }
-
-                length = 0;
-
-                for (var i = 0; i < lengthBytes; i++)
-                {
-                    length =
-                        (length << 8) |
-                        encoded[position++];
-                }
-            }
-
-            if (length < 0 ||
-                encoded.Length < position + length)
-            {
-                return false;
-            }
-
-            payload = new byte[length];
-
-            Buffer.BlockCopy(
-                encoded,
-                position,
-                payload,
-                0,
-                length);
-
-            return true;
         }
 
         private static string NormalizeDisplayedAddress(
@@ -459,18 +401,8 @@ namespace NetLoom.Protocols.Snmp.Arp
                 bytes[i] = parsed;
             }
 
-            return FormatHex(bytes);
-        }
-
-        private static string FormatHex(
-            byte[] bytes)
-        {
-            return string.Join(
-                ":",
-                bytes.Select(
-                    value => value.ToString(
-                        "X2",
-                        CultureInfo.InvariantCulture)));
+            return SnmpBinaryValue.FormatColonHex(
+                bytes);
         }
 
         private static int? ParseInt(

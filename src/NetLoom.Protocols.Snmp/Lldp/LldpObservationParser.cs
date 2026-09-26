@@ -6,6 +6,7 @@ using NetLoom.Application.Observations;
 using NetLoom.Application.Observations.Lldp;
 using NetLoom.Application.Snmp;
 using NetLoom.Domain.Observations.Lldp;
+using NetLoom.Protocols.Snmp;
 
 namespace NetLoom.Protocols.Snmp.Lldp
 {
@@ -86,14 +87,15 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     builders,
                     (builder, value) =>
                         builder.ChassisIdSubtype =
-                            ParseInt(value));
+                            ParseInt(value.DisplayValue));
 
                 ApplyRemote(
                     variable,
                     RemChassisId,
                     builders,
                     (builder, value) =>
-                        builder.ChassisId = value);
+                        builder.ChassisIdVariable =
+                            value);
 
                 ApplyRemote(
                     variable,
@@ -101,35 +103,39 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     builders,
                     (builder, value) =>
                         builder.PortIdSubtype =
-                            ParseInt(value));
+                            ParseInt(value.DisplayValue));
 
                 ApplyRemote(
                     variable,
                     RemPortId,
                     builders,
                     (builder, value) =>
-                        builder.PortId = value);
+                        builder.PortIdVariable =
+                            value);
 
                 ApplyRemote(
                     variable,
                     RemPortDesc,
                     builders,
                     (builder, value) =>
-                        builder.PortDescription = value);
+                        builder.PortDescription =
+                            value.DisplayValue);
 
                 ApplyRemote(
                     variable,
                     RemSysName,
                     builders,
                     (builder, value) =>
-                        builder.SystemName = value);
+                        builder.SystemName =
+                            value.DisplayValue);
 
                 ApplyRemote(
                     variable,
                     RemSysDesc,
                     builders,
                     (builder, value) =>
-                        builder.SystemDescription = value);
+                        builder.SystemDescription =
+                            value.DisplayValue);
 
                 ApplyRemote(
                     variable,
@@ -137,7 +143,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     builders,
                     (builder, value) =>
                         builder.SystemCapabilitiesSupported =
-                            value);
+                            value.DisplayValue);
 
                 ApplyRemote(
                     variable,
@@ -145,7 +151,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     builders,
                     (builder, value) =>
                         builder.SystemCapabilitiesEnabled =
-                            value);
+                            value.DisplayValue);
             }
 
             var neighbors = builders
@@ -177,7 +183,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
             IReadOnlyList<SnmpVariable> variables)
         {
             int? chassisIdSubtype = null;
-            string chassisId = null;
+            SnmpVariable chassisIdVariable = null;
             string systemName = null;
 
             foreach (var variable in variables)
@@ -200,7 +206,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     LocChassisId,
                     StringComparison.Ordinal))
                 {
-                    chassisId = variable.DisplayValue;
+                    chassisIdVariable = variable;
                 }
                 else if (string.Equals(
                     oid,
@@ -210,6 +216,11 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     systemName = variable.DisplayValue;
                 }
             }
+
+            var chassisId =
+                SnmpBinaryValue.ReadLldpChassisId(
+                    chassisIdVariable,
+                    chassisIdSubtype);
 
             if (!chassisIdSubtype.HasValue &&
                 string.IsNullOrWhiteSpace(chassisId) &&
@@ -239,21 +250,23 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     builders,
                     (builder, value) =>
                         builder.PortIdSubtype =
-                            ParseInt(value));
+                            ParseInt(value.DisplayValue));
 
                 ApplyLocal(
                     variable,
                     LocPortId,
                     builders,
                     (builder, value) =>
-                        builder.PortId = value);
+                        builder.PortIdVariable =
+                            value);
 
                 ApplyLocal(
                     variable,
                     LocPortDesc,
                     builders,
                     (builder, value) =>
-                        builder.PortDescription = value);
+                        builder.PortDescription =
+                            value.DisplayValue);
             }
 
             return builders.ToDictionary(
@@ -265,7 +278,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
             SnmpVariable variable,
             string rootOid,
             IDictionary<int, LocalBuilder> builders,
-            Action<LocalBuilder, string> apply)
+            Action<LocalBuilder, SnmpVariable> apply)
         {
             int portNumber;
 
@@ -287,14 +300,14 @@ namespace NetLoom.Protocols.Snmp.Lldp
                 builders.Add(portNumber, builder);
             }
 
-            apply(builder, variable.DisplayValue);
+            apply(builder, variable);
         }
 
         private static void ApplyRemote(
             SnmpVariable variable,
             string rootOid,
             IDictionary<RemoteKey, RemoteBuilder> builders,
-            Action<RemoteBuilder, string> apply)
+            Action<RemoteBuilder, SnmpVariable> apply)
         {
             RemoteKey key;
 
@@ -314,7 +327,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
                 builders.Add(key, builder);
             }
 
-            apply(builder, variable.DisplayValue);
+            apply(builder, variable);
         }
 
         private static bool TryParseLocalIndex(
@@ -484,7 +497,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
         {
             public int? PortIdSubtype { get; set; }
 
-            public string PortId { get; set; }
+            public SnmpVariable PortIdVariable { get; set; }
 
             public string PortDescription { get; set; }
 
@@ -494,7 +507,9 @@ namespace NetLoom.Protocols.Snmp.Lldp
                 return new LldpLocalPort(
                     localPortNumber,
                     PortIdSubtype,
-                    PortId,
+                    SnmpBinaryValue.ReadLldpPortId(
+                        PortIdVariable,
+                        PortIdSubtype),
                     PortDescription);
             }
         }
@@ -503,11 +518,11 @@ namespace NetLoom.Protocols.Snmp.Lldp
         {
             public int? ChassisIdSubtype { get; set; }
 
-            public string ChassisId { get; set; }
+            public SnmpVariable ChassisIdVariable { get; set; }
 
             public int? PortIdSubtype { get; set; }
 
-            public string PortId { get; set; }
+            public SnmpVariable PortIdVariable { get; set; }
 
             public string PortDescription { get; set; }
 
@@ -536,9 +551,13 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     key.LocalPortNumber,
                     key.RemoteIndex,
                     ChassisIdSubtype,
-                    ChassisId,
+                    SnmpBinaryValue.ReadLldpChassisId(
+                        ChassisIdVariable,
+                        ChassisIdSubtype),
                     PortIdSubtype,
-                    PortId,
+                    SnmpBinaryValue.ReadLldpPortId(
+                        PortIdVariable,
+                        PortIdSubtype),
                     PortDescription,
                     SystemName,
                     SystemDescription,

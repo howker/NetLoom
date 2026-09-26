@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -6,6 +6,7 @@ using NetLoom.Application.Observations;
 using NetLoom.Application.Observations.Stp;
 using NetLoom.Application.Snmp;
 using NetLoom.Domain.Observations.Stp;
+using NetLoom.Protocols.Snmp;
 
 namespace NetLoom.Protocols.Snmp.Stp
 {
@@ -101,7 +102,8 @@ namespace NetLoom.Protocols.Snmp.Stp
                     DesignatedRoot))
                 {
                     root =
-                        Normalize(variable.DisplayValue);
+                        SnmpBinaryValue.ReadStpBridgeId(
+                            variable);
                     continue;
                 }
 
@@ -302,7 +304,8 @@ namespace NetLoom.Protocols.Snmp.Stp
                 GetBuilder(
                     builders,
                     bridgePortIndex).DesignatedRoot =
-                    Normalize(variable.DisplayValue);
+                    SnmpBinaryValue.ReadStpBridgeId(
+                        variable);
                 return;
             }
 
@@ -326,7 +329,8 @@ namespace NetLoom.Protocols.Snmp.Stp
                 GetBuilder(
                     builders,
                     bridgePortIndex).DesignatedBridge =
-                    Normalize(variable.DisplayValue);
+                    SnmpBinaryValue.ReadStpBridgeId(
+                        variable);
                 return;
             }
 
@@ -338,7 +342,8 @@ namespace NetLoom.Protocols.Snmp.Stp
                 GetBuilder(
                     builders,
                     bridgePortIndex).DesignatedPort =
-                    Normalize(variable.DisplayValue);
+                    SnmpBinaryValue.ReadStpPortId(
+                        variable);
                 return;
             }
 
