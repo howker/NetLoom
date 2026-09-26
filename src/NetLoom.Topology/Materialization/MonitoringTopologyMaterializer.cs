@@ -217,6 +217,10 @@ namespace NetLoom.Topology.Materialization
                     ? null
                     : localSystem.ChassisId);
 
+            PreReconcileNumericLldpLocalPorts(
+                deviceId,
+                observation,
+                observedUtc);
             var candidates =
                 _resolver.Resolve(
                     new TopologyResolutionInput(
@@ -233,6 +237,58 @@ namespace NetLoom.Topology.Materialization
             }
         }
 
+        private void PreReconcileNumericLldpLocalPorts(
+            Guid deviceId,
+            LldpObservation observation,
+            DateTime observedUtc)
+        {
+            foreach (var neighbor in
+                observation.Neighbors)
+            {
+                if (neighbor == null ||
+                    neighbor.LocalPort == null)
+                {
+                    continue;
+                }
+
+                var normalizedPortId =
+                    NormalizePortId(
+                        neighbor.LocalPort.PortId);
+
+                if (normalizedPortId == null ||
+                    !string.Equals(
+                        normalizedPortId,
+                        neighbor.LocalPortNumber.ToString(
+                            CultureInfo.InvariantCulture),
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var realInterfaces =
+                    _repository
+                        .GetInterfaces()
+                        .Where(
+                            item =>
+                                item.DeviceId == deviceId &&
+                                item.IfIndex.HasValue &&
+                                item.IfIndex.Value ==
+                                    neighbor.LocalPortNumber)
+                        .ToArray();
+
+                if (realInterfaces.Length != 1)
+                {
+                    continue;
+                }
+
+                MaterializeLldpInterface(
+                    deviceId,
+                    neighbor.LocalPort.PortId,
+                    neighbor.LocalPort.PortDescription,
+                    neighbor.LocalPortNumber,
+                    observedUtc);
+            }
+        }
         public void MaterializeCdp(
             Guid deviceId,
             CdpObservation observation)
