@@ -9,6 +9,7 @@ using NetLoom.Application.Observations.Fdb;
 using NetLoom.Application.Observations.Lldp;
 using NetLoom.Application.Observations.Stp;
 using NetLoom.Application.Snmp;
+using NetLoom.Domain.Observations.Cdp;
 using NetLoom.Domain.Observations.Lldp;
 
 namespace NetLoom.Application.Monitoring
@@ -255,10 +256,9 @@ namespace NetLoom.Application.Monitoring
 
                         if (cdp != null)
                         {
-                            MaterializeDevice(
+                            MaterializeCdp(
                                 request.DeviceId,
-                                cdp.Observation.CapturedUtc,
-                                request.Address.ToString());
+                                cdp);
                         }
 
                         break;
@@ -624,6 +624,31 @@ namespace NetLoom.Application.Monitoring
             }
 
             _topologyMaterializer.MaterializeLldp(
+                deviceId.Value,
+                observation);
+        }
+
+        private void MaterializeCdp(
+            Guid? deviceId,
+            CdpObservation observation)
+        {
+            if (_topologyMaterializer == null ||
+                !deviceId.HasValue ||
+                observation == null)
+            {
+                return;
+            }
+
+            var cdpMaterializer =
+                _topologyMaterializer
+                    as IMonitoringCdpTopologyMaterializer;
+
+            if (cdpMaterializer == null)
+            {
+                return;
+            }
+
+            cdpMaterializer.MaterializeCdp(
                 deviceId.Value,
                 observation);
         }

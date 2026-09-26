@@ -1,4 +1,5 @@
 using System;
+using NetLoom.Domain.Observations.Cdp;
 using NetLoom.Domain.Observations.Lldp;
 
 namespace NetLoom.Application.Monitoring
@@ -22,5 +23,12 @@ namespace NetLoom.Application.Monitoring
         void MaterializeLldp(
             Guid deviceId,
             LldpObservation observation);
+    }
+
+    public interface IMonitoringCdpTopologyMaterializer
+    {
+        void MaterializeCdp(
+            Guid deviceId,
+            CdpObservation observation);
     }
 }

@@ -15,10 +15,14 @@ using NetLoom.Topology.Resolution;
 namespace NetLoom.Topology.Materialization
 {
     public sealed class MonitoringTopologyMaterializer :
-        IMonitoringTopologyMaterializer
+        IMonitoringTopologyMaterializer,
+        IMonitoringCdpTopologyMaterializer
     {
         private const string ResolverVersion =
             "monitoring-lldp-v1";
+
+        private const string CdpResolverVersion =
+            "monitoring-cdp-v1";
 
         private readonly IMaterializedTopologyRepository
             _repository;
@@ -227,6 +231,153 @@ namespace NetLoom.Topology.Materialization
                     observedUtc,
                     candidate);
             }
+        }
+
+        public void MaterializeCdp(
+            Guid deviceId,
+            CdpObservation observation)
+        {
+            RequireDeviceId(
+                deviceId);
+
+            if (observation == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(observation));
+            }
+
+            var observedUtc =
+                observation.Observation.CapturedUtc;
+
+            RequireUtc(
+                observedUtc);
+
+            var existing =
+                _repository.GetDevice(
+                    deviceId);
+
+            SaveDevice(
+                deviceId,
+                observedUtc,
+                existing,
+                null,
+                null,
+                observation.Observation.SourceAddress);
+
+            var candidates =
+                _resolver.Resolve(
+                    new TopologyResolutionInput(
+                        new LldpObservation[0],
+                        new[] { observation },
+                        new MacCorrelation[0]));
+
+            foreach (var candidate in candidates)
+            {
+                MaterializeCdpCandidate(
+                    deviceId,
+                    observedUtc,
+                    candidate);
+            }
+        }
+
+        private void MaterializeCdpCandidate(
+            Guid localDeviceId,
+            DateTime observedUtc,
+            PhysicalLinkCandidate candidate)
+        {
+            var remoteDevice =
+                ResolveCdpRemoteDevice(
+                    localDeviceId,
+                    candidate.RemoteEndpoint);
+
+            if (remoteDevice == null)
+            {
+                return;
+            }
+
+            var localInterfaceId =
+                ResolveCdpLocalInterface(
+                    localDeviceId,
+                    candidate.LocalEndpoint.PortIndex,
+                    observedUtc);
+
+            var remoteInterfaceId =
+                ResolveCdpRemoteInterface(
+                    remoteDevice.Id,
+                    candidate.RemoteEndpoint.PortId);
+
+            if (HasCompatibleManualLink(
+                localDeviceId,
+                localInterfaceId,
+                remoteDevice.Id,
+                remoteInterfaceId))
+            {
+                return;
+            }
+
+            var linkKey =
+                PhysicalLinkIdentity.BuildLinkKey(
+                    localDeviceId,
+                    localInterfaceId,
+                    remoteDevice.Id,
+                    remoteInterfaceId);
+
+            var link =
+                _repository.SavePhysicalLink(
+                    new PhysicalLink(
+                        StableGuid(
+                            "physical-link|" +
+                            linkKey),
+                        localDeviceId,
+                        localInterfaceId,
+                        remoteDevice.Id,
+                        remoteInterfaceId,
+                        PhysicalLinkStrength.Observed,
+                        PhysicalLinkFreshness.Fresh,
+                        null,
+                        null,
+                        "CDP",
+                        observedUtc,
+                        observedUtc,
+                        null,
+                        CdpResolverVersion,
+                        false,
+                        false,
+                        null));
+
+            var directionPrefix =
+                DirectionPrefix(
+                    localDeviceId);
+
+            var existingEvidence =
+                _repository
+                    .GetPhysicalLinkEvidence(
+                        link.Id)
+                    .Where(
+                        item =>
+                            !item.SlotDiscriminator.StartsWith(
+                                directionPrefix,
+                                StringComparison.Ordinal))
+                    .ToArray();
+
+            var newEvidence =
+                _evidenceMaterializer
+                    .Materialize(
+                        link.Id,
+                        candidate.Evidence)
+                    .Select(
+                        item =>
+                            WithDirection(
+                                item,
+                                localDeviceId))
+                    .ToArray();
+
+            _repository.ReplacePhysicalLinkEvidence(
+                link.Id,
+                existingEvidence
+                    .Concat(
+                        newEvidence)
+                    .ToArray());
         }
 
         private void MaterializeCandidate(
@@ -494,6 +645,196 @@ namespace NetLoom.Topology.Materialization
                 !left.HasValue ||
                 !right.HasValue ||
                 left.Value == right.Value;
+        }
+
+        private TopologyDevice ResolveCdpRemoteDevice(
+            Guid localDeviceId,
+            LinkEndpointClaim remoteEndpoint)
+        {
+            if (remoteEndpoint == null)
+            {
+                return null;
+            }
+
+            var devices =
+                _repository
+                    .GetDevices()
+                    .Where(
+                        device =>
+                            device.Id != localDeviceId)
+                    .ToArray();
+
+            var managementAddress =
+                NormalizeIdentity(
+                    remoteEndpoint.ManagementAddress);
+
+            if (managementAddress != null)
+            {
+                var byAddress =
+                    devices
+                        .Where(
+                            device =>
+                                string.Equals(
+                                    NormalizeIdentity(
+                                        device.ManagementAddress),
+                                    managementAddress,
+                                    StringComparison.Ordinal))
+                        .ToArray();
+
+                if (byAddress.Length == 1)
+                {
+                    return byAddress[0];
+                }
+            }
+
+            foreach (var identity in
+                new[]
+                {
+                    remoteEndpoint.DeviceIdClaim,
+                    remoteEndpoint.SystemName
+                })
+            {
+                var normalized =
+                    NormalizeIdentity(
+                        identity);
+
+                if (normalized == null)
+                {
+                    continue;
+                }
+
+                var matches =
+                    devices
+                        .Where(
+                            device =>
+                                string.Equals(
+                                    NormalizeIdentity(
+                                        device.DiscoveredName),
+                                    normalized,
+                                    StringComparison.Ordinal) ||
+                                string.Equals(
+                                    NormalizeIdentity(
+                                        device.CustomName),
+                                    normalized,
+                                    StringComparison.Ordinal) ||
+                                string.Equals(
+                                    NormalizeIdentity(
+                                        device.LldpChassisId),
+                                    normalized,
+                                    StringComparison.Ordinal))
+                        .ToArray();
+
+                if (matches.Length == 1)
+                {
+                    return matches[0];
+                }
+            }
+
+            return null;
+        }
+
+        private Guid? ResolveCdpLocalInterface(
+            Guid deviceId,
+            int? ifIndex,
+            DateTime observedUtc)
+        {
+            if (!ifIndex.HasValue ||
+                ifIndex.Value <= 0)
+            {
+                return null;
+            }
+
+            var matches =
+                _repository
+                    .GetInterfaces()
+                    .Where(
+                        item =>
+                            item.DeviceId == deviceId &&
+                            item.IfIndex ==
+                                ifIndex.Value)
+                    .ToArray();
+
+            if (matches.Length == 1)
+            {
+                return matches[0].Id;
+            }
+
+            if (matches.Length > 1)
+            {
+                return null;
+            }
+
+            MaterializeInterface(
+                deviceId,
+                ifIndex.Value,
+                observedUtc);
+
+            matches =
+                _repository
+                    .GetInterfaces()
+                    .Where(
+                        item =>
+                            item.DeviceId == deviceId &&
+                            item.IfIndex ==
+                                ifIndex.Value)
+                    .ToArray();
+
+            return matches.Length == 1
+                ? (Guid?)matches[0].Id
+                : null;
+        }
+
+        private Guid? ResolveCdpRemoteInterface(
+            Guid deviceId,
+            string portId)
+        {
+            var normalizedPortId =
+                NormalizePortId(
+                    portId);
+
+            if (normalizedPortId == null)
+            {
+                return null;
+            }
+
+            var matches =
+                _repository
+                    .GetInterfaces()
+                    .Where(
+                        item =>
+                            item.DeviceId == deviceId &&
+                            (
+                                string.Equals(
+                                    NormalizePortId(
+                                        item.IfName),
+                                    normalizedPortId,
+                                    StringComparison.Ordinal) ||
+                                string.Equals(
+                                    NormalizePortId(
+                                        item.IfDescription),
+                                    normalizedPortId,
+                                    StringComparison.Ordinal) ||
+                                string.Equals(
+                                    NormalizePortId(
+                                        item.IfAlias),
+                                    normalizedPortId,
+                                    StringComparison.Ordinal) ||
+                                string.Equals(
+                                    NormalizePortId(
+                                        item.CustomName),
+                                    normalizedPortId,
+                                    StringComparison.Ordinal) ||
+                                string.Equals(
+                                    NormalizePortId(
+                                        item.LldpPortId),
+                                    normalizedPortId,
+                                    StringComparison.Ordinal)
+                            ))
+                    .ToArray();
+
+            return matches.Length == 1
+                ? (Guid?)matches[0].Id
+                : null;
         }
 
         private TopologyDevice ResolveRemoteDevice(
