@@ -36,4 +36,10 @@ namespace NetLoom.Application.Topology
 
         void DeleteManualDevice(Guid id);
     }
+    public interface IAutomaticInterfaceReferenceReconciler
+    {
+        void ReconcileAutomaticInterfaceReferences(
+            Guid obsoleteInterfaceId,
+            Guid canonicalInterfaceId);
+    }
 }

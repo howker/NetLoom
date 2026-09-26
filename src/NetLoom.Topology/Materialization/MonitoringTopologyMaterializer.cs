@@ -885,6 +885,81 @@ namespace NetLoom.Topology.Materialization
                             item.DeviceId == deviceId)
                     .ToArray();
 
+            if (localPortNumber.HasValue &&
+                normalizedPortId != null &&
+                string.Equals(
+                    normalizedPortId,
+                    localPortNumber.Value.ToString(
+                        CultureInfo.InvariantCulture),
+                    StringComparison.Ordinal))
+            {
+                var byIfIndex =
+                    interfaces
+                        .Where(
+                            item =>
+                                item.IfIndex.HasValue &&
+                                item.IfIndex.Value ==
+                                    localPortNumber.Value)
+                        .ToArray();
+
+                if (byIfIndex.Length > 1)
+                {
+                    return null;
+                }
+
+                if (byIfIndex.Length == 1)
+                {
+                    var synthetic =
+                        interfaces
+                            .Where(
+                                item =>
+                                    item.Id !=
+                                        byIfIndex[0].Id &&
+                                    !item.IfIndex.HasValue &&
+                                    string.Equals(
+                                        NormalizePortId(
+                                            item.LldpPortId),
+                                        normalizedPortId,
+                                        StringComparison.Ordinal))
+                            .ToArray();
+
+                    if (synthetic.Length > 1)
+                    {
+                        return null;
+                    }
+
+                    if (synthetic.Length == 1)
+                    {
+                        var reconciler =
+                            _repository
+                                as IAutomaticInterfaceReferenceReconciler;
+
+                        if (reconciler == null)
+                        {
+                            TouchLldpInterface(
+                                synthetic[0],
+                                portId,
+                                portDescription,
+                                observedUtc);
+
+                            return synthetic[0].Id;
+                        }
+
+                        reconciler
+                            .ReconcileAutomaticInterfaceReferences(
+                                synthetic[0].Id,
+                                byIfIndex[0].Id);
+                    }
+
+                    TouchLldpInterface(
+                        byIfIndex[0],
+                        portId,
+                        portDescription,
+                        observedUtc);
+
+                    return byIfIndex[0].Id;
+                }
+            }
             if (normalizedPortId != null)
             {
                 var byName =

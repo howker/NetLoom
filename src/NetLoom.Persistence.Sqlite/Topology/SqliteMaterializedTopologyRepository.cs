@@ -9,7 +9,8 @@ using NetLoom.Persistence.Sqlite.Database;
 namespace NetLoom.Persistence.Sqlite.Topology
 {
     public sealed class SqliteMaterializedTopologyRepository :
-        IMaterializedTopologyRepository
+        IMaterializedTopologyRepository,
+        IAutomaticInterfaceReferenceReconciler
     {
         private readonly SqliteConnectionFactory _connectionFactory;
 
@@ -676,6 +677,290 @@ VALUES
             }
         }
 
+        public void ReconcileAutomaticInterfaceReferences(
+            Guid obsoleteInterfaceId,
+            Guid canonicalInterfaceId)
+        {
+            if (obsoleteInterfaceId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Obsolete interface id is required.",
+                    nameof(obsoleteInterfaceId));
+            }
+
+            if (canonicalInterfaceId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Canonical interface id is required.",
+                    nameof(canonicalInterfaceId));
+            }
+
+            if (obsoleteInterfaceId ==
+                canonicalInterfaceId)
+            {
+                return;
+            }
+
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            {
+                SqliteImmediateWrite.Execute(
+                    connection,
+                    () =>
+                    {
+                        var obsoleteDeviceId =
+                            ScalarString(
+                                connection,
+                                "SELECT device_id FROM interfaces WHERE id = @id;",
+                                obsoleteInterfaceId);
+
+                        if (obsoleteDeviceId == null)
+                        {
+                            return;
+                        }
+
+                        var canonicalDeviceId =
+                            ScalarString(
+                                connection,
+                                "SELECT device_id FROM interfaces WHERE id = @id;",
+                                canonicalInterfaceId);
+
+                        if (canonicalDeviceId == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Canonical interface does not exist.");
+                        }
+
+                        if (!string.Equals(
+                            obsoleteDeviceId,
+                            canonicalDeviceId,
+                            StringComparison.OrdinalIgnoreCase))
+                        {
+                            throw new InvalidOperationException(
+                                "Automatic interface reconciliation cannot cross devices.");
+                        }
+
+                        var obsoleteManual =
+                            ScalarString(
+                                connection,
+                                "SELECT is_manual FROM interfaces WHERE id = @id;",
+                                obsoleteInterfaceId);
+
+                        if (obsoleteManual != "0")
+                        {
+                            throw new InvalidOperationException(
+                                "Manual interface cannot be reconciled automatically.");
+                        }
+
+                        var affected =
+                            GetPhysicalLinksForInterface(
+                                connection,
+                                obsoleteInterfaceId);
+
+                        var replacements =
+                            new List<PhysicalLink>();
+
+                        var replacementKeys =
+                            new HashSet<string>(
+                                StringComparer.Ordinal);
+
+                        foreach (var existing in affected)
+                        {
+                            if (existing.Strength ==
+                                PhysicalLinkStrength.Manual)
+                            {
+                                throw new InvalidOperationException(
+                                    "Automatic interface reconciliation cannot move a manual physical link.");
+                            }
+
+                            var interfaceA =
+                                existing.InterfaceAId;
+
+                            if (interfaceA.HasValue &&
+                                interfaceA.Value ==
+                                    obsoleteInterfaceId)
+                            {
+                                interfaceA =
+                                    canonicalInterfaceId;
+                            }
+
+                            var interfaceB =
+                                existing.InterfaceBId;
+
+                            if (interfaceB.HasValue &&
+                                interfaceB.Value ==
+                                    obsoleteInterfaceId)
+                            {
+                                interfaceB =
+                                    canonicalInterfaceId;
+                            }
+
+                            var replacement =
+                                new PhysicalLink(
+                                    existing.Id,
+                                    existing.DeviceAId,
+                                    interfaceA,
+                                    existing.DeviceBId,
+                                    interfaceB,
+                                    existing.Strength,
+                                    existing.Freshness,
+                                    existing.MediaTypeResolved,
+                                    existing.SpeedBpsResolved,
+                                    existing.SourceSummary,
+                                    existing.FirstSeenUtc,
+                                    existing.LastSeenUtc,
+                                    existing.LastConfirmedUtc,
+                                    existing.ResolverVersion,
+                                    existing.IsHidden,
+                                    existing.IsArchived,
+                                    existing.Notes);
+
+                            if (!replacementKeys.Add(
+                                replacement.LinkKey))
+                            {
+                                throw new InvalidOperationException(
+                                    "Automatic interface reconciliation would collapse multiple physical links.");
+                            }
+
+                            replacements.Add(
+                                replacement);
+                        }
+
+                        foreach (var replacement in
+                            replacements)
+                        {
+                            using (var conflict =
+                                connection.CreateCommand())
+                            {
+                                conflict.CommandText = @"
+SELECT id
+FROM physical_links
+WHERE link_key = @linkKey
+  AND id <> @id
+LIMIT 1;";
+
+                                Add(
+                                    conflict,
+                                    "@linkKey",
+                                    replacement.LinkKey);
+
+                                Add(
+                                    conflict,
+                                    "@id",
+                                    replacement.Id.ToString("D"));
+
+                                var conflictingId =
+                                    conflict.ExecuteScalar();
+
+                                if (conflictingId != null &&
+                                    conflictingId != DBNull.Value)
+                                {
+                                    throw new InvalidOperationException(
+                                        "Automatic interface reconciliation conflicts with an existing physical link.");
+                                }
+                            }
+                        }
+
+                        foreach (var existing in affected)
+                        {
+                            using (var temporary =
+                                connection.CreateCommand())
+                            {
+                                temporary.CommandText = @"
+UPDATE physical_links
+SET link_key = @temporaryKey
+WHERE id = @id;";
+
+                                Add(
+                                    temporary,
+                                    "@temporaryKey",
+                                    "reconcile-temp-" +
+                                    existing.Id.ToString("N"));
+
+                                Add(
+                                    temporary,
+                                    "@id",
+                                    existing.Id.ToString("D"));
+
+                                temporary.ExecuteNonQuery();
+                            }
+                        }
+
+                        foreach (var replacement in
+                            replacements)
+                        {
+                            using (var update =
+                                connection.CreateCommand())
+                            {
+                                update.CommandText = @"
+UPDATE physical_links
+SET link_key = @linkKey,
+    device_a_id = @deviceA,
+    interface_a_id = @interfaceA,
+    device_b_id = @deviceB,
+    interface_b_id = @interfaceB
+WHERE id = @id;";
+
+                                Add(
+                                    update,
+                                    "@linkKey",
+                                    replacement.LinkKey);
+
+                                Add(
+                                    update,
+                                    "@deviceA",
+                                    replacement.DeviceAId.ToString("D"));
+
+                                AddGuid(
+                                    update,
+                                    "@interfaceA",
+                                    replacement.InterfaceAId);
+
+                                Add(
+                                    update,
+                                    "@deviceB",
+                                    replacement.DeviceBId.ToString("D"));
+
+                                AddGuid(
+                                    update,
+                                    "@interfaceB",
+                                    replacement.InterfaceBId);
+
+                                Add(
+                                    update,
+                                    "@id",
+                                    replacement.Id.ToString("D"));
+
+                                update.ExecuteNonQuery();
+                            }
+                        }
+
+                        using (var delete =
+                            connection.CreateCommand())
+                        {
+                            delete.CommandText = @"
+DELETE FROM interfaces
+WHERE id = @id
+  AND is_manual = 0
+  AND NOT EXISTS
+      (
+          SELECT 1
+          FROM physical_links
+          WHERE interface_a_id = @id
+             OR interface_b_id = @id
+      );";
+
+                            Add(
+                                delete,
+                                "@id",
+                                obsoleteInterfaceId.ToString("D"));
+
+                            delete.ExecuteNonQuery();
+                        }
+                    });
+            }
+        }
+
         public void DeleteManualPhysicalLink(Guid id)
         {
             using (var connection = _connectionFactory.OpenConnection())
@@ -976,6 +1261,54 @@ WHERE id = @id;";
                         : null;
                 }
             }
+        }
+
+        private static IReadOnlyList<PhysicalLink>
+            GetPhysicalLinksForInterface(
+                SQLiteConnection connection,
+                Guid interfaceId)
+        {
+            var result =
+                new List<PhysicalLink>();
+
+            using (var command =
+                connection.CreateCommand())
+            {
+                command.CommandText = @"
+SELECT
+    id, link_key,
+    device_a_id, interface_a_id,
+    device_b_id, interface_b_id,
+    strength, freshness,
+    media_type_resolved, speed_bps_resolved,
+    source_summary,
+    first_seen_utc, last_seen_utc, last_confirmed_utc,
+    resolver_version,
+    is_hidden, is_archived,
+    notes
+FROM physical_links
+WHERE interface_a_id = @interfaceId
+   OR interface_b_id = @interfaceId
+ORDER BY id;";
+
+                Add(
+                    command,
+                    "@interfaceId",
+                    interfaceId.ToString("D"));
+
+                using (var reader =
+                    command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        result.Add(
+                            ReadLink(
+                                reader));
+                    }
+                }
+            }
+
+            return result;
         }
 
         private static IReadOnlyList<PhysicalLink>
