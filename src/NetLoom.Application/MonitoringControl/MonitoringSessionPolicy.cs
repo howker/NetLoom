@@ -17,7 +17,8 @@ namespace NetLoom.Application.MonitoringControl
             int maxRepetitions,
             IEnumerable<MonitoringPollKind> kinds,
             double? interfaceErrorRatePerMinuteThreshold = null,
-            double? interfaceDiscardRatePerMinuteThreshold = null)
+            double? interfaceDiscardRatePerMinuteThreshold = null,
+            Guid? accessProfileId = null)
         {
             if (interval < TimeSpan.FromSeconds(1) ||
                 interval.TotalSeconds > int.MaxValue ||
@@ -90,8 +91,17 @@ namespace NetLoom.Application.MonitoringControl
                 interfaceDiscardRatePerMinuteThreshold,
                 nameof(interfaceDiscardRatePerMinuteThreshold));
 
+            if (accessProfileId.HasValue &&
+                accessProfileId.Value == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "MONITORING_ACCESS_PROFILE_ID_REQUIRED",
+                    nameof(accessProfileId));
+            }
+
             Interval = interval;
             Version = version;
+            AccessProfileId = accessProfileId;
             Port = port;
             TimeoutMilliseconds = timeoutMilliseconds;
             RetryCount = retryCount;
@@ -106,6 +116,8 @@ namespace NetLoom.Application.MonitoringControl
         public TimeSpan Interval { get; }
 
         public SnmpVersion Version { get; }
+
+        public Guid? AccessProfileId { get; }
 
         public int Port { get; }
 

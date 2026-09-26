@@ -102,29 +102,32 @@ namespace NetLoom.Desktop
                     DesktopEngineExecutablePathResolver
                         .Resolve();
 
-                var monitoringControl =
-                    new DesktopEngineMonitoringControl(
-                        engineExecutablePath,
-                        databasePath);
-
                 var accessProfileRepository =
                     new AccessProfileRepository(
                         connectionFactory);
+                var secretRepository =
+                    new SecretRepository(
+                        connectionFactory,
+                        new DpapiSecretProtector());
+                var processEnvironmentProvider =
+                    new DesktopDiscoveryProcessEnvironmentProvider(
+                        accessProfileRepository,
+                        secretRepository);
+                var monitoringControl =
+                    new DesktopEngineMonitoringControl(
+                        engineExecutablePath,
+                        databasePath,
+                        processEnvironmentProvider,
+                        new DesktopEngineProcessFactory());
 
                 var accessProfileProvisioningService =
                     new AccessProfileProvisioningService(
                         accessProfileRepository,
-                        new SecretRepository(
-                            connectionFactory,
-                            new DpapiSecretProtector()));
+                        secretRepository);
                 var discoveryControl =
                     new DesktopEngineDiscoveryControl(
                         engineExecutablePath,
-                        new DesktopDiscoveryProcessEnvironmentProvider(
-                            accessProfileRepository,
-                            new SecretRepository(
-                                connectionFactory,
-                                new DpapiSecretProtector())));
+                        processEnvironmentProvider);
 
                 var discoveryProfiles =
                     accessProfileRepository

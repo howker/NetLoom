@@ -1019,6 +1019,16 @@ namespace NetLoom.Wpf
                 return false;
             }
 
+            var selectedProfile =
+                DiscoveryProfileComboBox.SelectedItem
+                    as DiscoveryProfileOption;
+
+            if (selectedProfile != null)
+            {
+                MonitoringVersionComboBox.SelectedItem =
+                    selectedProfile.Profile.SnmpVersion;
+            }
+
             if (!(MonitoringVersionComboBox.SelectedItem
                     is SnmpVersion))
             {
@@ -1032,15 +1042,20 @@ namespace NetLoom.Wpf
                 new MonitoringSessionPolicy(
                     TimeSpan.FromSeconds(
                         intervalSeconds),
-                    (SnmpVersion)
-                        MonitoringVersionComboBox.SelectedItem,
+                    selectedProfile == null
+                        ? (SnmpVersion)
+                            MonitoringVersionComboBox.SelectedItem
+                        : selectedProfile.Profile.SnmpVersion,
                     port,
                     timeoutMilliseconds,
                     retryCount,
                     maxRepetitions,
                     kinds,
                     errorThreshold,
-                    discardThreshold);
+                    discardThreshold,
+                    selectedProfile == null
+                        ? (Guid?)null
+                        : selectedProfile.Profile.Id);
 
             return true;
         }

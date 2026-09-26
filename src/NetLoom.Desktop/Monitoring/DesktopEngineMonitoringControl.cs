@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NetLoom.Application.MonitoringControl;
+using NetLoom.Desktop.Discovery;
 
 namespace NetLoom.Desktop.Monitoring
 {
@@ -25,6 +26,8 @@ namespace NetLoom.Desktop.Monitoring
         private readonly string _engineExecutablePath;
         private readonly string _databasePath;
         private readonly IEngineProcessFactory _processFactory;
+        private readonly IDiscoveryProcessEnvironmentProvider
+            _processEnvironmentProvider;
 
         private readonly Queue<MonitoringControlSnapshot>
             _pendingSnapshotNotifications =
@@ -56,6 +59,19 @@ namespace NetLoom.Desktop.Monitoring
             string engineExecutablePath,
             string databasePath,
             IEngineProcessFactory processFactory)
+            : this(
+                engineExecutablePath,
+                databasePath,
+                InheritedDiscoveryProcessEnvironmentProvider.Instance,
+                processFactory)
+        {
+        }
+
+        internal DesktopEngineMonitoringControl(
+            string engineExecutablePath,
+            string databasePath,
+            IDiscoveryProcessEnvironmentProvider processEnvironmentProvider,
+            IEngineProcessFactory processFactory)
         {
             if (string.IsNullOrWhiteSpace(engineExecutablePath))
             {
@@ -75,6 +91,10 @@ namespace NetLoom.Desktop.Monitoring
                 engineExecutablePath;
             _databasePath =
                 databasePath;
+            _processEnvironmentProvider =
+                processEnvironmentProvider ??
+                throw new ArgumentNullException(
+                    nameof(processEnvironmentProvider));
             _processFactory =
                 processFactory ??
                 throw new ArgumentNullException(
@@ -167,6 +187,7 @@ namespace NetLoom.Desktop.Monitoring
                                 target,
                                 policy,
                                 _databasePath),
+                        policy,
                         out observer);
             }
             catch
@@ -305,6 +326,7 @@ namespace NetLoom.Desktop.Monitoring
                                 policy,
                                 targetSetPolicy,
                                 _databasePath),
+                        policy,
                         out observer);
             }
             catch
@@ -522,6 +544,7 @@ namespace NetLoom.Desktop.Monitoring
                             target,
                             policy,
                             _databasePath),
+                    policy,
                     out observer);
             }
             catch
@@ -562,14 +585,35 @@ namespace NetLoom.Desktop.Monitoring
 
         private IEngineProcessSession StartProcess(
             IReadOnlyList<string> argumentTokens,
+            MonitoringSessionPolicy policy,
             out Task observer)
         {
+            if (policy == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(policy));
+            }
+
+            IReadOnlyDictionary<string, string>
+                environmentVariables =
+                    null;
+
+            if (policy.AccessProfileId.HasValue)
+            {
+                environmentVariables =
+                    _processEnvironmentProvider
+                        .CreateEnvironment(
+                            policy.AccessProfileId.Value,
+                            policy.Version);
+            }
+
             var request =
                 new EngineProcessStartRequest(
                     _engineExecutablePath,
                     EngineMonitoringCommandBuilder
                         .FormatArguments(
-                            argumentTokens));
+                            argumentTokens),
+                    environmentVariables);
 
             var process =
                 _processFactory.Start(
