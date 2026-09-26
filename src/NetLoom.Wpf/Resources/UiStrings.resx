@@ -1360,6 +1360,48 @@ Drag the header to move this location together with its child locations and assi
   <data name="DiscoveryProfileLabel" xml:space="preserve">
     <value>SNMP profile</value>
   </data>
+  <data name="DiscoveryProfileAddAction" xml:space="preserve">
+    <value>Add profile...</value>
+  </data>
+  <data name="DiscoveryProfileDialogTitle" xml:space="preserve">
+    <value>Add SNMP profile</value>
+  </data>
+  <data name="DiscoveryProfileNameLabel" xml:space="preserve">
+    <value>Profile name</value>
+  </data>
+  <data name="DiscoveryProfileVersionLabel" xml:space="preserve">
+    <value>SNMP version</value>
+  </data>
+  <data name="DiscoveryProfileCommunityLabel" xml:space="preserve">
+    <value>Community</value>
+  </data>
+  <data name="DiscoveryProfileSaveAction" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="DiscoveryProfileCancelAction" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="DiscoveryProfileValidationName" xml:space="preserve">
+    <value>Enter a profile name.</value>
+  </data>
+  <data name="DiscoveryProfileValidationCommunity" xml:space="preserve">
+    <value>Enter an SNMP community.</value>
+  </data>
+  <data name="DiscoveryProfileValidationDuplicateName" xml:space="preserve">
+    <value>An enabled SNMP profile with this name already exists.</value>
+  </data>
+  <data name="DiscoveryProfileValidationVersion" xml:space="preserve">
+    <value>Select SNMP v1 or v2c.</value>
+  </data>
+  <data name="DiscoveryProfileCreationUnavailable" xml:space="preserve">
+    <value>SNMP profile creation is unavailable in this host.</value>
+  </data>
+  <data name="DiscoveryProfileSaveFailed" xml:space="preserve">
+    <value>Could not save the SNMP profile: {0}</value>
+  </data>
+  <data name="DiscoveryProfileCreated" xml:space="preserve">
+    <value>SNMP profile “{0}” was created and selected.</value>
+  </data>
   <data name="DiscoveryStartAction" xml:space="preserve">
     <value>Start discovery</value>
   </data>

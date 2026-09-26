@@ -111,6 +111,12 @@ namespace NetLoom.Desktop
                     new AccessProfileRepository(
                         connectionFactory);
 
+                var accessProfileProvisioningService =
+                    new AccessProfileProvisioningService(
+                        accessProfileRepository,
+                        new SecretRepository(
+                            connectionFactory,
+                            new DpapiSecretProtector()));
                 var discoveryControl =
                     new DesktopEngineDiscoveryControl(
                         engineExecutablePath,
@@ -127,27 +133,48 @@ namespace NetLoom.Desktop
                 var application =
                     new System.Windows.Application();
 
+                var mainWindow =
+                    new MainWindow(
+                        refreshProvider,
+                        new SqliteMacIpLookupReader(
+                            connectionFactory),
+                        mapLayoutStore,
+                        new ManualTopologyService(
+                            topologyRepository,
+                            new SqliteManualTopologyAuditStore(
+                                connectionFactory)),
+                        new LocationTopologyService(
+                            locationRepository,
+                            topologyRepository),
+                        mapLayoutStore,
+                        monitoringControl,
+                        discoveryControl,
+                        discoveryProfiles,
+                        new DiscoveryCandidateTopologyMaterializer(
+                            topologyRepository));
+
+                mainWindow.DiscoveryProfileCreateRequested +=
+                    (sender, request) =>
+                    {
+                        try
+                        {
+                            request.CreatedProfile =
+                                accessProfileProvisioningService
+                                    .CreateCommunityProfile(
+                                        request.Name,
+                                        request.SnmpVersion,
+                                        request.CommunityUtf8);
+                        }
+                        catch (Exception error)
+                        {
+                            request.FailureMessage =
+                                error.Message;
+                        }
+                    };
+
                 var exitCode =
                     application.Run(
-                        new MainWindow(
-                            refreshProvider,
-                            new SqliteMacIpLookupReader(
-                                connectionFactory),
-                            mapLayoutStore,
-                            new ManualTopologyService(
-                                topologyRepository,
-                                new SqliteManualTopologyAuditStore(
-                                    connectionFactory)),
-                            new LocationTopologyService(
-                                locationRepository,
-                                topologyRepository),
-                            mapLayoutStore,
-                            monitoringControl,
-                            discoveryControl,
-                            discoveryProfiles,
-                            new DiscoveryCandidateTopologyMaterializer(
-                                topologyRepository)));
-
+                        mainWindow);
                 hostLog.Info(
                     "HOST_STOPPED exitCode=" +
                     exitCode);

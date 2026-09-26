@@ -287,6 +287,10 @@
                             <ComboBox x:Name="DiscoveryProfileComboBox"
                                       DisplayMemberPath="DisplayName" />
                         </StackPanel>
+                        <Button x:Name="DiscoveryProfileAddButton"
+                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                VerticalAlignment="Bottom"
+                                Click="OnDiscoveryProfileAddClick" />
                         <Button x:Name="DiscoveryStartButton"
                                 Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                 VerticalAlignment="Bottom"

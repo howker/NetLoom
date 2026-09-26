@@ -1360,6 +1360,48 @@
   <data name="DiscoveryProfileLabel" xml:space="preserve">
     <value>SNMP-профиль</value>
   </data>
+  <data name="DiscoveryProfileAddAction" xml:space="preserve">
+    <value>Добавить профиль...</value>
+  </data>
+  <data name="DiscoveryProfileDialogTitle" xml:space="preserve">
+    <value>Добавить SNMP-профиль</value>
+  </data>
+  <data name="DiscoveryProfileNameLabel" xml:space="preserve">
+    <value>Имя профиля</value>
+  </data>
+  <data name="DiscoveryProfileVersionLabel" xml:space="preserve">
+    <value>Версия SNMP</value>
+  </data>
+  <data name="DiscoveryProfileCommunityLabel" xml:space="preserve">
+    <value>Community</value>
+  </data>
+  <data name="DiscoveryProfileSaveAction" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="DiscoveryProfileCancelAction" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="DiscoveryProfileValidationName" xml:space="preserve">
+    <value>Введите имя профиля.</value>
+  </data>
+  <data name="DiscoveryProfileValidationCommunity" xml:space="preserve">
+    <value>Введите SNMP community.</value>
+  </data>
+  <data name="DiscoveryProfileValidationDuplicateName" xml:space="preserve">
+    <value>Включённый SNMP-профиль с таким именем уже существует.</value>
+  </data>
+  <data name="DiscoveryProfileValidationVersion" xml:space="preserve">
+    <value>Выберите SNMP v1 или v2c.</value>
+  </data>
+  <data name="DiscoveryProfileCreationUnavailable" xml:space="preserve">
+    <value>Создание SNMP-профиля недоступно в этом хосте.</value>
+  </data>
+  <data name="DiscoveryProfileSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить SNMP-профиль: {0}</value>
+  </data>
+  <data name="DiscoveryProfileCreated" xml:space="preserve">
+    <value>SNMP-профиль «{0}» создан и выбран.</value>
+  </data>
   <data name="DiscoveryStartAction" xml:space="preserve">
     <value>Начать обнаружение</value>
   </data>
