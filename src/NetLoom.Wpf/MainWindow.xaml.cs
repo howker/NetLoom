@@ -30,6 +30,7 @@ using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.MapInteraction;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf;
 
@@ -297,6 +298,25 @@ public partial class MainWindow : Window
     public MainWindow(
         ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
         IMacIpLookupReader lookupReader,
+        IMonitoringControl monitoringControl,
+        IReadOnlyList<AccessProfile> accessProfiles)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            new EmptyMapLayoutStore(),
+            new EmptyManualTopologyService(),
+            new EmptyLocationTopologyService(),
+            new EmptyMapLocationLayoutStore(),
+            monitoringControl,
+            new EmptyDiscoveryControl(),
+            accessProfiles,
+            new EmptyDiscoveryCandidateMaterializer())
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
         IMapLayoutStore mapLayoutStore,
         IManualTopologyService manualTopologyService,
         ILocationTopologyService locationTopologyService,
@@ -340,6 +360,29 @@ public partial class MainWindow : Window
     public MainWindow(
         ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
         IMacIpLookupReader lookupReader,
+        IMonitoringControl monitoringControl,
+        IDiscoveryControl discoveryControl,
+        IReadOnlyList<AccessProfile> discoveryProfiles,
+        IDiscoveryCandidateMaterializer discoveryCandidateMaterializer,
+        IUiShellStateStore uiShellStateStore)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            new EmptyMapLayoutStore(),
+            new EmptyManualTopologyService(),
+            new EmptyLocationTopologyService(),
+            new EmptyMapLocationLayoutStore(),
+            monitoringControl,
+            discoveryControl,
+            discoveryProfiles,
+            discoveryCandidateMaterializer,
+            uiShellStateStore)
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
         IMapLayoutStore mapLayoutStore,
         IManualTopologyService manualTopologyService,
         ILocationTopologyService locationTopologyService,
@@ -348,8 +391,40 @@ public partial class MainWindow : Window
         IDiscoveryControl discoveryControl,
         IReadOnlyList<AccessProfile> discoveryProfiles,
         IDiscoveryCandidateMaterializer discoveryCandidateMaterializer)
+        : this(
+            topologyRefreshSnapshotProvider,
+            lookupReader,
+            mapLayoutStore,
+            manualTopologyService,
+            locationTopologyService,
+            mapLocationLayoutStore,
+            monitoringControl,
+            discoveryControl,
+            discoveryProfiles,
+            discoveryCandidateMaterializer,
+            new NullUiShellStateStore())
+    {
+    }
+
+    public MainWindow(
+        ITopologyRefreshSnapshotProvider topologyRefreshSnapshotProvider,
+        IMacIpLookupReader lookupReader,
+        IMapLayoutStore mapLayoutStore,
+        IManualTopologyService manualTopologyService,
+        ILocationTopologyService locationTopologyService,
+        IMapLocationLayoutStore mapLocationLayoutStore,
+        IMonitoringControl monitoringControl,
+        IDiscoveryControl discoveryControl,
+        IReadOnlyList<AccessProfile> discoveryProfiles,
+        IDiscoveryCandidateMaterializer discoveryCandidateMaterializer,
+        IUiShellStateStore uiShellStateStore)
     {
         InitializeComponent();
+
+        _uiShellStateStore =
+            uiShellStateStore ??
+            throw new ArgumentNullException(
+                nameof(uiShellStateStore));
 
         _monitoringControl =
             monitoringControl ??
@@ -614,6 +689,7 @@ public partial class MainWindow : Window
 
         InitializeMonitoringPanel();
         InitializeDiscoveryPanel();
+        InitializeShell();
 
         _lastMapSnapshot =
             EmptySnapshot();
@@ -641,6 +717,8 @@ public partial class MainWindow : Window
         object sender,
         EventArgs e)
     {
+        SaveShellState();
+
         _startupTopologyFitPending = false;
         MapScrollViewer.SizeChanged -=
             OnStartupMapViewportSizeChanged;

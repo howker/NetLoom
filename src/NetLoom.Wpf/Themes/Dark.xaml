@@ -8,6 +8,13 @@
     <SolidColorBrush x:Key="NetLoom.Brush.SurfaceHover" Color="#293746" />
     <SolidColorBrush x:Key="NetLoom.Brush.Canvas" Color="#0E141A" />
 
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRail" Color="#0D141B" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailHover" Color="#18232E" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailSelected" Color="#203246" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailText" Color="#E7EDF3" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailTextMuted" Color="#9EADBB" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailBorder" Color="#2B3947" />
+
     <SolidColorBrush x:Key="NetLoom.Brush.Border" Color="#344352" />
     <SolidColorBrush x:Key="NetLoom.Brush.BorderStrong" Color="#5A6D7F" />
 

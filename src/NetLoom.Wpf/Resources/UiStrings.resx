@@ -1495,4 +1495,57 @@ Drag the header to move this location together with its child locations and assi
   <data name="DiscoveryMaterializationFailed" xml:space="preserve">
     <value>Device {0} was found, but could not be added to topology: {1}</value>
   </data>
+  <data name="ShellMapSection" xml:space="preserve">
+    <value>Map</value>
+  </data>
+  <data name="ShellEquipmentSection" xml:space="preserve">
+    <value>Equipment</value>
+  </data>
+  <data name="ShellAlertsSection" xml:space="preserve">
+    <value>Alerts</value>
+  </data>
+  <data name="ShellDiscoverySection" xml:space="preserve">
+    <value>Discovery</value>
+  </data>
+  <data name="ShellSearchSection" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="ShellSettingsSection" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="ShellMapActionsTitle" xml:space="preserve">
+    <value>Map actions</value>
+  </data>
+  <data name="ShellMonitoringLabel" xml:space="preserve">
+    <value>Monitoring</value>
+  </data>
+  <data name="ShellEventsLabel" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="ShellThemeLight" xml:space="preserve">
+    <value>Light theme</value>
+  </data>
+  <data name="ShellThemeDark" xml:space="preserve">
+    <value>Dark theme</value>
+  </data>
+  <data name="ShellNoProfile" xml:space="preserve">
+    <value>Not selected</value>
+  </data>
+  <data name="ShellMonitoringHeader" xml:space="preserve">
+    <value>Monitoring: {0}</value>
+  </data>
+  <data name="ShellMonitoringSummary" xml:space="preserve">
+    <value>State: {0}
+Targets: {1}
+Last poll: {2}</value>
+  </data>
+  <data name="ShellAlertCount" xml:space="preserve">
+    <value>Alerts: {0}</value>
+  </data>
+  <data name="ShellEventIdle" xml:space="preserve">
+    <value>No recent events</value>
+  </data>
+  <data name="MonitoringValidationProfileRequired" xml:space="preserve">
+    <value>Select an SNMP profile in the application header before starting monitoring.</value>
+  </data>
 </root>

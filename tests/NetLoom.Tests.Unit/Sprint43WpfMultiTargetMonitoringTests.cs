@@ -15,6 +15,7 @@ using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.TopologyMap;
+using NetLoom.Domain.Access;
 using NetLoom.Wpf;
 
 namespace NetLoom.Tests.Unit
@@ -52,7 +53,8 @@ namespace NetLoom.Tests.Unit
                                     firstId,
                                     secondId)),
                             new EmptyLookupReader(),
-                            new RecordingMultiTargetMonitoringControl());
+                            new RecordingMultiTargetMonitoringControl(),
+                            MonitoringProfiles());
 
                     var viewer =
                         (ScrollViewer)window.FindName(
@@ -64,6 +66,9 @@ namespace NetLoom.Tests.Unit
                     try
                     {
                         window.Show();
+
+                        SelectFirstProfile(
+                            window);
 
                         WaitForCondition(
                             () =>
@@ -130,11 +135,15 @@ namespace NetLoom.Tests.Unit
                                             "192.0.2.62",
                                             MapMonitoringCapability.Unknown))),
                                 new EmptyLookupReader(),
-                                new RecordingMultiTargetMonitoringControl());
+                                new RecordingMultiTargetMonitoringControl(),
+                                MonitoringProfiles());
 
                         try
                         {
                             window.Show();
+
+                            SelectFirstProfile(
+                                window);
 
                             WaitForCondition(
                                 () =>
@@ -189,11 +198,15 @@ namespace NetLoom.Tests.Unit
                                     "192.0.2.71",
                                     null)),
                             new EmptyLookupReader(),
-                            control);
+                            control,
+                            MonitoringProfiles());
 
                     try
                     {
                         window.Show();
+
+                        SelectFirstProfile(
+                            window);
 
                         WaitForCondition(
                             () =>
@@ -281,11 +294,15 @@ namespace NetLoom.Tests.Unit
                                         null,
                                         MapMonitoringCapability.Unknown))),
                             new EmptyLookupReader(),
-                            control);
+                            control,
+                            MonitoringProfiles());
 
                     try
                     {
                         window.Show();
+
+                        SelectFirstProfile(
+                            window);
 
                         WaitForCondition(
                             () =>
@@ -371,11 +388,15 @@ namespace NetLoom.Tests.Unit
                                         "192.0.2.22",
                                         MapMonitoringCapability.Unknown))),
                             new EmptyLookupReader(),
-                            control);
+                            control,
+                            MonitoringProfiles());
 
                     try
                     {
                         window.Show();
+
+                        SelectFirstProfile(
+                            window);
 
                         WaitForCondition(
                             () =>
@@ -457,11 +478,15 @@ namespace NetLoom.Tests.Unit
                                         "192.0.2.32",
                                         MapMonitoringCapability.Unknown))),
                             new EmptyLookupReader(),
-                            control);
+                            control,
+                            MonitoringProfiles());
 
                     try
                     {
                         window.Show();
+
+                        SelectFirstProfile(
+                            window);
 
                         WaitForCondition(
                             () =>
@@ -523,11 +548,15 @@ namespace NetLoom.Tests.Unit
                                         null,
                                         MapMonitoringCapability.Unknown))),
                             new EmptyLookupReader(),
-                            new RecordingMultiTargetMonitoringControl());
+                            new RecordingMultiTargetMonitoringControl(),
+                            MonitoringProfiles());
 
                     try
                     {
                         window.Show();
+
+                        SelectFirstProfile(
+                            window);
 
                         WaitForCondition(
                             () =>
@@ -847,6 +876,35 @@ namespace NetLoom.Tests.Unit
                 new RoutedEventArgs(
                     Button.ClickEvent));
 
+            PumpDispatcher();
+        }
+
+        private static AccessProfile[] MonitoringProfiles()
+        {
+            return new[]
+            {
+                new AccessProfile(
+                    Guid.Parse(
+                        "46464646-4646-4646-4646-464646464646"),
+                    "Monitoring profile",
+                    true,
+                    SnmpVersion.V2C,
+                    null)
+            };
+        }
+
+        private static void SelectFirstProfile(
+            MainWindow window)
+        {
+            var profiles =
+                (ComboBox)window.FindName(
+                    "DiscoveryProfileComboBox");
+
+            Assert.IsTrue(
+                profiles.Items.Count > 0,
+                "The monitoring fixture must expose one SNMP profile.");
+
+            profiles.SelectedIndex = 0;
             PumpDispatcher();
         }
 

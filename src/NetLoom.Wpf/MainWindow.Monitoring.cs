@@ -532,6 +532,9 @@ namespace NetLoom.Wpf
                         "MonitoringFaultMessage",
                         snapshot.FaultMessage);
 
+            UpdateShellMonitoringPresentation(
+                snapshot);
+
             UpdateMonitoringControlAvailability(
                 snapshot);
         }
@@ -552,7 +555,7 @@ namespace NetLoom.Wpf
                 canEdit &&
                 hasSelectedDevice;
             MonitoringIntervalTextBox.IsEnabled = canEdit;
-            MonitoringVersionComboBox.IsEnabled = canEdit;
+            MonitoringVersionComboBox.IsEnabled = false;
             MonitoringPortTextBox.IsEnabled = canEdit;
             MonitoringTimeoutTextBox.IsEnabled = canEdit;
             MonitoringRetriesTextBox.IsEnabled = canEdit;
@@ -1023,29 +1026,22 @@ namespace NetLoom.Wpf
                 DiscoveryProfileComboBox.SelectedItem
                     as DiscoveryProfileOption;
 
-            if (selectedProfile != null)
-            {
-                MonitoringVersionComboBox.SelectedItem =
-                    selectedProfile.Profile.SnmpVersion;
-            }
-
-            if (!(MonitoringVersionComboBox.SelectedItem
-                    is SnmpVersion))
+            if (selectedProfile == null)
             {
                 validation =
                     UiText.Get(
-                        "MonitoringValidationVersion");
+                        "MonitoringValidationProfileRequired");
                 return false;
             }
+
+            MonitoringVersionComboBox.SelectedItem =
+                selectedProfile.Profile.SnmpVersion;
 
             policy =
                 new MonitoringSessionPolicy(
                     TimeSpan.FromSeconds(
                         intervalSeconds),
-                    selectedProfile == null
-                        ? (SnmpVersion)
-                            MonitoringVersionComboBox.SelectedItem
-                        : selectedProfile.Profile.SnmpVersion,
+                    selectedProfile.Profile.SnmpVersion,
                     port,
                     timeoutMilliseconds,
                     retryCount,
@@ -1053,9 +1049,7 @@ namespace NetLoom.Wpf
                     kinds,
                     errorThreshold,
                     discardThreshold,
-                    selectedProfile == null
-                        ? (Guid?)null
-                        : selectedProfile.Profile.Id);
+                    selectedProfile.Profile.Id);
 
             return true;
         }

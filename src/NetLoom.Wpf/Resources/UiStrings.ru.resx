@@ -1495,4 +1495,57 @@
   <data name="DiscoveryMaterializationFailed" xml:space="preserve">
     <value>Устройство {0} найдено, но его не удалось добавить в топологию: {1}</value>
   </data>
+  <data name="ShellMapSection" xml:space="preserve">
+    <value>Карта</value>
+  </data>
+  <data name="ShellEquipmentSection" xml:space="preserve">
+    <value>Оборудование</value>
+  </data>
+  <data name="ShellAlertsSection" xml:space="preserve">
+    <value>Предупреждения</value>
+  </data>
+  <data name="ShellDiscoverySection" xml:space="preserve">
+    <value>Обнаружение</value>
+  </data>
+  <data name="ShellSearchSection" xml:space="preserve">
+    <value>Поиск</value>
+  </data>
+  <data name="ShellSettingsSection" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="ShellMapActionsTitle" xml:space="preserve">
+    <value>Действия с картой</value>
+  </data>
+  <data name="ShellMonitoringLabel" xml:space="preserve">
+    <value>Мониторинг</value>
+  </data>
+  <data name="ShellEventsLabel" xml:space="preserve">
+    <value>События</value>
+  </data>
+  <data name="ShellThemeLight" xml:space="preserve">
+    <value>Светлая тема</value>
+  </data>
+  <data name="ShellThemeDark" xml:space="preserve">
+    <value>Тёмная тема</value>
+  </data>
+  <data name="ShellNoProfile" xml:space="preserve">
+    <value>Не выбран</value>
+  </data>
+  <data name="ShellMonitoringHeader" xml:space="preserve">
+    <value>Мониторинг: {0}</value>
+  </data>
+  <data name="ShellMonitoringSummary" xml:space="preserve">
+    <value>Состояние: {0}
+Устройств: {1}
+Последний опрос: {2}</value>
+  </data>
+  <data name="ShellAlertCount" xml:space="preserve">
+    <value>Предупреждений: {0}</value>
+  </data>
+  <data name="ShellEventIdle" xml:space="preserve">
+    <value>Нет недавних событий</value>
+  </data>
+  <data name="MonitoringValidationProfileRequired" xml:space="preserve">
+    <value>Выберите SNMP-профиль в верхней строке приложения перед запуском мониторинга.</value>
+  </data>
 </root>

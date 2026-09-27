@@ -162,6 +162,16 @@ public partial class MainWindow
                     warningCount);
         }
 
+        ShellAlertCountText.Text =
+            UiText.Format(
+                "ShellAlertCount",
+                rows.Length);
+        ShellAlertCountText.SetResourceReference(
+            System.Windows.Controls.TextBlock.ForegroundProperty,
+            rows.Length == 0
+                ? "NetLoom.Brush.ShellRailTextMuted"
+                : "NetLoom.Brush.Critical");
+
         switch (transition)
         {
             case TopologyAlertTransitionKind
@@ -189,7 +199,10 @@ public partial class MainWindow
 
             default:
                 AlertTransitionText.Text =
-                    string.Empty;
+                    rows.Length == 0
+                        ? UiText.Get(
+                            "ShellEventIdle")
+                        : rows[0].Summary;
                 break;
         }
     }

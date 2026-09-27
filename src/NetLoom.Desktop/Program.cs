@@ -17,6 +17,7 @@ using NetLoom.Topology.Alerts;
 using NetLoom.Topology.Map;
 using NetLoom.Topology.Refresh;
 using NetLoom.Wpf;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Desktop
 {
@@ -154,7 +155,9 @@ namespace NetLoom.Desktop
                         discoveryControl,
                         discoveryProfiles,
                         new DiscoveryCandidateTopologyMaterializer(
-                            topologyRepository));
+                            topologyRepository),
+                        FileUiShellStateStore
+                            .CreateDefault());
 
                 mainWindow.DiscoveryProfileCreateRequested +=
                     (sender, request) =>

@@ -358,4 +358,62 @@
                 Value="{DynamicResource NetLoom.FontSize.Caption}" />
     </Style>
 
+
+    <Style x:Key="NetLoom.Style.SecondaryButton"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.Surface}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource NetLoom.Brush.Border}" />
+        <Setter Property="FontWeight"
+                Value="Normal" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver"
+                     Value="True">
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource NetLoom.Brush.BorderStrong}" />
+            </Trigger>
+            <Trigger Property="IsPressed"
+                     Value="True">
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource NetLoom.Brush.Accent}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.NavigationButton"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.ShellRailTextMuted}" />
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.ShellRail}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource NetLoom.Brush.ShellRail}" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Left" />
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.ShellNavigationButtonMargin}" />
+        <Setter Property="Padding"
+                Value="{DynamicResource NetLoom.Thickness.ListItemPadding}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver"
+                     Value="True">
+                <Setter Property="Foreground"
+                        Value="{DynamicResource NetLoom.Brush.ShellRailText}" />
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.ShellRailHover}" />
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource NetLoom.Brush.ShellRailHover}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
 </ResourceDictionary>
