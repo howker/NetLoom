@@ -157,7 +157,6 @@
 1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	устройство отображается соответствующим образом.
 1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	чем:
 1	docs/ТЕХНИЧЕСКОЕ ЗАДАНИЕ.md	является корректным результатом.
-1	README.md	- русскоязычный интерфейс.
 1	src/NetLoom.Protocols.Snmp/Lldp/LldpCollector.cs	// его можно повторно обработать новым парсером.
 1	src/NetLoom.Topology/Correlation/MacCorrelationResolver.cs	// а не сосед.
 1	src/NetLoom.Topology/Resolution/TopologyResolver.cs	// не создаёт кандидата физической связи.

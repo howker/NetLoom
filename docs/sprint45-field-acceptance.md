@@ -14,7 +14,7 @@
 - app-local UCRT/VC runtime;
 - self-contained .NET 8 Desktop/Engine;
 - реальное SNMP-оборудование нескольких производителей;
-- медленный RDP-канал, поэтому полевые обновления должны оставаться малыми.
+- Медленный RDP-канал, поэтому полевые обновления должны оставаться малыми.
 
 ## Фактически подтверждено
 
@@ -27,13 +27,13 @@
 - материализация 275 интерфейсов;
 - LLDP topology materialization;
 - 10 физических связей;
-- после protocol-identity repair и повторной валидации:
+- После protocol-identity repair и повторной валидации:
   - 9 связей `Confirmed`;
   - 1 связь `Observed`;
   - 19 current link-evidence records;
 - persistence после полного restart приложения без повторного опроса;
 - PNG + CSV export;
-- сохранение DeviceId, layout, links и evidence после offline repair полевой БД.
+- Сохранение DeviceId, layout, links и evidence после offline repair полевой БД.
 
 ## Backend-дефекты, найденные только в поле
 
@@ -64,7 +64,7 @@ LLDP-связи использовали synthetic interfaces с `ifIndex = NULL
 - устройство: `VOS-2 EDS408`, `10.48.228.84`;
 - LLDP port: `5`;
 - это remote side односторонней связи;
-- нет достаточного reciprocal local-port evidence для безопасного назначения `ifIndex`.
+- Нет достаточного reciprocal local-port evidence для безопасного назначения `ifIndex`.
 
 ### Binary protocol identity
 
@@ -80,7 +80,7 @@ SNMP transport сохранял:
 - `00:90:E8:38:CA:95`;
 - `00:90:E8:38:CA:DB`;
 
-до исправления нормализовались одинаково.
+До исправления нормализовались одинаково.
 
 Полевой пример STP:
 

@@ -1,4 +1,4 @@
-# NetLoom Backlog
+﻿# NetLoom Backlog
 
 Этот файл дополняет Sprint-план из PROJECT_STATE.md и не заменяет его.
 
@@ -141,7 +141,7 @@
 
 ## Execution map after Sprint 38
 
-The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, Sprint 41, Sprint 42, Sprint 43, and Sprint 44 are complete.
+The realistic stand gate, Sprint 33A, Sprint 33B, the post-Sprint friction review, Sprint 34A through Sprint 34K, the UI foundation preparation task, Sprint 35, Sprint 36, Sprint 37, Sprint 38, the pre-Sprint-39 `MainWindow` decomposition preparation, Sprint 39, Sprint 40, Sprint 41, Sprint 42, Sprint 43, Sprint 44, and Sprint 45 are complete.
 The current WPF client combines coherent selected-element diagnostics, an operator-arrangeable persistent physical map, operator-managed manual devices/ports/cables, persistent hierarchical Location containers, monitoring control, glance-readable topology semantics, operator-driven discovery, one-Engine multi-target monitoring, and coherent operator export of the full site diagram plus inventory.
 Sprint 44 closed bounded PNG plus UTF-8 BOM CSV export from one canonical `TopologyExportSnapshot`, with the operator action inside existing Map settings. Sprint 45 is now the first unchecked committed product item.
 ### Completed
@@ -257,18 +257,26 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Technical acceptance: canonical snapshot boundary `701824d`, CSV exporter `9163d3b`, bounded PNG renderer `122c8375dba51551e2b3a865c270adc914daa1a4`, and operator export surface `834f0eba9db6ead0a7daa64a59ec4e322f7caa44` are pushed. Final regression passed Modern 183/183, Unit 349/349, Integration 113/113, Snapshots 7/7; text-integrity, exact boundaries, index/HEAD blob proofs, push, `HEAD == origin/main`, and clean postflight passed.
   - Operator acceptance: a real WPF export produced a readable 1730x950 PNG plus matching UTF-8 BOM CSV in one action. The exported visual matched the current map presentation; pre-existing on-map card overlaps were not introduced by export. The supplied CSV contained 22 columns, 23 data rows and 17 unique devices.
   - No SQLite migration or new production dependency was added. PDF, SVG and draw.io remain outside Sprint 44 acceptance.
-- [ ] Sprint 45 — full acceptance on the author's real network.
-  - Operator outcome: run the complete workflow on the real network — discover, observe the map building, monitor many devices, diagnose, and export — without development-only workarounds.
-  - This is an acceptance/hardening Sprint, not speculative feature expansion. All real friction is recorded in `FRICTION_LOG.md`; fixes required to achieve the one accepted outcome remain inside Sprint 45 until operator acceptance passes.
-  - Record navigation friction as well as functional friction: which sections the operator repeatedly switches between, what is hard to find visually, and which existing editor windows are repeatedly opened. These observations are input to Sprint 46.
-  - The next committed sequence is chosen only after this real-network evidence is reviewed.
+- [x] Sprint 45 — full acceptance on the author's real network.
+  - Operator outcome completed on the field site: discovery, topology materialization, multi-target monitoring, diagnostics and export were exercised against the real environment without development-only topology shortcuts.
+  - Field baseline: 55 devices, 275 interfaces and 10 physical links; platform acceptance included Windows Server 2012 R2 in the actual unpatched state present on site.
+  - Closure and field evidence: `docs/sprint45-field-acceptance.md`. Navigation/UX friction from the field session is recorded in `FRICTION_LOG.md` and drives Sprints 46–49.
+  - Closure baseline: `f475fec`; Sprint 45 closed with 543 tests and 21 migrations.
 
-- [ ] Sprint 46 — application shell/navigation rework.
-  - Operator outcome: understand where the operator is and what needs attention without relying on the growing top toolbar or separate feature/editor windows.
-  - The navigation rail / breadcrumbs / selected-element panel concept is a design direction, not a pixel specification. Final information architecture is chosen from Sprint 45 navigation evidence.
-  - Recompose existing functionality rather than inventing new topology/monitoring semantics, data, migrations or time-series features.
+- [ ] Sprint 46 — новая оболочка интерфейса и общий контекст оператора.
+  - Operator outcome: оператор понимает, где он находится, какой SNMP-профиль активен и что делает система, — без верхней панели инструментов, отдельных окон редакторов и скрытых зависимостей между вкладками.
+  - Спецификация: `docs/sprint46-ui-ux-redesign.md`, макет `docs/design/netloom-sprint46-obolochka.png` (направление, не пиксели).
+  - Перекомпоновка существующего: новых данных, миграций и семантики топологии не вводится.
 
-### Parallel evidence gathering — not a Sprint and not a gate for Sprints 41–45
+- [ ] Sprint 47 — видимый прогресс мониторинга.
+  - Operator outcome: по одному взгляду понятно, идёт ли опрос, какое устройство опрашивается, сколько сделано и осталось, были ли ошибки, закончился ли цикл.
+
+- [ ] Sprint 48 — обнаружение с объяснимым результатом.
+  - Operator outcome: после обнаружения понятно, какие устройства найдены полностью, какие частично и почему, какие уже были известны и что в них изменилось; профиль SNMP можно проверить до сохранения.
+
+- [ ] Sprint 49 — читаемая карта большой площадки.
+  - Operator outcome: на 55 и более устройствах карта читается без массовых перекрытий; видно, где данные неполны.
+### Parallel evidence gathering — not a Sprint
 
 - Optical capability audit on existing hardware: MikroTik CSS106 confirms SFP identity but has not yet confirmed Rx/Tx/temperature DDM; MOXA PT-7728 confirms SNMP/LLDP but no DDM surface has yet been found; MOXA EDS-408A-SS-SC uses fixed optical ports; unmanaged optical/copper converters are not expected to expose their own SNMP sensors. Use a small offline/read-only audit utility from the development machine if deeper private-MIB inspection is needed.
 - Promote optical degradation into a future committed sequence only after real hardware exposes trustworthy sensor values and transceiver/port identity that can support a non-misleading time series.
@@ -276,8 +284,33 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 
 ### Next candidates — not commitments
 
-The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the remaining committed Sprint 45 → 46 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
+The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the remaining committed Sprints 46–49 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
 
+#### Кандидаты из полевого evidence Sprint 45
+
+- [ ] Подавление зависимых предупреждений: один инцидент при отказе аплинка, симптомы за ним подавлены и отмечены «затронуто выше по течению». До реализации зафиксировать, что «выше по течению» означает «ближе к точке опроса Engine». Использовать существующий `PhysicalGraphSafetyAnalyzer`, не смешивая событие и инцидент.
+
+  ```
+  КРИТИЧНО  Аплинк недоступен                              2 мин 14 с
+            SW-CORE Gi1/0/24 ↔ SW-B4 Gi0/1
+            Затронуто: 18 устройств · Корпус Б
+            Подавлено вторичных предупреждений: 17
+            Изменение состояния порта: 11:41:03
+            [Показать влияние] [Диагностика] [Принять]
+  ```
+
+- [ ] Логические метки поверх физической иерархии: «АСУ ТП», «Видеонаблюдение», «Учёт», «Критично».
+- [ ] Экспорт для Visio: простой формат данных плюс шаблон; прямую генерацию `.vsdx` не вводить без отдельной необходимости.
+- [ ] Пересмотр окна хранения сырых наблюдений: 24 часа может быть недостаточно для ремонта из исходных BER-значений.
+- [ ] Направление лицензирования: плоская цена за площадку как основной кандидат (рыночный сдвиг, отмеченный в исследовании сентября 2026); сравнивать прежде всего с локальными системами PRTG, OpManager и SolarWinds, поскольку закрытая сеть меняет конкурентный контекст.
+- [ ] Вид портов: таблица интерфейсов как основной вид для сотен интерфейсов; быстрые фильтры поднят / опущен / administratively down / с ошибками / есть LLDP-сосед / нет соседа. Компактная матрица 24–48 портов — дополнительная сводка выбранного коммутатора во вкладке «Интерфейсы».
+- [ ] Кнопка «Диагностика» в инспекторе: пошаговая проверка выбранного устройства `ping → SNMP → LLDP → FDB → ARP → STP → пересчёт топологии` с результатом каждого шага.
+- [ ] Полноэкранный операторский режим: только карта и состояние без рабочих панелей.
+- [ ] Обслуживание/подавление предупреждений с обязательной причиной и сроком, например «работы на подстанции до 16:00».
+- [ ] История подключения MAC: где конечное устройство было подключено вчера и неделю назад; требует журнала изменений и идёт после него.
+- [ ] Массовые действия и сохранённые виды карты — позже, при росте площадок.
+
+Уже существующие кандидаты из `docs/NETLOOM_WOW_FEATURES.md` сохраняются: экран состояния сети в трёх группах, детерминированный демо-стенд, предпросмотр влияния физической связи, журнал изменений и read-only предпросмотр работ на L2-модели.
 - [ ] Network state surface: present existing analysis in three operator-visible groups — structural risks, active confirmed problems, and insufficient data — without inventing missing evidence or adding the not-yet-implemented multi-MAC hidden-switch heuristic to the first version.
 - [ ] Deterministic demonstration stand after the network-state surface: use controlled `snmpsim` fixtures, including a proven STP-state transition chain from `.snmprec` through observation/materialization/analyzer/alert transition, so the sales scenario also serves as behavioral regression evidence.
 - [ ] Physical-link impact preview: highlight the portion of the known physical topology that becomes separated when a selected link is unavailable; do not present structural graph separation as guaranteed service/IP outage.
@@ -299,6 +332,19 @@ The evidence-first demonstration/sales candidate strategy is recorded in `docs/N
 - [ ] Ready-to-use alert presets with conservative defaults so first use does not require building a rule set from scratch.
 - [ ] Device configuration backup with version history and line-by-line diff, only after a trustworthy device-specific configuration retrieval boundary is defined.
 - [ ] Scheduled file reporting as a follow-up to Sprint 44 export when a real delivery/reporting workflow is requested.
+
+### Не-цели
+
+Сознательно не делаем в текущем направлении продукта:
+
+- конструктор дашбордов;
+- конструктор правил уровня Zabbix;
+- полноценное управление конфигурациями;
+- поиск первопричин с помощью ИИ;
+- отрисовку передних панелей для сотен моделей оборудования;
+- десятки алгоритмов раскладки графа;
+- L3-топологию и моделирование маршрутизации;
+- Числовые проценты достоверности связей.
 
 ### Roadmap — direction, not scheduled backlog commitment
 
