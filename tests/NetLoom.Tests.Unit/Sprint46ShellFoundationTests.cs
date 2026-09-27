@@ -299,6 +299,90 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            TopologyEditorsRenderInsideShellInsteadOfOwnedWindows()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var host =
+                            (ContentControl)window.FindName(
+                                "ShellWorkspaceEditorHost");
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            host.Visibility);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ManualTopologyButton"));
+
+                        WaitForCondition(
+                            () =>
+                                host.Visibility ==
+                                    Visibility.Visible &&
+                                host.Content != null);
+
+                        Assert.IsInstanceOfType(
+                            host.Content,
+                            typeof(UserControl));
+                        Assert.AreEqual(
+                            "ManualTopologyEditorControl",
+                            host.Content.GetType().Name);
+                        Assert.AreSame(
+                            window,
+                            Window.GetWindow(
+                                (DependencyObject)host.Content),
+                            "The manual editor must live in the MainWindow visual tree.");
+                        Assert.AreEqual(
+                            0,
+                            window.OwnedWindows.Count,
+                            "Opening the manual editor must not create an owned working window.");
+
+                        Click(
+                            (Button)window.FindName(
+                                "LocationsButton"));
+
+                        WaitForCondition(
+                            () =>
+                                host.Content != null &&
+                                string.Equals(
+                                    "LocationTopologyEditorControl",
+                                    host.Content.GetType().Name,
+                                    StringComparison.Ordinal));
+
+                        Assert.IsInstanceOfType(
+                            host.Content,
+                            typeof(UserControl));
+                        Assert.AreSame(
+                            window,
+                            Window.GetWindow(
+                                (DependencyObject)host.Content),
+                            "The location editor must live in the MainWindow visual tree.");
+                        Assert.AreEqual(
+                            0,
+                            window.OwnedWindows.Count,
+                            "Opening the location editor must not create an owned working window.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             ThemeToggleChangesSemanticPaletteAndPersistsSelection()
         {
             RunOnSta(

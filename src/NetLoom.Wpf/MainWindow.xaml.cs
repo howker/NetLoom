@@ -84,6 +84,9 @@ public partial class MainWindow : Window
     private readonly IMapLocationLayoutStore
         _mapLocationLayoutStore;
 
+    private IShellTopologyEditor
+        _activeTopologyEditor;
+
     private readonly Guid
         _mapLayoutId =
             MapLayoutScope.PhysicalTopologyMapId;

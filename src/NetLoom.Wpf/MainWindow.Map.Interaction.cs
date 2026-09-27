@@ -26,6 +26,7 @@ using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.MapInteraction;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf;
 
@@ -449,21 +450,17 @@ public partial class MainWindow
         Guid? initialDeviceId,
         Guid? initialLinkId)
     {
-        var editor =
-            new ManualTopologyWindow(
+        await CloseShellTopologyEditorAsync();
+
+        ShowShellSection(
+            ShellSection.Map);
+
+        ShowShellTopologyEditor(
+            new ManualTopologyEditorControl(
                 _manualTopologyService,
                 initialDeviceId,
-                initialLinkId)
-            {
-                Owner = this
-            };
-
-        editor.ShowDialog();
-
-        if (editor.HasChanges)
-        {
-            await RefreshTopologyAsync();
-        }
+                initialLinkId,
+                this));
     }
 
     private async void OnLocationsClick(
@@ -477,20 +474,16 @@ public partial class MainWindow
     private async Task OpenLocationTopologyEditorAsync(
         Guid? initialLocationId)
     {
-        var editor =
-            new LocationTopologyWindow(
+        await CloseShellTopologyEditorAsync();
+
+        ShowShellSection(
+            ShellSection.Map);
+
+        ShowShellTopologyEditor(
+            new LocationTopologyEditorControl(
                 _locationTopologyService,
-                initialLocationId)
-            {
-                Owner = this
-            };
-
-        editor.ShowDialog();
-
-        if (editor.HasChanges)
-        {
-            await RefreshTopologyAsync();
-        }
+                initialLocationId,
+                this));
     }
 
     private MapLocationVisual LocationVisual(

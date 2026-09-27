@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -42,6 +42,15 @@ namespace NetLoom.Wpf
         private Guid?
             _editBaselineParentId;
 
+        private Window
+            _messageOwner;
+
+        private bool
+            _isEmbedded;
+
+        public event EventHandler
+            CloseRequested;
+
         public LocationTopologyWindow(
             ILocationTopologyService service)
             : this(
@@ -79,6 +88,39 @@ namespace NetLoom.Wpf
         }
 
         public bool HasChanges { get; private set; }
+
+        public UIElement ExtractContentForEmbedding(
+            Window messageOwner)
+        {
+            if (_isEmbedded)
+            {
+                throw new InvalidOperationException(
+                    "Location topology content is already embedded.");
+            }
+
+            _messageOwner =
+                messageOwner ??
+                throw new ArgumentNullException(
+                    nameof(messageOwner));
+
+            var content =
+                Content as UIElement;
+
+            if (content == null)
+            {
+                throw new InvalidOperationException(
+                    "Location topology content is unavailable.");
+            }
+
+            Content = null;
+            _isEmbedded = true;
+
+            return content;
+        }
+
+        private Window DialogOwner =>
+            _messageOwner ??
+            this;
 
         private void ApplyLocalizedText()
         {
@@ -951,7 +993,7 @@ namespace NetLoom.Wpf
 
             var answer =
                 MessageBox.Show(
-                    this,
+                    DialogOwner,
                     UiText.Format(
                         "LocationTopologyDeleteConfirm",
                         row.Item.Name),
@@ -989,7 +1031,7 @@ namespace NetLoom.Wpf
                     error);
 
                 MessageBox.Show(
-                    this,
+                    DialogOwner,
                     UiText.Get(
                         "LocationTopologyDeleteBlocked"),
                     UiText.Get(
@@ -1074,7 +1116,7 @@ namespace NetLoom.Wpf
         private void ShowValidationMessage()
         {
             MessageBox.Show(
-                this,
+                DialogOwner,
                 UiText.Get(
                     "LocationTopologyValidationName"),
                 UiText.Get(
@@ -1091,7 +1133,7 @@ namespace NetLoom.Wpf
                 error);
 
             MessageBox.Show(
-                this,
+                DialogOwner,
                 UiText.Get(
                     "LocationTopologyOperationFailed"),
                 UiText.Get(
@@ -1104,6 +1146,14 @@ namespace NetLoom.Wpf
             object sender,
             RoutedEventArgs e)
         {
+            if (_isEmbedded)
+            {
+                CloseRequested?.Invoke(
+                    this,
+                    EventArgs.Empty);
+                return;
+            }
+
             Close();
         }
 

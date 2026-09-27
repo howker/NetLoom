@@ -270,10 +270,63 @@ namespace NetLoom.Wpf
                 themeText;
         }
 
+        private void ShowShellTopologyEditor(
+            IShellTopologyEditor editor)
+        {
+            _activeTopologyEditor =
+                editor ??
+                throw new ArgumentNullException(
+                    nameof(editor));
+
+            editor.CloseRequested +=
+                OnShellTopologyEditorCloseRequested;
+
+            ShellWorkspaceEditorHost.Content =
+                editor;
+            ShellWorkspaceEditorHost.Visibility =
+                Visibility.Visible;
+        }
+
+        private async void OnShellTopologyEditorCloseRequested(
+            object sender,
+            EventArgs e)
+        {
+            await CloseShellTopologyEditorAsync();
+        }
+
+        private async System.Threading.Tasks.Task CloseShellTopologyEditorAsync()
+        {
+            var editor =
+                _activeTopologyEditor;
+
+            if (editor == null)
+            {
+                return;
+            }
+
+            editor.CloseRequested -=
+                OnShellTopologyEditorCloseRequested;
+
+            _activeTopologyEditor = null;
+            ShellWorkspaceEditorHost.Content = null;
+            ShellWorkspaceEditorHost.Visibility =
+                Visibility.Collapsed;
+
+            if (editor.HasChanges)
+            {
+                await RefreshTopologyAsync();
+            }
+        }
+
         private void OnShellMapClick(
             object sender,
             RoutedEventArgs e)
         {
+            if (_activeTopologyEditor != null)
+            {
+                _ = CloseShellTopologyEditorAsync();
+            }
+
             ShowShellSection(
                 ShellSection.Map);
         }
@@ -323,6 +376,12 @@ namespace NetLoom.Wpf
         private void ShowShellSection(
             ShellSection section)
         {
+            if (section != ShellSection.Map &&
+                _activeTopologyEditor != null)
+            {
+                _ = CloseShellTopologyEditorAsync();
+            }
+
             _shellSection =
                 section;
 

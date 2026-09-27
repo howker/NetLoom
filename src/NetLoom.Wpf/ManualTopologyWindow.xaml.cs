@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -31,6 +31,15 @@ namespace NetLoom.Wpf
 
         private bool
             _restoringTabSelection;
+
+        private Window
+            _messageOwner;
+
+        private bool
+            _isEmbedded;
+
+        public event EventHandler
+            CloseRequested;
 
         public ManualTopologyWindow(
             IManualTopologyService service)
@@ -82,6 +91,39 @@ namespace NetLoom.Wpf
         }
 
         public bool HasChanges { get; private set; }
+
+        public UIElement ExtractContentForEmbedding(
+            Window messageOwner)
+        {
+            if (_isEmbedded)
+            {
+                throw new InvalidOperationException(
+                    "Manual topology content is already embedded.");
+            }
+
+            _messageOwner =
+                messageOwner ??
+                throw new ArgumentNullException(
+                    nameof(messageOwner));
+
+            var content =
+                Content as UIElement;
+
+            if (content == null)
+            {
+                throw new InvalidOperationException(
+                    "Manual topology content is unavailable.");
+            }
+
+            Content = null;
+            _isEmbedded = true;
+
+            return content;
+        }
+
+        private Window DialogOwner =>
+            _messageOwner ??
+            this;
 
         private void ApplyLocalizedText()
         {
@@ -938,7 +980,7 @@ namespace NetLoom.Wpf
 
             var result =
                 MessageBox.Show(
-                    this,
+                    DialogOwner,
                     UiText.Get(
                         "ManualTopologySaveBeforeLeavingDevice"),
                     UiText.Get(
@@ -2002,7 +2044,7 @@ namespace NetLoom.Wpf
                     "ManualTopologyOperationFailed");
 
             MessageBox.Show(
-                this,
+                DialogOwner,
                 UiText.Get(
                     "ManualTopologyOperationFailed"),
                 UiText.Get(
@@ -2016,7 +2058,7 @@ namespace NetLoom.Wpf
             string displayName)
         {
             return MessageBox.Show(
-                this,
+                DialogOwner,
                 UiText.Format(
                     messageKey,
                     displayName),
@@ -2039,7 +2081,7 @@ namespace NetLoom.Wpf
                 message;
 
             MessageBox.Show(
-                this,
+                DialogOwner,
                 message,
                 UiText.Get(
                     "ManualTopologyWarningTitle"),
@@ -2290,6 +2332,14 @@ namespace NetLoom.Wpf
             object sender,
             RoutedEventArgs e)
         {
+            if (_isEmbedded)
+            {
+                CloseRequested?.Invoke(
+                    this,
+                    EventArgs.Empty);
+                return;
+            }
+
             Close();
         }
 
