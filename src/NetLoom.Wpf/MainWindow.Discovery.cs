@@ -597,6 +597,7 @@ namespace NetLoom.Wpf
 
                 _highlightedDeviceId = null;
                 _selectedDeviceId = deviceId;
+                _selectedInterfaceId = null;
                 _selectedPhysicalLinkId = null;
                 _selectedLocationId = null;
 

@@ -136,6 +136,12 @@ public partial class MainWindow : Window
 
     private bool _startupTopologyFitPending;
 
+    private bool _hasPersistedViewport;
+
+    private bool _startupPersistedViewportApplied;
+
+    private bool _startupFallbackFitActive;
+
     private bool _suppressLockSelectedChange;
 
     private MapNodeVisual _dragNodeVisual;
@@ -177,6 +183,8 @@ public partial class MainWindow : Window
     private Guid? _highlightedDeviceId;
 
     private Guid? _selectedDeviceId;
+
+    private Guid? _selectedInterfaceId;
 
     private Guid? _selectedPhysicalLinkId;
 
@@ -631,10 +639,28 @@ public partial class MainWindow : Window
         ApplyZoomTransform();
 
         DiagnosticTitleText.Text =
-            UiText.Get("DiagnosticTitle");
+            UiText.Get("ShellInspectorTitle");
 
         DiagnosticStatusText.Text =
             UiText.Get("DiagnosticNothingSelected");
+
+        InspectorOverviewTab.Header =
+            UiText.Get("InspectorOverviewTab");
+
+        InspectorInterfacesTab.Header =
+            UiText.Get("InspectorInterfacesTab");
+
+        InspectorLinksTab.Header =
+            UiText.Get("InspectorLinksTab");
+
+        InspectorEvidenceTab.Header =
+            UiText.Get("InspectorEvidenceTab");
+
+        InspectorEntityTypeText.Text =
+            string.Empty;
+
+        InspectorEntityIdText.Text =
+            string.Empty;
 
         DiagnosticElementTitleText.Text =
             string.Empty;
@@ -653,6 +679,12 @@ public partial class MainWindow : Window
 
         DiagnosticFieldsList.ItemsSource =
             new DiagnosticFieldRow[0];
+
+        DiagnosticInterfaceList.ItemsSource =
+            new DiagnosticEntityRow[0];
+
+        DiagnosticLinkList.ItemsSource =
+            new DiagnosticEntityRow[0];
 
         DiagnosticSecondaryList.ItemsSource =
             new DiagnosticTextRow[0];

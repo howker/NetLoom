@@ -1548,4 +1548,64 @@
   <data name="MonitoringValidationProfileRequired" xml:space="preserve">
     <value>Выберите SNMP-профиль в верхней строке приложения перед запуском мониторинга.</value>
   </data>
+  <data name="ShellInspectorTitle" xml:space="preserve">
+    <value>Инспектор</value>
+  </data>
+  <data name="InspectorOverviewTab" xml:space="preserve">
+    <value>Обзор</value>
+  </data>
+  <data name="InspectorInterfacesTab" xml:space="preserve">
+    <value>Интерфейсы</value>
+  </data>
+  <data name="InspectorLinksTab" xml:space="preserve">
+    <value>Связи</value>
+  </data>
+  <data name="InspectorEvidenceTab" xml:space="preserve">
+    <value>Основания</value>
+  </data>
+  <data name="InspectorEntityDevice" xml:space="preserve">
+    <value>Устройство</value>
+  </data>
+  <data name="InspectorEntityInterface" xml:space="preserve">
+    <value>Интерфейс</value>
+  </data>
+  <data name="InspectorEntityLink" xml:space="preserve">
+    <value>Физическая связь</value>
+  </data>
+  <data name="InspectorEntityLocation" xml:space="preserve">
+    <value>Локация</value>
+  </data>
+  <data name="InspectorEntityId" xml:space="preserve">
+    <value>ID: {0}</value>
+  </data>
+  <data name="InspectorFieldIfIndex" xml:space="preserve">
+    <value>ifIndex</value>
+  </data>
+  <data name="InspectorFieldIfName" xml:space="preserve">
+    <value>ifName</value>
+  </data>
+  <data name="InspectorFieldIfAlias" xml:space="preserve">
+    <value>ifAlias</value>
+  </data>
+  <data name="InspectorFieldIfDescription" xml:space="preserve">
+    <value>ifDescr</value>
+  </data>
+  <data name="InspectorFieldMac" xml:space="preserve">
+    <value>MAC</value>
+  </data>
+  <data name="InspectorFieldAdmin" xml:space="preserve">
+    <value>Адм. состояние</value>
+  </data>
+  <data name="InspectorFieldOper" xml:space="preserve">
+    <value>Фактическое состояние</value>
+  </data>
+  <data name="InspectorFieldStp" xml:space="preserve">
+    <value>STP</value>
+  </data>
+  <data name="InspectorFieldDegradation" xml:space="preserve">
+    <value>Качество</value>
+  </data>
+  <data name="InspectorFieldIfType" xml:space="preserve">
+    <value>Тип IF-MIB</value>
+  </data>
 </root>

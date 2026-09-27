@@ -1548,4 +1548,64 @@ Last poll: {2}</value>
   <data name="MonitoringValidationProfileRequired" xml:space="preserve">
     <value>Select an SNMP profile in the application header before starting monitoring.</value>
   </data>
+  <data name="ShellInspectorTitle" xml:space="preserve">
+    <value>Inspector</value>
+  </data>
+  <data name="InspectorOverviewTab" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="InspectorInterfacesTab" xml:space="preserve">
+    <value>Interfaces</value>
+  </data>
+  <data name="InspectorLinksTab" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="InspectorEvidenceTab" xml:space="preserve">
+    <value>Evidence</value>
+  </data>
+  <data name="InspectorEntityDevice" xml:space="preserve">
+    <value>Device</value>
+  </data>
+  <data name="InspectorEntityInterface" xml:space="preserve">
+    <value>Interface</value>
+  </data>
+  <data name="InspectorEntityLink" xml:space="preserve">
+    <value>Physical link</value>
+  </data>
+  <data name="InspectorEntityLocation" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="InspectorEntityId" xml:space="preserve">
+    <value>ID: {0}</value>
+  </data>
+  <data name="InspectorFieldIfIndex" xml:space="preserve">
+    <value>ifIndex</value>
+  </data>
+  <data name="InspectorFieldIfName" xml:space="preserve">
+    <value>ifName</value>
+  </data>
+  <data name="InspectorFieldIfAlias" xml:space="preserve">
+    <value>ifAlias</value>
+  </data>
+  <data name="InspectorFieldIfDescription" xml:space="preserve">
+    <value>ifDescr</value>
+  </data>
+  <data name="InspectorFieldMac" xml:space="preserve">
+    <value>MAC</value>
+  </data>
+  <data name="InspectorFieldAdmin" xml:space="preserve">
+    <value>Admin state</value>
+  </data>
+  <data name="InspectorFieldOper" xml:space="preserve">
+    <value>Oper state</value>
+  </data>
+  <data name="InspectorFieldStp" xml:space="preserve">
+    <value>STP</value>
+  </data>
+  <data name="InspectorFieldDegradation" xml:space="preserve">
+    <value>Degradation</value>
+  </data>
+  <data name="InspectorFieldIfType" xml:space="preserve">
+    <value>IF-MIB type</value>
+  </data>
 </root>

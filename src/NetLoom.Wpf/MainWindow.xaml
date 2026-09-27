@@ -506,8 +506,12 @@
                         Padding="{DynamicResource NetLoom.Thickness.ShellMapHeaderPadding}"
                         BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
                     <StackPanel>
+                        <TextBlock x:Name="ShellBreadcrumbText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   TextTrimming="CharacterEllipsis" />
                         <TextBlock x:Name="MapTitleText"
-                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                                   Style="{StaticResource NetLoom.Style.SectionTitle}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
                         <TextBlock x:Name="MapStatusText"
                                    Style="{StaticResource NetLoom.Style.MutedText}"
                                    Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
@@ -581,71 +585,143 @@
                     Style="{StaticResource NetLoom.Style.Panel}"
                     Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
                     BorderThickness="{DynamicResource NetLoom.Thickness.BorderLeft}">
-                                <DockPanel Grid.Row="0">
-                                    <StackPanel DockPanel.Dock="Top">
-                                        <TextBlock x:Name="DiagnosticTitleText"
-                                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
-                                        <TextBlock x:Name="DiagnosticStatusText"
-                                                   Style="{StaticResource NetLoom.Style.MutedText}"
-                                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                        <StackPanel>
-                                            <TextBlock x:Name="DiagnosticElementTitleText"
-                                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
-                                                       TextWrapping="Wrap" />
-                                            <TextBlock x:Name="DiagnosticElementSubtitleText"
-                                                       Style="{StaticResource NetLoom.Style.MutedText}"
-                                                       TextWrapping="Wrap" />
+                    <StackPanel Grid.Row="0">
+                        <TextBlock x:Name="DiagnosticTitleText"
+                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                        <TextBlock x:Name="DiagnosticStatusText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock x:Name="InspectorEntityTypeText"
+                                   Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                        <TextBlock x:Name="InspectorEntityIdText"
+                                   Style="{StaticResource NetLoom.Style.MonoText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
 
-                                            <TextBlock x:Name="DiagnosticPrimaryTitleText"
-                                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                                            <ItemsControl x:Name="DiagnosticFieldsList">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
-                                                            <TextBlock Text="{Binding Label}"
-                                                                       Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                            <TextBlock Text="{Binding Value}"
-                                                                       FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
-                                                                       TextWrapping="Wrap" />
-                                                        </StackPanel>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                    <StackPanel Grid.Row="1">
+                        <TextBlock x:Name="DiagnosticElementTitleText"
+                                   Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                   Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock x:Name="DiagnosticElementSubtitleText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
 
-                                            <TextBlock x:Name="DiagnosticSecondaryTitleText"
-                                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                                            <ItemsControl x:Name="DiagnosticSecondaryList">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Text}"
-                                                                   Margin="{DynamicResource NetLoom.Thickness.ListRow}"
-                                                                   TextWrapping="Wrap" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                    <TabControl x:Name="InspectorTabControl"
+                                Grid.Row="2"
+                                Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                Style="{StaticResource NetLoom.Style.InspectorTabs}">
+                        <TabItem x:Name="InspectorOverviewTab"
+                                 Style="{StaticResource NetLoom.Style.InspectorTab}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock x:Name="DiagnosticPrimaryTitleText"
+                                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                                    <ItemsControl x:Name="DiagnosticFieldsList">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                                    <TextBlock Text="{Binding Label}"
+                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
+                                                    <TextBlock Text="{Binding Value}"
+                                                               FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
 
-                                            <TextBlock x:Name="DiagnosticTertiaryTitleText"
-                                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                                            <ItemsControl x:Name="DiagnosticTertiaryList">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Text}"
-                                                                   Margin="{DynamicResource NetLoom.Thickness.ListRow}"
-                                                                   TextWrapping="Wrap" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </ScrollViewer>
-                                </DockPanel>
+                                    <TextBlock x:Name="DiagnosticSecondaryTitleText"
+                                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                                    <ItemsControl x:Name="DiagnosticSecondaryList">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Text}"
+                                                           Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                           TextWrapping="Wrap" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem x:Name="InspectorInterfacesTab"
+                                 Style="{StaticResource NetLoom.Style.InspectorTab}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="DiagnosticInterfaceList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                    Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                    HorizontalContentAlignment="Left"
+                                                    Tag="{Binding EntityId}"
+                                                    IsEnabled="{Binding IsEnabled}"
+                                                    Click="OnDiagnosticInterfaceClick">
+                                                <TextBlock Text="{Binding Text}"
+                                                           TextWrapping="Wrap" />
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem x:Name="InspectorLinksTab"
+                                 Style="{StaticResource NetLoom.Style.InspectorTab}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="DiagnosticLinkList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                    Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                    HorizontalContentAlignment="Left"
+                                                    Tag="{Binding EntityId}"
+                                                    IsEnabled="{Binding IsEnabled}"
+                                                    Click="OnDiagnosticLinkClick">
+                                                <TextBlock Text="{Binding Text}"
+                                                           TextWrapping="Wrap" />
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem x:Name="InspectorEvidenceTab"
+                                 Style="{StaticResource NetLoom.Style.InspectorTab}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock x:Name="DiagnosticTertiaryTitleText"
+                                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                                    <ItemsControl x:Name="DiagnosticTertiaryList">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Text}"
+                                                           Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                           TextWrapping="Wrap" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
+                </Grid>
             </Border>
         </Grid>
 

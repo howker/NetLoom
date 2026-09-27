@@ -55,6 +55,9 @@ public partial class MainWindow
         _selectedDeviceId =
             deviceId;
 
+        _selectedInterfaceId =
+            null;
+
         _selectedPhysicalLinkId =
             null;
 
@@ -136,6 +139,7 @@ public partial class MainWindow
 
         _highlightedDeviceId = null;
         _selectedDeviceId = (Guid)element.Tag;
+        _selectedInterfaceId = null;
         _selectedPhysicalLinkId = null;
 
 
@@ -208,6 +212,20 @@ public partial class MainWindow
         object sender,
         KeyEventArgs e)
     {
+        if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+
+            if (_activeTopologyEditor != null)
+            {
+                await CloseShellTopologyEditorAsync();
+            }
+
+            ShowShellSection(
+                ShellSection.Map);
+            return;
+        }
+
         if (e.Key != Key.Delete ||
             e.OriginalSource is TextBoxBase ||
             e.OriginalSource is PasswordBox)
@@ -535,6 +553,7 @@ public partial class MainWindow
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
+        _selectedInterfaceId = null;
         _selectedPhysicalLinkId = null;
         _selectedLocationId =
             locationId;
@@ -1721,6 +1740,7 @@ public partial class MainWindow
             if (_selectedDeviceId == deviceId)
             {
                 _selectedDeviceId = null;
+                _selectedInterfaceId = null;
             }
 
             await RefreshTopologyAsync();
@@ -2103,6 +2123,7 @@ public partial class MainWindow
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
+        _selectedInterfaceId = null;
         _selectedPhysicalLinkId =
             physicalLinkId;
 
@@ -2145,6 +2166,7 @@ public partial class MainWindow
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
+        _selectedInterfaceId = null;
         _selectedPhysicalLinkId =
             (Guid)element.Tag;
 
@@ -2254,6 +2276,7 @@ public partial class MainWindow
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
+        _selectedInterfaceId = null;
         _selectedPhysicalLinkId = null;
         _selectedLocationId = null;
 

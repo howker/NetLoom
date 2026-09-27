@@ -58,6 +58,8 @@ public partial class MainWindow
 
     private void LoadPersistedMapLayout()
     {
+        _hasPersistedViewport = false;
+
         try
         {
             var snapshot =
@@ -78,6 +80,8 @@ public partial class MainWindow
 
             _pendingPanY =
                 snapshot.Viewport.PanY;
+
+            _hasPersistedViewport = true;
 
             _persistedDeviceLayouts.Clear();
 
@@ -103,6 +107,7 @@ public partial class MainWindow
             _zoom = 1.0;
             _pendingPanX = 0.0;
             _pendingPanY = 0.0;
+            _hasPersistedViewport = false;
             _persistedDeviceLayouts.Clear();
             _persistedLocationLayouts.Clear();
         }
@@ -113,24 +118,26 @@ public partial class MainWindow
         Dispatcher.BeginInvoke(
             DispatcherPriority.Loaded,
             new Action(
-                () =>
-                {
-                    MapScrollViewer
-                        .ScrollToHorizontalOffset(
-                            MapVirtualWorkspace
-                                .ToScrollOffset(
-                                    _pendingPanX,
-                                    _virtualOriginX,
-                                    _zoom));
+                ApplyPersistedViewportOffsets));
+    }
 
-                    MapScrollViewer
-                        .ScrollToVerticalOffset(
-                            MapVirtualWorkspace
-                                .ToScrollOffset(
-                                    _pendingPanY,
-                                    _virtualOriginY,
-                                    _zoom));
-                }));
+    private void ApplyPersistedViewportOffsets()
+    {
+        MapScrollViewer
+            .ScrollToHorizontalOffset(
+                MapVirtualWorkspace
+                    .ToScrollOffset(
+                        _pendingPanX,
+                        _virtualOriginX,
+                        _zoom));
+
+        MapScrollViewer
+            .ScrollToVerticalOffset(
+                MapVirtualWorkspace
+                    .ToScrollOffset(
+                        _pendingPanY,
+                        _virtualOriginY,
+                        _zoom));
     }
 
     private void ApplyZoomTransform()
@@ -334,6 +341,8 @@ public partial class MainWindow
     private void ScheduleStartupTopologyFit()
     {
         _startupTopologyFitPending = true;
+        _startupPersistedViewportApplied = false;
+        _startupFallbackFitActive = false;
 
         MapScrollViewer.SizeChanged -=
             OnStartupMapViewportSizeChanged;
@@ -382,7 +391,90 @@ public partial class MainWindow
         MapScrollViewer.UpdateLayout();
         MapCanvas.UpdateLayout();
 
+        if (MapScrollViewer.ViewportWidth <= 0.0 ||
+            MapScrollViewer.ViewportHeight <= 0.0)
+        {
+            return;
+        }
+
+        if (_startupFallbackFitActive ||
+            !_hasPersistedViewport)
+        {
+            _startupFallbackFitActive = true;
+            TryFitTopologyToViewport();
+            return;
+        }
+
+        if (!_startupPersistedViewportApplied)
+        {
+            ApplyZoomTransform();
+            UpdateZoomText();
+            ApplyPersistedViewportOffsets();
+            MapScrollViewer.UpdateLayout();
+            _startupPersistedViewportApplied = true;
+        }
+
+        if (IsCurrentStartupViewportMeaningful())
+        {
+            return;
+        }
+
+        _startupFallbackFitActive = true;
         TryFitTopologyToViewport();
+    }
+
+    private bool IsCurrentStartupViewportMeaningful()
+    {
+        if (_zoom <= 0.0 ||
+            MapScrollViewer.ViewportWidth <= 0.0 ||
+            MapScrollViewer.ViewportHeight <= 0.0)
+        {
+            return false;
+        }
+
+        var bounds =
+            new List<Rect>();
+
+        bounds.AddRange(
+            _nodeVisualsByIdentity.Values
+                .Where(
+                    visual =>
+                        visual != null &&
+                        visual.Border.Visibility ==
+                            Visibility.Visible)
+                .Select(
+                    NodeBounds));
+
+        bounds.AddRange(
+            _locationVisualsById.Values
+                .Where(
+                    visual =>
+                        visual != null &&
+                        visual.Border.Visibility ==
+                            Visibility.Visible)
+                .Select(
+                    LocationVisibleBounds));
+
+        if (bounds.Count == 0)
+        {
+            return true;
+        }
+
+        var viewport =
+            new Rect(
+                MapScrollViewer.HorizontalOffset /
+                    _zoom,
+                MapScrollViewer.VerticalOffset /
+                    _zoom,
+                MapScrollViewer.ViewportWidth /
+                    _zoom,
+                MapScrollViewer.ViewportHeight /
+                    _zoom);
+
+        return bounds.Any(
+            item =>
+                item.IntersectsWith(
+                    viewport));
     }
 
     private void FitTopologyToViewport()

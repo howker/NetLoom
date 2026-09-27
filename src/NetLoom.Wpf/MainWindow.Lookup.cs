@@ -234,7 +234,13 @@ public partial class MainWindow : Window
             _selectedDeviceId =
                 candidate.DeviceId.Value;
 
+            _selectedInterfaceId =
+                null;
+
             _selectedPhysicalLinkId =
+                null;
+
+            _selectedLocationId =
                 null;
 
             RedrawCurrentMap();

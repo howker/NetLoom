@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.Lookup;
+using NetLoom.Application.MapLayout;
 using NetLoom.Application.MonitoringControl;
 using NetLoom.Application.Topology;
 using NetLoom.Application.TopologyRefresh;
@@ -383,6 +384,279 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            InspectorKeepsMapContextAndSupportsStableInterfaceSelection()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var siteId =
+                        Guid.Parse(
+                            "46464646-1000-1000-1000-464646464646");
+
+                    var rackId =
+                        Guid.Parse(
+                            "46464646-2000-2000-2000-464646464646");
+
+                    var deviceId =
+                        Guid.Parse(
+                            "46464646-3000-3000-3000-464646464646");
+
+                    var interfaceId =
+                        Guid.Parse(
+                            "46464646-4000-4000-4000-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                InspectorSnapshot(
+                                    siteId,
+                                    rackId,
+                                    deviceId,
+                                    interfaceId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    deviceId) !=
+                                null);
+
+                        Click(
+                            (Button)window.FindName(
+                                "MapFitAllButton"));
+
+                        PumpDispatcher();
+                        PumpDispatcher();
+
+                        var scroll =
+                            (ScrollViewer)window.FindName(
+                                "MapScrollViewer");
+
+                        var zoomText =
+                            ((TextBlock)window.FindName(
+                                "MapZoomValueText"))
+                            .Text;
+
+                        var horizontal =
+                            scroll.HorizontalOffset;
+
+                        var vertical =
+                            scroll.VerticalOffset;
+
+                        SelectDevice(
+                            window,
+                            deviceId);
+
+                        Assert.AreEqual(
+                            horizontal,
+                            scroll.HorizontalOffset,
+                            0.5,
+                            "Selecting a device must not pan the map.");
+
+                        Assert.AreEqual(
+                            vertical,
+                            scroll.VerticalOffset,
+                            0.5,
+                            "Selecting a device must not pan the map.");
+
+                        Assert.AreEqual(
+                            zoomText,
+                            ((TextBlock)window.FindName(
+                                "MapZoomValueText"))
+                            .Text,
+                            "Selecting a device must not change zoom.");
+
+                        var breadcrumb =
+                            ((TextBlock)window.FindName(
+                                "ShellBreadcrumbText"))
+                            .Text;
+
+                        StringAssert.Contains(
+                            breadcrumb,
+                            "Site A");
+
+                        StringAssert.Contains(
+                            breadcrumb,
+                            "Rack A");
+
+                        StringAssert.Contains(
+                            ((TextBlock)window.FindName(
+                                "InspectorEntityIdText"))
+                            .Text,
+                            deviceId.ToString("D"));
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((TabItem)window.FindName(
+                                "InspectorInterfacesTab"))
+                            .Visibility);
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((TabItem)window.FindName(
+                                "InspectorLinksTab"))
+                            .Visibility);
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((TabItem)window.FindName(
+                                "InspectorEvidenceTab"))
+                            .Visibility);
+
+                        var tabs =
+                            (TabControl)window.FindName(
+                                "InspectorTabControl");
+
+                        tabs.SelectedItem =
+                            (TabItem)window.FindName(
+                                "InspectorInterfacesTab");
+
+                        PumpDispatcher();
+
+                        var interfaceList =
+                            (ItemsControl)window.FindName(
+                                "DiagnosticInterfaceList");
+
+                        Assert.AreEqual(
+                            1,
+                            interfaceList.Items.Count);
+
+                        var interfaceButton =
+                            FindVisualDescendant<Button>(
+                                interfaceList);
+
+                        Assert.IsNotNull(
+                            interfaceButton);
+
+                        Click(
+                            interfaceButton);
+
+                        StringAssert.Contains(
+                            ((TextBlock)window.FindName(
+                                "InspectorEntityIdText"))
+                            .Text,
+                            interfaceId.ToString("D"));
+
+                        StringAssert.Contains(
+                            ((TextBlock)window.FindName(
+                                "DiagnosticElementTitleText"))
+                            .Text,
+                            "Gi0/1");
+
+                        StringAssert.Contains(
+                            ((TextBlock)window.FindName(
+                                "ShellBreadcrumbText"))
+                            .Text,
+                            "Rack A");
+
+                        Assert.AreEqual(
+                            horizontal,
+                            scroll.HorizontalOffset,
+                            0.5,
+                            "Selecting an interface in the inspector must preserve pan.");
+
+                        Assert.AreEqual(
+                            vertical,
+                            scroll.VerticalOffset,
+                            0.5,
+                            "Selecting an interface in the inspector must preserve pan.");
+
+                        Assert.AreEqual(
+                            zoomText,
+                            ((TextBlock)window.FindName(
+                                "MapZoomValueText"))
+                            .Text,
+                            "Selecting an interface in the inspector must preserve zoom.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            MeaningfulPersistedViewportSurvivesStartupShellMeasurement()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var deviceId =
+                        Guid.Parse(
+                            "46464646-5000-5000-5000-464646464646");
+
+                    var layoutStore =
+                        new FixedViewportLayoutStore(
+                            new MapLayoutSnapshot(
+                                MapLayoutScope
+                                    .PhysicalTopologyMapId,
+                                new MapViewportLayout(
+                                    2.0,
+                                    0.0,
+                                    0.0),
+                                new MapDeviceLayout[0],
+                                new MapLocationLayout[0]));
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                Snapshot(
+                                    deviceId,
+                                    "Switch viewport",
+                                    "192.0.2.146")),
+                            new EmptyLookupReader(),
+                            layoutStore);
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    deviceId) !=
+                                null &&
+                                ((ScrollViewer)window.FindName(
+                                    "MapScrollViewer"))
+                                .ViewportWidth >
+                                0.0);
+
+                        for (var index = 0;
+                             index < 6;
+                             index++)
+                        {
+                            PumpDispatcher();
+                            Thread.Sleep(10);
+                        }
+
+                        Assert.AreEqual(
+                            "200%",
+                            ((TextBlock)window.FindName(
+                                "MapZoomValueText"))
+                            .Text,
+                            "A meaningful persisted viewport must not be replaced by startup Fit all.");
+
+                        Assert.AreEqual(
+                            0,
+                            layoutStore.SaveViewportCount,
+                            "Preserving a meaningful startup viewport must not rewrite it before operator interaction.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             ThemeToggleChangesSemanticPaletteAndPersistsSelection()
         {
             RunOnSta(
@@ -577,6 +851,89 @@ namespace NetLoom.Tests.Unit
                     new PhysicalLinkDiagnostic[0]));
         }
 
+        private static TopologyRefreshSnapshot
+            InspectorSnapshot(
+                Guid siteId,
+                Guid rackId,
+                Guid deviceId,
+                Guid interfaceId)
+        {
+            return new TopologyRefreshSnapshot(
+                new MapSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new MapNode(
+                            deviceId.ToString("D"),
+                            "Switch A",
+                            "192.0.2.146",
+                            100.0,
+                            100.0,
+                            rackId,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            deviceId,
+                            "192.0.2.146")
+                    },
+                    new MapLink[0],
+                    new[]
+                    {
+                        new MapLocation(
+                            siteId,
+                            null,
+                            "Site A",
+                            null),
+                        new MapLocation(
+                            rackId,
+                            siteId,
+                            "Rack A",
+                            null)
+                    }),
+                new TopologyAlertSnapshot(
+                    Now,
+                    "cist",
+                    new TopologyAlert[0]),
+                new NetworkDiagnosticSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new DeviceDiagnostic(
+                            deviceId,
+                            "Switch A",
+                            "192.0.2.146",
+                            "Rack A",
+                            Now,
+                            Now,
+                            new[]
+                            {
+                                new InterfaceDiagnostic(
+                                    interfaceId,
+                                    deviceId,
+                                    1,
+                                    "Gi0/1",
+                                    "00:11:22:33:44:55",
+                                    "up",
+                                    "up",
+                                    1000000000L,
+                                    Now,
+                                    NetLoom.Contracts.StpTree
+                                        .StpTreePortState
+                                        .Forwarding,
+                                    DiagnosticDegradationStatus
+                                        .Healthy,
+                                    Now,
+                                    new DiagnosticDegradationReason[0],
+                                    "Gi0/1",
+                                    "Uplink",
+                                    6,
+                                    "GigabitEthernet0/1")
+                            },
+                            "192.0.2.146")
+                    },
+                    new PhysicalLinkDiagnostic[0]));
+        }
+
         private static void SelectDevice(
             MainWindow window,
             Guid deviceId)
@@ -633,6 +990,49 @@ namespace NetLoom.Tests.Unit
                             item.Tag is Guid &&
                             (Guid)item.Tag ==
                                 deviceId);
+        }
+
+        private static T FindVisualDescendant<T>(
+            DependencyObject root)
+            where T : DependencyObject
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var count =
+                VisualTreeHelper.GetChildrenCount(
+                    root);
+
+            for (var index = 0;
+                 index < count;
+                 index++)
+            {
+                var child =
+                    VisualTreeHelper.GetChild(
+                        root,
+                        index);
+
+                var typed =
+                    child as T;
+
+                if (typed != null)
+                {
+                    return typed;
+                }
+
+                var nested =
+                    FindVisualDescendant<T>(
+                        child);
+
+                if (nested != null)
+                {
+                    return nested;
+                }
+            }
+
+            return null;
         }
 
         private static void Click(
@@ -731,6 +1131,43 @@ namespace NetLoom.Tests.Unit
 
             Dispatcher.PushFrame(
                 frame);
+        }
+
+        private sealed class FixedViewportLayoutStore :
+            IMapLayoutStore
+        {
+            private readonly MapLayoutSnapshot
+                _snapshot;
+
+            public FixedViewportLayoutStore(
+                MapLayoutSnapshot snapshot)
+            {
+                _snapshot =
+                    snapshot ??
+                    throw new ArgumentNullException(
+                        nameof(snapshot));
+            }
+
+            public int SaveViewportCount { get; private set; }
+
+            public MapLayoutSnapshot Load(
+                Guid mapId)
+            {
+                return _snapshot;
+            }
+
+            public void SaveViewport(
+                Guid mapId,
+                MapViewportLayout viewport)
+            {
+                SaveViewportCount++;
+            }
+
+            public void SaveDevice(
+                Guid mapId,
+                MapDeviceLayout deviceLayout)
+            {
+            }
         }
 
         private sealed class MemoryShellStateStore :
