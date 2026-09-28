@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using NetLoom.Application.MonitoringControl;
+using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.Shell;
 
@@ -23,30 +24,45 @@ namespace NetLoom.Wpf
         {
             ShellBrandText.Text =
                 UiText.Get(
-                    "WindowTitle");
+                    "ShellBrandName");
 
-            ShellMapButton.Content =
+            ShellMapButtonText.Text =
                 UiText.Get(
                     "ShellMapSection");
-            ShellEquipmentButton.Content =
+            ShellEquipmentButtonText.Text =
                 UiText.Get(
                     "ShellEquipmentSection");
-            ShellAlertsButton.Content =
+            ShellMonitoringButtonText.Text =
+                UiText.Get(
+                    "ShellMonitoringLabel");
+            ShellAlertsButtonText.Text =
                 UiText.Get(
                     "ShellAlertsSection");
-            ShellDiscoveryButton.Content =
+            ShellDiscoveryButtonText.Text =
                 UiText.Get(
                     "ShellDiscoverySection");
-            ShellSearchButton.Content =
+            ShellSearchButtonText.Text =
                 UiText.Get(
                     "ShellSearchSection");
-            ShellSettingsButton.Content =
+            ShellSettingsButtonText.Text =
                 UiText.Get(
                     "ShellSettingsSection");
 
             ShellMapActionsTitleText.Text =
                 UiText.Get(
                     "ShellMapActionsTitle");
+            EquipmentTitleText.Text =
+                UiText.Get(
+                    "ShellEquipmentSection");
+            EquipmentSummaryText.Text =
+                UiText.Format(
+                    "ShellEquipmentSummary",
+                    0);
+            EquipmentList.ItemsSource =
+                new ShellEquipmentRow[0];
+            ShellProfileAddButton.Content =
+                UiText.Get(
+                    "DiscoveryProfileAddAction");
             ShellSettingsTitleText.Text =
                 UiText.Get(
                     "ShellSettingsSection");
@@ -180,18 +196,57 @@ namespace NetLoom.Wpf
                 DiscoveryProfileComboBox.SelectedItem
                     as DiscoveryProfileOption;
 
+            var hasProfiles =
+                DiscoveryProfileComboBox.Items.Count > 0;
+
+            DiscoveryProfileComboBox.Visibility =
+                hasProfiles
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            DiscoveryProfileComboBox.IsEnabled =
+                hasProfiles;
+
+            ShellProfileAddButton.Visibility =
+                hasProfiles
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+
             ShellProfileStatusText.Text =
                 selected == null
                     ? UiText.Get(
-                        "ShellNoProfile")
+                        hasProfiles
+                            ? "ShellNoProfile"
+                            : "ShellProfilesEmpty")
                     : string.Empty;
 
             ShellProfileStatusText
                 .SetResourceReference(
                     TextBlock.ForegroundProperty,
                     selected == null
-                        ? "NetLoom.Brush.Critical"
+                        ? (hasProfiles
+                            ? "NetLoom.Brush.Warning"
+                            : "NetLoom.Brush.TextSecondary")
                         : "NetLoom.Brush.Success");
+
+
+            DiscoveryProfileSummaryText.Text =
+                selected == null
+                    ? UiText.Get("ShellProfilesEmpty")
+                    : selected.DisplayName;
+            DiscoveryProfileHintText.Text =
+                selected == null
+                    ? UiText.Get("DiscoveryProfileHintMissing")
+                    : UiText.Get("DiscoveryProfileReady");
+            DiscoveryProfileSummaryText.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                selected == null
+                    ? "NetLoom.Brush.TextPrimary"
+                    : "NetLoom.Brush.Success");
+            DiscoveryProfileCard.SetResourceReference(
+                Border.BorderBrushProperty,
+                selected == null
+                    ? "NetLoom.Brush.Border"
+                    : "NetLoom.Brush.Success");
         }
 
         private void OnShellThemeClick(
@@ -257,17 +312,26 @@ namespace NetLoom.Wpf
             _shellTheme =
                 theme;
 
+            var targetTheme =
+                theme == UiShellTheme.Light
+                    ? UiShellTheme.Dark
+                    : UiShellTheme.Light;
+
             var themeText =
                 UiText.Get(
-                    theme ==
+                    targetTheme ==
                         UiShellTheme.Dark
                         ? "ShellThemeDark"
                         : "ShellThemeLight");
 
             ShellThemeButton.Content =
                 themeText;
+            ShellThemeButton.Tag =
+                targetTheme;
             ShellSettingsThemeButton.Content =
                 themeText;
+            ShellSettingsThemeButton.Tag =
+                targetTheme;
         }
 
         private void ShowShellTopologyEditor(
@@ -339,6 +403,14 @@ namespace NetLoom.Wpf
                 ShellSection.Equipment);
         }
 
+        private void OnShellMonitoringClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ShowShellSection(
+                ShellSection.Monitoring);
+        }
+
         private void OnShellAlertsClick(
             object sender,
             RoutedEventArgs e)
@@ -393,6 +465,10 @@ namespace NetLoom.Wpf
                 SectionVisibility(
                     section,
                     ShellSection.Equipment);
+            ShellMonitoringSidebarPanel.Visibility =
+                SectionVisibility(
+                    section,
+                    ShellSection.Monitoring);
             ShellAlertsSidebarPanel.Visibility =
                 SectionVisibility(
                     section,
@@ -419,6 +495,10 @@ namespace NetLoom.Wpf
                 section ==
                     ShellSection.Equipment);
             SetNavigationSelection(
+                ShellMonitoringButton,
+                section ==
+                    ShellSection.Monitoring);
+            SetNavigationSelection(
                 ShellAlertsButton,
                 section ==
                     ShellSection.Alerts);
@@ -434,6 +514,84 @@ namespace NetLoom.Wpf
                 ShellSettingsButton,
                 section ==
                     ShellSection.Settings);
+        }
+
+        private void UpdateShellEquipmentPresentation(
+            MapSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                EquipmentSummaryText.Text =
+                    UiText.Format(
+                        "ShellEquipmentSummary",
+                        0);
+                EquipmentList.ItemsSource =
+                    new ShellEquipmentRow[0];
+                return;
+            }
+
+            var rows =
+                snapshot.Nodes
+                    .OrderBy(
+                        node => node.Label,
+                        StringComparer.CurrentCultureIgnoreCase)
+                    .ThenBy(
+                        node => node.Key,
+                        StringComparer.Ordinal)
+                    .Select(
+                        node =>
+                            new ShellEquipmentRow(
+                                node.DeviceId,
+                                node.Label,
+                                node.ManagementAddress))
+                    .ToArray();
+
+            EquipmentSummaryText.Text =
+                UiText.Format(
+                    "ShellEquipmentSummary",
+                    rows.Length);
+            EquipmentList.ItemsSource =
+                rows;
+        }
+
+        private void OnShellEquipmentDeviceClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var button =
+                sender as Button;
+
+            if (button == null ||
+                !(button.Tag is Guid) ||
+                (Guid)button.Tag == Guid.Empty)
+            {
+                return;
+            }
+
+            StopStartupTopologyFit();
+
+            var deviceId =
+                (Guid)button.Tag;
+
+            _highlightedDeviceId =
+                null;
+            _selectedDeviceId =
+                deviceId;
+            _selectedInterfaceId =
+                null;
+            _selectedPhysicalLinkId =
+                null;
+            _selectedLocationId =
+                null;
+
+            RedrawCurrentMap();
+            ShowSelectedDiagnostic();
+            UpdateSelectedLayoutControl();
+
+            FocusSelectedMapAtNativeZoom(
+                () =>
+                    AnimateDiscoveryFocus(
+                        deviceId));
         }
 
         private static Visibility
@@ -461,6 +619,9 @@ namespace NetLoom.Wpf
                 button.SetResourceReference(
                     Control.BorderBrushProperty,
                     "NetLoom.Brush.Accent");
+                button.SetResourceReference(
+                    Control.BorderThicknessProperty,
+                    "NetLoom.Thickness.NavigationSelectedBorder");
                 return;
             }
 
@@ -470,6 +631,8 @@ namespace NetLoom.Wpf
                 Control.ForegroundProperty);
             button.ClearValue(
                 Control.BorderBrushProperty);
+            button.ClearValue(
+                Control.BorderThicknessProperty);
         }
 
         private void UpdateShellMonitoringPresentation(
@@ -547,10 +710,41 @@ namespace NetLoom.Wpf
         {
             Map = 0,
             Equipment = 1,
-            Alerts = 2,
-            Discovery = 3,
-            Search = 4,
-            Settings = 5
+            Monitoring = 2,
+            Alerts = 3,
+            Discovery = 4,
+            Search = 5,
+            Settings = 6
+        }
+
+        private sealed class ShellEquipmentRow
+        {
+            public ShellEquipmentRow(
+                Guid? deviceId,
+                string name,
+                string address)
+            {
+                DeviceId =
+                    deviceId;
+                Name =
+                    string.IsNullOrWhiteSpace(name)
+                        ? UiText.Get(
+                            "DiagnosticNotAvailable")
+                        : name;
+                Address =
+                    string.IsNullOrWhiteSpace(address)
+                        ? string.Empty
+                        : address;
+            }
+
+            public Guid? DeviceId { get; }
+
+            public string Name { get; }
+
+            public string Address { get; }
+
+            public bool IsSelectable =>
+                DeviceId.HasValue;
         }
     }
 }

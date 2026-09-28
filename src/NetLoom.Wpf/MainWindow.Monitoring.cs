@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
@@ -65,6 +65,10 @@ namespace NetLoom.Wpf
                 UiText.Get("MonitoringDiscardThresholdLabel");
             MonitoringKindsLabelText.Text =
                 UiText.Get("MonitoringKindsLabel");
+            MonitoringParametersTitleText.Text =
+                UiText.Get("MonitoringParametersTitle");
+            MonitoringRecentActivityTitleText.Text =
+                UiText.Get("MonitoringRecentActivityTitle");
 
             MonitoringStartButton.Content =
                 UiText.Get("MonitoringStartAction");
@@ -180,8 +184,7 @@ namespace NetLoom.Wpf
                         device.DisplayName)
                         ? UiText.Get(
                             "NodeUnknownLabel")
-                        : device.DisplayName,
-                    device.DeviceId);
+                        : device.DisplayName);
 
             MonitoringTargetAddressTextBox.Text =
                 MonitoringSelectedAddressText(
@@ -495,6 +498,37 @@ namespace NetLoom.Wpf
                     MonitoringStateResourceKey(
                         snapshot.State));
 
+            var isMonitoringActive =
+                snapshot.State ==
+                    MonitoringControlState.Starting ||
+                snapshot.State ==
+                    MonitoringControlState.Running ||
+                snapshot.State ==
+                    MonitoringControlState.Polling;
+
+            var monitoringStateBrush =
+                snapshot.State ==
+                    MonitoringControlState.Faulted
+                    ? "NetLoom.Brush.Critical"
+                    : isMonitoringActive
+                        ? "NetLoom.Brush.Success"
+                        : "NetLoom.Brush.BorderStrong";
+
+            MonitoringStateDot.SetResourceReference(
+                System.Windows.Shapes.Shape.FillProperty,
+                monitoringStateBrush);
+            MonitoringStatusCard.SetResourceReference(
+                System.Windows.Controls.Border.BorderBrushProperty,
+                monitoringStateBrush);
+            MonitoringStateValueText.SetResourceReference(
+                System.Windows.Controls.TextBlock.ForegroundProperty,
+                snapshot.State ==
+                    MonitoringControlState.Faulted
+                    ? "NetLoom.Brush.Critical"
+                    : isMonitoringActive
+                        ? "NetLoom.Brush.Success"
+                        : "NetLoom.Brush.TextPrimary");
+
             if (_monitoringControl is
                     IMultiTargetMonitoringControl)
             {
@@ -587,6 +621,15 @@ namespace NetLoom.Wpf
                     MonitoringControlState.Running ||
                 snapshot.State ==
                     MonitoringControlState.Polling;
+
+            MonitoringStartButton.Visibility =
+                MonitoringStopButton.IsEnabled
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            MonitoringStopButton.Visibility =
+                MonitoringStopButton.IsEnabled
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
 
             MonitoringPollNowButton.IsEnabled =
                 snapshot.State ==

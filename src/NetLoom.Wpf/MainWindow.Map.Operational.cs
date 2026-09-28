@@ -685,7 +685,8 @@ public partial class MainWindow
     {
         Unknown = 0,
         Normal = 1,
-        Degraded = 2
+        Degraded = 2,
+        Critical = 3
     }
 
     private void ApplyNodeDegradationPresentation(
@@ -715,6 +716,26 @@ public partial class MainWindow
             return MapNodeDegradationState.Unknown;
         }
 
+        var linkedState =
+            ConnectedNodeOperationalState(
+                deviceId.Value);
+
+        if (linkedState ==
+            MapLinkOperationalState.Critical)
+        {
+            return MapNodeDegradationState.Critical;
+        }
+
+        if (linkedState ==
+                MapLinkOperationalState.Degraded ||
+            linkedState ==
+                MapLinkOperationalState.Blocked ||
+            linkedState ==
+                MapLinkOperationalState.Transition)
+        {
+            return MapNodeDegradationState.Degraded;
+        }
+
         foreach (var device in
             _lastDiagnosticSnapshot.Devices)
         {
@@ -739,6 +760,60 @@ public partial class MainWindow
         }
 
         return MapNodeDegradationState.Unknown;
+    }
+
+    private MapLinkOperationalState
+        ConnectedNodeOperationalState(
+            Guid deviceId)
+    {
+        if (_lastMapSnapshot == null)
+        {
+            return MapLinkOperationalState.Normal;
+        }
+
+        var node =
+            _lastMapSnapshot.Nodes
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId.HasValue &&
+                        item.DeviceId.Value ==
+                            deviceId);
+
+        if (node == null)
+        {
+            return MapLinkOperationalState.Normal;
+        }
+
+        var state =
+            MapLinkOperationalState.Normal;
+
+        foreach (var link in
+            _lastMapSnapshot.Links)
+        {
+            if (!string.Equals(
+                    link.SourceNodeKey,
+                    node.Key,
+                    StringComparison.Ordinal) &&
+                !string.Equals(
+                    link.TargetNodeKey,
+                    node.Key,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var candidate =
+                LinkOperationalState(
+                    link.PhysicalLinkId);
+
+            if (candidate > state)
+            {
+                state =
+                    candidate;
+            }
+        }
+
+        return state;
     }
 
     private static MapNodeDegradationState
@@ -782,6 +857,9 @@ public partial class MainWindow
     {
         switch (state)
         {
+            case MapNodeDegradationState.Critical:
+                return "NetLoom.Brush.Critical";
+
             case MapNodeDegradationState.Degraded:
                 return "NetLoom.Brush.Warning";
 

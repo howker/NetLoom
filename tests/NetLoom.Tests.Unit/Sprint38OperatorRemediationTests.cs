@@ -357,12 +357,27 @@ namespace NetLoom.Tests.Unit
                                     canvas.LayoutTransform
                                         as ScaleTransform;
 
-                                return resizedScale !=
-                                        null &&
-                                    IsFullyVisibleInViewport(
-                                        scroll,
-                                        resizedScale,
-                                        location);
+                                if (resizedScale == null ||
+                                    resizedScale.ScaleX < 0.75 ||
+                                    resizedScale.ScaleY < 0.75)
+                                {
+                                    return false;
+                                }
+
+                                var viewport =
+                                    new Rect(
+                                        scroll.HorizontalOffset /
+                                            resizedScale.ScaleX,
+                                        scroll.VerticalOffset /
+                                            resizedScale.ScaleY,
+                                        scroll.ViewportWidth /
+                                            resizedScale.ScaleX,
+                                        scroll.ViewportHeight /
+                                            resizedScale.ScaleY);
+
+                                return viewport.IntersectsWith(
+                                    Bounds(
+                                        location));
                             });
 
                         var finalScale =
@@ -373,11 +388,26 @@ namespace NetLoom.Tests.Unit
                             finalScale);
 
                         Assert.IsTrue(
-                            IsFullyVisibleInViewport(
-                                scroll,
-                                finalScale,
-                                location),
-                            "After the initial startup fit succeeds, a later map viewport resize must refit the visible topology until the operator takes control.");
+                            finalScale.ScaleX >= 0.75 &&
+                            finalScale.ScaleY >= 0.75,
+                            "Sprint 46 keeps automatic fitting at a readable zoom instead of shrinking the whole site below 75%.");
+
+                        var finalViewport =
+                            new Rect(
+                                scroll.HorizontalOffset /
+                                    finalScale.ScaleX,
+                                scroll.VerticalOffset /
+                                    finalScale.ScaleY,
+                                scroll.ViewportWidth /
+                                    finalScale.ScaleX,
+                                scroll.ViewportHeight /
+                                    finalScale.ScaleY);
+
+                        Assert.IsTrue(
+                            finalViewport.IntersectsWith(
+                                Bounds(
+                                    location)),
+                            "After a later map viewport resize, startup fitting must keep useful topology visible until the operator takes control.");
                     }
                     finally
                     {

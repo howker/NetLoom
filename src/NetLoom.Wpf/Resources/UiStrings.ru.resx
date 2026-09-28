@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ShellBrandName" xml:space="preserve">
+    <value>NetLoom</value>
+  </data>
   <data name="WindowTitle" xml:space="preserve">
     <value>NetLoom — физическая топология</value>
   </data>
@@ -1199,7 +1202,7 @@
     <value>Выбранное устройство</value>
   </data>
   <data name="MonitoringSelectedDeviceValue" xml:space="preserve">
-    <value>{0} • {1}</value>
+    <value>{0}</value>
   </data>
   <data name="MonitoringNoDeviceSelected" xml:space="preserve">
     <value>Выберите устройство на карте.</value>
@@ -1268,7 +1271,7 @@
     <value>Обновить топологию</value>
   </data>
   <data name="MonitoringSessionOnlyHint" xml:space="preserve">
-    <value>Непрерывный мониторинг использует все доступные для опроса устройства карты со стабильным DeviceId и корректным адресом управления. Для уже доступного к опросу выбранного устройства переопределение адреса действует только для него и только в текущем сеансе Desktop; когда мониторинг остановлен, «Опросить сейчас» по-прежнему опрашивает только выбранное устройство. Учётные данные SNMP берутся из переменных среды NETLOOM_SNMP_*.</value>
+    <value>Непрерывный мониторинг опрашивает все устройства карты с доступным адресом управления. Переопределение адреса действует только для выбранного устройства в текущем сеансе. «Опросить сейчас» опрашивает только выбранное устройство.</value>
   </data>
   <data name="MonitoringStateStopped" xml:space="preserve">
     <value>Остановлен</value>
@@ -1607,5 +1610,47 @@
   </data>
   <data name="InspectorFieldIfType" xml:space="preserve">
     <value>Тип IF-MIB</value>
+  </data>
+  <data name="DiagnosticNoEvidenceDevice" xml:space="preserve">
+    <value>Для устройства нет текущих подтверждающих данных.</value>
+  </data>
+  <data name="DiagnosticNoEvidenceInterface" xml:space="preserve">
+    <value>Для интерфейса нет текущих подтверждающих данных.</value>
+  </data>
+  <data name="ShellProfilesEmpty" xml:space="preserve">
+    <value>Профилей нет</value>
+  </data>
+  <data name="ShellEquipmentSummary" xml:space="preserve">
+    <value>Устройств: {0}</value>
+  </data>
+  <data name="OperatorTechnicalDetails" xml:space="preserve">
+    <value>Технические детали</value>
+  </data>
+  <data name="AlertShowOnMapAction" xml:space="preserve">
+    <value>Показать на карте</value>
+  </data>
+  <data name="AlertTechnicalDetails" xml:space="preserve">
+    <value>Технические детали</value>
+  </data>
+  <data name="AlertAffectedLinks" xml:space="preserve">
+    <value>Затронуто связей: {0}</value>
+  </data>
+  <data name="AlertMoreDevices" xml:space="preserve">
+    <value> · +{0}</value>
+  </data>
+  <data name="ShellAlertEvent" xml:space="preserve">
+    <value>{0} · {1} · {2}: {3}</value>
+  </data>
+  <data name="MonitoringParametersTitle" xml:space="preserve">
+    <value>Параметры опроса</value>
+  </data>
+  <data name="MonitoringRecentActivityTitle" xml:space="preserve">
+    <value>Последние события</value>
+  </data>
+  <data name="DiscoveryProfileHintMissing" xml:space="preserve">
+    <value>Добавьте профиль перед запуском обнаружения.</value>
+  </data>
+  <data name="DiscoveryProfileReady" xml:space="preserve">
+    <value>Готов к обнаружению.</value>
   </data>
 </root>

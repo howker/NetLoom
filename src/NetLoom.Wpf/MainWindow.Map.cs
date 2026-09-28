@@ -72,8 +72,10 @@ public partial class MainWindow
             }
 
             _zoom =
-                ClampZoom(
-                    snapshot.Viewport.Zoom);
+                Math.Max(
+                    _readableZoomMin,
+                    ClampZoom(
+                        snapshot.Viewport.Zoom));
 
             _pendingPanX =
                 snapshot.Viewport.PanX;
@@ -146,6 +148,33 @@ public partial class MainWindow
             new ScaleTransform(
                 _zoom,
                 _zoom);
+
+        UpdateSemanticMapVisibility();
+    }
+
+    private void UpdateSemanticMapVisibility()
+    {
+        var showLinkLabels =
+            _zoom >=
+                _linkLabelMinZoom;
+
+        foreach (var visual in
+                 _linkVisualsByIdentity.Values)
+        {
+            if (visual == null)
+            {
+                continue;
+            }
+
+            visual.Label.Visibility =
+                showLinkLabels &&
+                visual.Line.Visibility ==
+                    Visibility.Visible &&
+                !string.IsNullOrWhiteSpace(
+                    visual.Label.Text)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+        }
     }
 
     private double ClampZoom(
@@ -479,7 +508,34 @@ public partial class MainWindow
 
     private void FitTopologyToViewport()
     {
-        TryFitTopologyToViewport();
+        var bounds =
+            new List<Rect>();
+
+        bounds.AddRange(
+            _nodeVisualsByIdentity.Values
+                .Where(
+                    visual =>
+                        visual != null &&
+                        visual.Border.Visibility ==
+                            Visibility.Visible)
+                .Select(
+                    NodeBounds));
+
+        bounds.AddRange(
+            _locationVisualsById.Values
+                .Where(
+                    visual =>
+                        visual != null &&
+                        visual.Border.Visibility ==
+                            Visibility.Visible)
+                .Select(
+                    LocationVisibleBounds));
+
+        // Explicit operator action means exactly what it says:
+        // fit every visible object, even when that requires going below
+        // the automatic startup readability floor.
+        TryFitMapBoundsToViewport(
+            bounds);
     }
 
     private bool TryFitTopologyToViewport()
@@ -508,7 +564,8 @@ public partial class MainWindow
                     LocationVisibleBounds));
 
         return TryFitMapBoundsToViewport(
-            bounds);
+            bounds,
+            _readableZoomMin);
     }
 
     private void FitMapBoundsToViewport(
@@ -520,6 +577,15 @@ public partial class MainWindow
 
     private bool TryFitMapBoundsToViewport(
         IReadOnlyList<Rect> bounds)
+    {
+        return TryFitMapBoundsToViewport(
+            bounds,
+            null);
+    }
+
+    private bool TryFitMapBoundsToViewport(
+        IReadOnlyList<Rect> bounds,
+        double? minimumZoom)
     {
         if (bounds == null)
         {
@@ -587,13 +653,29 @@ public partial class MainWindow
                 viewportHeight -
                 (_fitPadding * 2.0));
 
-        _zoom =
+        var fitZoom =
             ClampZoom(
                 Math.Min(
                     availableWidth /
                     contentWidth,
                     availableHeight /
                     contentHeight));
+
+        var minimumReadableZoom =
+            minimumZoom.HasValue
+                ? ClampZoom(
+                    minimumZoom.Value)
+                : fitZoom;
+
+        var clippedForReadability =
+            minimumZoom.HasValue &&
+            fitZoom <
+                minimumReadableZoom;
+
+        _zoom =
+            clippedForReadability
+                ? minimumReadableZoom
+                : fitZoom;
 
         var centerX =
             (minX +
@@ -604,6 +686,22 @@ public partial class MainWindow
             (minY +
              maxY) /
             2.0;
+
+        if (clippedForReadability)
+        {
+            double selectedCenterX;
+            double selectedCenterY;
+
+            if (TryGetSelectedMapLogicalCenter(
+                    out selectedCenterX,
+                    out selectedCenterY))
+            {
+                centerX =
+                    selectedCenterX;
+                centerY =
+                    selectedCenterY;
+            }
+        }
 
         ApplyZoomTransform();
         UpdateZoomText();
@@ -1343,6 +1441,9 @@ public partial class MainWindow
 
         _lastMapSnapshot =
             snapshot;
+
+        UpdateShellEquipmentPresentation(
+            snapshot);
 
         RefreshOperationalFocusTargets();
 

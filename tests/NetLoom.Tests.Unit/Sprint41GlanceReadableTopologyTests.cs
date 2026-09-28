@@ -68,14 +68,16 @@ namespace NetLoom.Tests.Unit
                             "Production map card was not created.");
 
                         Assert.AreEqual(
-                            160.0,
+                            (double)window.FindResource(
+                                "NetLoom.Map.NodeWidth"),
                             card.Width,
-                            "The accepted glance-readable card width is 160 px.");
+                            "The production map card must use the shared node-width design token.");
 
                         Assert.AreEqual(
-                            56.0,
+                            (double)window.FindResource(
+                                "NetLoom.Map.NodeHeight"),
                             card.MinHeight,
-                            "The accepted glance-readable card base height is 56 px.");
+                            "The production map card must use the shared node-height design token.");
 
                         card.Measure(
                             new Size(
@@ -316,9 +318,9 @@ namespace NetLoom.Tests.Unit
 
                         Assert.AreSame(
                             window.FindResource(
-                                "NetLoom.Brush.Selection"),
+                                "NetLoom.Brush.Warning"),
                             StateStripe(degraded).Background,
-                            "Selection must also override the left stripe with blue so it cannot be confused with health state.");
+                            "Selection must keep the left stripe tied to device state while the full outline indicates selection.");
                     }
                     finally
                     {
@@ -497,7 +499,10 @@ namespace NetLoom.Tests.Unit
                 Descendants<Border>(card)
                     .SingleOrDefault(
                         item =>
-                            Math.Abs(item.Width - 5.0) < 0.001);
+                            string.Equals(
+                                item.Tag as string,
+                                "NodeStateStripe",
+                                StringComparison.Ordinal));
 
             Assert.IsNotNull(
                 stripe,

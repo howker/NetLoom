@@ -297,6 +297,11 @@ public partial class MainWindow : Window
             UiText.Format(
                 "InspectorEntityId",
                 entityId.ToString("D"));
+
+        InspectorTechnicalDetailsExpander.Visibility =
+            Visibility.Visible;
+        InspectorTechnicalDetailsExpander.IsExpanded =
+            false;
     }
 
     private void ClearInspectorEntity()
@@ -306,6 +311,11 @@ public partial class MainWindow : Window
 
         InspectorEntityIdText.Text =
             string.Empty;
+
+        InspectorTechnicalDetailsExpander.IsExpanded =
+            false;
+        InspectorTechnicalDetailsExpander.Visibility =
+            Visibility.Collapsed;
     }
 
     private void ConfigureInspectorTabs(
@@ -780,7 +790,7 @@ public partial class MainWindow : Window
             evidence.Length == 0
                 ? new[]
                 {
-                    Row("DiagnosticNoEvidence")
+                    Row("DiagnosticNoEvidenceDevice")
                 }
                 : evidence;
     }
@@ -951,7 +961,7 @@ public partial class MainWindow : Window
             evidence.Length == 0
                 ? new[]
                 {
-                    Row("DiagnosticNoEvidence")
+                    Row("DiagnosticNoEvidenceInterface")
                 }
                 : evidence;
     }

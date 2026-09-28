@@ -47,6 +47,8 @@ public partial class MainWindow : Window
     private readonly double _zoomMax;
     private readonly double _zoomStep;
     private readonly double _fitPadding;
+    private readonly double _readableZoomMin;
+    private readonly double _linkLabelMinZoom;
     private readonly double _virtualOriginX;
     private readonly double _virtualOriginY;
     private readonly double _locationDefaultWidth;
@@ -490,6 +492,14 @@ public partial class MainWindow : Window
             GetDoubleResource(
                 "NetLoom.Map.FitPadding");
 
+        _readableZoomMin =
+            GetDoubleResource(
+                "NetLoom.Map.ReadableZoomMin");
+
+        _linkLabelMinZoom =
+            GetDoubleResource(
+                "NetLoom.Map.LinkLabelMinZoom");
+
         _virtualOriginX =
             GetDoubleResource(
                 "NetLoom.Map.VirtualOriginX");
@@ -661,6 +671,14 @@ public partial class MainWindow : Window
 
         InspectorEntityIdText.Text =
             string.Empty;
+
+        InspectorTechnicalDetailsExpander.Header =
+            UiText.Get(
+                "OperatorTechnicalDetails");
+        InspectorTechnicalDetailsExpander.IsExpanded =
+            false;
+        InspectorTechnicalDetailsExpander.Visibility =
+            Visibility.Collapsed;
 
         DiagnosticElementTitleText.Text =
             string.Empty;

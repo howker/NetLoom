@@ -872,7 +872,7 @@ public partial class MainWindow
             {
                 Background =
                     FindResource(
-                        "NetLoom.Brush.AccentSoft")
+                        "NetLoom.Brush.SurfaceHover")
                         as Brush,
                 Padding =
                     GetThicknessResource(
@@ -1076,12 +1076,18 @@ public partial class MainWindow
         visual.Title.Text =
             location.Name;
 
+        var hasDescription =
+            !string.IsNullOrWhiteSpace(
+                location.Description);
+
         visual.Description.Text =
-            string.IsNullOrWhiteSpace(
-                location.Description)
-                ? UiText.Get(
-                    "MapLocationNoDescription")
-                : location.Description;
+            hasDescription
+                ? location.Description
+                : string.Empty;
+        visual.Description.Visibility =
+            hasDescription
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
         visual.Border.Tag =
             location.Id;
@@ -1096,16 +1102,16 @@ public partial class MainWindow
             location.Id;
 
         visual.Border.ToolTip =
-            UiText.Format(
-                "MapLocationToolTip",
-                BuildLocationPath(
-                    location,
-                    locations),
-                string.IsNullOrWhiteSpace(
+            hasDescription
+                ? UiText.Format(
+                    "MapLocationToolTip",
+                    BuildLocationPath(
+                        location,
+                        locations),
                     location.Description)
-                    ? UiText.Get(
-                        "MapLocationNoDescription")
-                    : location.Description);
+                : BuildLocationPath(
+                    location,
+                    locations);
 
         UpdateLocationVisualState(
             visual);
@@ -1687,7 +1693,9 @@ public partial class MainWindow
                     : Visibility.Collapsed;
 
             visual.Label.Visibility =
-                linkVisible
+                linkVisible &&
+                _zoom >=
+                    _linkLabelMinZoom
                     ? Visibility.Visible
                     : Visibility.Collapsed;
 
@@ -1873,6 +1881,8 @@ public partial class MainWindow
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapNodeStateStripe"),
+                Tag =
+                    "NodeStateStripe",
                 IsHitTestVisible = false
             };
 
@@ -2111,10 +2121,6 @@ public partial class MainWindow
 
             visual.Border.SetResourceReference(
                 Border.BorderBrushProperty,
-                "NetLoom.Brush.Selection");
-
-            visual.StateStripe.SetResourceReference(
-                Border.BackgroundProperty,
                 "NetLoom.Brush.Selection");
         }
         else
@@ -2579,29 +2585,18 @@ public partial class MainWindow
     private static string BuildLinkLabel(
         MapLink link)
     {
-        var status =
-            ConfidenceText(link.Confidence) +
-            " • " +
-            FreshnessText(link.Freshness) +
-            " • " +
-            UiText.FormatCount(
-                "EvidenceCount",
-                link.Evidence.Count);
-
         if (string.IsNullOrWhiteSpace(
                 link.SourcePortLabel) &&
             string.IsNullOrWhiteSpace(
                 link.TargetPortLabel))
         {
-            return status;
+            return string.Empty;
         }
 
         return
             (link.SourcePortLabel ?? "?") +
             " ↔ " +
-            (link.TargetPortLabel ?? "?") +
-            " • " +
-            status;
+            (link.TargetPortLabel ?? "?");
     }
 
     private static void UpdateNodeLockPresentation(

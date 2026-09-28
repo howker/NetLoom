@@ -761,15 +761,15 @@ namespace NetLoom.Tests.Unit
             MonitoringTextValues(
                 MainWindow window)
         {
-            var expander =
-                (Expander)window.FindName(
-                    "MonitoringExpander");
+            var panel =
+                (DependencyObject)window.FindName(
+                    "ShellMonitoringSidebarPanel");
 
             var result =
                 new List<string>();
 
             CollectTextValues(
-                expander,
+                panel,
                 result);
 
             return result;

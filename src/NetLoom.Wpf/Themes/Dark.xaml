@@ -1,37 +1,40 @@
-<ResourceDictionary
+﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <SolidColorBrush x:Key="NetLoom.Brush.Window" Color="#11171E" />
-    <SolidColorBrush x:Key="NetLoom.Brush.Surface" Color="#18212A" />
-    <SolidColorBrush x:Key="NetLoom.Brush.SurfaceMuted" Color="#202B36" />
-    <SolidColorBrush x:Key="NetLoom.Brush.SurfaceHover" Color="#293746" />
-    <SolidColorBrush x:Key="NetLoom.Brush.Canvas" Color="#0E141A" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Window" Color="#121820" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Surface" Color="#1B2430" />
+    <SolidColorBrush x:Key="NetLoom.Brush.SurfaceMuted" Color="#222D3A" />
+    <SolidColorBrush x:Key="NetLoom.Brush.SurfaceHover" Color="#2B3948" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Canvas" Color="#161E27" />
 
-    <SolidColorBrush x:Key="NetLoom.Brush.ShellRail" Color="#0D141B" />
-    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailHover" Color="#18232E" />
-    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailSelected" Color="#203246" />
-    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailText" Color="#E7EDF3" />
-    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailTextMuted" Color="#9EADBB" />
-    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailBorder" Color="#2B3947" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRail" Color="#101720" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailHover" Color="#1C2834" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailSelected" Color="#263A4F" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailText" Color="#F3F6F9" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailTextMuted" Color="#B1BDC8" />
+    <SolidColorBrush x:Key="NetLoom.Brush.ShellRailBorder" Color="#324252" />
 
-    <SolidColorBrush x:Key="NetLoom.Brush.Border" Color="#344352" />
-    <SolidColorBrush x:Key="NetLoom.Brush.BorderStrong" Color="#5A6D7F" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Border" Color="#3C4C5C" />
+    <SolidColorBrush x:Key="NetLoom.Brush.BorderStrong" Color="#6B7E90" />
 
-    <SolidColorBrush x:Key="NetLoom.Brush.TextPrimary" Color="#E7EDF3" />
-    <SolidColorBrush x:Key="NetLoom.Brush.TextSecondary" Color="#A2B0BE" />
-    <SolidColorBrush x:Key="NetLoom.Brush.TextDisabled" Color="#71808E" />
+    <SolidColorBrush x:Key="NetLoom.Brush.TextPrimary" Color="#F3F6F9" />
+    <SolidColorBrush x:Key="NetLoom.Brush.TextSecondary" Color="#BCC6D0" />
+    <SolidColorBrush x:Key="NetLoom.Brush.TextDisabled" Color="#8795A3" />
 
-    <SolidColorBrush x:Key="NetLoom.Brush.Accent" Color="#6EA8FF" />
-    <SolidColorBrush x:Key="NetLoom.Brush.AccentHover" Color="#85B6FF" />
-    <SolidColorBrush x:Key="NetLoom.Brush.AccentPressed" Color="#4F8FEA" />
-    <SolidColorBrush x:Key="NetLoom.Brush.AccentSoft" Color="#1D3456" />
-    <SolidColorBrush x:Key="NetLoom.Brush.OnAccent" Color="#0B1220" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Accent" Color="#5F9CF5" />
+    <SolidColorBrush x:Key="NetLoom.Brush.AccentHover" Color="#78ABF7" />
+    <SolidColorBrush x:Key="NetLoom.Brush.AccentPressed" Color="#4B86D9" />
+    <SolidColorBrush x:Key="NetLoom.Brush.AccentSoft" Color="#203B5F" />
+    <SolidColorBrush x:Key="NetLoom.Brush.OnAccent" Color="#FFFFFF" />
 
-    <SolidColorBrush x:Key="NetLoom.Brush.Success" Color="#55C38B" />
-    <SolidColorBrush x:Key="NetLoom.Brush.Warning" Color="#E6B45C" />
-    <SolidColorBrush x:Key="NetLoom.Brush.Critical" Color="#F07772" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Success" Color="#67D6A0" />
+    <SolidColorBrush x:Key="NetLoom.Brush.SuccessSoft" Color="#1C3A30" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Warning" Color="#F0BE66" />
+    <SolidColorBrush x:Key="NetLoom.Brush.WarningSoft" Color="#45351D" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Critical" Color="#FF827D" />
+    <SolidColorBrush x:Key="NetLoom.Brush.CriticalSoft" Color="#4B2628" />
 
-    <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#9DB2C6" />
-    <SolidColorBrush x:Key="NetLoom.Brush.Selection" Color="#6EA8FF" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#A8BDCF" />
+    <SolidColorBrush x:Key="NetLoom.Brush.Selection" Color="#5F9CF5" />
 </ResourceDictionary>

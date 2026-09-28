@@ -53,6 +53,11 @@
                               Width="{DynamicResource NetLoom.Shell.ProfileWidth}"
                               Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                               DisplayMemberPath="DisplayName" />
+                    <Button x:Name="ShellProfileAddButton"
+                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Visibility="Collapsed"
+                            Click="OnDiscoveryProfileAddClick" />
                     <TextBlock x:Name="ShellProfileStatusText"
                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                VerticalAlignment="Center"
@@ -90,22 +95,120 @@
                                 Margin="{DynamicResource NetLoom.Thickness.ShellRailInset}">
                         <Button x:Name="ShellMapButton"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
-                                Click="OnShellMapClick" />
+                                Click="OnShellMapClick">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellMap}" />
+                                <TextBlock x:Name="ShellMapButtonText"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
                         <Button x:Name="ShellEquipmentButton"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
-                                Click="OnShellEquipmentClick" />
+                                Click="OnShellEquipmentClick">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellEquipment}" />
+                                <TextBlock x:Name="ShellEquipmentButtonText"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
+                        <Button x:Name="ShellMonitoringButton"
+                                Style="{StaticResource NetLoom.Style.NavigationButton}"
+                                Click="OnShellMonitoringClick">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellMonitoring}" />
+                                <TextBlock x:Name="ShellMonitoringButtonText"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
                         <Button x:Name="ShellAlertsButton"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
-                                Click="OnShellAlertsClick" />
+                                Click="OnShellAlertsClick">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellAlerts}" />
+                                <TextBlock x:Name="ShellAlertsButtonText"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center" />
+                                <Border x:Name="ShellAlertsBadge"
+                                        Grid.Column="2"
+                                        Style="{StaticResource NetLoom.Style.NavigationBadge}"
+                                        Visibility="Collapsed">
+                                    <TextBlock x:Name="ShellAlertsBadgeText"
+                                               Foreground="{DynamicResource NetLoom.Brush.OnAccent}"
+                                               FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" />
+                                </Border>
+                            </Grid>
+                        </Button>
                         <Button x:Name="ShellDiscoveryButton"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
-                                Click="OnShellDiscoveryClick" />
+                                Click="OnShellDiscoveryClick">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellDiscovery}" />
+                                <TextBlock x:Name="ShellDiscoveryButtonText"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
                         <Button x:Name="ShellSearchButton"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
-                                Click="OnShellSearchClick" />
+                                Click="OnShellSearchClick">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellSearch}" />
+                                <TextBlock x:Name="ShellSearchButtonText"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
                         <Button x:Name="ShellSettingsButton"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
-                                Click="OnShellSettingsClick" />
+                                Click="OnShellSettingsClick">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellSettings}" />
+                                <TextBlock x:Name="ShellSettingsButtonText"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
                     </StackPanel>
 
                     <Border DockPanel.Dock="Bottom"
@@ -156,146 +259,279 @@
                     <ScrollViewer x:Name="ShellEquipmentSidebarPanel"
                                   Visibility="Collapsed"
                                   VerticalScrollBarVisibility="Auto">
-                                <Expander x:Name="MonitoringExpander"
-                                          IsExpanded="True">
-                                    <Expander.Header>
-                                        <TextBlock x:Name="MonitoringTitleText"
-                                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
-                                    </Expander.Header>
-                                    <Border Style="{StaticResource NetLoom.Style.Panel}"
-                                            Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
-                                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
-                                        <StackPanel>
-                                            <WrapPanel>
-                                                <StackPanel Width="180">
-                                                    <TextBlock x:Name="MonitoringStateLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="MonitoringStateValueText"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                                <StackPanel Width="250"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringActiveTargetLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="MonitoringActiveTargetValueText"
-                                                               FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                                <StackPanel Width="210"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringLastPollLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="MonitoringLastPollValueText"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                                <StackPanel Width="210"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringLastRefreshLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="MonitoringLastRefreshValueText"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                            </WrapPanel>
+                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                            <TextBlock x:Name="EquipmentTitleText"
+                                       Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                            <TextBlock x:Name="EquipmentSummaryText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+                            <ItemsControl x:Name="EquipmentList"
+                                          Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                HorizontalContentAlignment="Stretch"
+                                                Tag="{Binding DeviceId}"
+                                                IsEnabled="{Binding IsSelectable}"
+                                                Click="OnShellEquipmentDeviceClick">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Address}"
+                                                           Style="{StaticResource NetLoom.Style.MonoText}"
+                                                           Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
 
-                                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                                <StackPanel Width="270">
-                                                    <TextBlock x:Name="MonitoringSelectedDeviceLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="MonitoringSelectedDeviceValueText"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                                <StackPanel Width="170"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringTargetAddressLabelText" />
-                                                    <TextBox x:Name="MonitoringTargetAddressTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="90"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringIntervalLabelText" />
-                                                    <TextBox x:Name="MonitoringIntervalTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="95"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringVersionLabelText" />
-                                                    <ComboBox x:Name="MonitoringVersionComboBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="80"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringPortLabelText" />
-                                                    <TextBox x:Name="MonitoringPortTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="100"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringTimeoutLabelText" />
-                                                    <TextBox x:Name="MonitoringTimeoutTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="85"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringRetriesLabelText" />
-                                                    <TextBox x:Name="MonitoringRetriesTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="110"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringMaxRepetitionsLabelText" />
-                                                    <TextBox x:Name="MonitoringMaxRepetitionsTextBox" />
-                                                </StackPanel>
-                                            </WrapPanel>
+                    <ScrollViewer x:Name="ShellMonitoringSidebarPanel"
+                                  Visibility="Collapsed"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                            <TextBlock x:Name="MonitoringTitleText"
+                                       Style="{StaticResource NetLoom.Style.SectionTitle}" />
 
-                                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                                <StackPanel Width="180">
-                                                    <TextBlock x:Name="MonitoringErrorThresholdLabelText" />
-                                                    <TextBox x:Name="MonitoringErrorThresholdTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="180"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringDiscardThresholdLabelText" />
-                                                    <TextBox x:Name="MonitoringDiscardThresholdTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="MonitoringKindsLabelText" />
-                                                    <WrapPanel>
-                                                        <CheckBox x:Name="MonitoringKindLldpCheckBox" />
-                                                        <CheckBox x:Name="MonitoringKindCdpCheckBox"
-                                                                  Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
-                                                        <CheckBox x:Name="MonitoringKindFdbCheckBox"
-                                                                  Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
-                                                        <CheckBox x:Name="MonitoringKindArpCheckBox"
-                                                                  Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
-                                                        <CheckBox x:Name="MonitoringKindHealthCheckBox"
-                                                                  Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
-                                                        <CheckBox x:Name="MonitoringKindInterfaceCheckBox"
-                                                                  Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
-                                                        <CheckBox x:Name="MonitoringKindStpCheckBox"
-                                                                  Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
-                                                    </WrapPanel>
-                                                </StackPanel>
-                                            </WrapPanel>
+                            <Border x:Name="MonitoringStatusCard"
+                                    Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                    Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Ellipse x:Name="MonitoringStateDot"
+                                                 Width="{DynamicResource NetLoom.Status.DotSize}"
+                                                 Height="{DynamicResource NetLoom.Status.DotSize}"
+                                                 Fill="{DynamicResource NetLoom.Brush.TextDisabled}"
+                                                 VerticalAlignment="Center"
+                                                 Margin="{DynamicResource NetLoom.Thickness.StatusDot}" />
+                                        <TextBlock x:Name="MonitoringStateValueText"
+                                                   Grid.Column="1"
+                                                   Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock x:Name="MonitoringStateLabelText"
+                                                   Visibility="Collapsed" />
+                                    </Grid>
 
-                                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                                <Button x:Name="MonitoringStartButton"
-                                                        Click="OnMonitoringStartClick" />
-                                                <Button x:Name="MonitoringStopButton"
-                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                        Click="OnMonitoringStopClick" />
-                                                <Button x:Name="MonitoringPollNowButton"
-                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                        Click="OnMonitoringPollNowClick" />
-                                                <Button x:Name="MonitoringRefreshTopologyButton"
-                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                        Click="OnMonitoringRefreshTopologyClick" />
-                                            </WrapPanel>
-
-                                            <TextBlock x:Name="MonitoringHintText"
-                                                       Style="{StaticResource NetLoom.Style.MutedText}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                                       TextWrapping="Wrap" />
-                                            <TextBlock x:Name="MonitoringMessageText"
-                                                       Style="{StaticResource NetLoom.Style.StatusEmphasis}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.CardSectionGap}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock x:Name="MonitoringActiveTargetLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBlock x:Name="MonitoringActiveTargetValueText"
+                                                       FontWeight="SemiBold"
                                                        TextWrapping="Wrap" />
                                         </StackPanel>
-                                    </Border>
-                                </Expander>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock x:Name="MonitoringSelectedDeviceLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBlock x:Name="MonitoringSelectedDeviceValueText"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Grid Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="{DynamicResource NetLoom.Grid.ButtonGap}" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="MonitoringStartButton"
+                                        Grid.Column="0"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnMonitoringStartClick" />
+                                <Button x:Name="MonitoringStopButton"
+                                        Grid.Column="0"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnMonitoringStopClick" />
+                                <Button x:Name="MonitoringPollNowButton"
+                                        Grid.Column="2"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnMonitoringPollNowClick" />
+                            </Grid>
+
+                            <TextBlock x:Name="MonitoringRecentActivityTitleText"
+                                       Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}" />
+
+                            <Border Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="MonitoringLastPollLabelText"
+                                               Grid.Row="0"
+                                               Grid.Column="0"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                    <TextBlock x:Name="MonitoringLastPollValueText"
+                                               Grid.Row="0"
+                                               Grid.Column="1"
+                                               HorizontalAlignment="Right"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock x:Name="MonitoringLastRefreshLabelText"
+                                               Grid.Row="1"
+                                               Grid.Column="0"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                                    <TextBlock x:Name="MonitoringLastRefreshValueText"
+                                               Grid.Row="1"
+                                               Grid.Column="1"
+                                               HorizontalAlignment="Right"
+                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                               TextWrapping="Wrap" />
+                                </Grid>
+                            </Border>
+
+                            <Expander x:Name="MonitoringExpander"
+                                      IsExpanded="False"
+                                      Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}"
+                                      Style="{StaticResource NetLoom.Style.OperatorExpander}">
+                                <Expander.Header>
+                                    <TextBlock x:Name="MonitoringParametersTitleText"
+                                               Style="{StaticResource NetLoom.Style.SubsectionLabel}" />
+                                </Expander.Header>
+                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ExpanderContent}">
+                                    <StackPanel>
+                                        <TextBlock x:Name="MonitoringTargetAddressLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBox x:Name="MonitoringTargetAddressTextBox" />
+                                    </StackPanel>
+
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock x:Name="MonitoringIntervalLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBox x:Name="MonitoringIntervalTextBox" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock x:Name="MonitoringVersionLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <ComboBox x:Name="MonitoringVersionComboBox" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock x:Name="MonitoringPortLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBox x:Name="MonitoringPortTextBox" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock x:Name="MonitoringTimeoutLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBox x:Name="MonitoringTimeoutTextBox" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock x:Name="MonitoringRetriesLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBox x:Name="MonitoringRetriesTextBox" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock x:Name="MonitoringMaxRepetitionsLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBox x:Name="MonitoringMaxRepetitionsTextBox" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock x:Name="MonitoringErrorThresholdLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBox x:Name="MonitoringErrorThresholdTextBox" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock x:Name="MonitoringDiscardThresholdLabelText"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBox x:Name="MonitoringDiscardThresholdTextBox" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <StackPanel Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                        <TextBlock x:Name="MonitoringKindsLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                        <WrapPanel>
+                                            <CheckBox x:Name="MonitoringKindLldpCheckBox" />
+                                            <CheckBox x:Name="MonitoringKindCdpCheckBox"
+                                                      Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                            <CheckBox x:Name="MonitoringKindFdbCheckBox"
+                                                      Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                            <CheckBox x:Name="MonitoringKindArpCheckBox"
+                                                      Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                            <CheckBox x:Name="MonitoringKindHealthCheckBox"
+                                                      Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                            <CheckBox x:Name="MonitoringKindInterfaceCheckBox"
+                                                      Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                            <CheckBox x:Name="MonitoringKindStpCheckBox"
+                                                      Margin="{DynamicResource NetLoom.Thickness.InlineGap}" />
+                                        </WrapPanel>
+                                    </StackPanel>
+
+                                    <Button x:Name="MonitoringRefreshTopologyButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}"
+                                            HorizontalAlignment="Stretch"
+                                            Click="OnMonitoringRefreshTopologyClick" />
+
+                                    <TextBlock x:Name="MonitoringHintText"
+                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                               Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Expander>
+
+                            <TextBlock x:Name="MonitoringMessageText"
+                                       Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
                     </ScrollViewer>
 
                     <ScrollViewer x:Name="ShellAlertsSidebarPanel"
@@ -305,172 +541,302 @@
                             <TextBlock x:Name="AlertTitleText"
                                        Style="{StaticResource NetLoom.Style.SectionTitle}" />
                             <TextBlock x:Name="AlertStatusText"
-                                       Style="{StaticResource NetLoom.Style.MutedText}"
-                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                       Style="{StaticResource NetLoom.Style.AlertSummary}"
+                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                        TextWrapping="Wrap" />
-                            <ListBox x:Name="AlertList"
-                                     Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                <ListBox.ItemTemplate>
+                            <ItemsControl x:Name="AlertList"
+                                          Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
+                                <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding Summary}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="{DynamicResource NetLoom.Thickness.ListRow}" />
+                                        <Border Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                                Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{DynamicResource NetLoom.Alert.StripeWidth}" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border x:Name="AlertSeverityStripe"
+                                                        Grid.Column="0"
+                                                        Background="{DynamicResource NetLoom.Brush.Warning}"
+                                                        CornerRadius="{DynamicResource NetLoom.Radius.AlertStripe}" />
+                                                <StackPanel Grid.Column="1"
+                                                            Margin="{DynamicResource NetLoom.Thickness.CardBodyInset}">
+                                                    <DockPanel>
+                                                        <Border x:Name="AlertSeverityBadge"
+                                                                DockPanel.Dock="Left"
+                                                                Background="{DynamicResource NetLoom.Brush.WarningSoft}"
+                                                                CornerRadius="{DynamicResource NetLoom.Radius.Pill}"
+                                                                Padding="{DynamicResource NetLoom.Thickness.PillPadding}">
+                                                            <TextBlock x:Name="AlertSeverityRowText"
+                                                                       Text="{Binding SeverityText}"
+                                                                       Foreground="{DynamicResource NetLoom.Brush.Warning}"
+                                                                       FontWeight="SemiBold"
+                                                                       FontSize="{DynamicResource NetLoom.FontSize.Caption}" />
+                                                        </Border>
+                                                        <TextBlock DockPanel.Dock="Right"
+                                                                   Text="{Binding TimeText}"
+                                                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                   VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                    <TextBlock Text="{Binding Title}"
+                                                               Style="{StaticResource NetLoom.Style.CardTitle}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Scope}"
+                                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Reason}"
+                                                               x:Name="AlertReasonText"
+                                                               Foreground="{DynamicResource NetLoom.Brush.Warning}"
+                                                               FontWeight="SemiBold"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                               TextWrapping="Wrap" />
+                                                    <Button Content="{Binding ShowOnMapText}"
+                                                            Tag="{Binding PrimaryPhysicalLinkId}"
+                                                            HorizontalAlignment="Left"
+                                                            Style="{StaticResource NetLoom.Style.LinkButton}"
+                                                            Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                            Click="OnAlertShowOnMapClick" />
+                                                    <Expander Header="{Binding TechnicalDetailsLabel}"
+                                                              IsExpanded="False"
+                                                              Style="{StaticResource NetLoom.Style.OperatorExpander}"
+                                                              Margin="{DynamicResource NetLoom.Thickness.GapXsTop}">
+                                                        <TextBlock Text="{Binding TechnicalDetails}"
+                                                                   Style="{StaticResource NetLoom.Style.MonoText}"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="{DynamicResource NetLoom.Thickness.ExpanderContent}" />
+                                                    </Expander>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsCritical}"
+                                                         Value="True">
+                                                <Setter TargetName="AlertSeverityStripe"
+                                                        Property="Background"
+                                                        Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                                <Setter TargetName="AlertSeverityBadge"
+                                                        Property="Background"
+                                                        Value="{DynamicResource NetLoom.Brush.CriticalSoft}" />
+                                                <Setter TargetName="AlertSeverityRowText"
+                                                        Property="Foreground"
+                                                        Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                                <Setter TargetName="AlertReasonText"
+                                                        Property="Foreground"
+                                                        Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>
 
                     <ScrollViewer x:Name="ShellDiscoverySidebarPanel"
                                   Visibility="Collapsed"
                                   VerticalScrollBarVisibility="Auto">
-                                <Expander x:Name="DiscoveryExpander"
-                                          IsExpanded="False">
-                                    <Expander.Header>
-                                        <TextBlock x:Name="DiscoveryTitleText"
-                                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
-                                    </Expander.Header>
-                                    <Border Style="{StaticResource NetLoom.Style.Panel}"
-                                            Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
-                                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
-                                        <StackPanel>
-                                            <WrapPanel>
-                                                <StackPanel Width="180">
-                                                    <TextBlock x:Name="DiscoveryStateLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="DiscoveryStateValueText"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                                <StackPanel Width="270"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="DiscoveryProgressLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="DiscoveryProgressValueText"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                                <StackPanel Width="210"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="DiscoveryCurrentAddressLabelText"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock x:Name="DiscoveryCurrentAddressValueText"
-                                                               FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
-                                                               TextWrapping="Wrap" />
-                                                </StackPanel>
-                                            </WrapPanel>
+                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                            <TextBlock x:Name="DiscoveryTitleText"
+                                       Style="{StaticResource NetLoom.Style.SectionTitle}" />
 
-                                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                                <StackPanel Width="170">
-                                                    <TextBlock x:Name="DiscoveryStartAddressLabelText" />
-                                                    <TextBox x:Name="DiscoveryStartAddressTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="170"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="DiscoveryEndAddressLabelText" />
-                                                    <TextBox x:Name="DiscoveryEndAddressTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Width="150"
-                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
-                                                    <TextBlock x:Name="DiscoverySubnetMaskLabelText" />
-                                                    <TextBox x:Name="DiscoverySubnetMaskTextBox" />
-                                                </StackPanel>
-                                                <Button x:Name="DiscoveryProfileAddButton"
-                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                        VerticalAlignment="Bottom"
-                                                        Click="OnDiscoveryProfileAddClick" />
-                                                <Button x:Name="DiscoveryStartButton"
-                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                        VerticalAlignment="Bottom"
-                                                        Click="OnDiscoveryStartClick" />
-                                                <Button x:Name="DiscoveryStopButton"
-                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                        VerticalAlignment="Bottom"
-                                                        Click="OnDiscoveryStopClick" />
-                                            </WrapPanel>
+                            <Border x:Name="DiscoveryProfileCard"
+                                    Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                    Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock x:Name="DiscoverySidebarProfileLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                        <TextBlock x:Name="DiscoveryProfileSummaryText"
+                                                   Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock x:Name="DiscoveryProfileHintText"
+                                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Button x:Name="DiscoveryProfileAddButton"
+                                            Grid.Column="1"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                            VerticalAlignment="Center"
+                                            Click="OnDiscoveryProfileAddClick" />
+                                </Grid>
+                            </Border>
 
-                                            <TextBlock x:Name="DiscoveryWarningText"
-                                                       Foreground="{DynamicResource NetLoom.Brush.Warning}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                            <Grid Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock x:Name="DiscoveryStartAddressLabelText"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                    <TextBox x:Name="DiscoveryStartAddressTextBox"
+                                             FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock x:Name="DiscoveryEndAddressLabelText"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                    <TextBox x:Name="DiscoveryEndAddressTextBox"
+                                             FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                <TextBlock x:Name="DiscoverySubnetMaskLabelText"
+                                           Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                <TextBox x:Name="DiscoverySubnetMaskTextBox"
+                                         FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
+                            </StackPanel>
+
+                            <Grid Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}">
+                                <Button x:Name="DiscoveryStartButton"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnDiscoveryStartClick" />
+                                <Button x:Name="DiscoveryStopButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnDiscoveryStopClick" />
+                            </Grid>
+
+                            <TextBlock x:Name="DiscoveryWarningText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                       Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock x:Name="DiscoveryMessageText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                       TextWrapping="Wrap" />
+
+                            <Expander x:Name="DiscoveryExpander"
+                                      IsExpanded="True"
+                                      Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}"
+                                      Style="{StaticResource NetLoom.Style.OperatorExpander}">
+                                <Expander.Header>
+                                    <TextBlock x:Name="DiscoveryCandidatesLabelText"
+                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}" />
+                                </Expander.Header>
+                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ExpanderContent}">
+                                    <Border Style="{StaticResource NetLoom.Style.OperatorCard}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="DiscoveryStateLabelText"
+                                                       Grid.Row="0"
+                                                       Grid.Column="0"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                            <TextBlock x:Name="DiscoveryStateValueText"
+                                                       Grid.Row="0"
+                                                       Grid.Column="1"
+                                                       HorizontalAlignment="Right"
+                                                       FontWeight="SemiBold"
                                                        TextWrapping="Wrap" />
-                                            <TextBlock x:Name="DiscoveryMessageText"
-                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                                       Padding="10,8"
-                                                       TextWrapping="Wrap">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="{x:Type TextBlock}">
-                                                        <Setter Property="Visibility"
-                                                                Value="Visible" />
-                                                        <Setter Property="Foreground"
-                                                                Value="{DynamicResource NetLoom.Brush.OnAccent}" />
-                                                        <Setter Property="Background"
-                                                                Value="{DynamicResource NetLoom.Brush.Critical}" />
-                                                        <Setter Property="FontWeight"
-                                                                Value="SemiBold" />
-                                                        <Style.Triggers>
-                                                            <Trigger Property="Text"
-                                                                     Value="">
-                                                                <Setter Property="Visibility"
-                                                                        Value="Collapsed" />
-                                                            </Trigger>
-                                                            <Trigger Property="Text"
-                                                                     Value="{x:Null}">
-                                                                <Setter Property="Visibility"
-                                                                        Value="Collapsed" />
-                                                            </Trigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-
-                                            <TextBlock x:Name="DiscoveryCandidatesLabelText"
-                                                       Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                                            <ListBox x:Name="DiscoveryCandidatesList"
-                                                     MaxHeight="120"
-                                                     DisplayMemberPath="Summary" />
-                                        </StackPanel>
+                                            <TextBlock x:Name="DiscoveryProgressLabelText"
+                                                       Grid.Row="1"
+                                                       Grid.Column="0"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                                            <TextBlock x:Name="DiscoveryProgressValueText"
+                                                       Grid.Row="1"
+                                                       Grid.Column="1"
+                                                       HorizontalAlignment="Right"
+                                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock x:Name="DiscoveryCurrentAddressLabelText"
+                                                       Grid.Row="2"
+                                                       Grid.Column="0"
+                                                       Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                                            <TextBlock x:Name="DiscoveryCurrentAddressValueText"
+                                                       Grid.Row="2"
+                                                       Grid.Column="1"
+                                                       Style="{StaticResource NetLoom.Style.MonoText}"
+                                                       HorizontalAlignment="Right"
+                                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                       TextWrapping="Wrap" />
+                                        </Grid>
                                     </Border>
-                                </Expander>
+
+                                    <ListBox x:Name="DiscoveryCandidatesList"
+                                             Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                             MaxHeight="{DynamicResource NetLoom.Discovery.ResultsMaxHeight}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="{DynamicResource NetLoom.Thickness.ResultRowPadding}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Address}"
+                                                               Style="{StaticResource NetLoom.Style.MonoText}" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Summary}"
+                                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                                               TextWrapping="Wrap" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
                     </ScrollViewer>
 
                     <ScrollViewer x:Name="ShellSearchSidebarPanel"
                                   Visibility="Collapsed"
                                   VerticalScrollBarVisibility="Auto">
-                                        <DockPanel Grid.Row="2">
-                                            <StackPanel DockPanel.Dock="Top">
-                                                <TextBlock x:Name="LookupTitleText"
-                                                           Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                        <DockPanel Margin="{DynamicResource NetLoom.Thickness.SidebarInner}">
+                            <StackPanel DockPanel.Dock="Top">
+                                <TextBlock x:Name="LookupTitleText"
+                                           Style="{StaticResource NetLoom.Style.SectionTitle}" />
 
-                                                <TextBlock x:Name="LookupQueryLabelText"
-                                                           Margin="{DynamicResource NetLoom.Thickness.FieldLabel}" />
+                                <TextBlock x:Name="LookupQueryLabelText"
+                                           Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                           Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}" />
 
-                                                <TextBox x:Name="LookupQueryTextBox"
-                                                         KeyDown="OnLookupQueryKeyDown" />
+                                <TextBox x:Name="LookupQueryTextBox"
+                                         KeyDown="OnLookupQueryKeyDown" />
 
-                                                <Button x:Name="LookupSearchButton"
-                                                        Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                                                        HorizontalAlignment="Left"
-                                                        Click="OnLookupSearchClick" />
+                                <Button x:Name="LookupSearchButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnLookupSearchClick" />
 
-                                                <TextBlock x:Name="LookupStatusText"
-                                                           Style="{StaticResource NetLoom.Style.MutedText}"
-                                                           Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
-                                                           TextWrapping="Wrap" />
+                                <TextBlock x:Name="LookupStatusText"
+                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                           Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
+                                           TextWrapping="Wrap" />
 
-                                                <TextBlock x:Name="LookupResultsLabelText"
-                                                           Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                                                           Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                                            </StackPanel>
+                                <TextBlock x:Name="LookupResultsLabelText"
+                                           Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                           Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                            </StackPanel>
 
-                                            <TextBlock x:Name="LookupDetailsText"
-                                                       DockPanel.Dock="Bottom"
-                                                       Style="{StaticResource NetLoom.Style.MutedText}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
-                                                       TextWrapping="Wrap" />
+                            <TextBlock x:Name="LookupDetailsText"
+                                       DockPanel.Dock="Bottom"
+                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                       Margin="{DynamicResource NetLoom.Thickness.StatusTop}"
+                                       TextWrapping="Wrap" />
 
-                                            <ListBox x:Name="LookupResultsList"
-                                                     DisplayMemberPath="Summary"
-                                                     SelectionChanged="OnLookupSelectionChanged" />
-                                        </DockPanel>
+                            <ListBox x:Name="LookupResultsList"
+                                     DisplayMemberPath="Summary"
+                                     SelectionChanged="OnLookupSelectionChanged" />
+                        </DockPanel>
                     </ScrollViewer>
 
                     <ScrollViewer x:Name="ShellSettingsSidebarPanel"
@@ -602,10 +968,14 @@
                         <TextBlock x:Name="InspectorEntityTypeText"
                                    Style="{StaticResource NetLoom.Style.StatusEmphasis}"
                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
-                        <TextBlock x:Name="InspectorEntityIdText"
-                                   Style="{StaticResource NetLoom.Style.MonoText}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                   TextWrapping="Wrap" />
+                        <Expander x:Name="InspectorTechnicalDetailsExpander"
+                                  IsExpanded="False"
+                                  Margin="{DynamicResource NetLoom.Thickness.GapXsTop}">
+                            <TextBlock x:Name="InspectorEntityIdText"
+                                       Style="{StaticResource NetLoom.Style.MonoText}"
+                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                       TextWrapping="Wrap" />
+                        </Expander>
                     </StackPanel>
 
                     <StackPanel Grid.Row="1">
@@ -636,7 +1006,6 @@
                                                     <TextBlock Text="{Binding Label}"
                                                                Style="{StaticResource NetLoom.Style.MutedText}" />
                                                     <TextBlock Text="{Binding Value}"
-                                                               FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
                                                                TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </DataTemplate>

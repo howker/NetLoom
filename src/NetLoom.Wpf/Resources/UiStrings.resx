@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ShellBrandName" xml:space="preserve">
+    <value>NetLoom</value>
+  </data>
   <data name="WindowTitle" xml:space="preserve">
     <value>NetLoom — physical topology</value>
   </data>
@@ -1199,7 +1202,7 @@ Drag the header to move this location together with its child locations and assi
     <value>Selected device</value>
   </data>
   <data name="MonitoringSelectedDeviceValue" xml:space="preserve">
-    <value>{0} • {1}</value>
+    <value>{0}</value>
   </data>
   <data name="MonitoringNoDeviceSelected" xml:space="preserve">
     <value>Select a device on the map.</value>
@@ -1268,7 +1271,7 @@ Drag the header to move this location together with its child locations and assi
     <value>Refresh topology</value>
   </data>
   <data name="MonitoringSessionOnlyHint" xml:space="preserve">
-    <value>Continuous monitoring uses every pollable map device with a stable DeviceId and valid management address. For an already pollable selected device, an address override affects only that device in the current Desktop session; when monitoring is stopped, Poll now still polls only the selected device. SNMP credentials come from NETLOOM_SNMP_* environment variables.</value>
+    <value>Continuous monitoring polls every map device with an available management address. The address override applies only to the selected device in the current session. Poll now polls only the selected device.</value>
   </data>
   <data name="MonitoringStateStopped" xml:space="preserve">
     <value>Stopped</value>
@@ -1607,5 +1610,47 @@ Last poll: {2}</value>
   </data>
   <data name="InspectorFieldIfType" xml:space="preserve">
     <value>IF-MIB type</value>
+  </data>
+  <data name="DiagnosticNoEvidenceDevice" xml:space="preserve">
+    <value>No current supporting evidence is available for this device.</value>
+  </data>
+  <data name="DiagnosticNoEvidenceInterface" xml:space="preserve">
+    <value>No current supporting evidence is available for this interface.</value>
+  </data>
+  <data name="ShellProfilesEmpty" xml:space="preserve">
+    <value>No profiles</value>
+  </data>
+  <data name="ShellEquipmentSummary" xml:space="preserve">
+    <value>{0} devices</value>
+  </data>
+  <data name="OperatorTechnicalDetails" xml:space="preserve">
+    <value>Technical details</value>
+  </data>
+  <data name="AlertShowOnMapAction" xml:space="preserve">
+    <value>Show on map</value>
+  </data>
+  <data name="AlertTechnicalDetails" xml:space="preserve">
+    <value>Technical details</value>
+  </data>
+  <data name="AlertAffectedLinks" xml:space="preserve">
+    <value>Affected links: {0}</value>
+  </data>
+  <data name="AlertMoreDevices" xml:space="preserve">
+    <value> · +{0}</value>
+  </data>
+  <data name="ShellAlertEvent" xml:space="preserve">
+    <value>{0} · {1} · {2}: {3}</value>
+  </data>
+  <data name="MonitoringParametersTitle" xml:space="preserve">
+    <value>Polling parameters</value>
+  </data>
+  <data name="MonitoringRecentActivityTitle" xml:space="preserve">
+    <value>Recent activity</value>
+  </data>
+  <data name="DiscoveryProfileHintMissing" xml:space="preserve">
+    <value>Add a profile before starting discovery.</value>
+  </data>
+  <data name="DiscoveryProfileReady" xml:space="preserve">
+    <value>Ready for discovery.</value>
   </data>
 </root>

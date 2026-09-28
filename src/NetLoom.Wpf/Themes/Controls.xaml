@@ -36,6 +36,42 @@
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
     </Style>
 
+    <Style TargetType="{x:Type ComboBox}">
+        <Setter Property="FontFamily" Value="{DynamicResource NetLoom.FontFamily.Ui}" />
+        <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Control.MinHeight}" />
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.Border}" />
+        <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.ControlPadding}" />
+    </Style>
+
+    <Style TargetType="{x:Type ComboBoxItem}">
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
+        <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.ListItemPadding}" />
+        <Style.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type CheckBox}">
+        <Setter Property="FontFamily" Value="{DynamicResource NetLoom.FontFamily.Ui}" />
+        <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style TargetType="{x:Type Expander}">
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
     <Style TargetType="{x:Type Button}">
         <Setter Property="FontFamily"
                 Value="{DynamicResource NetLoom.FontFamily.Ui}" />
@@ -162,6 +198,16 @@
                 Value="SemiBold" />
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.FieldLabel"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.FieldLabelCompact}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.Caption}" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MonoText"
@@ -323,7 +369,7 @@
         <Setter Property="ClipToBounds"
                 Value="True" />
         <Setter Property="Opacity"
-                Value="0.88" />
+                Value="0.68" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MapLocationTitle"
@@ -397,12 +443,14 @@
                 Value="{DynamicResource NetLoom.Brush.ShellRail}" />
         <Setter Property="BorderBrush"
                 Value="{DynamicResource NetLoom.Brush.ShellRail}" />
+        <Setter Property="BorderThickness"
+                Value="{DynamicResource NetLoom.Thickness.None}" />
         <Setter Property="HorizontalContentAlignment"
-                Value="Left" />
+                Value="Stretch" />
         <Setter Property="Margin"
                 Value="{DynamicResource NetLoom.Thickness.ShellNavigationButtonMargin}" />
         <Setter Property="Padding"
-                Value="{DynamicResource NetLoom.Thickness.ListItemPadding}" />
+                Value="12,10" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver"
                      Value="True">
@@ -414,6 +462,48 @@
                         Value="{DynamicResource NetLoom.Brush.ShellRailHover}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.NavigationIcon"
+           TargetType="{x:Type Path}">
+        <Setter Property="Width"
+                Value="{DynamicResource NetLoom.Navigation.IconSize}" />
+        <Setter Property="Height"
+                Value="{DynamicResource NetLoom.Navigation.IconSize}" />
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.NavigationIcon}" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
+        <Setter Property="Stretch"
+                Value="Uniform" />
+        <Setter Property="Stroke"
+                Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+        <Setter Property="StrokeThickness"
+                Value="1.6" />
+        <Setter Property="StrokeStartLineCap"
+                Value="Round" />
+        <Setter Property="StrokeEndLineCap"
+                Value="Round" />
+        <Setter Property="StrokeLineJoin"
+                Value="Round" />
+        <Setter Property="Fill"
+                Value="Transparent" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.NavigationBadge"
+           TargetType="{x:Type Border}">
+        <Setter Property="MinWidth"
+                Value="{DynamicResource NetLoom.Navigation.BadgeMinWidth}" />
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.NavigationBadge}" />
+        <Setter Property="Padding"
+                Value="{DynamicResource NetLoom.Thickness.NavigationBadgePadding}" />
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.Critical}" />
+        <Setter Property="CornerRadius"
+                Value="{DynamicResource NetLoom.Radius.Pill}" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
     </Style>
 
 
@@ -437,21 +527,96 @@
                 Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
         <Setter Property="BorderBrush"
                 Value="{DynamicResource NetLoom.Brush.Border}" />
+        <Setter Property="BorderThickness"
+                Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
         <Setter Property="Padding"
                 Value="{DynamicResource NetLoom.Thickness.ListItemPadding}" />
         <Setter Property="FontWeight"
                 Value="SemiBold" />
-        <Style.Triggers>
-            <Trigger Property="IsSelected"
-                     Value="True">
-                <Setter Property="Foreground"
-                        Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
-                <Setter Property="Background"
-                        Value="{DynamicResource NetLoom.Brush.Surface}" />
-                <Setter Property="BorderBrush"
-                        Value="{DynamicResource NetLoom.Brush.Accent}" />
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabItem}">
+                    <Border x:Name="InspectorTabChrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource NetLoom.Radius.Control}">
+                        <ContentPresenter ContentSource="Header"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}"
+                                          RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter TargetName="InspectorTabChrome"
+                                    Property="Background"
+                                    Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+                            <Setter TargetName="InspectorTabChrome"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.BorderStrong}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected"
+                                 Value="True">
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+                            <Setter TargetName="InspectorTabChrome"
+                                    Property="Background"
+                                    Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+                            <Setter TargetName="InspectorTabChrome"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+                            <Setter TargetName="InspectorTabChrome"
+                                    Property="Opacity"
+                                    Value="0.65" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.OperatorCard" TargetType="{x:Type Border}" BasedOn="{StaticResource NetLoom.Style.Panel}">
+        <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.PanelPadding}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource NetLoom.Radius.Card}" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.OperatorExpander" TargetType="{x:Type Expander}">
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.SidebarSectionLabel" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Caption}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.CardTitle" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.LinkButton" TargetType="{x:Type Button}" BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.Accent}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.None}" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.AlertSummary" TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
+        <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Caption}" />
     </Style>
 
 </ResourceDictionary>

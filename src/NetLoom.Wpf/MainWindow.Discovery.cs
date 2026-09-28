@@ -50,6 +50,8 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoverySubnetMaskLabel");
             DiscoveryProfileLabelText.Text =
                 UiText.Get("DiscoveryProfileLabel");
+            DiscoverySidebarProfileLabelText.Text =
+                UiText.Get("DiscoveryProfileLabel");
             DiscoveryProfileAddButton.Content =
                 UiText.Get("DiscoveryProfileAddAction");
             DiscoveryStartButton.Content =
@@ -93,10 +95,7 @@ namespace NetLoom.Wpf
                 OnDiscoveryCandidateDiscovered;
 
             DiscoveryMessageText.Text =
-                _discoveryProfiles.Count == 0
-                    ? UiText.Get(
-                        "DiscoveryNoProfiles")
-                    : string.Empty;
+                string.Empty;
 
             UpdateDiscoveryPresentation(
                 _discoveryControl.Current);
@@ -158,10 +157,9 @@ namespace NetLoom.Wpf
                     : -1;
 
             DiscoveryMessageText.Text =
-                options.Length == 0
-                    ? UiText.Get(
-                        "DiscoveryNoProfiles")
-                    : string.Empty;
+                string.Empty;
+
+            UpdateShellProfilePresentation();
         }
 
         private void OnDiscoveryProfileAddClick(
@@ -873,6 +871,25 @@ namespace NetLoom.Wpf
                 snapshot.State ==
                     DiscoveryControlState.Running;
 
+            DiscoveryStartButton.Visibility =
+                DiscoveryStopButton.IsEnabled
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            DiscoveryStopButton.Visibility =
+                DiscoveryStopButton.IsEnabled
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            if (snapshot.State !=
+                    DiscoveryControlState.Faulted &&
+                string.IsNullOrWhiteSpace(
+                    DiscoveryMessageText.Text))
+            {
+                DiscoveryMessageText.SetResourceReference(
+                    TextBlock.ForegroundProperty,
+                    "NetLoom.Brush.TextSecondary");
+            }
+
             if (snapshot.State ==
                     DiscoveryControlState.Faulted &&
                 !string.IsNullOrWhiteSpace(
@@ -882,6 +899,9 @@ namespace NetLoom.Wpf
                     UiText.Format(
                         "DiscoveryFaultMessage",
                         snapshot.FaultMessage);
+                DiscoveryMessageText.SetResourceReference(
+                    TextBlock.ForegroundProperty,
+                    "NetLoom.Brush.Critical");
             }
         }
 
@@ -899,6 +919,10 @@ namespace NetLoom.Wpf
         private void ShowDiscoveryActionFailure(
             Exception error)
         {
+            DiscoveryMessageText.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                "NetLoom.Brush.Critical");
+
             var message =
                 error == null
                     ? null
