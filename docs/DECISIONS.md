@@ -1163,3 +1163,97 @@ The exact commercial classes, limits, editions and prices are deliberately not f
 **Решение.** Двоичные протокольные идентификаторы декодируются из BER-содержимого через `SnmpBinaryValue`. `DisplayValue` никогда не используется как идентичность. Испорченные уже материализованные значения ремонтируются только из `snmp_varbinds.encoded_value` или новым опросом; эвристическое восстановление по отображаемому тексту запрещено.
 
 Это правило относится к идентичности и не запрещает формировать отдельное человекочитаемое отображение после того, как каноническое двоичное значение уже определено.
+
+## ADR-078 — product priorities have two explicit sources
+
+**Status:** Accepted.
+
+**Date:** 2026-09-28.
+
+### Context
+
+`FRICTION_LOG.md` is the evidence source for what must be fixed or improved on existing deployments. It does not, by itself, create requirements that an existing site will never request, such as German localization, MRP, PROFINET DCP or EtherNet/IP support needed for an explicit market-entry decision.
+
+### Decision
+
+NetLoom has two legitimate sources of product priority:
+
+1. Recurring real operator friction recorded in `FRICTION_LOG.md`.
+2. An explicit market-entry decision approved by the user and recorded in `DECISIONS.md` before the affected product work starts.
+
+Market-entry work must not appear through silent roadmap drift. It must name the target market, the required capability and why existing-site friction cannot provide that evidence.
+
+### Consequences
+
+- Recurring field friction remains the default trigger for improving the current product.
+- Market-entry capabilities may enter a committed sequence only through an explicit decision.
+- Market research and `MARKET_AND_POSITIONING.md` describe direction, not automatic commitments.
+- A market decision can reprioritize work only after the user approves it and the rationale is durable in this file.
+
+## ADR-079 — conflicts between manual and observed topology are always visible
+
+**Status:** Accepted.
+
+**Date:** 2026-09-28.
+
+### Context
+
+Manual topology records operator knowledge that discovery may not be able to observe. Automatic discovery can later produce evidence that disagrees with the manual model. Silently replacing either side would destroy provenance and could make a physical diagram look more certain than the evidence allows.
+
+### Decision
+
+A manual physical link remains authoritative until the operator changes or removes it. If observed topology contradicts a manual link, NetLoom shows the conflict and both versions together with explicit actions such as `Open evidence`, `Keep manual` and `Change manual`.
+
+NetLoom never automatically “repairs” manual topology from discovery. Merging an automatically discovered device with a manual object is also an explicit operator action.
+
+### Consequences
+
+- Manual and observed truth remain distinguishable and explainable.
+- Reconciliation produces a visible conflict state rather than destructive automatic convergence.
+- Sprint 49 owns the first map presentation of this conflict; later workflows may add merge assistance without changing the explicit-action rule.
+
+## ADR-080 — view and edit are separate map modes
+
+**Status:** Accepted.
+
+**Date:** 2026-09-28.
+
+### Context
+
+Sprint 46 embeds topology and Location editors into the main shell. Once editing is no longer isolated in separate windows, drag, click and keyboard behavior can become ambiguous: an action intended to inspect the map must not accidentally modify layout or cabling.
+
+### Decision
+
+The working map has explicit `View` and `Edit` modes.
+
+In `View` mode, dragging a node does not persist a new layout position and topology-edit actions are unavailable. In `Edit` mode, editing affordances become visible: Location handles, manual cable creation, node locking and a persistent `Edit mode` indicator.
+
+Changing mode is explicit. Selection and inspection continue to work in both modes.
+
+### Consequences
+
+- Accidental topology/layout edits are prevented during normal operations.
+- Embedded editors no longer require a separate Window to provide an editing boundary.
+- Map interaction tests and operator acceptance must prove the difference between View and Edit behavior.
+
+## ADR-081 — one status grammar across the operator interface
+
+**Status:** Accepted.
+
+**Date:** 2026-09-28.
+
+### Context
+
+Sprint 45 and the failed Sprint 46 operator acceptance showed that the same operational state could be represented differently across map cards, links, monitoring, discovery and alerts. Color-only meaning was also easy to misread.
+
+### Decision
+
+One semantic state uses one label, one icon family and one color token across all operator surfaces. The same state must not be renamed or recolored just because it is shown in a different panel.
+
+Color is never the only carrier of meaning. Every meaningful state is also represented by text, an icon, shape, line grammar or another independent cue. Unknown or insufficient evidence stays neutral rather than being promoted to healthy or faulty.
+
+### Consequences
+
+- Map, inspector, alerts, discovery and monitoring consume one shared status grammar.
+- UI work that introduces a second label/color for an existing semantic state is a review defect.
+- The concrete presentation table belongs in `ARCHITECTURE.md` and shared design/status tokens; feature code consumes those tokens rather than local colors.

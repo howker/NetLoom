@@ -263,19 +263,55 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Closure and field evidence: `docs/sprint45-field-acceptance.md`. Navigation/UX friction from the field session is recorded in `FRICTION_LOG.md` and drives Sprints 46–49.
   - Closure baseline: `f475fec`; Sprint 45 closed with 543 tests and 21 migrations.
 
-- [ ] Sprint 46 — новая оболочка интерфейса и общий контекст оператора.
-  - Operator outcome: оператор понимает, где он находится, какой SNMP-профиль активен и что делает система, — без верхней панели инструментов, отдельных окон редакторов и скрытых зависимостей между вкладками.
-  - Спецификация: `docs/sprint46-ui-ux-redesign.md`, макет `docs/design/netloom-sprint46-obolochka.png` (направление, не пиксели).
-  - Перекомпоновка существующего: новых данных, миграций и семантики топологии не вводится.
+- [ ] Sprint 46 — new shell and shared operator context.
+  - Operator outcome: the operator understands where they are, which SNMP profile is active and what the system is doing without the old top toolbar, separate editor windows or hidden cross-panel dependencies.
+  - Already implemented: shell structure, embedded editors, unified inspector, resilient map viewport and the accepted remediation progress through commit `c98f4e6`; Sprint 46 remains **not accepted** until the remaining mandatory UI work and visual acceptance pass.
+  - Required before closure: complete the Sprint 46 remediation list, explicit View/Edit modes from ADR-080, one status grammar from ADR-081, a compact zoom cluster (`−`, percent, `+`, `Show all`), and distinct actions for data refresh versus layout rebuild.
+  - Automatic map opening keeps a readable useful context and does not shrink below approximately 75%; explicit `Show all` is a separate operator command and fits all visible topology even when that requires a lower zoom.
+  - Acceptance: functional and visual criteria in `docs/sprint46-ui-ux-redesign.md`, with screenshots of every affected section compared against both Sprint 46 design references.
 
-- [ ] Sprint 47 — видимый прогресс мониторинга.
-  - Operator outcome: по одному взгляду понятно, идёт ли опрос, какое устройство опрашивается, сколько сделано и осталось, были ли ошибки, закончился ли цикл.
+- [ ] Sprint 47 — visible monitoring progress.
+  - Operator outcome: one glance shows whether polling is running, the current device, completed/remaining work, errors and whether the cycle finished.
+  - States: stopped / starting / running cycle / stopping / error.
+  - Show `N / total`, progress bar, current device and address, successful/error/remaining counts, and cycle start/end time.
+  - Cycle events go to the bottom event strip.
+  - Context actions: `Poll selected` when stopped; `Start cycle now` when the scheduler is running.
+  - The rail summary and monitoring card follow the Sprint 46 panel design.
 
-- [ ] Sprint 48 — обнаружение с объяснимым результатом.
-  - Operator outcome: после обнаружения понятно, какие устройства найдены полностью, какие частично и почему, какие уже были известны и что в них изменилось; профиль SNMP можно проверить до сохранения.
+- [ ] Sprint 48 — discovery with explainable results and an inbox.
+  - Operator outcome: after discovery the operator can tell what is new, changed, ambiguous, missing, excluded or failed, why it happened, and can resolve results in bulk; a profile can be validated before use.
+  - Inbox groups: New, Changed, Ambiguous, Missing, Excluded, Error.
+  - Required bulk actions: accept selected, ignore, mark unmanaged, assign Location.
+  - Every row shows a concrete reason and retry context; `Missing` means a known device was not found in this run, and `Excluded` names the matching profile rule.
+  - New devices appear on the map immediately as unconfirmed until the operator resolves them in the inbox.
+  - Profile validation reports availability and MIB coverage for sysName/sysObjectID, IF-MIB, LLDP-MIB, BRIDGE-MIB and Q-BRIDGE-MIB where applicable.
+  - Discovery progress shows only phases that actually exist: ICMP, TCP and SNMP.
 
-- [ ] Sprint 49 — читаемая карта большой площадки.
-  - Operator outcome: на 55 и более устройствах карта читается без массовых перекрытий; видно, где данные неполны.
+- [ ] Sprint 49 — readable large-site map.
+  - Operator outcome: on 55+ devices the map remains readable without mass overlap, and the operator can see incomplete evidence and manual-versus-observed conflicts.
+  - Primary principle: show less instead of building a universal layout engine.
+  - Focus neighborhood around the selected node, with explicit `Expand up`, `Expand down` and `Whole site` actions.
+  - Four semantic zoom levels: distant, medium, close and detailed; device/link/Location detail changes by level.
+  - Show a topology-quality line with reasons for incomplete data.
+  - Present ADR-079 manual-versus-observed conflicts with explicit actions.
+  - Preserve manual positions; automatic anti-overlap applies only to new nodes.
+  - Keep parallel links separate; highlight both ports when a link is focused; support shortest-path inspection and Location fit interactions described in the Sprint plan.
+  - Carry optional Sprint 46 convenience items here if they were not completed: Ctrl+K search, collapsible inspector, selection history.
+
+- [ ] Sprint 50 — ring view.
+  - Operator outcome: selecting a ring immediately shows whether it is protected, the STP root, the blocked/alternate port and whether the ring is physically open.
+  - Selecting a ring dims unrelated topology and highlights every member link.
+  - Show participants, STP root, blocked/alternate port, protection state and last topology change when trustworthy evidence exists.
+  - Use existing protection semantics: Protected / Unprotected / Degraded / Unresolved / NotApplicable. Missing STP evidence is `Unresolved`, never automatically `Unprotected`.
+  - Before implementation, verify whether `dot1dStpTopChanges` is actually collected and trustworthy enough for the “last topology change” field.
+  - Ring history remains after the topology change journal, not in Sprint 50.
+
+- [ ] Sprint 51 — polling policies and profile templates.
+  - Operator outcome: polling behavior can be assigned per device or Location, including an explicit no-active-polling policy.
+  - Templates are policy only and never ship credentials: secure SNMPv3, industrial v2c, one-time audit, scheduled topology, no active polling.
+  - Policies may vary polling cadence for health versus LLDP/CDP/FDB/ARP/STP work.
+  - Passwords and community strings are never embedded in templates.
+
 ### Parallel evidence gathering — not a Sprint
 
 - Optical capability audit on existing hardware: MikroTik CSS106 confirms SFP identity but has not yet confirmed Rx/Tx/temperature DDM; MOXA PT-7728 confirms SNMP/LLDP but no DDM surface has yet been found; MOXA EDS-408A-SS-SC uses fixed optical ports; unmanaged optical/copper converters are not expected to expose their own SNMP sensors. Use a small offline/read-only audit utility from the development machine if deeper private-MIB inspection is needed.
@@ -284,7 +320,32 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 
 ### Next candidates — not commitments
 
-The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the remaining committed Sprints 46–49 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
+The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the committed Sprints 46–51 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
+
+#### Priority after Sprint 51
+
+This ordering is the next-candidate priority only; it does not become a committed sequence until the user explicitly commits it.
+
+1. **Device diagnostics** — step-by-step checks from the inspector following the evidence model: management address → SNMP → identity → interfaces → LLDP → FDB → ARP → STP → physical topology, with `Open evidence` on the failing step.
+2. **Dependent-alert suppression** with one incident card and downstream symptoms marked as suppressed/affected upstream.
+3. **Network state** in three groups: structural risks, confirmed active problems, insufficient data.
+4. **Ports view**: primary table with fast filters; compact per-switch matrix as a secondary view.
+5. **Merge discovered device with manual object** as an explicit operator action.
+6. **Topology change journal → time machine**. Capture before/after atomically in the same topology mutation transaction; audit all mutation paths before implementation.
+7. **Logical tags** over the physical hierarchy.
+8. **Visio export** as simple data plus a template; direct `.vsdx` generation remains out of scope.
+9. **Fullscreen operator mode**.
+10. **Maintenance / alert suppression** with a required reason and expiry.
+11. **Deterministic demo stand with seeded failures**, also used as regression evidence.
+12. **Raw observation retention review**; the current 24-hour window may be insufficient for some repair/replay workflows.
+
+#### Market-entry direction — ADR-078, not commitments
+
+- German localization as a DACH entry requirement.
+- MRP (IEC 62439-2) for European industrial networks.
+- PROFINET DCP for discovery of devices without usable IP configuration.
+- EtherNet/IP for the US industrial market.
+- A permanent free tier around 10–15 devices as a go-to-market candidate.
 
 #### Кандидаты из полевого evidence Sprint 45
 
@@ -345,6 +406,9 @@ The evidence-first demonstration/sales candidate strategy is recorded in `docs/N
 - десятки алгоритмов раскладки графа;
 - L3-топологию и моделирование маршрутизации;
 - Числовые проценты достоверности связей.
+- Numerical confidence percentages.
+- Automatic map “correction” when observed topology conflicts with manual topology.
+- Direct `.vsdx` generation.
 
 ### Roadmap — direction, not scheduled backlog commitment
 

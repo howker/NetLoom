@@ -884,3 +884,49 @@ Current boundary:
 ### LLDP Port ID и Port Description
 
 `LLDP Port ID` и `Port Description` хранятся и показываются раздельно, вместе с происхождением каждого значения. Их нельзя сливать в одно «красивое» поле или использовать одно как автоматическую замену другого. В реальных сетях эти значения расходятся; полевой пример Sprint 45 — односторонняя связь на порту 5 устройства `VOS-2`, где это расхождение не позволило безопасно назначить `ifIndex`.
+
+## Sprint 46 shell interaction contracts after operator acceptance
+
+The Sprint 46 shell keeps the structural boundary already defined above, but the failed operator acceptance makes the following interaction contracts architectural rather than cosmetic.
+
+### One status grammar
+
+ADR-081 defines one semantic status grammar across map cards, links, the inspector, alerts, discovery and monitoring. Presentation consumes shared status/design tokens; feature surfaces do not invent local names or colors for an existing state.
+
+| Semantic state | Operator meaning | Presentation contract |
+| --- | --- | --- |
+| Healthy / normal | Current evidence supports normal operation | Shared healthy token plus explicit text/icon; never color alone. |
+| Warning / degraded | Current evidence shows a non-critical degradation or reduced protection | Shared warning/degraded token plus label/icon. |
+| Critical | Confirmed evidence requires immediate attention | Shared critical token plus explicit severity text/icon. |
+| Blocked / transition | Protocol/topology state is intentionally not normal but is not interchangeable with critical failure | Preserve the specific state label and shared state token; do not collapse it into Healthy or Critical. |
+| Stale | Last-known-good data exists but freshness is outside the active window | Freshness is shown independently from health/trust. |
+| Unknown / insufficient evidence | NetLoom cannot safely classify the state | Neutral token and explicit unknown/insufficient-data wording; never synthesize Healthy/Fault. |
+| Manual / unconfirmed | Operator-entered or newly discovered state has not been confirmed by the normal evidence path | Explicit provenance marker in addition to any operational status. |
+
+The table is semantic, not a license to invent evidence. Existing topology/ring/degradation analyzers remain the source of the states they already own.
+
+### View mode and Edit mode
+
+ADR-080 separates inspection from mutation. `View` is the default operator mode. Dragging, cable creation and Location editing cannot persist topology/layout changes there. `Edit` makes the editing affordances visible and keeps an explicit edit-mode indicator on screen. Selection and the inspector are available in both modes.
+
+### Search, filter and focus
+
+Search changes attention: it locates/selects/focuses an object but does not silently remove unrelated topology from the map. A filter changes the visible set and is therefore a different action with a different label. Alert/device jump actions may center and pulse a target because the operator explicitly requested a focus transition.
+
+### Data refresh and layout rebuild are different actions
+
+Refreshing data never changes the operator's manual layout. `Refresh data` re-reads/recomputes current state. `Rebuild layout` is a separate explicit action and may move only the layout that the current mode/policy allows. The two actions must never share one ambiguous label.
+
+### Automatic fit versus explicit Show all
+
+Automatic startup/restart fitting protects readability: it keeps a useful context and does not shrink below approximately 75% merely to make the entire site visible. If the whole site does not fit, the shell centers a meaningful context such as the selected or last useful object.
+
+Explicit `Show all` is different. It is an operator request to see the complete visible topology and therefore fits all visible bounds even when the resulting zoom is below the automatic-readability floor. `Show all` must account for full node-card bounds so cards are not clipped at the viewport edge.
+
+### Discovery result lifecycle
+
+Sprint 48 discovery results appear on the map as soon as they are observed, but remain explicitly `unconfirmed` until the operator resolves them in the discovery inbox. This preserves live map construction without silently promoting every discovery result into accepted operator truth.
+
+### Manual versus observed reconciliation
+
+ADR-079 owns conflicts between manual and observed topology. A manual link is not overwritten by discovery. Conflicts are visible with both versions and explicit operator actions; merge/reconciliation never happens as a hidden side effect.
