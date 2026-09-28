@@ -1019,6 +1019,7 @@ public partial class MainWindow
                         _selectedLocationId.Value);
 
                 MapLockSelectedCheckBox.IsEnabled =
+                    IsMapEditMode &&
                     locationVisual != null;
 
                 MapLockSelectedCheckBox.IsChecked =
@@ -1042,6 +1043,7 @@ public partial class MainWindow
             }
 
             MapLockSelectedCheckBox.IsEnabled =
+                IsMapEditMode &&
                 visual != null;
 
             MapLockSelectedCheckBox.IsChecked =

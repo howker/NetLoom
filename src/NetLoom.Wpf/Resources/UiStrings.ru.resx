@@ -1653,4 +1653,22 @@
   <data name="DiscoveryProfileReady" xml:space="preserve">
     <value>Готов к обнаружению.</value>
   </data>
+  <data name="MapInteractionModeLabel" xml:space="preserve">
+    <value>Режим карты</value>
+  </data>
+  <data name="MapInteractionModeView" xml:space="preserve">
+    <value>Просмотр</value>
+  </data>
+  <data name="MapInteractionModeEdit" xml:space="preserve">
+    <value>Редактирование</value>
+  </data>
+  <data name="MapInteractionModeViewHint" xml:space="preserve">
+    <value>Просмотр и навигация по топологии без изменения раскладки и ручной топологии.</value>
+  </data>
+  <data name="MapInteractionModeEditHint" xml:space="preserve">
+    <value>Разрешено изменение раскладки и ручной топологии. Доступны ручки Locations, блокировка узлов и редакторы топологии.</value>
+  </data>
+  <data name="MapInteractionModeEditIndicator" xml:space="preserve">
+    <value>РЕЖИМ РЕДАКТИРОВАНИЯ</value>
+  </data>
 </root>

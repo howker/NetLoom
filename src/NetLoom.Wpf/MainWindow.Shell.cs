@@ -20,6 +20,13 @@ namespace NetLoom.Wpf
         private ShellSection _shellSection =
             ShellSection.Map;
 
+        private MapInteractionMode _mapInteractionMode =
+            MapInteractionMode.View;
+
+        private bool IsMapEditMode =>
+            _mapInteractionMode ==
+            MapInteractionMode.Edit;
+
         private void InitializeShell()
         {
             ShellBrandText.Text =
@@ -47,6 +54,28 @@ namespace NetLoom.Wpf
             ShellSettingsButtonText.Text =
                 UiText.Get(
                     "ShellSettingsSection");
+
+            MapInteractionModeLabelText.Text =
+                UiText.Get(
+                    "MapInteractionModeLabel");
+            MapViewModeButton.Content =
+                UiText.Get(
+                    "MapInteractionModeView");
+            MapViewModeButton.ToolTip =
+                UiText.Get(
+                    "MapInteractionModeViewHint");
+            MapEditModeButton.Content =
+                UiText.Get(
+                    "MapInteractionModeEdit");
+            MapEditModeButton.ToolTip =
+                UiText.Get(
+                    "MapInteractionModeEditHint");
+            MapEditModeIndicatorText.Text =
+                UiText.Get(
+                    "MapInteractionModeEditIndicator");
+            MapEditModeHintText.Text =
+                UiText.Get(
+                    "MapInteractionModeEditHint");
 
             ShellMapActionsTitleText.Text =
                 UiText.Get(
@@ -89,6 +118,9 @@ namespace NetLoom.Wpf
 
             ShowShellSection(
                 ShellSection.Map);
+
+            SetMapInteractionMode(
+                MapInteractionMode.View);
 
             UpdateShellMonitoringPresentation(
                 _monitoringControl.Current);
@@ -594,6 +626,99 @@ namespace NetLoom.Wpf
                         deviceId));
         }
 
+        private void OnMapViewModeClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetMapInteractionMode(
+                MapInteractionMode.View);
+        }
+
+        private void OnMapEditModeClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetMapInteractionMode(
+                MapInteractionMode.Edit);
+        }
+
+        private void SetMapInteractionMode(
+            MapInteractionMode mode)
+        {
+            if (mode ==
+                MapInteractionMode.View)
+            {
+                CancelMapEditingGesture();
+            }
+
+            _mapInteractionMode =
+                mode;
+
+            UpdateMapInteractionModePresentation();
+            RefreshMapInteractionModeVisuals();
+        }
+
+        private void UpdateMapInteractionModePresentation()
+        {
+            var editing =
+                IsMapEditMode;
+
+            SetMapModeSelection(
+                MapViewModeButton,
+                !editing);
+
+            SetMapModeSelection(
+                MapEditModeButton,
+                editing);
+
+            MapEditModeIndicator.Visibility =
+                editing
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            ManualTopologyButton.IsEnabled =
+                editing;
+
+            LocationsButton.IsEnabled =
+                editing;
+
+            MapLockSelectedCheckBox.Visibility =
+                editing
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+        }
+
+        private static void SetMapModeSelection(
+            Button button,
+            bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            if (selected)
+            {
+                button.SetResourceReference(
+                    Control.BackgroundProperty,
+                    "NetLoom.Brush.AccentSoft");
+                button.SetResourceReference(
+                    Control.BorderBrushProperty,
+                    "NetLoom.Brush.Accent");
+                button.SetResourceReference(
+                    Control.ForegroundProperty,
+                    "NetLoom.Brush.TextPrimary");
+                return;
+            }
+
+            button.ClearValue(
+                Control.BackgroundProperty);
+            button.ClearValue(
+                Control.BorderBrushProperty);
+            button.ClearValue(
+                Control.ForegroundProperty);
+        }
+
         private static Visibility
             SectionVisibility(
                 ShellSection actual,
@@ -704,6 +829,12 @@ namespace NetLoom.Wpf
                 default:
                     return "NetLoom.Brush.ShellRailTextMuted";
             }
+        }
+
+        private enum MapInteractionMode
+        {
+            View = 0,
+            Edit = 1
         }
 
         private enum ShellSection

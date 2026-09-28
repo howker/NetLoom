@@ -236,8 +236,44 @@
                     <ScrollViewer x:Name="ShellMapSidebarPanel"
                                   VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
+                            <TextBlock x:Name="MapInteractionModeLabelText"
+                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                            <Grid Margin="{DynamicResource NetLoom.Thickness.GapXsTop}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="MapViewModeButton"
+                                        Grid.Column="0"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnMapViewModeClick" />
+                                <Button x:Name="MapEditModeButton"
+                                        Grid.Column="2"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnMapEditModeClick" />
+                            </Grid>
+                            <Border x:Name="MapEditModeIndicator"
+                                    Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                    Margin="{DynamicResource NetLoom.Thickness.CardGapTop}"
+                                    Background="{DynamicResource NetLoom.Brush.WarningSoft}"
+                                    BorderBrush="{DynamicResource NetLoom.Brush.Warning}"
+                                    Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock x:Name="MapEditModeIndicatorText"
+                                               Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                               Foreground="{DynamicResource NetLoom.Brush.Warning}" />
+                                    <TextBlock x:Name="MapEditModeHintText"
+                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
                             <TextBlock x:Name="ShellMapActionsTitleText"
-                                       Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                                       Style="{StaticResource NetLoom.Style.SectionTitle}"
+                                       Margin="{DynamicResource NetLoom.Thickness.CardGapTop}" />
                             <Button x:Name="ManualTopologyButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                     Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"

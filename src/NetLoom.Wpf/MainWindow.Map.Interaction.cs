@@ -78,7 +78,8 @@ public partial class MainWindow
                 element.ReleaseMouseCapture();
             }
 
-            if (IsManualDevice(deviceId))
+            if (IsMapEditMode &&
+                IsManualDevice(deviceId))
             {
                 e.Handled = true;
 
@@ -98,7 +99,8 @@ public partial class MainWindow
                             item.Border,
                             element));
 
-        if (visual != null &&
+        if (IsMapEditMode &&
+            visual != null &&
             !visual.IsLocked)
         {
             _dragNodeVisual =
@@ -161,6 +163,7 @@ public partial class MainWindow
                 : menu.Tag as FrameworkElement;
 
         var canChange =
+            IsMapEditMode &&
             target != null &&
             target.Tag is Guid &&
             IsManualDevice(
@@ -175,6 +178,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var deviceId =
             MapElementIdFromMenuItem(sender);
 
@@ -196,6 +204,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var deviceId =
             MapElementIdFromMenuItem(sender);
 
@@ -226,7 +239,8 @@ public partial class MainWindow
             return;
         }
 
-        if (e.Key != Key.Delete ||
+        if (!IsMapEditMode ||
+            e.Key != Key.Delete ||
             e.OriginalSource is TextBoxBase ||
             e.OriginalSource is PasswordBox)
         {
@@ -266,7 +280,8 @@ public partial class MainWindow
         object sender,
         KeyEventArgs e)
     {
-        if (e.Key != Key.Delete)
+        if (!IsMapEditMode ||
+            e.Key != Key.Delete)
         {
             return;
         }
@@ -425,6 +440,33 @@ public partial class MainWindow
             nodes);
     }
 
+    private void CancelMapEditingGesture()
+    {
+        if (_dragNodeVisual != null &&
+            _dragNodeVisual.Border.IsMouseCaptured)
+        {
+            _dragNodeVisual.Border.ReleaseMouseCapture();
+        }
+
+        if (_dragLocationVisual != null &&
+            _dragLocationVisual.Header.IsMouseCaptured)
+        {
+            _dragLocationVisual.Header.ReleaseMouseCapture();
+        }
+
+        _dragNodeVisual =
+            null;
+        _dragLocationVisual =
+            null;
+        _dragMoved =
+            false;
+        _locationDragMoved =
+            false;
+
+        _locationDragLocationStarts.Clear();
+        _locationDragDeviceStarts.Clear();
+    }
+
     private void OnMapZoomOutClick(
         object sender,
         RoutedEventArgs e)
@@ -459,6 +501,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         await OpenManualTopologyEditorAsync(
             null,
             null);
@@ -485,6 +532,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         await OpenLocationTopologyEditorAsync(
             null);
     }
@@ -588,7 +640,8 @@ public partial class MainWindow
         SelectLocation(
             locationId.Value);
 
-        if (e.ClickCount >= 2)
+        if (IsMapEditMode &&
+            e.ClickCount >= 2)
         {
             _dragLocationVisual = null;
             _locationDragMoved = false;
@@ -606,7 +659,8 @@ public partial class MainWindow
             return;
         }
 
-        if (visual.IsLocked)
+        if (!IsMapEditMode ||
+            visual.IsLocked)
         {
             e.Handled = true;
             return;
@@ -658,7 +712,8 @@ public partial class MainWindow
         SelectLocation(
             locationId.Value);
 
-        if (e.ClickCount >= 2)
+        if (IsMapEditMode &&
+            e.ClickCount >= 2)
         {
             await OpenLocationTopologyEditorAsync(
                 locationId.Value);
@@ -1268,6 +1323,11 @@ public partial class MainWindow
         object sender,
         DragDeltaEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var locationId =
             LocationIdFromElement(
                 sender);
@@ -1324,6 +1384,11 @@ public partial class MainWindow
         object sender,
         DragCompletedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var locationId =
             LocationIdFromElement(
                 sender);
@@ -1468,6 +1533,8 @@ public partial class MainWindow
             edit.Header =
                 UiText.Get(
                     "MapLocationEdit");
+            edit.IsEnabled =
+                IsMapEditMode;
         }
 
         if (collapse != null)
@@ -1486,6 +1553,8 @@ public partial class MainWindow
                     visual.IsLocked
                         ? "MapLocationUnlock"
                         : "MapLocationLock");
+            lockItem.IsEnabled =
+                IsMapEditMode;
         }
 
         if (delete != null)
@@ -1493,6 +1562,8 @@ public partial class MainWindow
             delete.Header =
                 UiText.Get(
                     "LocationTopologyDelete");
+            delete.IsEnabled =
+                IsMapEditMode;
         }
     }
 
@@ -1500,6 +1571,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var locationId =
             LocationIdFromMenuItem(
                 sender);
@@ -1530,6 +1606,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var locationId =
             LocationIdFromMenuItem(
                 sender);
@@ -1545,6 +1626,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var locationId =
             LocationIdFromMenuItem(
                 sender);
@@ -1956,7 +2042,8 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
-        if (_suppressLockSelectedChange)
+        if (_suppressLockSelectedChange ||
+            !IsMapEditMode)
         {
             return;
         }
@@ -2133,7 +2220,8 @@ public partial class MainWindow
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
 
-        if (e.ClickCount >= 2 &&
+        if (IsMapEditMode &&
+            e.ClickCount >= 2 &&
             IsManualLink(
                 physicalLinkId))
         {
@@ -2190,6 +2278,7 @@ public partial class MainWindow
                 : menu.Tag as FrameworkElement;
 
         var canChange =
+            IsMapEditMode &&
             target != null &&
             target.Tag is Guid &&
             IsManualLink(
@@ -2204,6 +2293,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var physicalLinkId =
             MapElementIdFromMenuItem(sender);
 
@@ -2225,6 +2319,11 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
+        if (!IsMapEditMode)
+        {
+            return;
+        }
+
         var physicalLinkId =
             MapElementIdFromMenuItem(sender);
 
@@ -2241,7 +2340,8 @@ public partial class MainWindow
         object sender,
         KeyEventArgs e)
     {
-        if (e.Key != Key.Delete)
+        if (!IsMapEditMode ||
+            e.Key != Key.Delete)
         {
             return;
         }

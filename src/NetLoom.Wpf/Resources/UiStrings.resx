@@ -1653,4 +1653,22 @@ Last poll: {2}</value>
   <data name="DiscoveryProfileReady" xml:space="preserve">
     <value>Ready for discovery.</value>
   </data>
+  <data name="MapInteractionModeLabel" xml:space="preserve">
+    <value>Map mode</value>
+  </data>
+  <data name="MapInteractionModeView" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="MapInteractionModeEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="MapInteractionModeViewHint" xml:space="preserve">
+    <value>Inspect and navigate the topology without changing its layout or manual topology.</value>
+  </data>
+  <data name="MapInteractionModeEditHint" xml:space="preserve">
+    <value>Layout and manual topology changes are enabled. Location resize handles, node locking, and topology editors are available.</value>
+  </data>
+  <data name="MapInteractionModeEditIndicator" xml:space="preserve">
+    <value>EDIT MODE</value>
+  </data>
 </root>

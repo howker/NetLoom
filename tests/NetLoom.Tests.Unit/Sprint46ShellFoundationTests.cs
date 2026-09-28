@@ -301,6 +301,99 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            MapStartsInViewModeAndRequiresExplicitEditModeForMutations()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var viewButton =
+                            (Button)window.FindName(
+                                "MapViewModeButton");
+                        var editButton =
+                            (Button)window.FindName(
+                                "MapEditModeButton");
+                        var editIndicator =
+                            (FrameworkElement)window.FindName(
+                                "MapEditModeIndicator");
+                        var manualTopology =
+                            (Button)window.FindName(
+                                "ManualTopologyButton");
+                        var locations =
+                            (Button)window.FindName(
+                                "LocationsButton");
+                        var lockSelected =
+                            (CheckBox)window.FindName(
+                                "MapLockSelectedCheckBox");
+
+                        Assert.IsFalse(
+                            manualTopology.IsEnabled);
+
+                        Assert.IsFalse(
+                            locations.IsEnabled);
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            lockSelected.Visibility);
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            editIndicator.Visibility);
+
+                        Click(
+                            editButton);
+
+                        Assert.IsTrue(
+                            manualTopology.IsEnabled);
+
+                        Assert.IsTrue(
+                            locations.IsEnabled);
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            lockSelected.Visibility);
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            editIndicator.Visibility,
+                            "Edit mode must be unmistakable to the operator.");
+
+                        Click(
+                            viewButton);
+
+                        Assert.IsFalse(
+                            manualTopology.IsEnabled);
+
+                        Assert.IsFalse(
+                            locations.IsEnabled);
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            lockSelected.Visibility);
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            editIndicator.Visibility);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             TopologyEditorsRenderInsideShellInsteadOfOwnedWindows()
         {
             RunOnSta(
@@ -324,6 +417,10 @@ namespace NetLoom.Tests.Unit
                         Assert.AreEqual(
                             Visibility.Collapsed,
                             host.Visibility);
+
+                        Click(
+                            (Button)window.FindName(
+                                "MapEditModeButton"));
 
                         Click(
                             (Button)window.FindName(

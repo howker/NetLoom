@@ -1537,12 +1537,14 @@ public partial class MainWindow
                 : Visibility.Visible;
 
         visual.ResizeThumb.Visibility =
+            IsMapEditMode &&
             !visual.IsCollapsed &&
             !visual.IsLocked
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
         visual.Header.Cursor =
+            !IsMapEditMode ||
             visual.IsLocked
                 ? Cursors.Hand
                 : Cursors.SizeAll;
@@ -2599,10 +2601,30 @@ public partial class MainWindow
             (link.TargetPortLabel ?? "?");
     }
 
-    private static void UpdateNodeLockPresentation(
+    private void RefreshMapInteractionModeVisuals()
+    {
+        foreach (var visual in
+            _nodeVisualsByIdentity.Values)
+        {
+            UpdateNodeLockPresentation(
+                visual);
+        }
+
+        foreach (var visual in
+            _locationVisualsById.Values)
+        {
+            UpdateLocationVisualState(
+                visual);
+        }
+
+        UpdateSelectedLayoutControl();
+    }
+
+    private void UpdateNodeLockPresentation(
         MapNodeVisual visual)
     {
         visual.Border.Cursor =
+            !IsMapEditMode ||
             visual.IsLocked
                 ? Cursors.Hand
                 : Cursors.SizeAll;
