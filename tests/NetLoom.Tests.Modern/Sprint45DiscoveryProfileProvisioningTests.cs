@@ -96,6 +96,118 @@ namespace NetLoom.Tests.Modern
         }
 
         [TestMethod]
+        public void UpdateAndDeleteCommunityProfilePreserveOrReplaceSecretAsRequested()
+        {
+            var databasePath =
+                Path.Combine(
+                    Path.GetTempPath(),
+                    "netloom-s46-profile-manage-" +
+                    Guid.NewGuid().ToString("N") +
+                    ".db");
+
+            try
+            {
+                var connectionFactory =
+                    new SqliteConnectionFactory(
+                        databasePath);
+
+                new DatabaseInitializer(
+                    connectionFactory)
+                    .Initialize();
+
+                var protector =
+                    new PrefixSecretProtector();
+
+                var accessProfiles =
+                    new AccessProfileRepository(
+                        connectionFactory);
+
+                var secrets =
+                    new SecretRepository(
+                        connectionFactory,
+                        protector);
+
+                var service =
+                    new AccessProfileProvisioningService(
+                        accessProfiles,
+                        secrets);
+
+                var originalCommunity =
+                    Encoding.UTF8.GetBytes(
+                        "original-community");
+
+                var profile =
+                    service.CreateCommunityProfile(
+                        "Field profile",
+                        SnmpVersion.V2C,
+                        originalCommunity);
+
+                var renamed =
+                    service.UpdateCommunityProfile(
+                        profile.Id,
+                        "Field profile renamed",
+                        SnmpVersion.V1,
+                        null);
+
+                Assert.AreEqual(
+                    profile.Id,
+                    renamed.Id);
+                Assert.AreEqual(
+                    "Field profile renamed",
+                    renamed.Name);
+                Assert.AreEqual(
+                    SnmpVersion.V1,
+                    renamed.SnmpVersion);
+
+                CollectionAssert.AreEqual(
+                    originalCommunity,
+                    secrets.GetSecret(
+                        profile.Id,
+                        AccessProfileSecretKind.SnmpCommunity),
+                    "Blank edit must preserve the protected Community value.");
+
+                var replacementCommunity =
+                    Encoding.UTF8.GetBytes(
+                        "replacement-community");
+
+                var updated =
+                    service.UpdateCommunityProfile(
+                        profile.Id,
+                        "Field profile renamed",
+                        SnmpVersion.V2C,
+                        replacementCommunity);
+
+                Assert.AreEqual(
+                    SnmpVersion.V2C,
+                    updated.SnmpVersion);
+
+                CollectionAssert.AreEqual(
+                    replacementCommunity,
+                    secrets.GetSecret(
+                        profile.Id,
+                        AccessProfileSecretKind.SnmpCommunity),
+                    "Supplied Community must replace the previous secret.");
+
+                service.DeleteProfile(
+                    profile.Id);
+
+                Assert.IsNull(
+                    accessProfiles.Get(
+                        profile.Id));
+                Assert.IsNull(
+                    secrets.GetSecret(
+                        profile.Id,
+                        AccessProfileSecretKind.SnmpCommunity),
+                    "Deleting a profile must cascade to its protected secrets.");
+            }
+            finally
+            {
+                DeleteDatabaseFamily(
+                    databasePath);
+            }
+        }
+
+        [TestMethod]
         public void CreateCommunityProfileRejectsV3WithoutPersistingProfile()
         {
             var databasePath =

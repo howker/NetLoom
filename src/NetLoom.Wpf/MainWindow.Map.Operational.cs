@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.StpTree;
@@ -697,12 +698,30 @@ public partial class MainWindow
             NodeDegradationState(
                 deviceId);
 
-        var brushKey =
-            NodeDegradationBrushKey(
+        var semantic =
+            NodeStatusSemantic(
                 state);
+
+        var brushKey =
+            OperatorStatusBrushKey(
+                semantic);
 
         visual.StateStripe.SetResourceReference(
             System.Windows.Controls.Border.BackgroundProperty,
+            brushKey);
+
+        visual.StatusIcon.Data =
+            FindResource(
+                OperatorStatusIconGeometryKey(
+                    semantic))
+            as Geometry;
+
+        visual.StatusIcon.ToolTip =
+            OperatorStatusLabel(
+                semantic);
+
+        visual.StatusIcon.SetResourceReference(
+            Path.StrokeProperty,
             brushKey);
     }
 

@@ -11,6 +11,7 @@ using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf
 {
@@ -20,9 +21,14 @@ namespace NetLoom.Wpf
 
         private readonly IDiscoveryControl _discoveryControl;
         private IReadOnlyList<AccessProfile> _discoveryProfiles;
+        private Guid? _profileSettingsSelectedId;
 
         public event EventHandler<DiscoveryProfileCreateRequestedEventArgs>
             DiscoveryProfileCreateRequested;
+        public event EventHandler<DiscoveryProfileUpdateRequestedEventArgs>
+            DiscoveryProfileUpdateRequested;
+        public event EventHandler<DiscoveryProfileDeleteRequestedEventArgs>
+            DiscoveryProfileDeleteRequested;
         private readonly IDiscoveryCandidateMaterializer
             _discoveryCandidateMaterializer;
 
@@ -53,7 +59,7 @@ namespace NetLoom.Wpf
             DiscoverySidebarProfileLabelText.Text =
                 UiText.Get("DiscoveryProfileLabel");
             DiscoveryProfileAddButton.Content =
-                UiText.Get("DiscoveryProfileAddAction");
+                UiText.Get("DiscoveryProfileManageAction");
             DiscoveryStartButton.Content =
                 UiText.Get("DiscoveryStartAction");
             DiscoveryStopButton.Content =
@@ -162,24 +168,230 @@ namespace NetLoom.Wpf
             UpdateShellProfilePresentation();
         }
 
-        private void OnDiscoveryProfileAddClick(
+        private void OnShellProfileManageClick(
             object sender,
             RoutedEventArgs e)
         {
+            ShowShellSection(
+                ShellSection.Settings);
+
+            if (_discoveryProfiles.Count == 0)
+            {
+                ShellProfileSettingsAddButton.Focus();
+            }
+            else
+            {
+                ShellProfileSettingsList.Focus();
+            }
+        }
+
+        private void OnShellProfileSettingsAddClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ShowDiscoveryProfileDialog(
+                null);
+        }
+
+        private void OnShellProfileSettingsSelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            var selected =
+                ShellProfileSettingsList.SelectedItem
+                    as ProfileSettingsRow;
+
+            _profileSettingsSelectedId =
+                selected == null
+                    ? (Guid?)null
+                    : selected.Profile.Id;
+
+            UpdateProfileSettingsActions();
+        }
+
+        private void OnShellProfileEditClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var selected =
+                ShellProfileSettingsList.SelectedItem
+                    as ProfileSettingsRow;
+
+            if (selected == null)
+            {
+                return;
+            }
+
+            ShowDiscoveryProfileDialog(
+                selected.Profile);
+        }
+
+        private void OnShellProfileDeleteClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var selected =
+                ShellProfileSettingsList.SelectedItem
+                    as ProfileSettingsRow;
+
+            if (selected == null)
+            {
+                return;
+            }
+
             var requestHandler =
-                DiscoveryProfileCreateRequested;
+                DiscoveryProfileDeleteRequested;
 
             if (requestHandler == null)
             {
-                DiscoveryMessageText.Text =
+                ShellProfileSettingsSummaryText.Text =
                     UiText.Get(
-                        "DiscoveryProfileCreationUnavailable");
+                        "DiscoveryProfileChangeUnavailable");
+
+                return;
+            }
+
+            var active =
+                DiscoveryProfileComboBox.SelectedItem
+                    as DiscoveryProfileOption;
+            var activeProfileId =
+                active == null
+                    ? (Guid?)null
+                    : active.Profile.Id;
+            var deletingActive =
+                activeProfileId.HasValue &&
+                activeProfileId.Value ==
+                    selected.Profile.Id;
+
+            if (!ShowProfileDeleteConfirmation(
+                    selected.Profile,
+                    deletingActive))
+            {
+                return;
+            }
+
+            var request =
+                new DiscoveryProfileDeleteRequestedEventArgs(
+                    selected.Profile.Id);
+
+            requestHandler(
+                this,
+                request);
+
+            if (!request.Deleted)
+            {
+                ShellProfileSettingsSummaryText.Text =
+                    UiText.Format(
+                        "DiscoveryProfileDeleteFailed",
+                        string.IsNullOrWhiteSpace(
+                            request.FailureMessage)
+                            ? UiText.Get(
+                                "DiagnosticNotAvailable")
+                            : request.FailureMessage);
+
+                return;
+            }
+
+            _discoveryProfiles =
+                _discoveryProfiles
+                    .Where(
+                        profile =>
+                            profile.Id !=
+                            selected.Profile.Id)
+                    .ToArray();
+
+            var fallback =
+                _discoveryProfiles
+                    .OrderBy(
+                        profile =>
+                            profile.Name,
+                        StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(
+                        profile =>
+                            profile.Id)
+                    .FirstOrDefault();
+
+            var nextActiveProfileId =
+                deletingActive
+                    ? (fallback == null
+                        ? (Guid?)null
+                        : fallback.Id)
+                    : activeProfileId;
+
+            _profileSettingsSelectedId =
+                nextActiveProfileId ??
+                (fallback == null
+                    ? (Guid?)null
+                    : fallback.Id);
+
+            RefreshDiscoveryProfileOptions(
+                nextActiveProfileId);
+
+            UpdateDiscoveryPresentation(
+                _discoveryControl.Current);
+
+            SaveShellState();
+
+            UpdateMonitoringControlAvailability(
+                _monitoringControl.Current);
+        }
+
+        private void ShowDiscoveryProfileDialog(
+            AccessProfile editingProfile)
+        {
+            var creating =
+                editingProfile == null;
+            var activeOption =
+                DiscoveryProfileComboBox.SelectedItem
+                    as DiscoveryProfileOption;
+            var activeProfileId =
+                activeOption == null
+                    ? (Guid?)null
+                    : activeOption.Profile.Id;
+
+            var createRequestHandler =
+                DiscoveryProfileCreateRequested;
+            var updateRequestHandler =
+                DiscoveryProfileUpdateRequested;
+
+            if ((creating &&
+                 createRequestHandler == null) ||
+                (!creating &&
+                 updateRequestHandler == null))
+            {
+                var message =
+                    UiText.Get(
+                        creating
+                            ? "DiscoveryProfileCreationUnavailable"
+                            : "DiscoveryProfileChangeUnavailable");
+
+                DiscoveryMessageText.Text =
+                    message;
+                ShellProfileSettingsSummaryText.Text =
+                    message;
 
                 return;
             }
 
             var nameTextBox =
-                new TextBox();
+                new TextBox
+                {
+                    Text =
+                        creating
+                            ? string.Empty
+                            : editingProfile.Name
+                };
+
+            var versionOptions =
+                new[]
+                {
+                    new DiscoverySnmpVersionOption(
+                        SnmpVersion.V1,
+                        "v1"),
+                    new DiscoverySnmpVersionOption(
+                        SnmpVersion.V2C,
+                        "v2c")
+                };
 
             var versionComboBox =
                 new ComboBox
@@ -187,35 +399,67 @@ namespace NetLoom.Wpf
                     DisplayMemberPath =
                         "DisplayName",
                     ItemsSource =
-                        new[]
-                        {
-                            new DiscoverySnmpVersionOption(
-                                SnmpVersion.V1,
-                                "v1"),
-                            new DiscoverySnmpVersionOption(
-                                SnmpVersion.V2C,
-                                "v2c")
-                        },
+                        versionOptions,
                     SelectedIndex =
-                        1
+                        creating
+                            ? 1
+                            : Array.FindIndex(
+                                versionOptions,
+                                option =>
+                                    option.Version ==
+                                    editingProfile.SnmpVersion)
                 };
+
+            if (versionComboBox.SelectedIndex < 0)
+            {
+                versionComboBox.SelectedIndex =
+                    1;
+            }
 
             var communityPasswordBox =
                 new PasswordBox();
 
+            var nameLabel =
+                new TextBlock
+                {
+                    Text =
+                        UiText.Get(
+                            "DiscoveryProfileNameLabel")
+                };
+            var versionLabel =
+                new TextBlock
+                {
+                    Text =
+                        UiText.Get(
+                            "DiscoveryProfileVersionLabel")
+                };
+            var communityLabel =
+                new TextBlock
+                {
+                    Text =
+                        UiText.Get(
+                            "DiscoveryProfileCommunityLabel")
+                };
+            var communityHint =
+                new TextBlock
+                {
+                    Text =
+                        UiText.Get(
+                            "DiscoveryProfileCommunityKeepHint"),
+                    TextWrapping =
+                        TextWrapping.Wrap,
+                    Visibility =
+                        creating
+                            ? Visibility.Collapsed
+                            : Visibility.Visible
+                };
             var errorText =
                 new TextBlock
                 {
-                    Foreground =
-                        System.Windows.Media.Brushes.DarkRed,
                     TextWrapping =
                         TextWrapping.Wrap,
-                    Margin =
-                        new Thickness(
-                            0,
-                            10,
-                            0,
-                            0)
+                    Visibility =
+                        Visibility.Collapsed
                 };
 
             var saveButton =
@@ -226,15 +470,351 @@ namespace NetLoom.Wpf
                             "DiscoveryProfileSaveAction"),
                     MinWidth =
                         90,
-                    Margin =
-                        new Thickness(
-                            8,
-                            0,
-                            0,
-                            0),
                     IsDefault =
                         true
                 };
+            var cancelButton =
+                new Button
+                {
+                    Content =
+                        UiText.Get(
+                            "DiscoveryProfileCancelAction"),
+                    MinWidth =
+                        90,
+                    IsCancel =
+                        true
+                };
+            var actionPanel =
+                new StackPanel
+                {
+                    Orientation =
+                        Orientation.Horizontal,
+                    HorizontalAlignment =
+                        HorizontalAlignment.Right
+                };
+
+            actionPanel.Children.Add(
+                cancelButton);
+            actionPanel.Children.Add(
+                saveButton);
+
+            var content =
+                new StackPanel();
+
+            content.Children.Add(
+                nameLabel);
+            content.Children.Add(
+                nameTextBox);
+            content.Children.Add(
+                versionLabel);
+            content.Children.Add(
+                versionComboBox);
+            content.Children.Add(
+                communityLabel);
+            content.Children.Add(
+                communityPasswordBox);
+            content.Children.Add(
+                communityHint);
+            content.Children.Add(
+                errorText);
+            content.Children.Add(
+                actionPanel);
+
+            var dialog =
+                CreateThemedDialog(
+                    creating
+                        ? UiText.Get(
+                            "DiscoveryProfileDialogTitle")
+                        : UiText.Get(
+                            "DiscoveryProfileEditDialogTitle"),
+                    content,
+                    430);
+
+            content.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.PanelPadding");
+            nameLabel.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.FieldLabel");
+            versionLabel.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.FieldLabel");
+            versionLabel.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.FieldLabel");
+            communityLabel.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.FieldLabel");
+            communityLabel.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.FieldLabel");
+            communityHint.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.MutedText");
+            communityHint.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.GapXsTop");
+            errorText.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                "NetLoom.Brush.Critical");
+            errorText.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.GapSmTop");
+            actionPanel.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.SectionGapTop");
+            cancelButton.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.SecondaryButton");
+            saveButton.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.InlineGap");
+
+            Action<string> showError =
+                message =>
+                {
+                    errorText.Text =
+                        message;
+                    errorText.Visibility =
+                        Visibility.Visible;
+                };
+
+            saveButton.Click +=
+                (buttonSender, buttonArgs) =>
+                {
+                    var name =
+                        (nameTextBox.Text ??
+                            string.Empty)
+                            .Trim();
+
+                    if (name.Length == 0)
+                    {
+                        showError(
+                            UiText.Get(
+                                "DiscoveryProfileValidationName"));
+
+                        return;
+                    }
+
+                    if (_discoveryProfiles.Any(
+                            profile =>
+                                (creating ||
+                                 profile.Id !=
+                                    editingProfile.Id) &&
+                                string.Equals(
+                                    profile.Name,
+                                    name,
+                                    StringComparison.OrdinalIgnoreCase)))
+                    {
+                        showError(
+                            UiText.Get(
+                                "DiscoveryProfileValidationDuplicateName"));
+
+                        return;
+                    }
+
+                    var selectedVersion =
+                        versionComboBox.SelectedItem
+                            as DiscoverySnmpVersionOption;
+
+                    if (selectedVersion == null)
+                    {
+                        showError(
+                            UiText.Get(
+                                "DiscoveryProfileValidationVersion"));
+
+                        return;
+                    }
+
+                    var community =
+                        communityPasswordBox.Password ??
+                        string.Empty;
+
+                    if (creating &&
+                        community.Length == 0)
+                    {
+                        showError(
+                            UiText.Get(
+                                "DiscoveryProfileValidationCommunity"));
+
+                        return;
+                    }
+
+                    byte[] communityUtf8 =
+                        community.Length == 0
+                            ? null
+                            : Encoding.UTF8.GetBytes(
+                                community);
+
+                    try
+                    {
+                        AccessProfile savedProfile;
+                        string failureMessage;
+
+                        if (creating)
+                        {
+                            var request =
+                                new DiscoveryProfileCreateRequestedEventArgs(
+                                    name,
+                                    selectedVersion.Version,
+                                    communityUtf8);
+
+                            createRequestHandler(
+                                this,
+                                request);
+
+                            savedProfile =
+                                request.CreatedProfile;
+                            failureMessage =
+                                request.FailureMessage;
+                        }
+                        else
+                        {
+                            var request =
+                                new DiscoveryProfileUpdateRequestedEventArgs(
+                                    editingProfile.Id,
+                                    name,
+                                    selectedVersion.Version,
+                                    communityUtf8);
+
+                            updateRequestHandler(
+                                this,
+                                request);
+
+                            savedProfile =
+                                request.UpdatedProfile;
+                            failureMessage =
+                                request.FailureMessage;
+                        }
+
+                        if (savedProfile == null)
+                        {
+                            showError(
+                                UiText.Format(
+                                    creating
+                                        ? "DiscoveryProfileSaveFailed"
+                                        : "DiscoveryProfileUpdateFailed",
+                                    string.IsNullOrWhiteSpace(
+                                        failureMessage)
+                                        ? UiText.Get(
+                                            "DiagnosticNotAvailable")
+                                        : failureMessage));
+
+                            return;
+                        }
+
+                        if (creating)
+                        {
+                            _discoveryProfiles =
+                                _discoveryProfiles
+                                    .Concat(
+                                        new[]
+                                        {
+                                            savedProfile
+                                        })
+                                    .ToArray();
+                        }
+                        else
+                        {
+                            _discoveryProfiles =
+                                _discoveryProfiles
+                                    .Select(
+                                        profile =>
+                                            profile.Id ==
+                                                savedProfile.Id
+                                                ? savedProfile
+                                                : profile)
+                                    .ToArray();
+                        }
+
+                        _profileSettingsSelectedId =
+                            savedProfile.Id;
+
+                        RefreshDiscoveryProfileOptions(
+                            activeProfileId ??
+                            savedProfile.Id);
+
+                        UpdateDiscoveryPresentation(
+                            _discoveryControl.Current);
+
+                        DiscoveryMessageText.Text =
+                            string.Empty;
+
+                        dialog.DialogResult =
+                            true;
+                    }
+                    finally
+                    {
+                        if (communityUtf8 != null)
+                        {
+                            Array.Clear(
+                                communityUtf8,
+                                0,
+                                communityUtf8.Length);
+                        }
+
+                        communityPasswordBox.Password =
+                            string.Empty;
+                    }
+                };
+
+            dialog.ShowDialog();
+        }
+
+        private bool ShowProfileDeleteConfirmation(
+            AccessProfile profile,
+            bool isActive)
+        {
+            var prompt =
+                new TextBlock
+                {
+                    Text =
+                        UiText.Format(
+                            "DiscoveryProfileDeleteConfirm",
+                            profile.Name),
+                    TextWrapping =
+                        TextWrapping.Wrap
+                };
+
+            var warning =
+                new TextBlock
+                {
+                    Text =
+                        UiText.Get(
+                            "DiscoveryProfileDeleteActiveWarning"),
+                    TextWrapping =
+                        TextWrapping.Wrap,
+                    Visibility =
+                        isActive
+                            ? Visibility.Visible
+                            : Visibility.Collapsed
+                };
+
+            warning.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                "NetLoom.Brush.Warning");
+
+            var deleteButton =
+                new Button
+                {
+                    Content =
+                        UiText.Get(
+                            "DiscoveryProfileDeleteConfirmAction"),
+                    MinWidth =
+                        90,
+                    IsDefault =
+                        true
+                };
+
+            deleteButton.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.SecondaryButton");
+            deleteButton.SetResourceReference(
+                Control.ForegroundProperty,
+                "NetLoom.Brush.Critical");
+            deleteButton.SetResourceReference(
+                Control.BorderBrushProperty,
+                "NetLoom.Brush.Critical");
 
             var cancelButton =
                 new Button
@@ -248,96 +828,77 @@ namespace NetLoom.Wpf
                         true
                 };
 
-            var actionPanel =
+            cancelButton.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.SecondaryButton");
+
+            var actions =
                 new StackPanel
                 {
                     Orientation =
                         Orientation.Horizontal,
                     HorizontalAlignment =
-                        HorizontalAlignment.Right,
-                    Margin =
-                        new Thickness(
-                            0,
-                            16,
-                            0,
-                            0)
+                        HorizontalAlignment.Right
                 };
 
-            actionPanel.Children.Add(
+            actions.Children.Add(
                 cancelButton);
-
-            actionPanel.Children.Add(
-                saveButton);
+            actions.Children.Add(
+                deleteButton);
 
             var content =
-                new StackPanel
-                {
-                    Margin =
-                        new Thickness(
-                            18)
-                };
+                new StackPanel();
 
             content.Children.Add(
-                new TextBlock
-                {
-                    Text =
-                        UiText.Get(
-                            "DiscoveryProfileNameLabel")
-                });
-
+                prompt);
             content.Children.Add(
-                nameTextBox);
-
+                warning);
             content.Children.Add(
-                new TextBlock
-                {
-                    Text =
-                        UiText.Get(
-                            "DiscoveryProfileVersionLabel"),
-                    Margin =
-                        new Thickness(
-                            0,
-                            10,
-                            0,
-                            0)
-                });
+                actions);
 
-            content.Children.Add(
-                versionComboBox);
+            var dialog =
+                CreateThemedDialog(
+                    UiText.Get(
+                        "DiscoveryProfileDeleteDialogTitle"),
+                    content,
+                    480);
 
-            content.Children.Add(
-                new TextBlock
-                {
-                    Text =
-                        UiText.Get(
-                            "DiscoveryProfileCommunityLabel"),
-                    Margin =
-                        new Thickness(
-                            0,
-                            10,
-                            0,
-                            0)
-                });
+            content.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.PanelPadding");
+            warning.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.GapSmTop");
+            actions.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.SectionGapTop");
+            deleteButton.Margin =
+                (Thickness)dialog.FindResource(
+                    "NetLoom.Thickness.InlineGap");
 
-            content.Children.Add(
-                communityPasswordBox);
+            deleteButton.Click +=
+                (buttonSender, buttonArgs) =>
+                    dialog.DialogResult =
+                        true;
 
-            content.Children.Add(
-                errorText);
+            return dialog.ShowDialog() ==
+                true;
+        }
 
-            content.Children.Add(
-                actionPanel);
-
+        private Window CreateThemedDialog(
+            string title,
+            FrameworkElement content,
+            double width)
+        {
             var dialog =
                 new Window
                 {
                     Owner =
                         this,
                     Title =
-                        UiText.Get(
-                            "DiscoveryProfileDialogTitle"),
+                        title,
                     Width =
-                        430,
+                        width,
                     SizeToContent =
                         SizeToContent.Height,
                     ResizeMode =
@@ -346,131 +907,232 @@ namespace NetLoom.Wpf
                         WindowStartupLocation.CenterOwner,
                     ShowInTaskbar =
                         false,
-                    Content =
-                        content
+                    WindowStyle =
+                        WindowStyle.None
                 };
 
-            saveButton.Click +=
-                (buttonSender, buttonArgs) =>
+            dialog.Resources.MergedDictionaries.Add(
+                new ResourceDictionary
                 {
-                    var name =
-                        (nameTextBox.Text ??
-                            string.Empty)
-                            .Trim();
+                    Source =
+                        new Uri(
+                            "/NetLoom.Wpf;component/Themes/DesignTokens.xaml",
+                            UriKind.Relative)
+                });
+            dialog.Resources.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source =
+                        new Uri(
+                            _shellTheme ==
+                                UiShellTheme.Dark
+                                ? "/NetLoom.Wpf;component/Themes/Dark.xaml"
+                                : "/NetLoom.Wpf;component/Themes/Light.xaml",
+                            UriKind.Relative)
+                });
+            dialog.Resources.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source =
+                        new Uri(
+                            "/NetLoom.Wpf;component/Themes/DeviceIcons.xaml",
+                            UriKind.Relative)
+                });
+            dialog.Resources.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source =
+                        new Uri(
+                            "/NetLoom.Wpf;component/Themes/Controls.xaml",
+                            UriKind.Relative)
+                });
 
-                    if (name.Length == 0)
+            dialog.SetResourceReference(
+                Control.BackgroundProperty,
+                "NetLoom.Brush.Window");
+            dialog.SetResourceReference(
+                Control.ForegroundProperty,
+                "NetLoom.Brush.TextPrimary");
+            dialog.SetResourceReference(
+                Control.FontFamilyProperty,
+                "NetLoom.FontFamily.Ui");
+            dialog.SetResourceReference(
+                Control.FontSizeProperty,
+                "NetLoom.FontSize.Body");
+
+            var dialogTitle =
+                new TextBlock
+                {
+                    Text =
+                        title,
+                    VerticalAlignment =
+                        VerticalAlignment.Center
+                };
+
+            dialogTitle.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.WindowTitle");
+
+            var closeGlyph =
+                new System.Windows.Shapes.Path
+                {
+                    Data =
+                        System.Windows.Media.Geometry.Parse(
+                            "M 0,0 L 8,8 M 8,0 L 0,8"),
+                    Width =
+                        10,
+                    Height =
+                        10,
+                    Stretch =
+                        System.Windows.Media.Stretch.Uniform,
+                    StrokeThickness =
+                        1.6,
+                    IsHitTestVisible =
+                        false
+                };
+
+            closeGlyph.SetResourceReference(
+                System.Windows.Shapes.Shape.StrokeProperty,
+                "NetLoom.Brush.TextPrimary");
+
+            var closeButton =
+                new Button
+                {
+                    Content =
+                        closeGlyph,
+                    Width =
+                        Convert.ToDouble(
+                            dialog.FindResource(
+                                "NetLoom.Control.MinHeight")),
+                    Height =
+                        Convert.ToDouble(
+                            dialog.FindResource(
+                                "NetLoom.Control.MinHeight")),
+                    Padding =
+                        new Thickness(
+                            0),
+                    HorizontalAlignment =
+                        HorizontalAlignment.Right,
+                    IsCancel =
+                        true
+                };
+
+            closeButton.SetResourceReference(
+                FrameworkElement.StyleProperty,
+                "NetLoom.Style.SecondaryButton");
+            closeButton.Click +=
+                (closeSender, closeArgs) =>
+                    dialog.Close();
+
+            var titleGrid =
+                new Grid();
+
+            titleGrid.ColumnDefinitions.Add(
+                new ColumnDefinition
+                {
+                    Width =
+                        new GridLength(
+                            1.0,
+                            GridUnitType.Star)
+                });
+            titleGrid.ColumnDefinitions.Add(
+                new ColumnDefinition
+                {
+                    Width =
+                        GridLength.Auto
+                });
+
+            Grid.SetColumn(
+                dialogTitle,
+                0);
+            Grid.SetColumn(
+                closeButton,
+                1);
+            titleGrid.Children.Add(
+                dialogTitle);
+            titleGrid.Children.Add(
+                closeButton);
+
+            var titleBar =
+                new Border
+                {
+                    Padding =
+                        (Thickness)dialog.FindResource(
+                            "NetLoom.Thickness.ShellHeaderPadding"),
+                    BorderThickness =
+                        (Thickness)dialog.FindResource(
+                            "NetLoom.Thickness.BorderBottom"),
+                    Child =
+                        titleGrid
+                };
+
+            titleBar.SetResourceReference(
+                Border.BackgroundProperty,
+                "NetLoom.Brush.Surface");
+            titleBar.SetResourceReference(
+                Border.BorderBrushProperty,
+                "NetLoom.Brush.Border");
+
+            titleBar.MouseLeftButtonDown +=
+                (titleSender, titleArgs) =>
+                {
+                    if (titleArgs.ChangedButton ==
+                        System.Windows.Input.MouseButton.Left)
                     {
-                        errorText.Text =
-                            UiText.Get(
-                                "DiscoveryProfileValidationName");
-
-                        return;
-                    }
-
-                    if (_discoveryProfiles.Any(
-                            profile =>
-                                string.Equals(
-                                    profile.Name,
-                                    name,
-                                    StringComparison.OrdinalIgnoreCase)))
-                    {
-                        errorText.Text =
-                            UiText.Get(
-                                "DiscoveryProfileValidationDuplicateName");
-
-                        return;
-                    }
-
-                    var selectedVersion =
-                        versionComboBox.SelectedItem
-                            as DiscoverySnmpVersionOption;
-
-                    if (selectedVersion == null)
-                    {
-                        errorText.Text =
-                            UiText.Get(
-                                "DiscoveryProfileValidationVersion");
-
-                        return;
-                    }
-
-                    var community =
-                        communityPasswordBox.Password ??
-                        string.Empty;
-
-                    if (community.Length == 0)
-                    {
-                        errorText.Text =
-                            UiText.Get(
-                                "DiscoveryProfileValidationCommunity");
-
-                        return;
-                    }
-
-                    var communityUtf8 =
-                        Encoding.UTF8.GetBytes(
-                            community);
-
-                    try
-                    {
-                        var request =
-                            new DiscoveryProfileCreateRequestedEventArgs(
-                                name,
-                                selectedVersion.Version,
-                                communityUtf8);
-
-                        requestHandler(
-                            this,
-                            request);
-
-                        if (request.CreatedProfile == null)
-                        {
-                            errorText.Text =
-                                UiText.Format(
-                                    "DiscoveryProfileSaveFailed",
-                                    string.IsNullOrWhiteSpace(
-                                        request.FailureMessage)
-                                        ? UiText.Get(
-                                            "DiagnosticNotAvailable")
-                                        : request.FailureMessage);
-
-                            return;
-                        }
-
-                        _discoveryProfiles =
-                            _discoveryProfiles
-                                .Concat(
-                                    new[]
-                                    {
-                                        request.CreatedProfile
-                                    })
-                                .ToArray();
-
-                        RefreshDiscoveryProfileOptions(
-                            request.CreatedProfile.Id);
-
-                        UpdateDiscoveryPresentation(
-                            _discoveryControl.Current);
-
-                        DiscoveryMessageText.Text =
-                            string.Empty;
-
-                        dialog.DialogResult =
-                            true;
-                    }
-                    finally
-                    {
-                        Array.Clear(
-                            communityUtf8,
-                            0,
-                            communityUtf8.Length);
-
-                        communityPasswordBox.Password =
-                            string.Empty;
+                        dialog.DragMove();
                     }
                 };
 
-            dialog.ShowDialog();
+            var dialogRoot =
+                new Grid();
+
+            dialogRoot.RowDefinitions.Add(
+                new RowDefinition
+                {
+                    Height =
+                        GridLength.Auto
+                });
+            dialogRoot.RowDefinitions.Add(
+                new RowDefinition
+                {
+                    Height =
+                        new GridLength(
+                            1.0,
+                            GridUnitType.Star)
+                });
+
+            Grid.SetRow(
+                titleBar,
+                0);
+            Grid.SetRow(
+                content,
+                1);
+            dialogRoot.Children.Add(
+                titleBar);
+            dialogRoot.Children.Add(
+                content);
+
+            var dialogChrome =
+                new Border
+                {
+                    BorderThickness =
+                        (Thickness)dialog.FindResource(
+                            "NetLoom.Thickness.BorderThin"),
+                    Child =
+                        dialogRoot
+                };
+
+            dialogChrome.SetResourceReference(
+                Border.BackgroundProperty,
+                "NetLoom.Brush.Window");
+            dialogChrome.SetResourceReference(
+                Border.BorderBrushProperty,
+                "NetLoom.Brush.BorderStrong");
+
+            dialog.Content =
+                dialogChrome;
+
+            return dialog;
         }
 
         private async void OnDiscoveryStartClick(
@@ -820,10 +1482,17 @@ namespace NetLoom.Wpf
                     nameof(snapshot));
             }
 
-            DiscoveryStateValueText.Text =
+            var discoveryStatus =
+                DiscoveryStatusSemantic(
+                    snapshot.State);
+
+            ApplyOperatorStatus(
+                DiscoveryStateGlyphText,
+                DiscoveryStateValueText,
+                discoveryStatus,
                 UiText.Get(
                     DiscoveryStateResourceKey(
-                        snapshot.State));
+                        snapshot.State)));
 
             DiscoveryProgressValueText.Text =
                 snapshot.TotalAddresses > 0
@@ -1030,6 +1699,71 @@ namespace NetLoom.Wpf
             public string FailureMessage { get; set; }
         }
 
+        public sealed class DiscoveryProfileUpdateRequestedEventArgs :
+            EventArgs
+        {
+            public DiscoveryProfileUpdateRequestedEventArgs(
+                Guid profileId,
+                string name,
+                SnmpVersion snmpVersion,
+                byte[] communityUtf8)
+            {
+                if (profileId == Guid.Empty)
+                {
+                    throw new ArgumentException(
+                        "Access profile id is required.",
+                        nameof(profileId));
+                }
+
+                ProfileId =
+                    profileId;
+                Name =
+                    name ??
+                    throw new ArgumentNullException(
+                        nameof(name));
+                SnmpVersion =
+                    snmpVersion;
+                CommunityUtf8 =
+                    communityUtf8;
+            }
+
+            public Guid ProfileId { get; }
+
+            public string Name { get; }
+
+            public SnmpVersion SnmpVersion { get; }
+
+            public byte[] CommunityUtf8 { get; }
+
+            public AccessProfile UpdatedProfile { get; set; }
+
+            public string FailureMessage { get; set; }
+        }
+
+        public sealed class DiscoveryProfileDeleteRequestedEventArgs :
+            EventArgs
+        {
+            public DiscoveryProfileDeleteRequestedEventArgs(
+                Guid profileId)
+            {
+                if (profileId == Guid.Empty)
+                {
+                    throw new ArgumentException(
+                        "Access profile id is required.",
+                        nameof(profileId));
+                }
+
+                ProfileId =
+                    profileId;
+            }
+
+            public Guid ProfileId { get; }
+
+            public bool Deleted { get; set; }
+
+            public string FailureMessage { get; set; }
+        }
+
         private sealed class DiscoverySnmpVersionOption
         {
             public DiscoverySnmpVersionOption(
@@ -1045,6 +1779,38 @@ namespace NetLoom.Wpf
             public SnmpVersion Version { get; }
 
             public string DisplayName { get; }
+        }
+
+        private sealed class ProfileSettingsRow
+        {
+            public ProfileSettingsRow(
+                AccessProfile profile,
+                string displayName,
+                string activeText)
+            {
+                Profile = profile ??
+                    throw new ArgumentNullException(
+                        nameof(profile));
+                DisplayName = displayName ??
+                    throw new ArgumentNullException(
+                        nameof(displayName));
+                ActiveText =
+                    activeText ??
+                    string.Empty;
+                ActiveVisibility =
+                    string.IsNullOrWhiteSpace(
+                        ActiveText)
+                        ? Visibility.Collapsed
+                        : Visibility.Visible;
+            }
+
+            public AccessProfile Profile { get; }
+
+            public string DisplayName { get; }
+
+            public string ActiveText { get; }
+
+            public Visibility ActiveVisibility { get; }
         }
 
         private sealed class DiscoveryProfileOption

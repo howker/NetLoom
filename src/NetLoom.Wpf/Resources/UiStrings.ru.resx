@@ -427,7 +427,7 @@
     <value>Физические связи</value>
   </data>
   <data name="DiagnosticImpactTitle" xml:space="preserve">
-    <value>Последствия отказа</value>
+    <value>Если связь пропадёт</value>
   </data>
   <data name="DiagnosticEvidenceTitle" xml:space="preserve">
     <value>Подтверждающие данные</value>
@@ -509,16 +509,16 @@
 Состояние: {3}; на противоположной стороне: {4}.</value>
   </data>
   <data name="DiagnosticImpactSideA" xml:space="preserve">
-    <value>Сторона {0}: {1}</value>
+    <value>Со стороны {0}: {1}</value>
   </data>
   <data name="DiagnosticImpactSideB" xml:space="preserve">
-    <value>Сторона {0}: {1}</value>
+    <value>Со стороны {0}: {1}</value>
   </data>
   <data name="DiagnosticImpactPairs" xml:space="preserve">
-    <value>Разделённых пар устройств при отказе: {0}</value>
+    <value>Между двумя частями потеряют связь: {0} пар устройств</value>
   </data>
   <data name="DiagnosticImpactAlternativePath" xml:space="preserve">
-    <value>Эта линия не является мостом графа: в текущей материализованной топологии существует обходной физический путь.</value>
+    <value>По известной схеме сети связь между устройствами сохранится — есть обходной путь.</value>
   </data>
   <data name="DiagnosticEvidenceRow" xml:space="preserve">
     <value>{0} • {1} • источник {2} • {3} • исходное: {4}</value>
@@ -711,7 +711,7 @@
     <value>Масштаб</value>
   </data>
   <data name="MapZoomOutAction" xml:space="preserve">
-    <value>-</value>
+    <value>−</value>
   </data>
   <data name="MapZoomInAction" xml:space="preserve">
     <value>+</value>
@@ -1442,7 +1442,7 @@
     <value>Нет ответа</value>
   </data>
   <data name="DiscoveryStateIdle" xml:space="preserve">
-    <value>Готов</value>
+    <value>Ожидает запуска</value>
   </data>
   <data name="DiscoveryStateStarting" xml:space="preserve">
     <value>Запускается</value>
@@ -1540,7 +1540,7 @@
   <data name="ShellMonitoringSummary" xml:space="preserve">
     <value>Состояние: {0}
 Устройств: {1}
-Последний опрос: {2}</value>
+Опрос: {2}</value>
   </data>
   <data name="ShellAlertCount" xml:space="preserve">
     <value>Предупреждений: {0}</value>
@@ -1558,7 +1558,7 @@
     <value>Обзор</value>
   </data>
   <data name="InspectorInterfacesTab" xml:space="preserve">
-    <value>Интерфейсы</value>
+    <value>Порты</value>
   </data>
   <data name="InspectorLinksTab" xml:space="preserve">
     <value>Связи</value>
@@ -1666,9 +1666,126 @@
     <value>Просмотр и навигация по топологии без изменения раскладки и ручной топологии.</value>
   </data>
   <data name="MapInteractionModeEditHint" xml:space="preserve">
-    <value>Разрешено изменение раскладки и ручной топологии. Доступны ручки Locations, блокировка узлов и редакторы топологии.</value>
+    <value>Разрешено изменение раскладки и ручной топологии. Доступны ручки размещений, блокировка узлов и редакторы топологии.</value>
   </data>
   <data name="MapInteractionModeEditIndicator" xml:space="preserve">
     <value>РЕЖИМ РЕДАКТИРОВАНИЯ</value>
+  </data>
+  <data name="OperatorStatusNormal" xml:space="preserve">
+    <value>Норма</value>
+  </data>
+  <data name="OperatorStatusActive" xml:space="preserve">
+    <value>Активно</value>
+  </data>
+  <data name="OperatorStatusWarning" xml:space="preserve">
+    <value>Предупреждение</value>
+  </data>
+  <data name="OperatorStatusCritical" xml:space="preserve">
+    <value>Критическое</value>
+  </data>
+  <data name="OperatorStatusUnknown" xml:space="preserve">
+    <value>Нет данных</value>
+  </data>
+  <data name="OperatorStatusStopped" xml:space="preserve">
+    <value>Остановлено</value>
+  </data>
+  <data name="OperatorStatusTransition" xml:space="preserve">
+    <value>Переход</value>
+  </data>
+  <data name="OperatorStatusBlocked" xml:space="preserve">
+    <value>Блокировано</value>
+  </data>
+  <data name="OperatorStatusGlyphNormal" xml:space="preserve">
+    <value>✓</value>
+  </data>
+  <data name="OperatorStatusGlyphActive" xml:space="preserve">
+    <value>●</value>
+  </data>
+  <data name="OperatorStatusGlyphWarning" xml:space="preserve">
+    <value>!</value>
+  </data>
+  <data name="OperatorStatusGlyphCritical" xml:space="preserve">
+    <value>×</value>
+  </data>
+  <data name="OperatorStatusGlyphUnknown" xml:space="preserve">
+    <value>?</value>
+  </data>
+  <data name="OperatorStatusGlyphStopped" xml:space="preserve">
+    <value>■</value>
+  </data>
+  <data name="OperatorStatusGlyphTransition" xml:space="preserve">
+    <value>↻</value>
+  </data>
+  <data name="OperatorStatusGlyphBlocked" xml:space="preserve">
+    <value>⊘</value>
+  </data>
+  <data name="OperatorStatusIdle" xml:space="preserve">
+    <value>Ожидание</value>
+  </data>
+  <data name="OperatorStatusGlyphIdle" xml:space="preserve">
+    <value>○</value>
+  </data>
+  <data name="MonitoringVersionFromProfile" xml:space="preserve">
+    <value>SNMP {0} · из профиля</value>
+  </data>
+  <data name="MonitoringVersionNoProfile" xml:space="preserve">
+    <value>Профиль не выбран — выберите вверху</value>
+  </data>
+  <data name="ShellAlertBadgeOverflow" xml:space="preserve">
+    <value>99+</value>
+  </data>
+  <data name="DiagnosticImpactSinglePath" xml:space="preserve">
+    <value>По известной схеме сети это единственный путь: при отказе сеть разделится на две части.</value>
+  </data>
+  <data name="DiscoveryProfileEditAction" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="DiscoveryProfileDeleteAction" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="DiscoveryProfileSettingsTitle" xml:space="preserve">
+    <value>SNMP-профили</value>
+  </data>
+  <data name="DiscoveryProfileManageAction" xml:space="preserve">
+    <value>Настроить профили...</value>
+  </data>
+  <data name="DiscoveryProfileSettingsHint" xml:space="preserve">
+    <value>Выберите профиль для изменения или удаления. Активный профиль выбирается в верхней строке.</value>
+  </data>
+  <data name="DiscoveryProfileSettingsEmpty" xml:space="preserve">
+    <value>Профилей пока нет. Добавьте профиль здесь для мониторинга и обнаружения.</value>
+  </data>
+  <data name="DiscoveryProfileActiveLabel" xml:space="preserve">
+    <value>Активный</value>
+  </data>
+  <data name="DiscoveryProfileSettingsNoSelection" xml:space="preserve">
+    <value>Выберите профиль в верхней строке.</value>
+  </data>
+  <data name="DiscoveryProfileEditDialogTitle" xml:space="preserve">
+    <value>Изменить SNMP-профиль</value>
+  </data>
+  <data name="DiscoveryProfileCommunityKeepHint" xml:space="preserve">
+    <value>Оставьте Community пустым, чтобы сохранить текущее значение.</value>
+  </data>
+  <data name="DiscoveryProfileDeleteDialogTitle" xml:space="preserve">
+    <value>Удалить SNMP-профиль</value>
+  </data>
+  <data name="DiscoveryProfileDeleteConfirm" xml:space="preserve">
+    <value>Удалить профиль «{0}»?</value>
+  </data>
+  <data name="DiscoveryProfileDeleteActiveWarning" xml:space="preserve">
+    <value>Этот профиль сейчас активен. После удаления будет выбран другой доступный профиль; если профилей не останется, для мониторинга и обнаружения потребуется новый профиль.</value>
+  </data>
+  <data name="DiscoveryProfileDeleteConfirmAction" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="DiscoveryProfileChangeUnavailable" xml:space="preserve">
+    <value>Управление профилями недоступно в этом запуске.</value>
+  </data>
+  <data name="DiscoveryProfileUpdateFailed" xml:space="preserve">
+    <value>Не удалось изменить профиль: {0}</value>
+  </data>
+  <data name="DiscoveryProfileDeleteFailed" xml:space="preserve">
+    <value>Не удалось удалить профиль: {0}</value>
   </data>
 </root>

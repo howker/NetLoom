@@ -209,7 +209,12 @@ namespace NetLoom.Tests.Unit
                             var icon =
                                 Descendants<Path>(
                                         card)
-                                    .Single();
+                                    .Single(
+                                        item =>
+                                            string.Equals(
+                                                item.Tag as string,
+                                                "NodeCategoryIcon",
+                                                StringComparison.Ordinal));
 
                             Assert.IsNotNull(
                                 icon.Data,

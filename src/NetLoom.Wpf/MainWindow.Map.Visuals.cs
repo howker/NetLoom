@@ -82,21 +82,27 @@ public partial class MainWindow
     {
         public MapNodeVisual(
             Border border,
+            Rectangle pulseHalo,
             Border stateStripe,
             TextBlock title,
             TextBlock secondary,
             Path categoryIcon,
-            TextBlock lockBadge)
+            Path statusIcon,
+            Path lockBadge)
         {
             Border = border;
+            PulseHalo = pulseHalo;
             StateStripe = stateStripe;
             Title = title;
             Secondary = secondary;
             CategoryIcon = categoryIcon;
+            StatusIcon = statusIcon;
             LockBadge = lockBadge;
         }
 
         public Border Border { get; }
+
+        public Rectangle PulseHalo { get; }
 
         public Border StateStripe { get; }
 
@@ -106,7 +112,9 @@ public partial class MainWindow
 
         public Path CategoryIcon { get; }
 
-        public TextBlock LockBadge { get; }
+        public Path StatusIcon { get; }
+
+        public Path LockBadge { get; }
 
         public Guid? DeviceId { get; set; }
 
@@ -120,12 +128,20 @@ public partial class MainWindow
     private sealed class MapLinkVisual
     {
         public MapLinkVisual(
+            Path selectionHalo,
+            LineGeometry selectionHaloGeometry,
             Line line,
             TextBlock label)
         {
+            SelectionHalo = selectionHalo;
+            SelectionHaloGeometry = selectionHaloGeometry;
             Line = line;
             Label = label;
         }
+
+        public Path SelectionHalo { get; }
+
+        public LineGeometry SelectionHaloGeometry { get; }
 
         public Line Line { get; }
 

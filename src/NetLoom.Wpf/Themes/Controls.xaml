@@ -19,9 +19,13 @@
         <Setter Property="MinHeight"
                 Value="{DynamicResource NetLoom.Control.MinHeight}" />
         <Setter Property="Padding"
-                Value="{DynamicResource NetLoom.Thickness.ControlPadding}" />
+                Value="{DynamicResource NetLoom.Thickness.ControlPaddingOptical}" />
         <Setter Property="VerticalContentAlignment"
                 Value="Center" />
+        <Setter Property="TextBlock.LineStackingStrategy"
+                Value="BlockLineHeight" />
+        <Setter Property="TextBlock.LineHeight"
+                Value="{DynamicResource NetLoom.FontSize.Body}" />
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
         <Setter Property="Background"
@@ -36,28 +40,370 @@
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
     </Style>
 
+    <Style TargetType="{x:Type PasswordBox}">
+        <Setter Property="FontFamily"
+                Value="{DynamicResource NetLoom.FontFamily.Ui}" />
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="MinHeight"
+                Value="{DynamicResource NetLoom.Control.MinHeight}" />
+        <Setter Property="Padding"
+                Value="{DynamicResource NetLoom.Thickness.ControlPaddingOptical}" />
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.Surface}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource NetLoom.Brush.Border}" />
+        <Setter Property="BorderThickness"
+                Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+    </Style>
+
     <Style TargetType="{x:Type ComboBox}">
-        <Setter Property="FontFamily" Value="{DynamicResource NetLoom.FontFamily.Ui}" />
-        <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Body}" />
-        <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Control.MinHeight}" />
-        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
-        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.Border}" />
-        <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.ControlPadding}" />
+        <Setter Property="FontFamily"
+                Value="{DynamicResource NetLoom.FontFamily.Ui}" />
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="MinHeight"
+                Value="{DynamicResource NetLoom.Control.MinHeight}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.Surface}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource NetLoom.Brush.Border}" />
+        <Setter Property="BorderThickness"
+                Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+        <Setter Property="Padding"
+                Value="{DynamicResource NetLoom.Thickness.ControlPadding}" />
+        <Setter Property="TextBlock.LineStackingStrategy"
+                Value="BlockLineHeight" />
+        <Setter Property="TextBlock.LineHeight"
+                Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBox}">
+                    <Grid>
+                        <Border x:Name="ComboChrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource NetLoom.Radius.Control}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <ContentPresenter x:Name="SelectionPresenter"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  RecognizesAccessKey="True"
+                                                  IsHitTestVisible="False"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                    <ContentPresenter.RenderTransform>
+                                        <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+                                    </ContentPresenter.RenderTransform>
+                                </ContentPresenter>
+                                <Path HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      Margin="{DynamicResource NetLoom.Thickness.ComboBoxArrowMargin}"
+                                      Stroke="{TemplateBinding Foreground}"
+                                      StrokeThickness="1.5"
+                                      IsHitTestVisible="False"
+                                      Data="M 0,0 L 4,4 L 8,0" />
+                            </Grid>
+                        </Border>
+
+                        <ToggleButton x:Name="DropDownToggle"
+                                      Focusable="False"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                      ClickMode="Press">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                    <Border Background="{TemplateBinding Background}" />
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+
+                        <Popup x:Name="PART_Popup"
+                               Placement="Bottom"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               PopupAnimation="Fade">
+                            <Border x:Name="PopupChrome"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                    Background="{DynamicResource NetLoom.Brush.Surface}"
+                                    BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                                    BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                                    CornerRadius="{DynamicResource NetLoom.Radius.Control}">
+                                <ScrollViewer CanContentScroll="True"
+                                              MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <ItemsPresenter />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.BorderStrong}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin"
+                                 Value="True">
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+                            <Setter Property="Background"
+                                    Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Border}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="{x:Type ComboBoxItem}">
-        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
-        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
-        <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.ListItemPadding}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.Surface}" />
+        <Setter Property="BorderBrush"
+                Value="Transparent" />
+        <Setter Property="BorderThickness"
+                Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+        <Setter Property="FocusVisualStyle"
+                Value="{x:Null}" />
+        <Setter Property="Padding"
+                Value="{DynamicResource NetLoom.Thickness.ListItemPadding}" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                    <Border x:Name="ItemChrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
-            <Trigger Property="IsHighlighted" Value="True">
-                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+            <Trigger Property="IsHighlighted"
+                     Value="True">
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
             </Trigger>
-            <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+            <Trigger Property="IsSelected"
+                     Value="True">
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin"
+                     Value="True">
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource NetLoom.Brush.Accent}" />
+            </Trigger>
+            <Trigger Property="IsEnabled"
+                     Value="False">
+                <Setter Property="Foreground"
+                        Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapScrollBarPageButton"
+           TargetType="{x:Type RepeatButton}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                    <Border Background="{TemplateBinding Background}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapScrollBarThumb"
+           TargetType="{x:Type Thumb}">
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.BorderStrong}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <Border Margin="{DynamicResource NetLoom.Thickness.MapScrollBarThumbInset}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{DynamicResource NetLoom.Radius.Pill}" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background"
+                                    Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter Property="Background"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <ControlTemplate x:Key="NetLoom.Template.MapVerticalScrollBar"
+                     TargetType="{x:Type ScrollBar}">
+        <Grid Background="{TemplateBinding Background}">
+            <Track x:Name="PART_Track"
+                   Orientation="Vertical"
+                   Minimum="{TemplateBinding Minimum}"
+                   Maximum="{TemplateBinding Maximum}"
+                   Value="{TemplateBinding Value}"
+                   ViewportSize="{TemplateBinding ViewportSize}"
+                   IsDirectionReversed="True">
+                <Track.DecreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource NetLoom.Style.MapScrollBarPageButton}"
+                                  Command="{x:Static ScrollBar.PageUpCommand}"
+                                  CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                </Track.DecreaseRepeatButton>
+                <Track.Thumb>
+                    <Thumb Style="{StaticResource NetLoom.Style.MapScrollBarThumb}" />
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource NetLoom.Style.MapScrollBarPageButton}"
+                                  Command="{x:Static ScrollBar.PageDownCommand}"
+                                  CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                </Track.IncreaseRepeatButton>
+            </Track>
+        </Grid>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="NetLoom.Template.MapHorizontalScrollBar"
+                     TargetType="{x:Type ScrollBar}">
+        <Grid Background="{TemplateBinding Background}">
+            <Track x:Name="PART_Track"
+                   Orientation="Horizontal"
+                   Minimum="{TemplateBinding Minimum}"
+                   Maximum="{TemplateBinding Maximum}"
+                   Value="{TemplateBinding Value}"
+                   ViewportSize="{TemplateBinding ViewportSize}">
+                <Track.DecreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource NetLoom.Style.MapScrollBarPageButton}"
+                                  Command="{x:Static ScrollBar.PageLeftCommand}"
+                                  CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                </Track.DecreaseRepeatButton>
+                <Track.Thumb>
+                    <Thumb Style="{StaticResource NetLoom.Style.MapScrollBarThumb}" />
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource NetLoom.Style.MapScrollBarPageButton}"
+                                  Command="{x:Static ScrollBar.PageRightCommand}"
+                                  CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}" />
+                </Track.IncreaseRepeatButton>
+            </Track>
+        </Grid>
+    </ControlTemplate>
+
+    <Style x:Key="NetLoom.Style.MapScrollBar"
+           TargetType="{x:Type ScrollBar}">
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.Canvas}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Width"
+                Value="{DynamicResource NetLoom.Map.ScrollBarThickness}" />
+        <Setter Property="MinWidth"
+                Value="{DynamicResource NetLoom.Map.ScrollBarThickness}" />
+        <Setter Property="Template"
+                Value="{StaticResource NetLoom.Template.MapVerticalScrollBar}" />
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto" />
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="Height"
+                        Value="{DynamicResource NetLoom.Map.ScrollBarThickness}" />
+                <Setter Property="MinHeight"
+                        Value="{DynamicResource NetLoom.Map.ScrollBarThickness}" />
+                <Setter Property="Template"
+                        Value="{StaticResource NetLoom.Template.MapHorizontalScrollBar}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapScrollViewer"
+           TargetType="{x:Type ScrollViewer}">
+        <Setter Property="Background"
+                Value="{DynamicResource NetLoom.Brush.Canvas}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                Grid.Column="0"
+                                                Grid.Row="0"
+                                                CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                Content="{TemplateBinding Content}"
+                                                ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                                Margin="{TemplateBinding Padding}"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+
+                        <ScrollBar x:Name="PART_VerticalScrollBar"
+                                   Grid.Column="1"
+                                   Grid.Row="0"
+                                   Maximum="{TemplateBinding ScrollableHeight}"
+                                   Minimum="0"
+                                   Orientation="Vertical"
+                                   Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                   ViewportSize="{TemplateBinding ViewportHeight}"
+                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+
+                        <ScrollBar x:Name="PART_HorizontalScrollBar"
+                                   Grid.Column="0"
+                                   Grid.Row="1"
+                                   Maximum="{TemplateBinding ScrollableWidth}"
+                                   Minimum="0"
+                                   Orientation="Horizontal"
+                                   Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                   ViewportSize="{TemplateBinding ViewportWidth}"
+                                   Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" />
+
+                        <Border x:Name="MapScrollBarCorner"
+                                Grid.Column="1"
+                                Grid.Row="1"
+                                Background="{TemplateBinding Background}"
+                                IsHitTestVisible="False" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="{x:Type CheckBox}">
@@ -93,6 +439,36 @@
                 Value="SemiBold" />
         <Setter Property="Cursor"
                 Value="Hand" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Center" />
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
+        <Setter Property="TextBlock.LineStackingStrategy"
+                Value="BlockLineHeight" />
+        <Setter Property="TextBlock.LineHeight"
+                Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="ButtonChrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource NetLoom.Radius.Control}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter x:Name="ButtonContentPresenter"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}"
+                                          RecognizesAccessKey="True">
+                            <ContentPresenter.RenderTransform>
+                                <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+                            </ContentPresenter.RenderTransform>
+                        </ContentPresenter>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver"
                      Value="True">
@@ -208,6 +584,10 @@
                 Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
         <Setter Property="FontSize"
                 Value="{DynamicResource NetLoom.FontSize.Caption}" />
+        <Setter Property="TextWrapping"
+                Value="Wrap" />
+        <Setter Property="TextTrimming"
+                Value="None" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MonoText"
@@ -297,15 +677,31 @@
     </Style>
 
     <Style x:Key="NetLoom.Style.MapNodeLockBadge"
-           TargetType="{x:Type TextBlock}">
-        <Setter Property="Margin"
-                Value="{DynamicResource NetLoom.Thickness.InlineGap}" />
-        <Setter Property="FontSize"
-                Value="{DynamicResource NetLoom.FontSize.Caption}" />
-        <Setter Property="FontWeight"
-                Value="SemiBold" />
-        <Setter Property="Foreground"
+           TargetType="{x:Type Path}">
+        <Setter Property="Width"
+                Value="{DynamicResource NetLoom.Map.NodeLockIconSize}" />
+        <Setter Property="Height"
+                Value="{DynamicResource NetLoom.Map.NodeLockIconSize}" />
+        <Setter Property="HorizontalAlignment"
+                Value="Right" />
+        <Setter Property="VerticalAlignment"
+                Value="Bottom" />
+        <Setter Property="Stretch"
+                Value="Uniform" />
+        <Setter Property="Stroke"
                 Value="{DynamicResource NetLoom.Brush.Accent}" />
+        <Setter Property="StrokeThickness"
+                Value="1.5" />
+        <Setter Property="StrokeStartLineCap"
+                Value="Round" />
+        <Setter Property="StrokeEndLineCap"
+                Value="Round" />
+        <Setter Property="StrokeLineJoin"
+                Value="Round" />
+        <Setter Property="Fill"
+                Value="{DynamicResource NetLoom.Brush.Surface}" />
+        <Setter Property="Data"
+                Value="M 3,6 L 3,4 C 3,1.8 4.8,0 7,0 C 9.2,0 11,1.8 11,4 L 11,6 M 2,6 L 12,6 L 12,14 L 2,14 Z M 7,9 L 7,11" />
     </Style>
 
     <Style x:Key="NetLoom.Style.MapNodeSecondary"
@@ -434,11 +830,41 @@
         </Style.Triggers>
     </Style>
 
+    <Style x:Key="NetLoom.Style.SidebarActionButton"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="MinWidth"
+                Value="{DynamicResource NetLoom.Sidebar.ActionMinWidth}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.SidebarSecondaryActionButton"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+        <Setter Property="MinWidth"
+                Value="{DynamicResource NetLoom.Sidebar.ActionMinWidth}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.EquipmentRowButton"
+           TargetType="{x:Type Button}"
+           BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSelected}"
+                         Value="True">
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource NetLoom.Brush.Accent}" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="NetLoom.Style.NavigationButton"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
         <Setter Property="Foreground"
-                Value="{DynamicResource NetLoom.Brush.ShellRailTextMuted}" />
+                Value="{DynamicResource NetLoom.Brush.ShellRailText}" />
         <Setter Property="Background"
                 Value="{DynamicResource NetLoom.Brush.ShellRail}" />
         <Setter Property="BorderBrush"
@@ -450,7 +876,7 @@
         <Setter Property="Margin"
                 Value="{DynamicResource NetLoom.Thickness.ShellNavigationButtonMargin}" />
         <Setter Property="Padding"
-                Value="12,10" />
+                Value="{DynamicResource NetLoom.Thickness.NavigationButtonPadding}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver"
                      Value="True">
@@ -462,6 +888,18 @@
                         Value="{DynamicResource NetLoom.Brush.ShellRailHover}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.NavigationText"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground"
+                Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+        <Setter Property="TextWrapping"
+                Value="NoWrap" />
+        <Setter Property="TextTrimming"
+                Value="None" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
     </Style>
 
     <Style x:Key="NetLoom.Style.NavigationIcon"
@@ -492,16 +930,18 @@
 
     <Style x:Key="NetLoom.Style.NavigationBadge"
            TargetType="{x:Type Border}">
+        <Setter Property="Height"
+                Value="{DynamicResource NetLoom.Navigation.BadgeHeight}" />
         <Setter Property="MinWidth"
                 Value="{DynamicResource NetLoom.Navigation.BadgeMinWidth}" />
         <Setter Property="Margin"
                 Value="{DynamicResource NetLoom.Thickness.NavigationBadge}" />
         <Setter Property="Padding"
-                Value="{DynamicResource NetLoom.Thickness.NavigationBadgePadding}" />
+                Value="{DynamicResource NetLoom.Thickness.NavigationBadgePaddingSingle}" />
         <Setter Property="Background"
                 Value="{DynamicResource NetLoom.Brush.Critical}" />
         <Setter Property="CornerRadius"
-                Value="{DynamicResource NetLoom.Radius.Pill}" />
+                Value="{DynamicResource NetLoom.Radius.NavigationBadge}" />
         <Setter Property="VerticalAlignment"
                 Value="Center" />
     </Style>
@@ -517,6 +957,35 @@
                 Value="{DynamicResource NetLoom.Brush.Border}" />
         <Setter Property="BorderThickness"
                 Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+        <Setter Property="Padding"
+                Value="{DynamicResource NetLoom.Thickness.InspectorContentPadding}" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabControl}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <ItemsPresenter Grid.Row="0" />
+                        <Border Grid.Row="1"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter ContentSource="SelectedContent"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="NetLoom.Style.InspectorTab"
@@ -541,11 +1010,16 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{DynamicResource NetLoom.Radius.Control}">
-                        <ContentPresenter ContentSource="Header"
+                        <ContentPresenter x:Name="InspectorTabHeaderPresenter"
+                                          ContentSource="Header"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           Margin="{TemplateBinding Padding}"
-                                          RecognizesAccessKey="True" />
+                                          RecognizesAccessKey="True">
+                            <ContentPresenter.RenderTransform>
+                                <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+                            </ContentPresenter.RenderTransform>
+                        </ContentPresenter>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver"
@@ -597,6 +1071,57 @@
         <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Caption}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.MapNodeStatusIcon"
+           TargetType="{x:Type Path}">
+        <Setter Property="Width"
+                Value="{DynamicResource NetLoom.Status.GlyphMinWidth}" />
+        <Setter Property="Height"
+                Value="{DynamicResource NetLoom.Status.GlyphMinWidth}" />
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.StatusGlyph}" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
+        <Setter Property="Stretch"
+                Value="Uniform" />
+        <Setter Property="Fill"
+                Value="Transparent" />
+        <Setter Property="StrokeThickness"
+                Value="1.6" />
+        <Setter Property="StrokeStartLineCap"
+                Value="Round" />
+        <Setter Property="StrokeEndLineCap"
+                Value="Round" />
+        <Setter Property="StrokeLineJoin"
+                Value="Round" />
+    </Style>
+
+    <Style x:Key="NetLoom.Style.StatusGlyph"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="MinWidth"
+                Value="{DynamicResource NetLoom.Status.GlyphMinWidth}" />
+        <Setter Property="Margin"
+                Value="{DynamicResource NetLoom.Thickness.StatusGlyph}" />
+        <Setter Property="FontFamily"
+                Value="{DynamicResource NetLoom.FontFamily.Ui}" />
+        <Setter Property="FontSize"
+                Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="FontWeight"
+                Value="Bold" />
+        <Setter Property="VerticalAlignment"
+                Value="Center" />
+        <Setter Property="TextAlignment"
+                Value="Center" />
+        <Setter Property="LineStackingStrategy"
+                Value="BlockLineHeight" />
+        <Setter Property="LineHeight"
+                Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="NetLoom.Style.CardTitle" TargetType="{x:Type TextBlock}">

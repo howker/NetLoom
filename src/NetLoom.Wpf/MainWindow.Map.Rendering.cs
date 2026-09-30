@@ -97,8 +97,15 @@ public partial class MainWindow
                             _virtualOriginY));
 
                 Panel.SetZIndex(
+                    visual.PulseHalo,
+                    1);
+
+                Panel.SetZIndex(
                     visual.Border,
                     2);
+
+                MapCanvas.Children.Add(
+                    visual.PulseHalo);
 
                 MapCanvas.Children.Add(
                     visual.Border);
@@ -157,11 +164,18 @@ public partial class MainWindow
             _nodeVisualsByIdentity.Remove(
                 identity);
 
+            visual.PulseHalo.Visibility =
+                Visibility.Collapsed;
+
             AnimateRemoval(
                 visual.Border,
                 () =>
+                {
                     MapCanvas.Children.Remove(
-                        visual.Border));
+                        visual.PulseHalo);
+                    MapCanvas.Children.Remove(
+                        visual.Border);
+                });
         }
 
         _nodeBordersByDeviceId.Clear();
@@ -726,6 +740,12 @@ public partial class MainWindow
                 hidden
                     ? Visibility.Collapsed
                     : Visibility.Visible;
+
+            if (hidden)
+            {
+                visual.PulseHalo.Visibility =
+                    Visibility.Collapsed;
+            }
         }
     }
 
@@ -1663,12 +1683,19 @@ public partial class MainWindow
                     visual);
 
                 Panel.SetZIndex(
+                    visual.SelectionHalo,
+                    -1);
+
+                Panel.SetZIndex(
                     visual.Line,
                     0);
 
                 Panel.SetZIndex(
                     visual.Label,
                     1);
+
+                MapCanvas.Children.Add(
+                    visual.SelectionHalo);
 
                 MapCanvas.Children.Add(
                     visual.Line);
@@ -1693,6 +1720,12 @@ public partial class MainWindow
                 linkVisible
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+
+            if (!linkVisible)
+            {
+                visual.SelectionHalo.Visibility =
+                    Visibility.Collapsed;
+            }
 
             visual.Label.Visibility =
                 linkVisible &&
@@ -1725,6 +1758,12 @@ public partial class MainWindow
 
             _linkVisualsByIdentity.Remove(
                 identity);
+
+            AnimateRemoval(
+                visual.SelectionHalo,
+                () =>
+                    MapCanvas.Children.Remove(
+                        visual.SelectionHalo));
 
             AnimateRemoval(
                 visual.Line,
@@ -1856,6 +1895,8 @@ public partial class MainWindow
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapNodeCategoryIcon"),
+                Tag =
+                    "NodeCategoryIcon",
                 IsHitTestVisible = false
             };
 
@@ -1888,31 +1929,73 @@ public partial class MainWindow
                 IsHitTestVisible = false
             };
 
+        var statusIcon =
+            new Path
+            {
+                Style =
+                    GetStyleResource(
+                        "NetLoom.Style.MapNodeStatusIcon"),
+                Tag =
+                    "NodeStatusIcon",
+                IsHitTestVisible = false
+            };
+
         var lockBadge =
-            new TextBlock
+            new Path
             {
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapNodeLockBadge"),
-                Text =
+                ToolTip =
                     UiText.Get(
-                        "MapNodeLockedBadge"),
+                        "MapNodeLockedHint"),
                 Visibility =
-                    Visibility.Collapsed
+                    Visibility.Collapsed,
+                HorizontalAlignment =
+                    HorizontalAlignment.Center,
+                VerticalAlignment =
+                    VerticalAlignment.Top,
+                Margin =
+                    new Thickness(
+                        0,
+                        4,
+                        0,
+                        0),
+                IsHitTestVisible = false
             };
 
         var header =
-            new DockPanel();
+            new Grid();
 
-        DockPanel.SetDock(
-            lockBadge,
-            Dock.Right);
+        header.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    new GridLength(
+                        1.0,
+                        GridUnitType.Star)
+            });
 
-        header.Children.Add(
-            lockBadge);
+        header.ColumnDefinitions.Add(
+            new ColumnDefinition
+            {
+                Width =
+                    GridLength.Auto
+            });
+
+        Grid.SetColumn(
+            title,
+            0);
+
+        Grid.SetColumn(
+            statusIcon,
+            1);
 
         header.Children.Add(
             title);
+
+        header.Children.Add(
+            statusIcon);
 
         var textContent =
             new StackPanel
@@ -1926,6 +2009,27 @@ public partial class MainWindow
 
         textContent.Children.Add(
             secondary);
+
+        categoryIcon.Margin =
+            new Thickness(
+                0);
+
+        var iconHost =
+            new StackPanel
+            {
+                Margin =
+                    GetThicknessResource(
+                        "NetLoom.Thickness.MapNodeIcon"),
+                VerticalAlignment =
+                    VerticalAlignment.Center,
+                HorizontalAlignment =
+                    HorizontalAlignment.Center
+            };
+
+        iconHost.Children.Add(
+            categoryIcon);
+        iconHost.Children.Add(
+            lockBadge);
 
         var content =
             new Grid();
@@ -1947,7 +2051,7 @@ public partial class MainWindow
             });
 
         Grid.SetColumn(
-            categoryIcon,
+            iconHost,
             0);
 
         Grid.SetColumn(
@@ -1955,7 +2059,7 @@ public partial class MainWindow
             1);
 
         content.Children.Add(
-            categoryIcon);
+            iconHost);
 
         content.Children.Add(
             textContent);
@@ -2002,6 +2106,43 @@ public partial class MainWindow
         cardContent.Children.Add(
             body);
 
+        var haloRadius =
+            (CornerRadius)FindResource(
+                "NetLoom.Radius.MapNode");
+
+        var pulseHalo =
+            new Rectangle
+            {
+                Width =
+                    _nodeWidth,
+                StrokeThickness =
+                    2.0,
+                RadiusX =
+                    haloRadius.TopLeft,
+                RadiusY =
+                    haloRadius.TopLeft,
+                Fill =
+                    Brushes.Transparent,
+                Visibility =
+                    Visibility.Collapsed,
+                IsHitTestVisible =
+                    false,
+                RenderTransformOrigin =
+                    new Point(
+                        0.5,
+                        0.5),
+                RenderTransform =
+                    new ScaleTransform(
+                        1.0,
+                        1.0),
+                Tag =
+                    "NodeFocusHalo"
+            };
+
+        pulseHalo.SetResourceReference(
+            Shape.StrokeProperty,
+            "NetLoom.Brush.Selection");
+
         var border =
             new Border
             {
@@ -2034,10 +2175,12 @@ public partial class MainWindow
 
         return new MapNodeVisual(
             border,
+            pulseHalo,
             stateStripe,
             title,
             secondary,
             categoryIcon,
+            statusIcon,
             lockBadge);
     }
 
@@ -2143,6 +2286,32 @@ public partial class MainWindow
     private MapLinkVisual
         CreateLinkVisual()
     {
+        var selectionHaloGeometry =
+            new LineGeometry();
+
+        var selectionHalo =
+            new Path
+            {
+                Data = selectionHaloGeometry,
+                StrokeThickness =
+                    GetDoubleResource(
+                        "NetLoom.Map.LinkSelectionHaloThickness"),
+                Opacity =
+                    GetDoubleResource(
+                        "NetLoom.Map.LinkSelectionHaloOpacity"),
+                StrokeStartLineCap =
+                    PenLineCap.Round,
+                StrokeEndLineCap =
+                    PenLineCap.Round,
+                IsHitTestVisible = false,
+                Focusable = false,
+                Visibility = Visibility.Collapsed
+            };
+
+        selectionHalo.SetResourceReference(
+            Shape.StrokeProperty,
+            "NetLoom.Brush.Selection");
+
         var line =
             new Line
             {
@@ -2190,6 +2359,8 @@ public partial class MainWindow
             OnMapLinkMouseRightButtonDown;
 
         return new MapLinkVisual(
+            selectionHalo,
+            selectionHaloGeometry,
             line,
             label);
     }
@@ -2247,8 +2418,33 @@ public partial class MainWindow
         visual.Line.X2 = x2;
         visual.Line.Y2 = y2;
 
+        visual.SelectionHaloGeometry.StartPoint =
+            new Point(
+                x1,
+                y1);
+        visual.SelectionHaloGeometry.EndPoint =
+            new Point(
+                x2,
+                y2);
+
+        var linkState =
+            LinkOperationalState(
+                link.PhysicalLinkId);
+
+        var linkLabel =
+            BuildLinkLabel(
+                link);
+
         visual.Label.Text =
-            BuildLinkLabel(link);
+            linkLabel;
+
+        visual.Label.ToolTip =
+            OperatorStatusLabel(
+                LinkStatusSemantic(
+                    linkState));
+
+        visual.SelectionHalo.Tag =
+            link.PhysicalLinkId;
 
         visual.Line.Tag =
             link.PhysicalLinkId;
@@ -2262,29 +2458,23 @@ public partial class MainWindow
             link.PhysicalLinkId.Value ==
                 _selectedPhysicalLinkId.Value;
 
+        ApplyLinkOperationalPresentation(
+            visual,
+            link.PhysicalLinkId);
+
+        visual.SelectionHalo.Visibility =
+            isSelected
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
         if (isSelected)
         {
-            visual.Line.SetResourceReference(
-                Shape.StrokeProperty,
-                "NetLoom.Brush.Selection");
-
             visual.Line.StrokeThickness =
                 LinkSelectedStrokeThickness(
-                    LinkOperationalState(
-                        link.PhysicalLinkId));
-
-            visual.Label.SetResourceReference(
-                TextBlock.ForegroundProperty,
-                "NetLoom.Brush.Selection");
+                    linkState);
 
             visual.Label.FontWeight =
                 FontWeights.Bold;
-        }
-        else
-        {
-            ApplyLinkOperationalPresentation(
-                visual,
-                link.PhysicalLinkId);
         }
 
         PlaceLinkLabel(

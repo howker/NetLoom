@@ -100,11 +100,15 @@ namespace NetLoom.Wpf
                 string.Empty;
 
             MonitoringIntervalTextBox.Text = "60";
-            MonitoringVersionComboBox.ItemsSource =
-                Enum.GetValues(
-                    typeof(SnmpVersion));
-            MonitoringVersionComboBox.SelectedItem =
-                SnmpVersion.V2C;
+            MonitoringVersionValueText.Text =
+                string.Empty;
+            MonitoringVersionNoProfileText.Text =
+                UiText.Get(
+                    "MonitoringVersionNoProfile");
+            MonitoringVersionReadOnlyBorder.Visibility =
+                Visibility.Collapsed;
+            MonitoringVersionNoProfileText.Visibility =
+                Visibility.Visible;
             MonitoringPortTextBox.Text = "161";
             MonitoringTimeoutTextBox.Text = "2000";
             MonitoringRetriesTextBox.Text = "1";
@@ -493,41 +497,22 @@ namespace NetLoom.Wpf
                     0;
             }
 
-            MonitoringStateValueText.Text =
+            var monitoringStatus =
+                MonitoringStatusSemantic(
+                    snapshot.State);
+
+            ApplyOperatorStatus(
+                MonitoringStateGlyphText,
+                MonitoringStateValueText,
+                monitoringStatus,
                 UiText.Get(
                     MonitoringStateResourceKey(
-                        snapshot.State));
+                        snapshot.State)));
 
-            var isMonitoringActive =
-                snapshot.State ==
-                    MonitoringControlState.Starting ||
-                snapshot.State ==
-                    MonitoringControlState.Running ||
-                snapshot.State ==
-                    MonitoringControlState.Polling;
-
-            var monitoringStateBrush =
-                snapshot.State ==
-                    MonitoringControlState.Faulted
-                    ? "NetLoom.Brush.Critical"
-                    : isMonitoringActive
-                        ? "NetLoom.Brush.Success"
-                        : "NetLoom.Brush.BorderStrong";
-
-            MonitoringStateDot.SetResourceReference(
-                System.Windows.Shapes.Shape.FillProperty,
-                monitoringStateBrush);
             MonitoringStatusCard.SetResourceReference(
                 System.Windows.Controls.Border.BorderBrushProperty,
-                monitoringStateBrush);
-            MonitoringStateValueText.SetResourceReference(
-                System.Windows.Controls.TextBlock.ForegroundProperty,
-                snapshot.State ==
-                    MonitoringControlState.Faulted
-                    ? "NetLoom.Brush.Critical"
-                    : isMonitoringActive
-                        ? "NetLoom.Brush.Success"
-                        : "NetLoom.Brush.TextPrimary");
+                OperatorStatusBrushKey(
+                    monitoringStatus));
 
             if (_monitoringControl is
                     IMultiTargetMonitoringControl)
@@ -589,7 +574,6 @@ namespace NetLoom.Wpf
                 canEdit &&
                 hasSelectedDevice;
             MonitoringIntervalTextBox.IsEnabled = canEdit;
-            MonitoringVersionComboBox.IsEnabled = false;
             MonitoringPortTextBox.IsEnabled = canEdit;
             MonitoringTimeoutTextBox.IsEnabled = canEdit;
             MonitoringRetriesTextBox.IsEnabled = canEdit;
@@ -1076,9 +1060,6 @@ namespace NetLoom.Wpf
                         "MonitoringValidationProfileRequired");
                 return false;
             }
-
-            MonitoringVersionComboBox.SelectedItem =
-                selectedProfile.Profile.SnmpVersion;
 
             policy =
                 new MonitoringSessionPolicy(

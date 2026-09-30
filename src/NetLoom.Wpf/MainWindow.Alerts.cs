@@ -19,12 +19,9 @@ public partial class MainWindow
     private static string AlertSeverityText(
         TopologyAlertSeverity severity)
     {
-        return severity ==
-               TopologyAlertSeverity.Critical
-            ? UiText.Get(
-                "AlertSeverityCritical")
-            : UiText.Get(
-                "AlertSeverityWarning");
+        return OperatorStatusDecoratedLabel(
+            AlertStatusSemantic(
+                severity));
     }
 
     private static string AlertKindText(
@@ -236,11 +233,52 @@ public partial class MainWindow
             lines);
     }
 
+    private static string AlertExpansionKey(
+        TopologyAlert alert)
+    {
+        var links =
+            string.Join(
+                ",",
+                alert.PhysicalLinkIds
+                    .OrderBy(
+                        id => id)
+                    .Select(
+                        id => id.ToString("D")));
+        var regions =
+            string.Join(
+                ",",
+                alert.RelatedRegionKeys
+                    .OrderBy(
+                        key => key,
+                        StringComparer.Ordinal));
+        var reasons =
+            string.Join(
+                ",",
+                alert.Reasons
+                    .OrderBy(
+                        reason => reason)
+                    .Select(
+                        reason => reason.ToString()));
+
+        return (alert.InstanceId ?? string.Empty) +
+               "|" +
+               alert.Kind +
+               "|" +
+               links +
+               "|" +
+               regions +
+               "|" +
+               reasons;
+    }
+
     private AlertRow BuildAlertRow(
         TopologyAlert alert,
-        DateTime generatedUtc)
+        DateTime generatedUtc,
+        bool isTechnicalDetailsExpanded)
     {
         return new AlertRow(
+            AlertExpansionKey(
+                alert),
             AlertSeverityText(
                 alert.Severity),
             AlertKindText(
@@ -256,9 +294,10 @@ public partial class MainWindow
                     CultureInfo.CurrentCulture),
             BuildAlertTechnicalDetails(
                 alert),
-            alert.PhysicalLinkIds[0],
+            alert.PhysicalLinkIds.ToArray(),
             alert.Severity ==
                 TopologyAlertSeverity.Critical,
+            isTechnicalDetailsExpanded,
             UiText.Get(
                 "AlertShowOnMapAction"),
             UiText.Get(
@@ -280,17 +319,43 @@ public partial class MainWindow
         TopologyAlertSnapshot snapshot,
         TopologyAlertTransitionKind transition)
     {
+        var expandedAlertKeys =
+            new HashSet<string>(
+                AlertList.Items
+                    .OfType<AlertRow>()
+                    .Where(
+                        row =>
+                            row.IsTechnicalDetailsExpanded)
+                    .Select(
+                        row => row.ExpansionKey),
+                StringComparer.Ordinal);
+
         var rows =
             snapshot.Alerts
                 .Select(
                     alert =>
                         BuildAlertRow(
                             alert,
-                            snapshot.GeneratedUtc))
+                            snapshot.GeneratedUtc,
+                            expandedAlertKeys.Contains(
+                                AlertExpansionKey(
+                                    alert))))
                 .ToArray();
 
         AlertList.ItemsSource =
             rows;
+
+        var criticalCount =
+            snapshot.Alerts.Count(
+                alert =>
+                    alert.Severity ==
+                    TopologyAlertSeverity.Critical);
+
+        var warningCount =
+            snapshot.Alerts.Count(
+                alert =>
+                    alert.Severity ==
+                    TopologyAlertSeverity.Warning);
 
         if (rows.Length == 0)
         {
@@ -300,18 +365,6 @@ public partial class MainWindow
         }
         else
         {
-            var criticalCount =
-                snapshot.Alerts.Count(
-                    alert =>
-                        alert.Severity ==
-                        TopologyAlertSeverity.Critical);
-
-            var warningCount =
-                snapshot.Alerts.Count(
-                    alert =>
-                        alert.Severity ==
-                        TopologyAlertSeverity.Warning);
-
             AlertStatusText.Text =
                 UiText.Format(
                     "AlertSummary",
@@ -319,23 +372,24 @@ public partial class MainWindow
                     warningCount);
         }
 
+        var alertBrushKey =
+            criticalCount > 0
+                ? "NetLoom.Brush.Critical"
+                : warningCount > 0
+                    ? "NetLoom.Brush.Warning"
+                    : "NetLoom.Brush.ShellRailTextMuted";
+
         ShellAlertCountText.Text =
             UiText.Format(
                 "ShellAlertCount",
                 rows.Length);
         ShellAlertCountText.SetResourceReference(
             TextBlock.ForegroundProperty,
-            rows.Length == 0
-                ? "NetLoom.Brush.ShellRailTextMuted"
-                : "NetLoom.Brush.Critical");
+            alertBrushKey);
 
-        ShellAlertsBadgeText.Text =
-            rows.Length.ToString(
-                System.Globalization.CultureInfo.CurrentCulture);
-        ShellAlertsBadge.Visibility =
-            rows.Length == 0
-                ? Visibility.Collapsed
-                : Visibility.Visible;
+        ConfigureShellAlertBadge(
+            rows.Length,
+            alertBrushKey);
 
         if (rows.Length > 0)
         {
@@ -370,16 +424,59 @@ public partial class MainWindow
         }
     }
 
+    private void ConfigureShellAlertBadge(
+        int count,
+        string brushKey)
+    {
+        if (count <= 0)
+        {
+            ShellAlertsBadge.Visibility =
+                Visibility.Collapsed;
+            return;
+        }
+
+        var badgeHeight =
+            Convert.ToDouble(
+                FindResource(
+                    "NetLoom.Navigation.BadgeHeight"));
+        var isSingleDigit =
+            count < 10;
+
+        ShellAlertsBadge.Width =
+            isSingleDigit
+                ? badgeHeight
+                : double.NaN;
+        ShellAlertsBadge.Padding =
+            (Thickness)FindResource(
+                isSingleDigit
+                    ? "NetLoom.Thickness.NavigationBadgePaddingSingle"
+                    : "NetLoom.Thickness.NavigationBadgePaddingMulti");
+        ShellAlertsBadge.SetResourceReference(
+            Border.BackgroundProperty,
+            brushKey);
+        ShellAlertsBadgeText.Text =
+            count > 99
+                ? UiText.Get(
+                    "ShellAlertBadgeOverflow")
+                : count.ToString(
+                    CultureInfo.CurrentCulture);
+        ShellAlertsBadge.Visibility =
+            Visibility.Visible;
+    }
+
     private void OnAlertShowOnMapClick(
         object sender,
         RoutedEventArgs e)
     {
         var button =
             sender as Button;
+        var row =
+            button == null
+                ? null
+                : button.DataContext as AlertRow;
 
-        if (button == null ||
-            !(button.Tag is Guid) ||
-            (Guid)button.Tag == Guid.Empty)
+        if (row == null ||
+            row.PhysicalLinkIds.Length == 0)
         {
             return;
         }
@@ -393,75 +490,63 @@ public partial class MainWindow
         _selectedInterfaceId =
             null;
         _selectedPhysicalLinkId =
-            (Guid)button.Tag;
+            row.PrimaryPhysicalLinkId;
         _selectedLocationId =
             null;
 
-        ShowShellSection(
-            ShellSection.Map);
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
 
-        var physicalLinkId =
-            (Guid)button.Tag;
-
-        FocusSelectedMapAtNativeZoom(
+        FocusAlertContextToViewport(
+            row.PhysicalLinkIds,
             () =>
                 PulseAlertContext(
-                    physicalLinkId));
+                    row.PhysicalLinkIds));
     }
 
-    private void PulseAlertContext(
-        Guid physicalLinkId)
+    private void FocusAlertContextToViewport(
+        IReadOnlyCollection<Guid> physicalLinkIds,
+        Action completed)
     {
-        var linkVisual =
-            _linkVisualsByIdentity.Values
-                .FirstOrDefault(
-                    item =>
-                        item.Line.Tag is Guid &&
-                        (Guid)item.Line.Tag ==
-                            physicalLinkId);
-
-        if (linkVisual != null)
+        if (_lastMapSnapshot == null ||
+            physicalLinkIds == null ||
+            physicalLinkIds.Count == 0)
         {
-            AnimatePulse(
-                linkVisual.Line,
-                MapMotionKind.AlertPulse,
-                1.0,
-                5);
-
-            AnimatePulse(
-                linkVisual.Label,
-                MapMotionKind.AlertPulse,
-                1.0,
-                5);
-        }
-
-        if (_lastMapSnapshot == null)
-        {
+            FocusSelectedMapAtNativeZoom(
+                completed);
             return;
         }
 
-        var link =
-            _lastMapSnapshot.Links
-                .FirstOrDefault(
-                    item =>
-                        item.PhysicalLinkId.HasValue &&
-                        item.PhysicalLinkId.Value ==
-                            physicalLinkId);
-
-        if (link == null)
+        if (physicalLinkIds.Count == 1)
         {
+            FocusSelectedMapAtNativeZoom(
+                completed);
             return;
         }
 
+        var linkIds =
+            new HashSet<Guid>(
+                physicalLinkIds);
         var endpointKeys =
-            new[]
-            {
-                link.SourceNodeKey,
-                link.TargetNodeKey
-            };
+            new HashSet<string>(
+                _lastMapSnapshot.Links
+                    .Where(
+                        item =>
+                            item.PhysicalLinkId.HasValue &&
+                            linkIds.Contains(
+                                item.PhysicalLinkId.Value))
+                    .SelectMany(
+                        item =>
+                            new[]
+                            {
+                                item.SourceNodeKey,
+                                item.TargetNodeKey
+                            }),
+                StringComparer.Ordinal);
+
+        var bounds =
+            new List<Rect>();
 
         foreach (var node in
                  _lastMapSnapshot.Nodes
@@ -470,28 +555,129 @@ public partial class MainWindow
                              endpointKeys.Contains(
                                  item.Key)))
         {
-            if (node.DeviceId.HasValue)
+            MapNodeVisual visual;
+
+            if (_nodeVisualsByIdentity.TryGetValue(
+                    NodeIdentity(
+                        node),
+                    out visual))
             {
-                AnimateDiscoveryFocus(
-                    node.DeviceId.Value);
+                bounds.Add(
+                    NodeBounds(
+                        visual));
             }
+        }
+
+        if (!TryFitMapBoundsToViewport(
+                bounds))
+        {
+            FocusSelectedMapAtNativeZoom(
+                completed);
+            return;
+        }
+
+        if (_zoom > 1.0)
+        {
+            _zoom = 1.0;
+            ApplyZoomTransform();
+            UpdateZoomText();
+        }
+
+        Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Loaded,
+            new Action(
+                () =>
+                    completed?.Invoke()));
+    }
+
+    private void PulseAlertContext(
+        IReadOnlyCollection<Guid> physicalLinkIds)
+    {
+        if (physicalLinkIds == null ||
+            physicalLinkIds.Count == 0)
+        {
+            return;
+        }
+
+        var linkIds =
+            new HashSet<Guid>(
+                physicalLinkIds);
+
+        foreach (var linkVisual in
+                 _linkVisualsByIdentity.Values
+                     .Where(
+                         item =>
+                             item.Line.Tag is Guid &&
+                             linkIds.Contains(
+                                 (Guid)item.Line.Tag)))
+        {
+            AnimatePulse(
+                linkVisual.Line,
+                MapMotionKind.AlertPulse,
+                1.0,
+                3);
+
+            AnimatePulse(
+                linkVisual.Label,
+                MapMotionKind.AlertPulse,
+                1.0,
+                3);
+        }
+
+        if (_lastMapSnapshot == null)
+        {
+            return;
+        }
+
+        var endpointKeys =
+            new HashSet<string>(
+                _lastMapSnapshot.Links
+                    .Where(
+                        item =>
+                            item.PhysicalLinkId.HasValue &&
+                            linkIds.Contains(
+                                item.PhysicalLinkId.Value))
+                    .SelectMany(
+                        item =>
+                            new[]
+                            {
+                                item.SourceNodeKey,
+                                item.TargetNodeKey
+                            }),
+                StringComparer.Ordinal);
+
+        foreach (var node in
+                 _lastMapSnapshot.Nodes
+                     .Where(
+                         item =>
+                             endpointKeys.Contains(
+                                 item.Key) &&
+                             item.DeviceId.HasValue))
+        {
+            AnimateDiscoveryFocus(
+                node.DeviceId.Value);
         }
     }
 
     private sealed class AlertRow
     {
         public AlertRow(
+            string expansionKey,
             string severityText,
             string title,
             string scope,
             string reason,
             string timeText,
             string technicalDetails,
-            Guid primaryPhysicalLinkId,
+            Guid[] physicalLinkIds,
             bool isCritical,
+            bool isTechnicalDetailsExpanded,
             string showOnMapText,
             string technicalDetailsLabel)
         {
+            ExpansionKey =
+                expansionKey ??
+                string.Empty;
             SeverityText =
                 severityText;
             Title =
@@ -504,15 +690,24 @@ public partial class MainWindow
                 timeText;
             TechnicalDetails =
                 technicalDetails;
+            PhysicalLinkIds =
+                physicalLinkIds ??
+                new Guid[0];
             PrimaryPhysicalLinkId =
-                primaryPhysicalLinkId;
+                PhysicalLinkIds.Length == 0
+                    ? Guid.Empty
+                    : PhysicalLinkIds[0];
             IsCritical =
                 isCritical;
+            IsTechnicalDetailsExpanded =
+                isTechnicalDetailsExpanded;
             ShowOnMapText =
                 showOnMapText;
             TechnicalDetailsLabel =
                 technicalDetailsLabel;
         }
+
+        public string ExpansionKey { get; }
 
         public string SeverityText { get; }
 
@@ -526,9 +721,13 @@ public partial class MainWindow
 
         public string TechnicalDetails { get; }
 
+        public Guid[] PhysicalLinkIds { get; }
+
         public Guid PrimaryPhysicalLinkId { get; }
 
         public bool IsCritical { get; }
+
+        public bool IsTechnicalDetailsExpanded { get; set; }
 
         public string ShowOnMapText { get; }
 

@@ -309,6 +309,8 @@ public partial class MainWindow : Window
         InspectorEntityTypeText.Text =
             string.Empty;
 
+        ClearInspectorOperatorStatus();
+
         InspectorEntityIdText.Text =
             string.Empty;
 
@@ -323,6 +325,9 @@ public partial class MainWindow : Window
         bool linksVisible,
         bool evidenceVisible)
     {
+        InspectorTabControl.Visibility =
+            Visibility.Visible;
+
         InspectorOverviewTab.Visibility =
             Visibility.Visible;
 
@@ -491,9 +496,13 @@ public partial class MainWindow : Window
                     item.ParentLocationId ==
                     locationId);
 
+        DiagnosticStatusText.Visibility =
+            Visibility.Visible;
         DiagnosticStatusText.Text =
             UiText.Get(
                 "MapLocationSelectedStatus");
+
+        ClearInspectorOperatorStatus();
 
         DiagnosticElementTitleText.Text =
             location.Name;
@@ -581,6 +590,11 @@ public partial class MainWindow : Window
             false,
             false);
 
+        InspectorTabControl.Visibility =
+            Visibility.Collapsed;
+
+        DiagnosticStatusText.Visibility =
+            Visibility.Visible;
         DiagnosticStatusText.Text =
             UiText.Get(statusKey);
 
@@ -630,7 +644,14 @@ public partial class MainWindow : Window
             true);
 
         DiagnosticStatusText.Text =
-            UiText.Get("DiagnosticCurrent");
+            string.Empty;
+        DiagnosticStatusText.Visibility =
+            Visibility.Collapsed;
+
+        SetInspectorOperatorStatus(
+            NodeStatusSemantic(
+                NodeDegradationState(
+                    device.DeviceId)));
 
         DiagnosticElementTitleText.Text =
             string.IsNullOrWhiteSpace(
@@ -809,8 +830,13 @@ public partial class MainWindow : Window
             true);
 
         DiagnosticStatusText.Text =
-            UiText.Get(
-                "DiagnosticCurrent");
+            string.Empty;
+        DiagnosticStatusText.Visibility =
+            Visibility.Collapsed;
+
+        SetInspectorOperatorStatus(
+            InterfaceStatusSemantic(
+                item.DegradationStatus));
 
         DiagnosticElementTitleText.Text =
             InterfaceIdentity(
@@ -985,7 +1011,14 @@ public partial class MainWindow : Window
             new DiagnosticEntityRow[0];
 
         DiagnosticStatusText.Text =
-            UiText.Get("DiagnosticCurrent");
+            string.Empty;
+        DiagnosticStatusText.Visibility =
+            Visibility.Collapsed;
+
+        SetInspectorOperatorStatus(
+            LinkStatusSemantic(
+                LinkOperationalState(
+                    link.PhysicalLinkId)));
 
         DiagnosticElementTitleText.Text =
             UiText.Format(
@@ -1054,6 +1087,8 @@ public partial class MainWindow : Window
             link.IsBridge
                 ? new[]
                 {
+                    Row(
+                        "DiagnosticImpactSinglePath"),
                     new DiagnosticTextRow(
                         UiText.Format(
                             "DiagnosticImpactSideA",

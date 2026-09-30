@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using NetLoom.Application.MonitoringControl;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
@@ -29,6 +30,8 @@ namespace NetLoom.Wpf
 
         private void InitializeShell()
         {
+            InitializeOpticalTypography();
+
             ShellBrandText.Text =
                 UiText.Get(
                     "ShellBrandName");
@@ -91,10 +94,22 @@ namespace NetLoom.Wpf
                 new ShellEquipmentRow[0];
             ShellProfileAddButton.Content =
                 UiText.Get(
-                    "DiscoveryProfileAddAction");
+                    "DiscoveryProfileManageAction");
             ShellSettingsTitleText.Text =
                 UiText.Get(
                     "ShellSettingsSection");
+            ShellProfileSettingsTitleText.Text =
+                UiText.Get(
+                    "DiscoveryProfileSettingsTitle");
+            ShellProfileSettingsAddButton.Content =
+                UiText.Get(
+                    "DiscoveryProfileAddAction");
+            ShellProfileEditButton.Content =
+                UiText.Get(
+                    "DiscoveryProfileEditAction");
+            ShellProfileDeleteButton.Content =
+                UiText.Get(
+                    "DiscoveryProfileDeleteAction");
             ShellMonitoringRailTitleText.Text =
                 UiText.Get(
                     "ShellMonitoringLabel");
@@ -124,6 +139,95 @@ namespace NetLoom.Wpf
 
             UpdateShellMonitoringPresentation(
                 _monitoringControl.Current);
+        }
+
+        private void InitializeOpticalTypography()
+        {
+            var family =
+                (FontFamily)FindResource(
+                    "NetLoom.FontFamily.Ui");
+            var bodyFontSize =
+                Convert.ToDouble(
+                    FindResource(
+                        "NetLoom.FontSize.Body"));
+            var badgeFontSize =
+                Convert.ToDouble(
+                    FindResource(
+                        "NetLoom.Navigation.BadgeFontSize"));
+
+            var opticalOffset =
+                CalculateOpticalOffset(
+                    family,
+                    bodyFontSize,
+                    FontWeights.Normal);
+            var badgeOpticalOffset =
+                CalculateOpticalOffset(
+                    family,
+                    badgeFontSize,
+                    FontWeights.SemiBold);
+
+            Resources[
+                "NetLoom.Type.OpticalOffsetY"] =
+                opticalOffset;
+            Resources[
+                "NetLoom.Type.BadgeOpticalOffsetY"] =
+                badgeOpticalOffset;
+
+            var controlPadding =
+                (Thickness)FindResource(
+                    "NetLoom.Thickness.ControlPadding");
+
+            Resources[
+                "NetLoom.Thickness.ControlPaddingOptical"] =
+                new Thickness(
+                    controlPadding.Left,
+                    Math.Max(
+                        0.0,
+                        controlPadding.Top +
+                        opticalOffset),
+                    controlPadding.Right,
+                    Math.Max(
+                        0.0,
+                        controlPadding.Bottom -
+                        opticalOffset));
+        }
+
+        private static double CalculateOpticalOffset(
+            FontFamily family,
+            double fontSize,
+            FontWeight weight)
+        {
+            try
+            {
+                var typeface =
+                    new Typeface(
+                        family,
+                        FontStyles.Normal,
+                        weight,
+                        FontStretches.Normal);
+
+                GlyphTypeface glyphTypeface;
+
+                if (typeface.TryGetGlyphTypeface(
+                    out glyphTypeface))
+                {
+                    return
+                        (
+                            glyphTypeface.Baseline -
+                            glyphTypeface.CapsHeight / 2.0 -
+                            glyphTypeface.Height / 2.0
+                        ) *
+                        fontSize;
+                }
+            }
+            catch (Exception error)
+            {
+                System.Diagnostics.Trace.TraceWarning(
+                    "UI_OPTICAL_TYPOGRAPHY_FAILED " +
+                    error.Message);
+            }
+
+            return 0.0;
         }
 
         private UiShellState LoadShellState()
@@ -210,11 +314,8 @@ namespace NetLoom.Wpf
                 DiscoveryProfileComboBox.SelectedItem
                     as DiscoveryProfileOption;
 
-            if (selected != null)
-            {
-                MonitoringVersionComboBox.SelectedItem =
-                    selected.Profile.SnmpVersion;
-            }
+            UpdateMonitoringProfileVersion(
+                selected);
 
             SaveShellState();
 
@@ -222,11 +323,43 @@ namespace NetLoom.Wpf
                 _monitoringControl.Current);
         }
 
+        private void UpdateMonitoringProfileVersion(
+            DiscoveryProfileOption selected)
+        {
+            var hasProfile =
+                selected != null;
+
+            MonitoringVersionReadOnlyBorder.Visibility =
+                hasProfile
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            MonitoringVersionNoProfileText.Visibility =
+                hasProfile
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+
+            MonitoringVersionValueText.Text =
+                hasProfile
+                    ? UiText.Format(
+                        "MonitoringVersionFromProfile",
+                        SnmpVersionText(
+                            selected.Profile.SnmpVersion))
+                    : string.Empty;
+            MonitoringVersionNoProfileText.Text =
+                hasProfile
+                    ? string.Empty
+                    : UiText.Get(
+                        "MonitoringVersionNoProfile");
+        }
+
         private void UpdateShellProfilePresentation()
         {
             var selected =
                 DiscoveryProfileComboBox.SelectedItem
                     as DiscoveryProfileOption;
+
+            UpdateMonitoringProfileVersion(
+                selected);
 
             var hasProfiles =
                 DiscoveryProfileComboBox.Items.Count > 0;
@@ -279,6 +412,92 @@ namespace NetLoom.Wpf
                 selected == null
                     ? "NetLoom.Brush.Border"
                     : "NetLoom.Brush.Success");
+
+            RefreshProfileSettingsList(
+                selected);
+        }
+
+        private void RefreshProfileSettingsList(
+            DiscoveryProfileOption active)
+        {
+            var preferredId =
+                _profileSettingsSelectedId ??
+                (active == null
+                    ? (Guid?)null
+                    : active.Profile.Id);
+
+            var rows =
+                _discoveryProfiles
+                    .OrderBy(
+                        profile =>
+                            profile.Name,
+                        StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(
+                        profile =>
+                            profile.Id)
+                    .Select(
+                        profile =>
+                            new ProfileSettingsRow(
+                                profile,
+                                UiText.Format(
+                                    "DiscoveryProfileDisplay",
+                                    profile.Name,
+                                    SnmpVersionText(
+                                        profile.SnmpVersion)),
+                                active != null &&
+                                active.Profile.Id ==
+                                    profile.Id
+                                    ? UiText.Get(
+                                        "DiscoveryProfileActiveLabel")
+                                    : string.Empty))
+                    .ToArray();
+
+            ShellProfileSettingsList.ItemsSource =
+                rows;
+
+            ShellProfileSettingsSummaryText.Text =
+                rows.Length == 0
+                    ? UiText.Get(
+                        "DiscoveryProfileSettingsEmpty")
+                    : UiText.Get(
+                        "DiscoveryProfileSettingsHint");
+
+            var selectedRow =
+                preferredId.HasValue
+                    ? rows.FirstOrDefault(
+                        row =>
+                            row.Profile.Id ==
+                            preferredId.Value)
+                    : null;
+
+            if (selectedRow == null &&
+                rows.Length > 0)
+            {
+                selectedRow =
+                    rows[0];
+            }
+
+            ShellProfileSettingsList.SelectedItem =
+                selectedRow;
+
+            _profileSettingsSelectedId =
+                selectedRow == null
+                    ? (Guid?)null
+                    : selectedRow.Profile.Id;
+
+            UpdateProfileSettingsActions();
+        }
+
+        private void UpdateProfileSettingsActions()
+        {
+            var hasSelection =
+                ShellProfileSettingsList.SelectedItem
+                    is ProfileSettingsRow;
+
+            ShellProfileEditButton.IsEnabled =
+                hasSelection;
+            ShellProfileDeleteButton.IsEnabled =
+                hasSelection;
         }
 
         private void OnShellThemeClick(
@@ -575,7 +794,11 @@ namespace NetLoom.Wpf
                             new ShellEquipmentRow(
                                 node.DeviceId,
                                 node.Label,
-                                node.ManagementAddress))
+                                node.ManagementAddress,
+                                node.DeviceId.HasValue &&
+                                _selectedDeviceId.HasValue &&
+                                node.DeviceId.Value ==
+                                    _selectedDeviceId.Value))
                     .ToArray();
 
             EquipmentSummaryText.Text =
@@ -768,10 +991,16 @@ namespace NetLoom.Wpf
                 return;
             }
 
+            var monitoringStatus =
+                MonitoringStatusSemantic(
+                    snapshot.State);
+
             var stateText =
-                UiText.Get(
-                    MonitoringStateResourceKey(
-                        snapshot.State));
+                OperatorStatusDecoratedDetail(
+                    monitoringStatus,
+                    UiText.Get(
+                        MonitoringStateResourceKey(
+                            snapshot.State)));
 
             var targetCount =
                 _monitoringTargetSetSessionActive
@@ -797,8 +1026,8 @@ namespace NetLoom.Wpf
                     lastPoll);
 
             var brushKey =
-                ShellMonitoringBrushKey(
-                    snapshot.State);
+                OperatorStatusBrushKey(
+                    monitoringStatus);
 
             ShellMonitoringHeaderText
                 .SetResourceReference(
@@ -810,26 +1039,6 @@ namespace NetLoom.Wpf
                     brushKey);
         }
 
-        private static string
-            ShellMonitoringBrushKey(
-                MonitoringControlState state)
-        {
-            switch (state)
-            {
-                case MonitoringControlState.Faulted:
-                    return "NetLoom.Brush.Critical";
-
-                case MonitoringControlState.Starting:
-                case MonitoringControlState.Running:
-                case MonitoringControlState.Polling:
-                case MonitoringControlState.Stopping:
-                    return "NetLoom.Brush.Success";
-
-                case MonitoringControlState.Stopped:
-                default:
-                    return "NetLoom.Brush.ShellRailTextMuted";
-            }
-        }
 
         private enum MapInteractionMode
         {
@@ -853,7 +1062,8 @@ namespace NetLoom.Wpf
             public ShellEquipmentRow(
                 Guid? deviceId,
                 string name,
-                string address)
+                string address,
+                bool isSelected)
             {
                 DeviceId =
                     deviceId;
@@ -866,6 +1076,8 @@ namespace NetLoom.Wpf
                     string.IsNullOrWhiteSpace(address)
                         ? string.Empty
                         : address;
+                IsSelected =
+                    isSelected;
             }
 
             public Guid? DeviceId { get; }
@@ -873,6 +1085,8 @@ namespace NetLoom.Wpf
             public string Name { get; }
 
             public string Address { get; }
+
+            public bool IsSelected { get; }
 
             public bool IsSelectable =>
                 DeviceId.HasValue;

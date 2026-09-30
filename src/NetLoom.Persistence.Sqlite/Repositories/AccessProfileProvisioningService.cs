@@ -77,5 +77,111 @@ namespace NetLoom.Persistence.Sqlite.Repositories
                 throw;
             }
         }
+
+        public AccessProfile UpdateCommunityProfile(
+            Guid profileId,
+            string name,
+            SnmpVersion snmpVersion,
+            byte[] communityUtf8)
+        {
+            if (profileId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Access profile id is required.",
+                    nameof(profileId));
+            }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException(
+                    "Access profile name is required.",
+                    nameof(name));
+            }
+
+            if (snmpVersion != SnmpVersion.V1 &&
+                snmpVersion != SnmpVersion.V2C)
+            {
+                throw new InvalidOperationException(
+                    "DISCOVERY_PROFILE_VERSION_UNSUPPORTED");
+            }
+
+            if (communityUtf8 != null &&
+                communityUtf8.Length == 0)
+            {
+                throw new ArgumentException(
+                    "SNMP community cannot be empty when supplied.",
+                    nameof(communityUtf8));
+            }
+
+            var previous =
+                _accessProfiles.Get(
+                    profileId);
+
+            if (previous == null)
+            {
+                throw new InvalidOperationException(
+                    "DISCOVERY_PROFILE_NOT_FOUND");
+            }
+
+            var updated =
+                new AccessProfile(
+                    previous.Id,
+                    name.Trim(),
+                    previous.IsEnabled,
+                    snmpVersion,
+                    previous.SnmpUsername);
+
+            _accessProfiles.Save(
+                updated);
+
+            if (communityUtf8 == null)
+            {
+                return updated;
+            }
+
+            try
+            {
+                _secrets.SetSecret(
+                    profileId,
+                    AccessProfileSecretKind.SnmpCommunity,
+                    communityUtf8);
+
+                return updated;
+            }
+            catch
+            {
+                try
+                {
+                    _accessProfiles.Save(
+                        previous);
+                }
+                catch
+                {
+                }
+
+                throw;
+            }
+        }
+
+        public void DeleteProfile(
+            Guid profileId)
+        {
+            if (profileId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Access profile id is required.",
+                    nameof(profileId));
+            }
+
+            if (_accessProfiles.Get(
+                    profileId) == null)
+            {
+                throw new InvalidOperationException(
+                    "DISCOVERY_PROFILE_NOT_FOUND");
+            }
+
+            _accessProfiles.Delete(
+                profileId);
+        }
     }
 }

@@ -178,6 +178,45 @@ namespace NetLoom.Desktop
                         }
                     };
 
+                mainWindow.DiscoveryProfileUpdateRequested +=
+                    (sender, request) =>
+                    {
+                        try
+                        {
+                            request.UpdatedProfile =
+                                accessProfileProvisioningService
+                                    .UpdateCommunityProfile(
+                                        request.ProfileId,
+                                        request.Name,
+                                        request.SnmpVersion,
+                                        request.CommunityUtf8);
+                        }
+                        catch (Exception error)
+                        {
+                            request.FailureMessage =
+                                error.Message;
+                        }
+                    };
+
+                mainWindow.DiscoveryProfileDeleteRequested +=
+                    (sender, request) =>
+                    {
+                        try
+                        {
+                            accessProfileProvisioningService
+                                .DeleteProfile(
+                                    request.ProfileId);
+
+                            request.Deleted =
+                                true;
+                        }
+                        catch (Exception error)
+                        {
+                            request.FailureMessage =
+                                error.Message;
+                        }
+                    };
+
                 var exitCode =
                     application.Run(
                         mainWindow);

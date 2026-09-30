@@ -7,6 +7,7 @@
         MinWidth="{DynamicResource NetLoom.Shell.WindowMinWidth}"
         FontFamily="{DynamicResource NetLoom.FontFamily.Ui}"
         FontSize="{DynamicResource NetLoom.FontSize.Body}"
+        TextOptions.TextFormattingMode="Display"
         Background="{DynamicResource NetLoom.Brush.Window}"
         Foreground="{DynamicResource NetLoom.Brush.TextPrimary}">
     <Window.Resources>
@@ -57,7 +58,7 @@
                             Style="{StaticResource NetLoom.Style.SecondaryButton}"
                             Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                             Visibility="Collapsed"
-                            Click="OnDiscoveryProfileAddClick" />
+                            Click="OnShellProfileManageClick" />
                     <TextBlock x:Name="ShellProfileStatusText"
                                Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                VerticalAlignment="Center"
@@ -105,6 +106,7 @@
                                       Data="{StaticResource NetLoom.Icon.ShellMap}" />
                                 <TextBlock x:Name="ShellMapButtonText"
                                            Grid.Column="1"
+                                           Style="{StaticResource NetLoom.Style.NavigationText}"
                                            VerticalAlignment="Center" />
                             </Grid>
                         </Button>
@@ -120,6 +122,7 @@
                                       Data="{StaticResource NetLoom.Icon.ShellEquipment}" />
                                 <TextBlock x:Name="ShellEquipmentButtonText"
                                            Grid.Column="1"
+                                           Style="{StaticResource NetLoom.Style.NavigationText}"
                                            VerticalAlignment="Center" />
                             </Grid>
                         </Button>
@@ -135,6 +138,7 @@
                                       Data="{StaticResource NetLoom.Icon.ShellMonitoring}" />
                                 <TextBlock x:Name="ShellMonitoringButtonText"
                                            Grid.Column="1"
+                                           Style="{StaticResource NetLoom.Style.NavigationText}"
                                            VerticalAlignment="Center" />
                             </Grid>
                         </Button>
@@ -151,16 +155,24 @@
                                       Data="{StaticResource NetLoom.Icon.ShellAlerts}" />
                                 <TextBlock x:Name="ShellAlertsButtonText"
                                            Grid.Column="1"
+                                           Style="{StaticResource NetLoom.Style.NavigationText}"
                                            VerticalAlignment="Center" />
                                 <Border x:Name="ShellAlertsBadge"
                                         Grid.Column="2"
                                         Style="{StaticResource NetLoom.Style.NavigationBadge}"
                                         Visibility="Collapsed">
                                     <TextBlock x:Name="ShellAlertsBadgeText"
-                                               Foreground="{DynamicResource NetLoom.Brush.OnAccent}"
-                                               FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                               Foreground="{DynamicResource NetLoom.Brush.Window}"
+                                               FontSize="{DynamicResource NetLoom.Navigation.BadgeFontSize}"
                                                FontWeight="SemiBold"
-                                               HorizontalAlignment="Center" />
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               TextBlock.LineStackingStrategy="BlockLineHeight"
+                                               TextBlock.LineHeight="{DynamicResource NetLoom.Navigation.BadgeFontSize}">
+                                        <TextBlock.RenderTransform>
+                                            <TranslateTransform Y="{DynamicResource NetLoom.Type.BadgeOpticalOffsetY}" />
+                                        </TextBlock.RenderTransform>
+                                    </TextBlock>
                                 </Border>
                             </Grid>
                         </Button>
@@ -176,6 +188,7 @@
                                       Data="{StaticResource NetLoom.Icon.ShellDiscovery}" />
                                 <TextBlock x:Name="ShellDiscoveryButtonText"
                                            Grid.Column="1"
+                                           Style="{StaticResource NetLoom.Style.NavigationText}"
                                            VerticalAlignment="Center" />
                             </Grid>
                         </Button>
@@ -191,6 +204,7 @@
                                       Data="{StaticResource NetLoom.Icon.ShellSearch}" />
                                 <TextBlock x:Name="ShellSearchButtonText"
                                            Grid.Column="1"
+                                           Style="{StaticResource NetLoom.Style.NavigationText}"
                                            VerticalAlignment="Center" />
                             </Grid>
                         </Button>
@@ -206,6 +220,7 @@
                                       Data="{StaticResource NetLoom.Icon.ShellSettings}" />
                                 <TextBlock x:Name="ShellSettingsButtonText"
                                            Grid.Column="1"
+                                           Style="{StaticResource NetLoom.Style.NavigationText}"
                                            VerticalAlignment="Center" />
                             </Grid>
                         </Button>
@@ -305,7 +320,7 @@
                                           Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        <Button Style="{StaticResource NetLoom.Style.EquipmentRowButton}"
                                                 Margin="{DynamicResource NetLoom.Thickness.ListRow}"
                                                 HorizontalContentAlignment="Stretch"
                                                 Tag="{Binding DeviceId}"
@@ -317,7 +332,8 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding Name}"
-                                                           TextTrimming="CharacterEllipsis" />
+                                                           TextWrapping="Wrap"
+                                                           TextTrimming="None" />
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding Address}"
                                                            Style="{StaticResource NetLoom.Style.MonoText}"
@@ -346,12 +362,8 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <Ellipse x:Name="MonitoringStateDot"
-                                                 Width="{DynamicResource NetLoom.Status.DotSize}"
-                                                 Height="{DynamicResource NetLoom.Status.DotSize}"
-                                                 Fill="{DynamicResource NetLoom.Brush.TextDisabled}"
-                                                 VerticalAlignment="Center"
-                                                 Margin="{DynamicResource NetLoom.Thickness.StatusDot}" />
+                                        <TextBlock x:Name="MonitoringStateGlyphText"
+                                                   Style="{StaticResource NetLoom.Style.StatusGlyph}" />
                                         <TextBlock x:Name="MonitoringStateValueText"
                                                    Grid.Column="1"
                                                    Style="{StaticResource NetLoom.Style.StatusEmphasis}"
@@ -385,17 +397,17 @@
 
                             <Grid Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="{DynamicResource NetLoom.Grid.ButtonGap}" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Button x:Name="MonitoringStartButton"
                                         Grid.Column="0"
-                                        HorizontalAlignment="Stretch"
+                                        Style="{StaticResource NetLoom.Style.SidebarActionButton}"
                                         Click="OnMonitoringStartClick" />
                                 <Button x:Name="MonitoringStopButton"
                                         Grid.Column="0"
-                                        HorizontalAlignment="Stretch"
+                                        Style="{StaticResource NetLoom.Style.SidebarActionButton}"
                                         Click="OnMonitoringStopClick" />
                                 <Button x:Name="MonitoringPollNowButton"
                                         Grid.Column="2"
@@ -472,7 +484,22 @@
                                         <StackPanel Grid.Column="2">
                                             <TextBlock x:Name="MonitoringVersionLabelText"
                                                        Style="{StaticResource NetLoom.Style.FieldLabel}" />
-                                            <ComboBox x:Name="MonitoringVersionComboBox" />
+                                            <Border x:Name="MonitoringVersionReadOnlyBorder"
+                                                    MinHeight="{DynamicResource NetLoom.Control.MinHeight}"
+                                                    Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                                                    BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                                                    BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                                                    CornerRadius="{DynamicResource NetLoom.Radius.Control}"
+                                                    Padding="{DynamicResource NetLoom.Thickness.ControlPaddingOptical}"
+                                                    Visibility="Collapsed">
+                                                <TextBlock x:Name="MonitoringVersionValueText"
+                                                           VerticalAlignment="Center"
+                                                           TextWrapping="Wrap" />
+                                            </Border>
+                                            <TextBlock x:Name="MonitoringVersionNoProfileText"
+                                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
                                         </StackPanel>
                                     </Grid>
 
@@ -635,7 +662,7 @@
                                                             Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                                             Click="OnAlertShowOnMapClick" />
                                                     <Expander Header="{Binding TechnicalDetailsLabel}"
-                                                              IsExpanded="False"
+                                                              IsExpanded="{Binding IsTechnicalDetailsExpanded, Mode=TwoWay}"
                                                               Style="{StaticResource NetLoom.Style.OperatorExpander}"
                                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}">
                                                         <TextBlock Text="{Binding TechnicalDetails}"
@@ -701,7 +728,7 @@
                                             Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                             Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                             VerticalAlignment="Center"
-                                            Click="OnDiscoveryProfileAddClick" />
+                                            Click="OnShellProfileManageClick" />
                                 </Grid>
                             </Border>
 
@@ -734,10 +761,11 @@
 
                             <Grid Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}">
                                 <Button x:Name="DiscoveryStartButton"
+                                        Style="{StaticResource NetLoom.Style.SidebarActionButton}"
                                         HorizontalAlignment="Stretch"
                                         Click="OnDiscoveryStartClick" />
                                 <Button x:Name="DiscoveryStopButton"
-                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        Style="{StaticResource NetLoom.Style.SidebarSecondaryActionButton}"
                                         HorizontalAlignment="Stretch"
                                         Click="OnDiscoveryStopClick" />
                             </Grid>
@@ -775,12 +803,16 @@
                                                        Grid.Row="0"
                                                        Grid.Column="0"
                                                        Style="{StaticResource NetLoom.Style.FieldLabel}" />
-                                            <TextBlock x:Name="DiscoveryStateValueText"
-                                                       Grid.Row="0"
-                                                       Grid.Column="1"
-                                                       HorizontalAlignment="Right"
-                                                       FontWeight="SemiBold"
-                                                       TextWrapping="Wrap" />
+                                            <StackPanel Grid.Row="0"
+                                                        Grid.Column="1"
+                                                        Orientation="Horizontal"
+                                                        HorizontalAlignment="Right">
+                                                <TextBlock x:Name="DiscoveryStateGlyphText"
+                                                           Style="{StaticResource NetLoom.Style.StatusGlyph}" />
+                                                <TextBlock x:Name="DiscoveryStateValueText"
+                                                           Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
                                             <TextBlock x:Name="DiscoveryProgressLabelText"
                                                        Grid.Row="1"
                                                        Grid.Column="0"
@@ -891,6 +923,56 @@
                                     Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                     HorizontalAlignment="Stretch"
                                     Click="OnShellThemeClick" />
+                            <TextBlock x:Name="ShellProfileSettingsTitleText"
+                                       Style="{StaticResource NetLoom.Style.SectionTitle}"
+                                       Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}" />
+                            <TextBlock x:Name="ShellProfileSettingsSummaryText"
+                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                       Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                       TextWrapping="Wrap" />
+                            <Button x:Name="ShellProfileSettingsAddButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                    HorizontalAlignment="Stretch"
+                                    Click="OnShellProfileSettingsAddClick" />
+                            <ListBox x:Name="ShellProfileSettingsList"
+                                     Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                     SelectionMode="Single"
+                                     SelectionChanged="OnShellProfileSettingsSelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding ActiveText}"
+                                                       Visibility="{Binding ActiveVisibility}"
+                                                       Foreground="{DynamicResource NetLoom.Brush.Accent}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="ShellProfileEditButton"
+                                        Grid.Column="0"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        HorizontalAlignment="Stretch"
+                                        Click="OnShellProfileEditClick" />
+                                <Button x:Name="ShellProfileDeleteButton"
+                                        Grid.Column="2"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        HorizontalAlignment="Stretch"
+                                        Foreground="{DynamicResource NetLoom.Brush.Critical}"
+                                        BorderBrush="{DynamicResource NetLoom.Brush.Critical}"
+                                        Click="OnShellProfileDeleteClick" />
+                            </Grid>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
@@ -921,23 +1003,13 @@
                 </Border>
 
                 <Grid Grid.Row="1">
-                            <ScrollViewer x:Name="MapScrollViewer"
-                                          Background="{DynamicResource NetLoom.Brush.Canvas}"
-                                          HorizontalScrollBarVisibility="Auto"
-                                          VerticalScrollBarVisibility="Auto"
-                                          PreviewMouseWheel="OnMapPreviewMouseWheel"
-                                          PreviewMouseDown="OnMapPreviewMouseDown"
-                                          PreviewMouseMove="OnMapPreviewMouseMove"
-                                          PreviewMouseUp="OnMapPreviewMouseUp">
-                                <Canvas x:Name="MapCanvas"
-                                        Background="{DynamicResource NetLoom.Brush.Canvas}"
-                                        MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
-                                        Width="{DynamicResource NetLoom.Map.CanvasWidth}"
-                                        Height="{DynamicResource NetLoom.Map.CanvasHeight}" />
-                            </ScrollViewer>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                    <Border HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
+                    <Border Grid.Row="0"
+                            HorizontalAlignment="Right"
                             Margin="{DynamicResource NetLoom.Thickness.ShellMapControlsMargin}"
                             Padding="{DynamicResource NetLoom.Thickness.ShellMapControlsPadding}"
                             Background="{DynamicResource NetLoom.Brush.Surface}"
@@ -973,6 +1045,27 @@
                         </StackPanel>
                     </Border>
 
+                    <ScrollViewer x:Name="MapScrollViewer"
+                                  Grid.Row="1"
+                                  Style="{StaticResource NetLoom.Style.MapScrollViewer}"
+                                  Background="{DynamicResource NetLoom.Brush.Canvas}"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  PreviewMouseWheel="OnMapPreviewMouseWheel"
+                                  PreviewMouseDown="OnMapPreviewMouseDown"
+                                  PreviewMouseMove="OnMapPreviewMouseMove"
+                                  PreviewMouseUp="OnMapPreviewMouseUp">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="{x:Type ScrollBar}"
+                                   BasedOn="{StaticResource NetLoom.Style.MapScrollBar}" />
+                        </ScrollViewer.Resources>
+                        <Canvas x:Name="MapCanvas"
+                                Background="{DynamicResource NetLoom.Brush.Canvas}"
+                                MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
+                                Width="{DynamicResource NetLoom.Map.CanvasWidth}"
+                                Height="{DynamicResource NetLoom.Map.CanvasHeight}" />
+                    </ScrollViewer>
+
                     <ContentControl x:Name="ShellWorkspaceEditorHost"
                                     Grid.RowSpan="2"
                                     Panel.ZIndex="20"
@@ -990,42 +1083,37 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0">
                         <TextBlock x:Name="DiagnosticTitleText"
                                    Style="{StaticResource NetLoom.Style.SectionTitle}" />
-                        <TextBlock x:Name="DiagnosticStatusText"
-                                   Style="{StaticResource NetLoom.Style.MutedText}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                   TextWrapping="Wrap" />
-                        <TextBlock x:Name="InspectorEntityTypeText"
-                                   Style="{StaticResource NetLoom.Style.StatusEmphasis}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
-                        <Expander x:Name="InspectorTechnicalDetailsExpander"
-                                  IsExpanded="False"
-                                  Margin="{DynamicResource NetLoom.Thickness.GapXsTop}">
-                            <TextBlock x:Name="InspectorEntityIdText"
-                                       Style="{StaticResource NetLoom.Style.MonoText}"
-                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                       TextWrapping="Wrap" />
-                        </Expander>
-                    </StackPanel>
-
-                    <StackPanel Grid.Row="1">
                         <TextBlock x:Name="DiagnosticElementTitleText"
                                    Style="{StaticResource NetLoom.Style.SubsectionLabel}"
                                    Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
                                    TextWrapping="Wrap" />
+                        <TextBlock x:Name="InspectorOperationalStatusText"
+                                   Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   Visibility="Collapsed" />
                         <TextBlock x:Name="DiagnosticElementSubtitleText"
                                    Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                    TextWrapping="Wrap" />
+                        <TextBlock x:Name="InspectorEntityTypeText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+                        <TextBlock x:Name="DiagnosticStatusText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   TextWrapping="Wrap"
+                                   Visibility="Collapsed" />
                     </StackPanel>
 
                     <TabControl x:Name="InspectorTabControl"
-                                Grid.Row="2"
+                                Grid.Row="1"
                                 Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                 Style="{StaticResource NetLoom.Style.InspectorTabs}">
                         <TabItem x:Name="InspectorOverviewTab"
@@ -1126,6 +1214,16 @@
                             </ScrollViewer>
                         </TabItem>
                     </TabControl>
+
+                    <Expander x:Name="InspectorTechnicalDetailsExpander"
+                              Grid.Row="2"
+                              IsExpanded="False"
+                              Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                        <TextBlock x:Name="InspectorEntityIdText"
+                                   Style="{StaticResource NetLoom.Style.MonoText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.ExpanderContent}"
+                                   TextWrapping="Wrap" />
+                    </Expander>
                 </Grid>
             </Border>
         </Grid>

@@ -1054,6 +1054,9 @@ public partial class MainWindow
         {
             _suppressLockSelectedChange = false;
         }
+
+        UpdateShellEquipmentPresentation(
+            _lastMapSnapshot);
     }
 
     private void AnimateAppearance(
@@ -1171,84 +1174,203 @@ public partial class MainWindow
 
         var element =
             visual.Border;
+        var halo =
+            visual.PulseHalo;
 
-        // Discovery focus должен быть заметен даже на уже выбранном узле.
-        // Пульсируем не только прозрачностью, но и рамкой карточки.
         element.BeginAnimation(
             UIElement.OpacityProperty,
             null);
 
-        element.BeginAnimation(
-            Border.BorderThicknessProperty,
-            null);
+        element.Opacity =
+            1.0;
 
-        element.Opacity = 1.0;
+        StopNodeFocusHalo(
+            halo);
 
-        var baseThickness =
-            element.BorderThickness;
+        if (_motionMode ==
+            MapMotionMode.Off)
+        {
+            return;
+        }
 
-        var pulseThickness =
-            new Thickness(
-                baseThickness.Left + 4.0,
-                baseThickness.Top + 4.0,
-                baseThickness.Right + 4.0,
-                baseThickness.Bottom + 4.0);
+        var width =
+            element.ActualWidth > 0.0
+                ? element.ActualWidth
+                : _nodeWidth;
+        var height =
+            element.ActualHeight > 0.0
+                ? element.ActualHeight
+                : NodeVisualHeight(
+                    visual);
+
+        halo.Width =
+            width;
+        halo.Height =
+            height;
+
+        Canvas.SetLeft(
+            halo,
+            NodeLeft(
+                visual));
+
+        Canvas.SetTop(
+            halo,
+            NodeTop(
+                visual));
+
+        halo.Visibility =
+            Visibility.Visible;
+        halo.Opacity =
+            0.72;
+
+        var scale =
+            halo.RenderTransform
+                as ScaleTransform;
+
+        if (scale == null)
+        {
+            scale =
+                new ScaleTransform(
+                    1.0,
+                    1.0);
+
+            halo.RenderTransform =
+                scale;
+        }
+
+        scale.ScaleX =
+            1.0;
+        scale.ScaleY =
+            1.0;
+
+        if (_motionMode ==
+            MapMotionMode.Reduced)
+        {
+            var hold =
+                MapMotionPolicy
+                    .AlertFocusStaticDuration(
+                        _motionMode);
+
+            var holdAnimation =
+                new DoubleAnimation(
+                    0.72,
+                    0.72,
+                    new Duration(
+                        hold));
+
+            holdAnimation.Completed +=
+                (sender, args) =>
+                    StopNodeFocusHalo(
+                        halo);
+
+            halo.BeginAnimation(
+                UIElement.OpacityProperty,
+                holdAnimation,
+                HandoffBehavior.SnapshotAndReplace);
+
+            return;
+        }
 
         var duration =
-            new Duration(
-                TimeSpan.FromMilliseconds(
-                    260.0));
-
+            MapMotionPolicy.Duration(
+                _motionMode,
+                MapMotionKind.AlertPulse);
         var repeat =
             new RepeatBehavior(
-                6.0);
+                MapMotionPolicy
+                    .AlertFocusPulseCount(
+                        _motionMode));
 
         var opacityAnimation =
             new DoubleAnimation(
-                1.0,
-                0.35,
-                duration)
+                0.72,
+                0.0,
+                new Duration(
+                    duration))
             {
-                AutoReverse = true,
-                RepeatBehavior = repeat
+                RepeatBehavior =
+                    repeat
             };
 
-        var borderAnimation =
-            new ThicknessAnimation(
-                baseThickness,
-                pulseThickness,
-                duration)
+        var scaleXAnimation =
+            new DoubleAnimation(
+                1.0,
+                1.28,
+                new Duration(
+                    duration))
             {
-                AutoReverse = true,
-                RepeatBehavior = repeat
+                RepeatBehavior =
+                    repeat
+            };
+
+        var scaleYAnimation =
+            new DoubleAnimation(
+                1.0,
+                1.28,
+                new Duration(
+                    duration))
+            {
+                RepeatBehavior =
+                    repeat
             };
 
         opacityAnimation.Completed +=
             (sender, args) =>
-            {
-                element.BeginAnimation(
-                    UIElement.OpacityProperty,
-                    null);
+                StopNodeFocusHalo(
+                    halo);
 
-                element.BeginAnimation(
-                    Border.BorderThicknessProperty,
-                    null);
-
-                element.Opacity = 1.0;
-                element.BorderThickness =
-                    baseThickness;
-            };
-
-        element.BeginAnimation(
+        halo.BeginAnimation(
             UIElement.OpacityProperty,
             opacityAnimation,
             HandoffBehavior.SnapshotAndReplace);
 
-        element.BeginAnimation(
-            Border.BorderThicknessProperty,
-            borderAnimation,
+        scale.BeginAnimation(
+            ScaleTransform.ScaleXProperty,
+            scaleXAnimation,
+            HandoffBehavior.SnapshotAndReplace);
+
+        scale.BeginAnimation(
+            ScaleTransform.ScaleYProperty,
+            scaleYAnimation,
             HandoffBehavior.SnapshotAndReplace);
     }
+
+    private static void StopNodeFocusHalo(
+        Rectangle halo)
+    {
+        if (halo == null)
+        {
+            return;
+        }
+
+        halo.BeginAnimation(
+            UIElement.OpacityProperty,
+            null);
+
+        var scale =
+            halo.RenderTransform
+                as ScaleTransform;
+
+        if (scale != null)
+        {
+            scale.BeginAnimation(
+                ScaleTransform.ScaleXProperty,
+                null);
+            scale.BeginAnimation(
+                ScaleTransform.ScaleYProperty,
+                null);
+            scale.ScaleX =
+                1.0;
+            scale.ScaleY =
+                1.0;
+        }
+
+        halo.Opacity =
+            1.0;
+        halo.Visibility =
+            Visibility.Collapsed;
+    }
+
     private void AnimatePulse(
         UIElement element,
         MapMotionKind kind,
@@ -1265,8 +1387,14 @@ public partial class MainWindow
                 _motionMode,
                 kind);
 
-        if (duration == TimeSpan.Zero)
+        if (duration == TimeSpan.Zero ||
+            (kind == MapMotionKind.AlertPulse &&
+             _motionMode == MapMotionMode.Reduced))
         {
+            element.BeginAnimation(
+                UIElement.OpacityProperty,
+                null);
+
             element.Opacity =
                 targetOpacity;
             return;
@@ -1322,6 +1450,9 @@ public partial class MainWindow
         {
             StopMotion(
                 visual.Border);
+
+            StopNodeFocusHalo(
+                visual.PulseHalo);
         }
 
         foreach (var visual in

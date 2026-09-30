@@ -49,5 +49,35 @@ namespace NetLoom.Tests.Unit
                 MapMotionPolicy.PulseOpacity(
                     MapMotionMode.Normal));
         }
+
+        [TestMethod]
+        public void AlertFocusUsesThreeHalosReducedStaticHoldAndNoMotionWhenOff()
+        {
+            Assert.AreEqual(
+                3,
+                MapMotionPolicy.AlertFocusPulseCount(
+                    MapMotionMode.Normal));
+            Assert.AreEqual(
+                0,
+                MapMotionPolicy.AlertFocusPulseCount(
+                    MapMotionMode.Reduced));
+            Assert.AreEqual(
+                0,
+                MapMotionPolicy.AlertFocusPulseCount(
+                    MapMotionMode.Off));
+
+            Assert.AreEqual(
+                TimeSpan.Zero,
+                MapMotionPolicy.AlertFocusStaticDuration(
+                    MapMotionMode.Normal));
+            Assert.AreEqual(
+                TimeSpan.FromSeconds(2.0),
+                MapMotionPolicy.AlertFocusStaticDuration(
+                    MapMotionMode.Reduced));
+            Assert.AreEqual(
+                TimeSpan.Zero,
+                MapMotionPolicy.AlertFocusStaticDuration(
+                    MapMotionMode.Off));
+        }
     }
 }

@@ -427,7 +427,7 @@
     <value>Physical connections</value>
   </data>
   <data name="DiagnosticImpactTitle" xml:space="preserve">
-    <value>Failure impact</value>
+    <value>If this link fails</value>
   </data>
   <data name="DiagnosticEvidenceTitle" xml:space="preserve">
     <value>Evidence</value>
@@ -509,16 +509,16 @@ Link: {0} / {2}
 State: {3}; opposite side: {4}.</value>
   </data>
   <data name="DiagnosticImpactSideA" xml:space="preserve">
-    <value>Side {0}: {1}</value>
+    <value>On the {0} side: {1}</value>
   </data>
   <data name="DiagnosticImpactSideB" xml:space="preserve">
-    <value>Side {0}: {1}</value>
+    <value>On the {0} side: {1}</value>
   </data>
   <data name="DiagnosticImpactPairs" xml:space="preserve">
-    <value>Separated device pairs if this link fails: {0}</value>
+    <value>Device pairs that lose connectivity between the two sides: {0}</value>
   </data>
   <data name="DiagnosticImpactAlternativePath" xml:space="preserve">
-    <value>This link is not a graph bridge; an alternate physical path exists in the current materialized graph.</value>
+    <value>According to the known topology, devices remain connected through an alternate path.</value>
   </data>
   <data name="DiagnosticEvidenceRow" xml:space="preserve">
     <value>{0} • {1} • source {2} • {3} • raw: {4}</value>
@@ -711,7 +711,7 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Zoom</value>
   </data>
   <data name="MapZoomOutAction" xml:space="preserve">
-    <value>-</value>
+    <value>−</value>
   </data>
   <data name="MapZoomInAction" xml:space="preserve">
     <value>+</value>
@@ -1442,7 +1442,7 @@ Drag the header to move this location together with its child locations and assi
     <value>no response</value>
   </data>
   <data name="DiscoveryStateIdle" xml:space="preserve">
-    <value>Ready</value>
+    <value>Waiting to start</value>
   </data>
   <data name="DiscoveryStateStarting" xml:space="preserve">
     <value>Starting</value>
@@ -1540,7 +1540,7 @@ Drag the header to move this location together with its child locations and assi
   <data name="ShellMonitoringSummary" xml:space="preserve">
     <value>State: {0}
 Targets: {1}
-Last poll: {2}</value>
+Poll: {2}</value>
   </data>
   <data name="ShellAlertCount" xml:space="preserve">
     <value>Alerts: {0}</value>
@@ -1558,7 +1558,7 @@ Last poll: {2}</value>
     <value>Overview</value>
   </data>
   <data name="InspectorInterfacesTab" xml:space="preserve">
-    <value>Interfaces</value>
+    <value>Ports</value>
   </data>
   <data name="InspectorLinksTab" xml:space="preserve">
     <value>Links</value>
@@ -1670,5 +1670,122 @@ Last poll: {2}</value>
   </data>
   <data name="MapInteractionModeEditIndicator" xml:space="preserve">
     <value>EDIT MODE</value>
+  </data>
+  <data name="OperatorStatusNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="OperatorStatusActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="OperatorStatusWarning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="OperatorStatusCritical" xml:space="preserve">
+    <value>Critical</value>
+  </data>
+  <data name="OperatorStatusUnknown" xml:space="preserve">
+    <value>No data</value>
+  </data>
+  <data name="OperatorStatusStopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="OperatorStatusTransition" xml:space="preserve">
+    <value>Transition</value>
+  </data>
+  <data name="OperatorStatusBlocked" xml:space="preserve">
+    <value>Blocked</value>
+  </data>
+  <data name="OperatorStatusGlyphNormal" xml:space="preserve">
+    <value>✓</value>
+  </data>
+  <data name="OperatorStatusGlyphActive" xml:space="preserve">
+    <value>●</value>
+  </data>
+  <data name="OperatorStatusGlyphWarning" xml:space="preserve">
+    <value>!</value>
+  </data>
+  <data name="OperatorStatusGlyphCritical" xml:space="preserve">
+    <value>×</value>
+  </data>
+  <data name="OperatorStatusGlyphUnknown" xml:space="preserve">
+    <value>?</value>
+  </data>
+  <data name="OperatorStatusGlyphStopped" xml:space="preserve">
+    <value>■</value>
+  </data>
+  <data name="OperatorStatusGlyphTransition" xml:space="preserve">
+    <value>↻</value>
+  </data>
+  <data name="OperatorStatusGlyphBlocked" xml:space="preserve">
+    <value>⊘</value>
+  </data>
+  <data name="OperatorStatusIdle" xml:space="preserve">
+    <value>Waiting</value>
+  </data>
+  <data name="OperatorStatusGlyphIdle" xml:space="preserve">
+    <value>○</value>
+  </data>
+  <data name="MonitoringVersionFromProfile" xml:space="preserve">
+    <value>SNMP {0} · from profile</value>
+  </data>
+  <data name="MonitoringVersionNoProfile" xml:space="preserve">
+    <value>No profile selected — choose one above</value>
+  </data>
+  <data name="ShellAlertBadgeOverflow" xml:space="preserve">
+    <value>99+</value>
+  </data>
+  <data name="DiagnosticImpactSinglePath" xml:space="preserve">
+    <value>According to the known topology, this is the only path: if it fails, the network splits into two parts.</value>
+  </data>
+  <data name="DiscoveryProfileEditAction" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="DiscoveryProfileDeleteAction" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="DiscoveryProfileSettingsTitle" xml:space="preserve">
+    <value>SNMP profiles</value>
+  </data>
+  <data name="DiscoveryProfileManageAction" xml:space="preserve">
+    <value>Manage profiles...</value>
+  </data>
+  <data name="DiscoveryProfileSettingsHint" xml:space="preserve">
+    <value>Select a profile to edit or delete. Choose the active profile in the top bar.</value>
+  </data>
+  <data name="DiscoveryProfileSettingsEmpty" xml:space="preserve">
+    <value>No profiles yet. Add one here to use monitoring and discovery.</value>
+  </data>
+  <data name="DiscoveryProfileActiveLabel" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="DiscoveryProfileSettingsNoSelection" xml:space="preserve">
+    <value>Select a profile in the top bar.</value>
+  </data>
+  <data name="DiscoveryProfileEditDialogTitle" xml:space="preserve">
+    <value>Edit SNMP profile</value>
+  </data>
+  <data name="DiscoveryProfileCommunityKeepHint" xml:space="preserve">
+    <value>Leave Community blank to keep the current value.</value>
+  </data>
+  <data name="DiscoveryProfileDeleteDialogTitle" xml:space="preserve">
+    <value>Delete SNMP profile</value>
+  </data>
+  <data name="DiscoveryProfileDeleteConfirm" xml:space="preserve">
+    <value>Delete profile “{0}”?</value>
+  </data>
+  <data name="DiscoveryProfileDeleteActiveWarning" xml:space="preserve">
+    <value>This profile is active. After deletion, another available profile will be selected; if none remain, monitoring and discovery will require a new profile.</value>
+  </data>
+  <data name="DiscoveryProfileDeleteConfirmAction" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="DiscoveryProfileChangeUnavailable" xml:space="preserve">
+    <value>Profile management is unavailable in this run.</value>
+  </data>
+  <data name="DiscoveryProfileUpdateFailed" xml:space="preserve">
+    <value>Could not update profile: {0}</value>
+  </data>
+  <data name="DiscoveryProfileDeleteFailed" xml:space="preserve">
+    <value>Could not delete profile: {0}</value>
   </data>
 </root>

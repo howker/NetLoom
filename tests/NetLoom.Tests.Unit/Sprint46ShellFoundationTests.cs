@@ -866,6 +866,896 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            OperatorTextTabsDisabledChromeAndEmptyInspectorStayReadable()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var deviceId =
+                        Guid.Parse(
+                            "46464646-6500-6500-6500-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                Snapshot(
+                                    deviceId,
+                                    "Longest operator device name",
+                                    "192.0.2.180")),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    deviceId) != null);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellMonitoringButton"));
+
+                        var startButton =
+                            (Button)window.FindName(
+                                "MonitoringStartButton");
+
+                        startButton.Measure(
+                            new Size(
+                                double.PositiveInfinity,
+                                double.PositiveInfinity));
+
+                        Assert.IsTrue(
+                            double.IsNaN(
+                                startButton.Width),
+                            "Text actions must not use a fixed Width.");
+
+                        Assert.IsTrue(
+                            startButton.MinWidth > 0.0,
+                            "Text actions may use a minimum width.");
+
+                        Assert.IsTrue(
+                            startButton.ActualWidth + 0.5 >=
+                            startButton.DesiredSize.Width,
+                            "The longest visible monitoring action must fit instead of losing Russian letters.");
+
+                        var pollNowButton =
+                            (Button)window.FindName(
+                                "MonitoringPollNowButton");
+
+                        var monitoringPanel =
+                            (ScrollViewer)window.FindName(
+                                "ShellMonitoringSidebarPanel");
+
+                        PumpDispatcher();
+
+                        var pollRight =
+                            pollNowButton
+                                .TransformToAncestor(
+                                    monitoringPanel)
+                                .Transform(
+                                    new Point(
+                                        pollNowButton.ActualWidth,
+                                        0.0))
+                                .X;
+
+                        Assert.IsTrue(
+                            pollRight <=
+                            monitoringPanel.ViewportWidth + 0.5,
+                            "The secondary monitoring action must stay inside the sidebar instead of clipping its right border.");
+
+                        var longLabel =
+                            (TextBlock)window.FindName(
+                                "MonitoringActiveTargetLabelText");
+
+                        Assert.IsTrue(
+                            double.IsNaN(
+                                longLabel.Width));
+                        Assert.AreEqual(
+                            TextWrapping.Wrap,
+                            longLabel.TextWrapping);
+                        Assert.AreEqual(
+                            TextTrimming.None,
+                            longLabel.TextTrimming);
+
+                        SelectDevice(
+                            window,
+                            deviceId);
+
+                        PumpDispatcher();
+
+                        var inspector =
+                            (TabControl)window.FindName(
+                                "InspectorTabControl");
+
+                        var tabs =
+                            new[]
+                            {
+                                (TabItem)window.FindName(
+                                    "InspectorOverviewTab"),
+                                (TabItem)window.FindName(
+                                    "InspectorInterfacesTab"),
+                                (TabItem)window.FindName(
+                                    "InspectorLinksTab"),
+                                (TabItem)window.FindName(
+                                    "InspectorEvidenceTab")
+                            };
+
+                        var visibleTabs =
+                            tabs
+                                .Where(
+                                    item =>
+                                        item.Visibility ==
+                                        Visibility.Visible)
+                                .ToArray();
+
+                        Assert.IsTrue(
+                            visibleTabs.Length >= 2);
+
+                        var firstTop =
+                            visibleTabs[0]
+                                .TransformToAncestor(
+                                    inspector)
+                                .Transform(
+                                    new Point(
+                                        0.0,
+                                        0.0))
+                                .Y;
+
+                        foreach (var tab in
+                            visibleTabs.Skip(1))
+                        {
+                            var top =
+                                tab
+                                    .TransformToAncestor(
+                                        inspector)
+                                    .Transform(
+                                        new Point(
+                                            0.0,
+                                            0.0))
+                                    .Y;
+
+                            Assert.AreEqual(
+                                firstTop,
+                                top,
+                                0.5,
+                                "Inspector tabs must stay in one row.");
+                        }
+
+                        var themeButton =
+                            (Button)window.FindName(
+                                "ShellThemeButton");
+
+                        Click(
+                            themeButton);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellDiscoveryButton"));
+
+                        var discoveryStart =
+                            (Button)window.FindName(
+                                "DiscoveryStartButton");
+
+                        Assert.IsFalse(
+                            discoveryStart.IsEnabled);
+
+                        discoveryStart.ApplyTemplate();
+                        PumpDispatcher();
+
+                        var disabledChrome =
+                            FindVisualDescendant<Border>(
+                                discoveryStart);
+
+                        Assert.IsNotNull(
+                            disabledChrome);
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.SurfaceMuted"),
+                            disabledChrome.Background,
+                            "Disabled buttons in dark theme must use semantic dark chrome.");
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiscoveryStateIdle"),
+                            ((TextBlock)window.FindName(
+                                "DiscoveryStateValueText"))
+                            .Text);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "OperatorStatusGlyphIdle"),
+                            ((TextBlock)window.FindName(
+                                "DiscoveryStateGlyphText"))
+                            .Text,
+                            "Discovery before first run must be neutral, not a green success.");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellEquipmentButton"));
+
+                        var equipmentList =
+                            (ItemsControl)window.FindName(
+                                "EquipmentList");
+
+                        WaitForCondition(
+                            () =>
+                                equipmentList.Items.Count > 0 &&
+                                FindVisualDescendant<Button>(
+                                    equipmentList) != null);
+
+                        var equipmentButton =
+                            FindVisualDescendant<Button>(
+                                equipmentList);
+
+                        Assert.IsNotNull(
+                            equipmentButton);
+
+                        Click(
+                            equipmentButton);
+                        PumpDispatcher();
+
+                        WaitForCondition(
+                            () =>
+                                FindVisualDescendant<Button>(
+                                    equipmentList) != null);
+
+                        equipmentButton =
+                            FindVisualDescendant<Button>(
+                                equipmentList);
+
+                        Assert.IsNotNull(
+                            equipmentButton);
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.AccentSoft"),
+                            equipmentButton.Background,
+                            "The selected equipment row must remain visibly selected in dark theme.");
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Accent"),
+                            equipmentButton.BorderBrush);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            EmptyInspectorShowsPromptWithoutEmptyTabs()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((TabControl)window.FindName(
+                                "InspectorTabControl"))
+                            .Visibility,
+                            "An empty inspector must show only its prompt, without an empty tab frame.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            OperatorContainersKeepSharedMinimumInsets()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var minimum =
+                            12.0;
+
+                        var railSummary =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.ShellRailSummary");
+                        var eventPadding =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.ShellEventPadding");
+                        var mapControls =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.ShellMapControlsPadding");
+                        var expanderContent =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.ExpanderContent");
+                        var inspectorContent =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.InspectorContentPadding");
+                        var cardPadding =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.PanelPadding");
+
+                        foreach (var inset in
+                            new[]
+                            {
+                                railSummary,
+                                eventPadding,
+                                mapControls,
+                                expanderContent,
+                                inspectorContent
+                            })
+                        {
+                            Assert.IsTrue(
+                                inset.Left >= minimum &&
+                                inset.Right >= minimum,
+                                "Operator containers must keep at least 12 px horizontal breathing room from their frame or window edge.");
+                        }
+
+                        Assert.IsTrue(
+                            cardPadding.Left >= 16.0 &&
+                            cardPadding.Right >= 16.0,
+                            "Operator cards must keep at least 16 px horizontal content padding.");
+
+                        var inspector =
+                            (TabControl)window.FindName(
+                                "InspectorTabControl");
+
+                        Assert.AreEqual(
+                            inspectorContent,
+                            inspector.Padding,
+                            "Inspector content padding must come from the shared token.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            SingleLineControlsUseGlyphMetricOpticalCentering()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var family =
+                            (System.Windows.Media.FontFamily)
+                            window.FindResource(
+                                "NetLoom.FontFamily.Ui");
+                        var fontSize =
+                            Convert.ToDouble(
+                                window.FindResource(
+                                    "NetLoom.FontSize.Body"));
+
+                        var typeface =
+                            new System.Windows.Media.Typeface(
+                                family,
+                                FontStyles.Normal,
+                                FontWeights.Normal,
+                                FontStretches.Normal);
+
+                        System.Windows.Media.GlyphTypeface
+                            glyphTypeface;
+
+                        Assert.IsTrue(
+                            typeface.TryGetGlyphTypeface(
+                                out glyphTypeface),
+                            "The UI font must expose glyph metrics for optical centering.");
+
+                        var expectedOffset =
+                            (
+                                glyphTypeface.Baseline -
+                                glyphTypeface.CapsHeight / 2.0 -
+                                glyphTypeface.Height / 2.0
+                            ) *
+                            fontSize;
+
+                        var actualOffset =
+                            Convert.ToDouble(
+                                window.FindResource(
+                                    "NetLoom.Type.OpticalOffsetY"));
+
+                        Assert.AreEqual(
+                            expectedOffset,
+                            actualOffset,
+                            0.001,
+                            "Optical vertical shift must come from Baseline, CapsHeight and Height instead of a hand-tuned per-control margin.");
+
+                        var fitAllButton =
+                            (Button)window.FindName(
+                                "MapFitAllButton");
+
+                        fitAllButton.ApplyTemplate();
+
+                        var buttonPresenter =
+                            (ContentPresenter)
+                            fitAllButton.Template.FindName(
+                                "ButtonContentPresenter",
+                                fitAllButton);
+
+                        Assert.IsNotNull(
+                            buttonPresenter);
+
+                        var buttonTransform =
+                            buttonPresenter.RenderTransform
+                                as System.Windows.Media.TranslateTransform;
+
+                        Assert.IsNotNull(
+                            buttonTransform);
+                        Assert.AreEqual(
+                            actualOffset,
+                            buttonTransform.Y,
+                            0.001);
+
+                        var overviewTab =
+                            (TabItem)window.FindName(
+                                "InspectorOverviewTab");
+
+                        overviewTab.ApplyTemplate();
+
+                        var tabPresenter =
+                            (ContentPresenter)
+                            overviewTab.Template.FindName(
+                                "InspectorTabHeaderPresenter",
+                                overviewTab);
+
+                        Assert.IsNotNull(
+                            tabPresenter);
+
+                        var tabTransform =
+                            tabPresenter.RenderTransform
+                                as System.Windows.Media.TranslateTransform;
+
+                        Assert.IsNotNull(
+                            tabTransform);
+                        Assert.AreEqual(
+                            actualOffset,
+                            tabTransform.Y,
+                            0.001);
+
+                        var textBox =
+                            (TextBox)window.FindName(
+                                "MonitoringTargetAddressTextBox");
+
+                        var basePadding =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.ControlPadding");
+                        var opticalPadding =
+                            (Thickness)window.FindResource(
+                                "NetLoom.Thickness.ControlPaddingOptical");
+
+                        Assert.AreEqual(
+                            basePadding.Left,
+                            opticalPadding.Left,
+                            0.001);
+                        Assert.AreEqual(
+                            basePadding.Right,
+                            opticalPadding.Right,
+                            0.001);
+                        Assert.AreEqual(
+                            Math.Max(
+                                0.0,
+                                basePadding.Top +
+                                actualOffset),
+                            opticalPadding.Top,
+                            0.001);
+                        Assert.AreEqual(
+                            Math.Max(
+                                0.0,
+                                basePadding.Bottom -
+                                actualOffset),
+                            opticalPadding.Bottom,
+                            0.001);
+                        Assert.AreEqual(
+                            opticalPadding,
+                            textBox.Padding);
+
+                        Assert.AreEqual(
+                            LineStackingStrategy.BlockLineHeight,
+                            fitAllButton.GetValue(
+                                TextBlock.LineStackingStrategyProperty));
+                        Assert.AreEqual(
+                            fontSize,
+                            Convert.ToDouble(
+                                fitAllButton.GetValue(
+                                    TextBlock.LineHeightProperty)),
+                            0.001);
+
+                        var badgeFontSize =
+                            Convert.ToDouble(
+                                window.FindResource(
+                                    "NetLoom.Navigation.BadgeFontSize"));
+                        var semiBoldTypeface =
+                            new Typeface(
+                                family,
+                                FontStyles.Normal,
+                                FontWeights.SemiBold,
+                                FontStretches.Normal);
+                        GlyphTypeface badgeGlyphTypeface;
+
+                        Assert.IsTrue(
+                            semiBoldTypeface.TryGetGlyphTypeface(
+                                out badgeGlyphTypeface));
+
+                        var expectedBadgeOffset =
+                            (
+                                badgeGlyphTypeface.Baseline -
+                                badgeGlyphTypeface.CapsHeight / 2.0 -
+                                badgeGlyphTypeface.Height / 2.0
+                            ) *
+                            badgeFontSize;
+
+                        Assert.AreEqual(
+                            expectedBadgeOffset,
+                            Convert.ToDouble(
+                                window.FindResource(
+                                    "NetLoom.Type.BadgeOpticalOffsetY")),
+                            0.001,
+                            "Navigation badge digits must use the same glyph-metric optical-centering rule as buttons and tabs.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            ComboBoxUsesSemanticDarkChromeWhenNormalDisabledAndOpen()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var profileId =
+                        Guid.Parse(
+                            "46464646-6600-6600-6600-464646464646");
+
+                    var profile =
+                        new AccessProfile(
+                            profileId,
+                            "Field profile A",
+                            true,
+                            SnmpVersion.V2C,
+                            null);
+                    var secondProfileId =
+                        Guid.Parse(
+                            "46464646-6601-6601-6601-464646464646");
+                    var secondProfile =
+                        new AccessProfile(
+                            secondProfileId,
+                            "Field profile B",
+                            true,
+                            SnmpVersion.V1,
+                            null);
+                    var shellStateStore =
+                        new MemoryShellStateStore(
+                            new UiShellState(
+                                profileId,
+                                UiShellTheme.Dark));
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader(),
+                            new RecordingMonitoringControl(),
+                            new EmptyDiscoveryControl(),
+                            new[]
+                            {
+                                profile,
+                                secondProfile
+                            },
+                            new NoopCandidateMaterializer(),
+                            shellStateStore);
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var combo =
+                            (ComboBox)window.FindName(
+                                "DiscoveryProfileComboBox");
+
+                        combo.ApplyTemplate();
+                        PumpDispatcher();
+
+                        var chrome =
+                            (Border)combo.Template.FindName(
+                                "ComboChrome",
+                                combo);
+
+                        Assert.IsNotNull(
+                            chrome);
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Surface"),
+                            chrome.Background,
+                            "Enabled ComboBox must use the semantic dark surface.");
+
+                        var selectionPresenter =
+                            (ContentPresenter)combo.Template.FindName(
+                                "SelectionPresenter",
+                                combo);
+
+                        Assert.IsNotNull(
+                            selectionPresenter);
+                        Assert.IsFalse(
+                            selectionPresenter.IsHitTestVisible,
+                            "Selected ComboBox content must not intercept clicks intended for the drop-down toggle.");
+                        Assert.IsNotNull(
+                            combo.SelectedItem,
+                            "The seeded profile must be selected before ComboBox rendering is verified.");
+                        Assert.IsNotNull(
+                            selectionPresenter.Content,
+                            "The selected ComboBox value must be present in the semantic template.");
+
+                        PumpDispatcher();
+
+                        var selectedText =
+                            FindVisualDescendant<TextBlock>(
+                                selectionPresenter);
+
+                        Assert.IsNotNull(
+                            selectedText,
+                            "The selected ComboBox value must render as visible text.");
+                        Assert.AreEqual(
+                            UiText.Format(
+                                "DiscoveryProfileDisplay",
+                                profile.Name,
+                                "v2c"),
+                            selectedText.Text,
+                            "The custom ComboBox template must render the selected discovery profile display text instead of dropping the selected value.");
+
+                        combo.IsEnabled =
+                            false;
+                        PumpDispatcher();
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.SurfaceMuted"),
+                            chrome.Background,
+                            "Disabled ComboBox must use the semantic muted dark surface.");
+
+                        combo.IsEnabled =
+                            true;
+
+                        var toggle =
+                            (System.Windows.Controls.Primitives.ToggleButton)combo.Template.FindName(
+                                "DropDownToggle",
+                                combo);
+
+                        Assert.IsNotNull(
+                            toggle);
+
+                        toggle.IsChecked =
+                            true;
+                        PumpDispatcher();
+
+                        Assert.IsTrue(
+                            combo.IsDropDownOpen,
+                            "The shared profile ComboBox template must wire its full-field toggle to IsDropDownOpen.");
+
+                        var popup =
+                            (System.Windows.Controls.Primitives.Popup)
+                            combo.Template.FindName(
+                                "PART_Popup",
+                                combo);
+
+                        Assert.IsNotNull(
+                            popup);
+                        Assert.IsTrue(
+                            popup.IsOpen);
+
+                        var popupChrome =
+                            popup.Child as Border;
+
+                        Assert.IsNotNull(
+                            popupChrome);
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Surface"),
+                            popupChrome.Background,
+                            "Open ComboBox popup must use the semantic dark surface instead of Windows white chrome.");
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Border"),
+                            popupChrome.BorderBrush);
+
+                        Assert.AreEqual(
+                            UiText.Format(
+                                "MonitoringVersionFromProfile",
+                                "v2c"),
+                            ((TextBlock)window.FindName(
+                                "MonitoringVersionValueText"))
+                            .Text,
+                            "Monitoring SNMP version is inherited from the active profile and must be presented as read-only text, not as a dead drop-down.");
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((FrameworkElement)window.FindName(
+                                "MonitoringVersionReadOnlyBorder"))
+                            .Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((FrameworkElement)window.FindName(
+                                "MonitoringVersionNoProfileText"))
+                            .Visibility);
+                        Assert.IsNull(
+                            window.FindName(
+                                "MonitoringVersionComboBox"));
+
+                        combo.IsDropDownOpen =
+                            false;
+                        combo.SelectedIndex =
+                            1;
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            secondProfileId,
+                            shellStateStore.LastSaved.AccessProfileId,
+                            "Changing the shared profile selector must persist the newly active profile.");
+                        Assert.AreEqual(
+                            UiText.Format(
+                                "MonitoringVersionFromProfile",
+                                "v1"),
+                            ((TextBlock)window.FindName(
+                                "MonitoringVersionValueText"))
+                            .Text,
+                            "Changing the active SNMP profile must update the read-only monitoring version.");
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiscoveryProfileSettingsHint"),
+                            ((TextBlock)window.FindName(
+                                "ShellProfileSettingsSummaryText"))
+                            .Text);
+                        Assert.AreEqual(
+                            2,
+                            ((ListBox)window.FindName(
+                                "ShellProfileSettingsList"))
+                            .Items.Count);
+                        Assert.IsTrue(
+                            ((Button)window.FindName(
+                                "ShellProfileEditButton"))
+                            .IsEnabled);
+                        Assert.IsTrue(
+                            ((Button)window.FindName(
+                                "ShellProfileDeleteButton"))
+                            .IsEnabled);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            ProfileSettingsSelectionDoesNotChangeActiveProfile()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var first =
+                        new AccessProfile(
+                            Guid.Parse(
+                                "46464646-7100-7100-7100-464646464646"),
+                            "Alpha",
+                            true,
+                            SnmpVersion.V2C,
+                            null);
+                    var second =
+                        new AccessProfile(
+                            Guid.Parse(
+                                "46464646-7200-7200-7200-464646464646"),
+                            "Beta",
+                            true,
+                            SnmpVersion.V1,
+                            null);
+                    var stateStore =
+                        new MemoryShellStateStore(
+                            new UiShellState(
+                                first.Id,
+                                UiShellTheme.Dark));
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader(),
+                            new RecordingMonitoringControl(),
+                            new EmptyDiscoveryControl(),
+                            new[]
+                            {
+                                first,
+                                second
+                            },
+                            new NoopCandidateMaterializer(),
+                            stateStore);
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellSettingsButton"));
+                        PumpDispatcher();
+
+                        var activeCombo =
+                            (ComboBox)window.FindName(
+                                "DiscoveryProfileComboBox");
+                        var settingsList =
+                            (ListBox)window.FindName(
+                                "ShellProfileSettingsList");
+
+                        Assert.AreEqual(0, activeCombo.SelectedIndex);
+                        Assert.AreEqual(2, settingsList.Items.Count);
+
+                        settingsList.SelectedIndex = 1;
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            0,
+                            activeCombo.SelectedIndex,
+                            "Choosing an inactive profile for maintenance must not activate it.");
+                        Assert.AreEqual(
+                            first.Id,
+                            stateStore.Load().AccessProfileId,
+                            "Maintenance selection must not persist a different active profile.");
+                        Assert.IsTrue(
+                            ((Button)window.FindName(
+                                "ShellProfileEditButton"))
+                            .IsEnabled);
+                        Assert.IsTrue(
+                            ((Button)window.FindName(
+                                "ShellProfileDeleteButton"))
+                            .IsEnabled);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             ExplicitShowAllCanGoBelowStartupReadableZoomFloor()
         {
             RunOnSta(
@@ -961,6 +1851,36 @@ namespace NetLoom.Tests.Unit
                             new Thickness(20),
                             panelPadding,
                             "Operator panels must share the 20 px panel inset.");
+
+                        var mapScroller =
+                            (ScrollViewer)window.FindName(
+                                "MapScrollViewer");
+                        var mapScrollStyle =
+                            mapScroller.Resources[
+                                typeof(System.Windows.Controls.Primitives.ScrollBar)]
+                            as Style;
+
+                        Assert.IsNotNull(
+                            mapScrollStyle,
+                            "The map must override system scrollbars with theme-aware chrome.");
+                        Assert.IsNotNull(
+                            mapScrollStyle.BasedOn,
+                            "The map scrollbar override must inherit the shared semantic map scrollbar style.");
+
+                        mapScroller.ApplyTemplate();
+
+                        var scrollCorner =
+                            mapScroller.Template.FindName(
+                                "MapScrollBarCorner",
+                                mapScroller) as Border;
+
+                        Assert.IsNotNull(
+                            scrollCorner,
+                            "The map ScrollViewer must own the bottom-right scrollbar corner instead of exposing the system control brush.");
+                        Assert.AreSame(
+                            mapScroller.Background,
+                            scrollCorner.Background,
+                            "The scrollbar corner must use the same theme-aware canvas brush as the map viewport.");
 
                         Assert.AreEqual(
                             13d,
@@ -1072,11 +1992,17 @@ namespace NetLoom.Tests.Unit
                             .Visibility,
                             "An empty profile list must not open as a blank white popup.");
 
+                        var manageButton =
+                            (Button)window.FindName(
+                                "ShellProfileAddButton");
+
                         Assert.AreEqual(
                             Visibility.Visible,
-                            ((Button)window.FindName(
-                                "ShellProfileAddButton"))
-                            .Visibility);
+                            manageButton.Visibility);
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiscoveryProfileManageAction"),
+                            manageButton.Content);
 
                         Assert.AreEqual(
                             UiText.Get(
@@ -1084,6 +2010,59 @@ namespace NetLoom.Tests.Unit
                             ((TextBlock)window.FindName(
                                 "ShellProfileStatusText"))
                             .Text);
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((FrameworkElement)window.FindName(
+                                "MonitoringVersionReadOnlyBorder"))
+                            .Visibility);
+
+                        var noProfile =
+                            (TextBlock)window.FindName(
+                                "MonitoringVersionNoProfileText");
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            noProfile.Visibility);
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "MonitoringVersionNoProfile"),
+                            noProfile.Text);
+                        Assert.AreEqual(
+                            TextWrapping.Wrap,
+                            noProfile.TextWrapping,
+                            "Without an active profile the monitoring version must be plain wrapping guidance, not a clipped field-like control.");
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiscoveryProfileSettingsEmpty"),
+                            ((TextBlock)window.FindName(
+                                "ShellProfileSettingsSummaryText"))
+                            .Text);
+                        Assert.AreEqual(
+                            0,
+                            ((ListBox)window.FindName(
+                                "ShellProfileSettingsList"))
+                            .Items.Count);
+
+                        Click(
+                            manageButton);
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((FrameworkElement)window.FindName(
+                                "ShellSettingsSidebarPanel"))
+                            .Visibility,
+                            "No-profile actions must lead to the single profile-management surface instead of opening creation in place.");
+
+                        Assert.IsFalse(
+                            ((Button)window.FindName(
+                                "ShellProfileEditButton"))
+                            .IsEnabled);
+                        Assert.IsFalse(
+                            ((Button)window.FindName(
+                                "ShellProfileDeleteButton"))
+                            .IsEnabled);
                     }
                     finally
                     {
@@ -1211,15 +2190,205 @@ namespace NetLoom.Tests.Unit
                                 "NetLoom.Brush.Critical"),
                             stripe.Background);
 
+                        var statusIcon =
+                            FindVisualDescendantByTag<System.Windows.Shapes.Path>(
+                                first,
+                                "NodeStatusIcon");
+
+                        Assert.IsNotNull(
+                            statusIcon);
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Icon.StatusCritical"),
+                            statusIcon.Data,
+                            "Critical map status must use the canonical non-color vector symbol.");
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Critical"),
+                            statusIcon.Stroke,
+                            "Map status must expose the same critical color plus a non-color vector symbol.");
+
                         SelectDevice(
                             window,
                             firstId);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "OperatorStatusGlyphCritical") +
+                            " " +
+                            UiText.Get(
+                                "OperatorStatusCritical"),
+                            ((TextBlock)window.FindName(
+                                "InspectorOperationalStatusText"))
+                            .Text,
+                            "Inspector must use the same critical label and glyph as the map.");
+
+                        var alertRow =
+                            ((ItemsControl)window.FindName(
+                                "AlertList"))
+                            .Items[0];
+
+                        var severityProperty =
+                            alertRow.GetType()
+                                .GetProperty(
+                                    "SeverityText");
+
+                        Assert.IsNotNull(
+                            severityProperty);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "OperatorStatusGlyphCritical") +
+                            " " +
+                            UiText.Get(
+                                "OperatorStatusCritical"),
+                            (string)severityProperty.GetValue(
+                                alertRow,
+                                null),
+                            "Alerts must use the same critical label and glyph as map and inspector.");
 
                         Assert.AreSame(
                             window.FindResource(
                                 "NetLoom.Brush.Critical"),
                             stripe.Background,
                             "Selection outline must not erase the current state stripe.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            SelectedCriticalLinkKeepsCriticalStateColor()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6510-6510-6510-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6511-6511-6511-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6512-6512-6512-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    firstId) != null);
+
+                        var canvas =
+                            (Canvas)window.FindName(
+                                "MapCanvas");
+
+                        var link =
+                            canvas.Children
+                                .OfType<System.Windows.Shapes.Line>()
+                                .Single(
+                                    item =>
+                                        item.Tag is Guid &&
+                                        (Guid)item.Tag ==
+                                            physicalLinkId);
+
+                        var criticalBrush =
+                            window.FindResource(
+                                "NetLoom.Brush.Critical");
+
+                        Assert.AreSame(
+                            criticalBrush,
+                            link.Stroke);
+
+                        var beforeThickness =
+                            link.StrokeThickness;
+
+                        link.RaiseEvent(
+                            new MouseButtonEventArgs(
+                                Mouse.PrimaryDevice,
+                                Environment.TickCount,
+                                MouseButton.Left)
+                            {
+                                RoutedEvent =
+                                    UIElement.MouseLeftButtonDownEvent,
+                                Source =
+                                    link
+                            });
+
+                        PumpDispatcher();
+
+                        link =
+                            canvas.Children
+                                .OfType<System.Windows.Shapes.Line>()
+                                .Single(
+                                    item =>
+                                        item.Tag is Guid &&
+                                        (Guid)item.Tag ==
+                                            physicalLinkId);
+
+                        Assert.AreSame(
+                            criticalBrush,
+                            link.Stroke,
+                            "Selection must not replace a critical state color with blue.");
+
+                        Assert.IsTrue(
+                            link.StrokeThickness >
+                            beforeThickness,
+                            "Selection may strengthen the status line without replacing its status color.");
+
+                        var halo =
+                            canvas.Children
+                                .OfType<System.Windows.Shapes.Path>()
+                                .Single(
+                                    item =>
+                                        item.Tag is Guid &&
+                                        (Guid)item.Tag ==
+                                            physicalLinkId);
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            halo.Visibility,
+                            "A selected link must expose an additional visible selection halo.");
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Selection"),
+                            halo.Stroke);
+
+                        Assert.IsTrue(
+                            halo.StrokeThickness >=
+                            link.StrokeThickness * 3.0,
+                            "The selection halo must be roughly three times wider than the selected status line.");
+
+                        Assert.IsTrue(
+                            halo.Opacity >= 0.40 &&
+                            halo.Opacity < 0.55,
+                            "The halo must be visibly accent-colored while remaining translucent enough to preserve the operational status line.");
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.TextSecondary"),
+                            ((TextBlock)window.FindName(
+                                "InspectorEntityTypeText"))
+                            .Foreground,
+                            "The inspector entity type is descriptive text, not a link or status accent.");
                     }
                     finally
                     {
@@ -1333,6 +2502,13 @@ namespace NetLoom.Tests.Unit
                             window,
                             firstId);
 
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((FrameworkElement)window.FindName(
+                                "DiagnosticStatusText"))
+                            .Visibility,
+                            "Selected entities must not repeat the redundant current-snapshot sentence.");
+
                         var inspectorTechnical =
                             (Expander)window.FindName(
                                 "InspectorTechnicalDetailsExpander");
@@ -1366,6 +2542,123 @@ namespace NetLoom.Tests.Unit
                         Assert.IsFalse(
                             monitoringHint.Contains(
                                 "DeviceId"));
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            AlertTechnicalDetailsExpansionSurvivesUnchangedRefresh()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6390-6390-6390-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6391-6391-6391-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6392-6392-6392-464646464646");
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        var list =
+                            (ItemsControl)window.FindName(
+                                "AlertList");
+
+                        WaitForCondition(
+                            () =>
+                                list.Items.Count == 1);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellAlertsButton"));
+                        PumpDispatcher();
+
+                        var expander =
+                            FindVisualDescendant<Expander>(
+                                list);
+
+                        Assert.IsNotNull(
+                            expander);
+
+                        expander.IsExpanded =
+                            true;
+                        PumpDispatcher();
+
+                        var alertSnapshot =
+                            new TopologyAlertSnapshot(
+                                Now.AddSeconds(5),
+                                "cist",
+                                new[]
+                                {
+                                    new TopologyAlert(
+                                        "critical-link",
+                                        TopologyAlertKind.ForwardingCycle,
+                                        TopologyAlertSeverity.Critical,
+                                        "cist",
+                                        new string[0],
+                                        new[]
+                                        {
+                                            physicalLinkId
+                                        },
+                                        new[]
+                                        {
+                                            TopologyAlertReason
+                                                .ConfirmedForwardingCycle
+                                        })
+                                });
+
+                        var showAlerts =
+                            typeof(MainWindow).GetMethod(
+                                "ShowAlerts",
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.NonPublic);
+
+                        Assert.IsNotNull(
+                            showAlerts);
+
+                        var transitionType =
+                            showAlerts.GetParameters()[1]
+                                .ParameterType;
+
+                        showAlerts.Invoke(
+                            window,
+                            new[]
+                            {
+                                (object)alertSnapshot,
+                                Activator.CreateInstance(
+                                    transitionType)
+                            });
+
+                        PumpDispatcher();
+
+                        var refreshedExpander =
+                            FindVisualDescendant<Expander>(
+                                list);
+
+                        Assert.IsNotNull(
+                            refreshedExpander);
+                        Assert.IsTrue(
+                            refreshedExpander.IsExpanded,
+                            "Refreshing an unchanged alert must preserve the operator's expanded technical-details state.");
                     }
                     finally
                     {
@@ -1430,11 +2723,147 @@ namespace NetLoom.Tests.Unit
                         PumpDispatcher();
 
                         Assert.AreEqual(
+                            Visibility.Visible,
+                            ((FrameworkElement)window.FindName(
+                                "ShellAlertsSidebarPanel"))
+                            .Visibility,
+                            "Show on map from Alerts must keep the Alerts rail section active so the operator can inspect alerts consecutively.");
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((FrameworkElement)window.FindName(
+                                "ShellMapSidebarPanel"))
+                            .Visibility);
+
+                        Assert.AreEqual(
                             "100%",
                             ((TextBlock)window.FindName(
                                 "MapZoomValueText"))
                             .Text,
                             "Alert navigation must center the selected map context at readable native zoom.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            AlertShowOnMapFitsEveryDeviceInForwardingCycle()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                ForwardingCycleIncidentSnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                ((ItemsControl)window.FindName(
+                                    "AlertList"))
+                                .Items.Count == 1);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellAlertsButton"));
+                        PumpDispatcher();
+
+                        var alertButton =
+                            FindVisualDescendant<Button>(
+                                (DependencyObject)window.FindName(
+                                    "AlertList"));
+
+                        Assert.IsNotNull(
+                            alertButton);
+
+                        Click(
+                            alertButton);
+                        PumpDispatcher();
+                        PumpDispatcher();
+
+                        var viewport =
+                            (ScrollViewer)window.FindName(
+                                "MapScrollViewer");
+                        var canvas =
+                            (Canvas)window.FindName(
+                                "MapCanvas");
+                        var focusHalos =
+                            canvas.Children
+                                .OfType<System.Windows.Shapes.Rectangle>()
+                                .Where(
+                                    item =>
+                                        string.Equals(
+                                            item.Tag as string,
+                                            "NodeFocusHalo",
+                                            StringComparison.Ordinal))
+                                .ToArray();
+
+                        Assert.IsTrue(
+                            focusHalos.Length >= 3,
+                            "Alert focus must provide a separate halo layer for every endpoint device instead of changing card opacity.");
+                        WaitForCondition(
+                            () =>
+                                focusHalos.Any(
+                                    item =>
+                                        item.Visibility ==
+                                        Visibility.Visible));
+
+                        foreach (var deviceId in
+                            new[]
+                            {
+                                Guid.Parse(
+                                    "46464646-6700-6700-6700-464646464646"),
+                                Guid.Parse(
+                                    "46464646-6701-6701-6701-464646464646"),
+                                Guid.Parse(
+                                    "46464646-6702-6702-6702-464646464646")
+                            })
+                        {
+                            var border =
+                                DeviceBorder(
+                                    window,
+                                    deviceId);
+
+                            Assert.IsNotNull(
+                                border);
+                            Assert.AreEqual(
+                                1.0,
+                                border.Opacity,
+                                0.001,
+                                "Alert focus must keep device cards fully opaque so link lines cannot bleed through them.");
+                            Assert.IsTrue(
+                                Panel.GetZIndex(
+                                    border) >
+                                focusHalos
+                                    .Select(
+                                        item =>
+                                            Panel.GetZIndex(
+                                                item))
+                                    .Max(),
+                                "Map layers must keep cards above their focus halos.");
+
+                            var center =
+                                border.TranslatePoint(
+                                    new Point(
+                                        border.ActualWidth / 2.0,
+                                        border.ActualHeight / 2.0),
+                                    viewport);
+
+                            Assert.IsTrue(
+                                center.X >= 0.0 &&
+                                center.X <= viewport.ViewportWidth &&
+                                center.Y >= 0.0 &&
+                                center.Y <= viewport.ViewportHeight,
+                                "Show on map must fit every device touched by the forwarding-cycle incident, not only the primary link.");
+                        }
                     }
                     finally
                     {
@@ -1467,6 +2896,22 @@ namespace NetLoom.Tests.Unit
                         Assert.IsNotNull(
                             window.FindName(
                                 "DiscoveryProfileCard"));
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "OperatorStatusGlyphStopped"),
+                            ((TextBlock)window.FindName(
+                                "MonitoringStateGlyphText"))
+                            .Text);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "OperatorStatusGlyphIdle"),
+                            ((TextBlock)window.FindName(
+                                "DiscoveryStateGlyphText"))
+                            .Text,
+                            "Discovery before its first run is neutral waiting state, not a successful completed state.");
+
                         Assert.IsFalse(
                             ((Expander)window.FindName(
                                 "MonitoringExpander"))
@@ -1623,20 +3068,62 @@ namespace NetLoom.Tests.Unit
                             window.FindResource(
                                 "NetLoom.Icon.ShellAlerts"));
 
-                        var railWidth =
-                            (GridLength)window.FindResource(
-                                "NetLoom.Shell.RailWidth");
+                        var alertsButton =
+                            (Button)window.FindName(
+                                "ShellAlertsButton");
+                        var alertsText =
+                            (TextBlock)window.FindName(
+                                "ShellAlertsButtonText");
+                        var alertsContentGrid =
+                            (Grid)VisualTreeHelper.GetParent(
+                                alertsText);
+
+                        Assert.IsNotNull(
+                            alertsContentGrid);
+                        Assert.IsTrue(
+                            alertsContentGrid.ColumnDefinitions.Count >= 2,
+                            "Navigation content must expose a dedicated text column.");
+
+                        var arrangedTextWidth =
+                            alertsContentGrid
+                                .ColumnDefinitions[1]
+                                .ActualWidth;
+
+                        alertsText.Measure(
+                            new Size(
+                                double.PositiveInfinity,
+                                double.PositiveInfinity));
+
+                        Assert.IsTrue(
+                            arrangedTextWidth + 0.5 >=
+                            alertsText.DesiredSize.Width,
+                            "The warning navigation label must fit its rendered text instead of losing letters.");
 
                         Assert.AreEqual(
-                            160.0,
-                            railWidth.Value,
-                            0.01);
+                            TextTrimming.None,
+                            alertsText.TextTrimming,
+                            "Primary navigation labels must not hide clipping with ellipsis.");
+
+                        Assert.AreEqual(
+                            TextWrapping.NoWrap,
+                            alertsText.TextWrapping);
+
+                        Assert.AreSame(
+                            alertsButton.Foreground,
+                            alertsText.Foreground,
+                            "Navigation text must inherit the button foreground so light and dark rail contrast stay consistent.");
 
                         Assert.AreEqual(
                             Visibility.Collapsed,
                             ((FrameworkElement)window.FindName(
                                 "ShellAlertsBadge"))
                             .Visibility);
+
+                        Assert.AreEqual(
+                            "−",
+                            UiText.Get(
+                                "MapZoomOutAction"),
+                            "Zoom out must use the typographic minus sign so it visually matches the plus control.");
 
                         Assert.AreEqual(
                             0.75,
@@ -1648,6 +3135,160 @@ namespace NetLoom.Tests.Unit
                             (double)window.FindResource(
                                 "NetLoom.Map.LinkLabelMinZoom"),
                             0.001);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            AlertBadgeUsesCircularSingleDigitGeometryAndCriticalSeverity()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6800-6800-6800-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6801-6801-6801-464646464646");
+                    var linkId =
+                        Guid.Parse(
+                            "46464646-6802-6802-6802-464646464646");
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    linkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var badge =
+                            (Border)window.FindName(
+                                "ShellAlertsBadge");
+                        var text =
+                            (TextBlock)window.FindName(
+                                "ShellAlertsBadgeText");
+                        var expectedSize =
+                            Convert.ToDouble(
+                                window.FindResource(
+                                    "NetLoom.Navigation.BadgeHeight"));
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            badge.Visibility);
+                        Assert.AreEqual(
+                            expectedSize,
+                            badge.Width,
+                            0.001,
+                            "A one-digit navigation badge must be a circle, not an ellipse.");
+                        Assert.AreEqual(
+                            expectedSize,
+                            badge.Height,
+                            0.001);
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Critical"),
+                            badge.Background,
+                            "The alert badge color must follow the most serious current alert.");
+                        Assert.AreEqual(
+                            "1",
+                            text.Text);
+                        Assert.AreEqual(
+                            LineStackingStrategy.BlockLineHeight,
+                            text.LineStackingStrategy);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            AlertBadgeUsesWarningPillAndOverflowPresentation()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var method =
+                            typeof(MainWindow).GetMethod(
+                                "ConfigureShellAlertBadge",
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.NonPublic);
+
+                        Assert.IsNotNull(
+                            method);
+
+                        method.Invoke(
+                            window,
+                            new object[]
+                            {
+                                12,
+                                "NetLoom.Brush.Warning"
+                            });
+                        PumpDispatcher();
+
+                        var badge =
+                            (Border)window.FindName(
+                                "ShellAlertsBadge");
+                        var text =
+                            (TextBlock)window.FindName(
+                                "ShellAlertsBadgeText");
+
+                        Assert.IsTrue(
+                            double.IsNaN(
+                                badge.Width),
+                            "Two or more digits must use auto-width pill geometry.");
+                        Assert.IsTrue(
+                            badge.ActualWidth >
+                            badge.ActualHeight,
+                            "A multi-digit alert badge must be a pill, not an ellipse with arbitrary proportions.");
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.Warning"),
+                            badge.Background,
+                            "Warnings-only badge presentation must use the warning semantic color.");
+                        Assert.AreEqual(
+                            "12",
+                            text.Text);
+
+                        method.Invoke(
+                            window,
+                            new object[]
+                            {
+                                100,
+                                "NetLoom.Brush.Warning"
+                            });
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "ShellAlertBadgeOverflow"),
+                            text.Text,
+                            "Alert counts above 99 must use the compact 99+ representation.");
                     }
                     finally
                     {
@@ -1912,6 +3553,165 @@ namespace NetLoom.Tests.Unit
                                     "GigabitEthernet0/1")
                             },
                             "192.0.2.146")
+                    },
+                    new PhysicalLinkDiagnostic[0]));
+        }
+
+        private static TopologyRefreshSnapshot
+            ForwardingCycleIncidentSnapshot()
+        {
+            var firstId =
+                Guid.Parse(
+                    "46464646-6700-6700-6700-464646464646");
+            var secondId =
+                Guid.Parse(
+                    "46464646-6701-6701-6701-464646464646");
+            var thirdId =
+                Guid.Parse(
+                    "46464646-6702-6702-6702-464646464646");
+            var firstLinkId =
+                Guid.Parse(
+                    "46464646-6710-6710-6710-464646464646");
+            var secondLinkId =
+                Guid.Parse(
+                    "46464646-6711-6711-6711-464646464646");
+            var thirdLinkId =
+                Guid.Parse(
+                    "46464646-6712-6712-6712-464646464646");
+
+            var firstKey = firstId.ToString("D");
+            var secondKey = secondId.ToString("D");
+            var thirdKey = thirdId.ToString("D");
+
+            return new TopologyRefreshSnapshot(
+                new MapSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new MapNode(
+                            firstKey,
+                            "Cycle A",
+                            null,
+                            100.0,
+                            80.0,
+                            null,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            firstId,
+                            "192.0.2.170"),
+                        new MapNode(
+                            secondKey,
+                            "Cycle B",
+                            null,
+                            1800.0,
+                            120.0,
+                            null,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            secondId,
+                            "192.0.2.171"),
+                        new MapNode(
+                            thirdKey,
+                            "Cycle C",
+                            null,
+                            950.0,
+                            1200.0,
+                            null,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            thirdId,
+                            "192.0.2.172")
+                    },
+                    new[]
+                    {
+                        new MapLink(
+                            firstLinkId.ToString("D"),
+                            firstKey,
+                            secondKey,
+                            null,
+                            null,
+                            MapConfidence.High,
+                            MapFreshness.Fresh,
+                            new MapEvidenceItem[0],
+                            firstLinkId),
+                        new MapLink(
+                            secondLinkId.ToString("D"),
+                            secondKey,
+                            thirdKey,
+                            null,
+                            null,
+                            MapConfidence.High,
+                            MapFreshness.Fresh,
+                            new MapEvidenceItem[0],
+                            secondLinkId),
+                        new MapLink(
+                            thirdLinkId.ToString("D"),
+                            thirdKey,
+                            firstKey,
+                            null,
+                            null,
+                            MapConfidence.High,
+                            MapFreshness.Fresh,
+                            new MapEvidenceItem[0],
+                            thirdLinkId)
+                    }),
+                new TopologyAlertSnapshot(
+                    Now,
+                    "cist",
+                    new[]
+                    {
+                        new TopologyAlert(
+                            "forwarding-cycle",
+                            TopologyAlertKind.ForwardingCycle,
+                            TopologyAlertSeverity.Critical,
+                            "cist",
+                            new string[0],
+                            new[]
+                            {
+                                firstLinkId,
+                                secondLinkId,
+                                thirdLinkId
+                            },
+                            new[]
+                            {
+                                TopologyAlertReason
+                                    .ConfirmedForwardingCycle
+                            })
+                    }),
+                new NetworkDiagnosticSnapshot(
+                    Now,
+                    new[]
+                    {
+                        new DeviceDiagnostic(
+                            firstId,
+                            "Cycle A",
+                            null,
+                            null,
+                            Now,
+                            Now,
+                            new InterfaceDiagnostic[0],
+                            "192.0.2.170"),
+                        new DeviceDiagnostic(
+                            secondId,
+                            "Cycle B",
+                            null,
+                            null,
+                            Now,
+                            Now,
+                            new InterfaceDiagnostic[0],
+                            "192.0.2.171"),
+                        new DeviceDiagnostic(
+                            thirdId,
+                            "Cycle C",
+                            null,
+                            null,
+                            Now,
+                            Now,
+                            new InterfaceDiagnostic[0],
+                            "192.0.2.172")
                     },
                     new PhysicalLinkDiagnostic[0]));
         }

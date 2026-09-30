@@ -57,6 +57,43 @@ namespace NetLoom.Wpf.MapInteraction
             }
         }
 
+        public static int AlertFocusPulseCount(
+            MapMotionMode mode)
+        {
+            switch (mode)
+            {
+                case MapMotionMode.Normal:
+                    return 3;
+
+                case MapMotionMode.Reduced:
+                case MapMotionMode.Off:
+                    return 0;
+
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(mode));
+            }
+        }
+
+        public static TimeSpan AlertFocusStaticDuration(
+            MapMotionMode mode)
+        {
+            switch (mode)
+            {
+                case MapMotionMode.Reduced:
+                    return TimeSpan.FromSeconds(
+                        2.0);
+
+                case MapMotionMode.Normal:
+                case MapMotionMode.Off:
+                    return TimeSpan.Zero;
+
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(mode));
+            }
+        }
+
         public static double PulseOpacity(
             MapMotionMode mode)
         {
