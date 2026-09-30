@@ -6,18 +6,23 @@
 
 ## Текущее состояние
 
-Sprint 44 is closed and pushed. NetLoom now exports the canonical full site diagram and the matching equipment/interface inventory through one operator action in Map settings. The final technical commit is `834f0eba9db6ead0a7daa64a59ec4e322f7caa44`; `HEAD == origin/main` and the technical postflight worktree was clean.
-The export path captures one `TopologyExportSnapshot` and feeds that same immutable snapshot to the bounded PNG renderer and UTF-8 BOM CSV exporter. The PNG is built from a separate bounded export visual rather than the live 1,000,000 x 1,000,000 virtual Canvas, and temporary viewport/selection/search/focus state does not redefine exported topology.
-Operator acceptance produced a readable 1730x950 PNG plus the matching CSV in one action. The visual matched the current WPF map, including already-existing card overlaps rather than introducing a separate export-layout defect. The supplied CSV contained 22 columns, 23 data rows and 17 unique devices. Existing-file handling is explicit: the PNG save dialog prompts for overwrite and an existing sibling CSV has a separate Yes/No confirmation before export writes either file.
+Sprint 45 is closed and pushed. Field acceptance exercised discovery, topology materialization, multi-target monitoring, diagnostics and export on the author's real network; the field baseline was 55 devices, 275 interfaces and 10 physical links, including Windows Server 2012 R2 in the actual site state. Closure evidence is in `docs/sprint45-field-acceptance.md`, and the closure baseline is `f475fec`.
+
+Sprint 46 is the active product Sprint and is **not accepted**. The current checkpoint is `db6f8cf34ad94e3276a1e3717dd5e7684a6ca503` (`Sprint 46: remediation progress 2 (not accepted)`). It contains the new shell/shared context plus the accepted remediation accumulated through 2026-09-30: embedded operator surfaces, persistent active SNMP profile and unified profile management, status/selection visual cleanup, warning-count badge, resilient viewport, alert-to-map context without leaving `Предупреждения`, operator impact wording, motion-aware halo selection, themed map scrollbars and related regression coverage. The checkpoint was built, tested, pushed, `HEAD == origin/main`, and the worktree was clean immediately after push.
+
+The next Sprint 46 gate is documentation synchronization, then the remaining operator-information work: inspector content/hierarchy, event strip semantics, remaining shell defects/action naming, breadcrumbs, and the explicit decision on the Map-side Location tree/layer filters. Sprint 46 closes only after the checklist in `docs/sprint46-ui-ux-redesign.md` passes again, including field-database / 55-device acceptance, restart viewport, PNG/CSV export, MAC/IP search, and the real Windows Server 2012 R2 / slow-RDP deployment checks.
 
 The committed product sequence is now:
-  1. Sprint 43 - multi-target monitoring inside one Engine process - complete.
-  2. Sprint 44 - PNG + CSV export - complete.
-  3. Sprint 45 - full acceptance/hardening on the author's real network - next.
-  4. Sprint 46 - application shell/navigation rework, informed by Sprint 45 evidence.
+  1. Sprint 45 - full field acceptance/hardening - complete.
+  2. Sprint 46 - application shell/navigation and shared operator context - active, not accepted.
+  3. Sprint 47 - visible monitoring progress - next only after Sprint 46 closure.
+  4. Sprint 48 - explainable discovery and inbox.
+  5. Sprint 49 - readable large-site map.
+  6. Sprint 50 - network redundancy: rings and single points of failure.
+  7. Sprint 51 - polling policies and profile templates.
+
 Optical degradation remains parallel evidence gathering rather than committed product work. MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on the known current-site devices.
 
-Next gate: begin Sprint 45 as an acceptance/hardening Sprint on the author's real network. Run the complete discover -> live map -> multi-target monitor -> diagnose -> export workflow without development-only workarounds; record every functional and navigation friction observation in `FRICTION_LOG.md`; keep required fixes inside Sprint 45 until operator acceptance passes. Do not add speculative product features before that evidence is reviewed.
 ## Sprint 44 closure — 2026-09-23
 
 Sprint 44 - export the site diagram and inventory - is complete.
