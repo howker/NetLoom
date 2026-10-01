@@ -266,11 +266,14 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 - [ ] Sprint 46 — new shell and shared operator context.
   - Operator outcome: the operator understands where they are, which SNMP profile is active and what the system is doing without the old top toolbar, separate editor windows or hidden cross-panel dependencies.
   - Current checkpoint: shell structure, embedded editors, unified inspector, resilient map viewport, warning-count badge, shared status remediation, persistent active SNMP profile, unified SNMP profile management (`Добавить` / `Изменить` / `Удалить`), alert focus that preserves the `Предупреждения` section, incident-context map focus, motion-aware halo selection, themed map scrollbars and the accepted visual fixes through `db6f8cf34ad94e3276a1e3717dd5e7684a6ca503`. This commit is explicitly **remediation progress 2 (not accepted)**; Sprint 46 remains open.
-  - Inspector before closure: keep device availability/state from §10 separate from alert severity; show one-line problem reason from active alerts; show Location hierarchy path; render device ports as rows/table rather than a prose block; expose device identity claims under `Основания`; support a Location inspector summary; keep operator text free of internal implementation jargon; preserve expanded UI state across data refresh.
+  - Inspector before closure: keep device availability/state from §10 separate from alert severity; show an explicit severity marker plus a concise problem reason from active alerts; show the Location hierarchy path; render device ports as a table rather than a prose block; expose `Основания` only from identity claims already present in stored observations; support a Location inspector summary; keep operator text free of internal implementation jargon; preserve expanded UI state across data refresh. Sprint 46 does not add collection, storage or migrations merely to populate missing Inspector fields.
   - Event strip before closure: use each event's own occurrence time rather than refresh time; show all new state-transition events without duplicating the same event; reserve severity color for the severity marker rather than the whole text; provide `Все события ›` navigation into `Предупреждения` while preserving the selected entity/context.
-  - Remaining shell work before closure: explicit View/Edit modes from ADR-080, one status grammar from ADR-081, a compact zoom cluster (`−`, percent, `+`, `Show all`), distinct operator names for data refresh versus layout rebuild, Location breadcrumbs, and the Sprint 46 decision on the Map-side Location tree/layer filters. If the tree/filters are deferred, record the rationale in `DECISIONS.md` and carry them into Sprint 49 rather than silently dropping them.
+  - Remaining shell work before closure: explicit View/Edit modes from ADR-080, one status grammar from ADR-081, a compact zoom cluster (`−`, percent, `+`, `Show all`), distinct operator names for data refresh versus layout rebuild, and Location breadcrumbs. The Map-side Location tree and layer filters are explicitly deferred to Sprint 49 together with focus-neighborhood and semantic zoom; they are not an open Sprint 46 decision.
   - Automatic map opening keeps a readable useful context and does not shrink below approximately 75%; explicit `Show all` is a separate operator command and fits all visible topology even when that requires a lower zoom.
-  - Acceptance: functional and visual criteria in `docs/sprint46-ui-ux-redesign.md`, with screenshots of every affected section compared against both Sprint 46 design references. Final acceptance also re-runs the field database / 55-device workflow, Windows Server 2012 R2 deployment/RDP checks, restart viewport, PNG/CSV export and MAC/IP search.
+  - Pass 2 boundary: Inspector/status grammar only — availability and problem are separate rows; freshness is computed from current time; `Сведения`, `Описание` and `Размещение` are explicit; physical-link endpoint ports are property rows; the device `Порты` tab is a §57 table using already stored interface data; critical events are ordered before warning events. No new collection, schema or migration is allowed for this pass.
+  - Immediately after Pass 2 visual acceptance, run a short real Windows Server 2012 R2 smoke through slow RDP: launch, both themes, custom-frame dialogs, selection halo and pulse. This early smoke is a risk gate, not the final field acceptance.
+  - Pass 3 boundary: shell/map/panels only — breadcrumbs, zoom-cluster artifact, viewport edge dots, shared focus style, one `Размещение` vocabulary, plain active-SNMP readout, discovery empty-address validation, status/severity in `Оборудование`, monitoring panel mock alignment, warnings layout and Location editor cleanup.
+  - Final acceptance: functional and visual criteria in `docs/sprint46-ui-ux-redesign.md`, with side-by-side screenshots against all four Sprint 46 design references (`obolochka`, `paneli`, `badge`, `inspector`). Re-run the field database / 55-device workflow, real Windows Server 2012 R2 deployment/RDP checks, restart viewport, PNG/CSV export and MAC/IP search. New non-blocking findings discovered during this acceptance go to `FRICTION_LOG.md` and later work instead of expanding Sprint 46.
 
 - [ ] Sprint 47 — visible monitoring progress.
   - Operator outcome: one glance shows whether polling is running, the current device, completed/remaining work, errors and whether the cycle finished.
@@ -279,6 +282,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Cycle events go to the bottom event strip.
   - Context actions: `Poll selected` when stopped; `Start cycle now` when the scheduler is running.
   - The rail summary and monitoring card follow the Sprint 46 panel design.
+  - If separate ICMP / SNMP / TCP availability cannot be presented from data already persisted by Sprint 46, the required new collection/projection belongs here with visible polling results; Sprint 46 must not add a new collection path just to fill Inspector fields.
 
 - [ ] Sprint 48 — discovery with explainable results and an inbox.
   - Operator outcome: after discovery the operator can tell what is new, changed, ambiguous, missing, excluded or failed, why it happened, and can resolve results in bulk; a profile can be validated before use.
@@ -293,6 +297,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Operator outcome: on 55+ devices the map remains readable without mass overlap, and the operator can see incomplete evidence and manual-versus-observed conflicts.
   - Primary principle: show less instead of building a universal layout engine.
   - Focus neighborhood around the selected node, with explicit `Expand up`, `Expand down` and `Whole site` actions.
+  - Add the Map-side Location tree and layer filters deferred from Sprint 46; they share the same large-site navigation model as focus-neighborhood and semantic zoom.
   - Four semantic zoom levels: distant, medium, close and detailed; device/link/Location detail changes by level.
   - Show a topology-quality line with reasons for incomplete data.
   - Present ADR-079 manual-versus-observed conflicts with explicit actions.
@@ -303,7 +308,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 - [ ] Sprint 50 — network redundancy: rings and single points of failure.
   - Operator outcome: selecting a ring or a predicted single point of failure immediately explains the protection state and the topology impact in operator terms.
   - Ring view: selecting a ring dims unrelated topology and highlights every member link; show participants, STP root, blocked/alternate port, protection state and last topology change when trustworthy evidence exists.
-  - Device/link impact: extend the existing link-level `PhysicalLinkFailureImpact` semantics to device-level predicted impact. For `Если связь/устройство пропадёт`, highlight devices predicted to be affected by the known topology and dim unrelated nodes; distinguish an available bypass path from a unique path/single point of failure.
+  - Device/link impact: extend the existing link-level `PhysicalLinkFailureImpact` semantics to device-level predicted impact. For `Если связь/устройство пропадёт`, highlight devices predicted to be affected by the known physical topology and dim unrelated nodes; distinguish an available bypass path from a unique path/single point of failure. A bypass is valid only through links/ports that remain usable under the current known failure and STP state; never report `есть обходной путь` through the link being evaluated as failed or through a path currently blocked/unavailable.
   - Prediction and observation stay separate. Sprint 50 answers what the known topology predicts would be affected; it does not claim which devices are actually down right now.
   - Use existing protection semantics: Protected / Unprotected / Degraded / Unresolved / NotApplicable. Missing STP evidence is `Unresolved`, never automatically `Unprotected`.
   - Before implementation, verify whether `dot1dStpTopChanges` is actually collected and trustworthy enough for the “last topology change” field.
@@ -343,6 +348,7 @@ After Sprint 47, keep `Что отвалилось сейчас` as a candidate 
 10. **Maintenance / alert suppression** with a required reason and expiry.
 11. **Deterministic demo stand with seeded failures**, also used as regression evidence.
 12. **Raw observation retention review**; the current 24-hour window may be insufficient for some repair/replay workflows.
+13. **Operator notes on devices and physical links** — requires an explicit persistent storage/write-path decision and is therefore outside Sprint 46.
 
 #### Market-entry direction — ADR-078, not commitments
 

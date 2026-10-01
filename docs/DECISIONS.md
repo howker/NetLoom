@@ -1257,3 +1257,31 @@ Color is never the only carrier of meaning. Every meaningful state is also repre
 - Map, inspector, alerts, discovery and monitoring consume one shared status grammar.
 - UI work that introduces a second label/color for an existing semantic state is a review defect.
 - The concrete presentation table belongs in `ARCHITECTURE.md` and shared design/status tokens; feature code consumes those tokens rather than local colors.
+## ADR-082 — Sprint 46 stays presentation-only after the shell foundation
+
+**Статус:** принято.
+
+**Дата:** 2026-10-01.
+
+### Контекст
+
+Визуальная приёмка Inspector/Event Pass 1 выявила недостающие поля и навигационные элементы. Часть желаемой информации можно показать из уже сохранённых materialized/observation данных, но заметки оператора и некоторые подробные сигналы доступности потребовали бы нового хранения или нового сбора. Одновременно открытым оставалось решение, входят ли дерево размещений и фильтры слоёв в Sprint 46.
+
+### Решение
+
+Sprint 46 остаётся UI/UX-рекомпозицией существующих данных: он не добавляет новый сбор данных, новую persistent storage-семантику, SQLite migration или новый класс хранимых данных только ради заполнения Inspector.
+
+- Заметки оператора к устройству и физической связи (§57/§58) переносятся из Sprint 46: для них требуется отдельное решение по persistent storage/write path.
+- Раздельные ICMP / SNMP / TCP показатели в Sprint 46 показываются только там, где необходимые факты уже сохранены. Если для них нужен новый сбор или новая проекция polling-result, эта работа переносится в Sprint 47 вместе с видимыми результатами опроса.
+- `Основания` устройства используют только identity claims, уже присутствующие в сохранённых observations/materialized data. Отсутствующие claims не добываются повторным сетевым опросом в Sprint 46.
+- Хлебные крошки входят в Sprint 46. Map-side дерево размещений и фильтры слоёв переносятся в Sprint 49 вместе с focus-neighborhood и semantic zoom; это больше не открытый вопрос Sprint 46.
+- Pass 2 ограничен Inspector/status grammar: отдельные availability/problem строки, freshness от текущего времени, `Сведения`/`Описание`/`Размещение`, порты концов связи в таблице, таблица `Порты` по уже сохранённым данным §57 и critical-first event strip.
+- Сразу после визуальной приёмки Pass 2 выполняется короткий smoke на реальном Windows Server 2012 R2 через медленный RDP: запуск, обе темы, диалоги с собственной рамкой, ореол выбора и пульсация. Полная полевая приёмка на базе ~55 устройств остаётся финальным gate Sprint 46.
+- Pass 3 ограничен оболочкой, картой и панелями: breadcrumbs, zoom artifact, edge dots, общий focus style, единый термин `Размещение`, plain SNMP-profile readout, validation пустого discovery range, статусы `Оборудования`, Monitoring/Alerts layout и Location editor.
+- Новые неблокирующие замечания, найденные во время финальной приёмки, фиксируются в `FRICTION_LOG.md` и будущих спринтах; они не расширяют Sprint 46.
+
+### Следствия
+
+- После визуальной приёмки Pass 2 делается промежуточный code checkpoint только явными путями `src/...` и `tests/...`.
+- Sprint 46 можно закрывать только после side-by-side проверки четырёх макетов, финальной 55-device field acceptance, реального Server 2012 R2, PNG/CSV export, MAC/IP search и restart viewport.
+- Sprint 50 impact analysis должен учитывать не только физическую связность, но и текущую пригодность пути по известному failure/STP state; недопустимо объявлять обход через уже отказавшую или известную заблокированной/недоступной связь.
