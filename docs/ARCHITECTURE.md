@@ -871,6 +871,8 @@ Current boundary:
 
 ## Оболочка Desktop и операторский контекст
 
+Canonical Desktop UI design rules, including typography, layout, components, themes, surfaces, motion, accessibility, keyboard behavior, the state gallery, and visual acceptance, are defined in `docs/UI_DESIGN_RULES.md` (§4–§10). This section keeps only shell and operator-context architecture boundaries.
+
 Целевая структура Desktop: полоса разделов → контекстная боковая панель → холст карты → инспектор выбранной сущности → нижняя лента событий. Верхняя строка сохраняет постоянный контекст приложения, включая активный SNMP-профиль и состояние мониторинга.
 
 Полоса разделов содержит основные рабочие области: Карта, Оборудование, Предупреждения, Обнаружение, Поиск и Настройки. Боковая панель зависит от выбранного раздела; для карты она содержит дерево Locations и фильтры слоёв. Функциональность не должна размножать отдельные верхнеуровневые окна, если она может быть встроена в эту оболочку.
@@ -879,7 +881,7 @@ Current boundary:
 
 Карта использует focus-neighborhood и semantic zoom вместо попытки постоянно уложить весь физический граф одним универсальным алгоритмом. Ручные позиции оператора имеют приоритет. Автоматическое размещение применяется консервативно к новым узлам и не должно переставлять уже настроенную схему без явного действия.
 
-Статус никогда не кодируется только цветом: цвет дополняется текстом, значком, формой или другим независимым признаком. Один набор status tokens используется во всех поверхностях Desktop.
+Status grammar and its visual presentation rules are defined in `docs/UI_DESIGN_RULES.md` §2 and §6; ADR-081 remains the architectural source of status semantics.
 
 ### LLDP Port ID и Port Description
 
