@@ -1277,6 +1277,7 @@ Sprint 46 остаётся UI/UX-рекомпозицией существующ
 - Хлебные крошки входят в Sprint 46. Map-side дерево размещений и фильтры слоёв переносятся в Sprint 49 вместе с focus-neighborhood и semantic zoom; это больше не открытый вопрос Sprint 46.
 - Pass 2 ограничен Inspector/status grammar: отдельные availability/problem строки, freshness от текущего времени, `Сведения`/`Описание`/`Размещение`, порты концов связи в таблице, таблица `Порты` по уже сохранённым данным §57 и critical-first event strip.
 - Сразу после визуальной приёмки Pass 2 выполняется короткий smoke на реальном Windows Server 2012 R2 через медленный RDP: запуск, обе темы, диалоги с собственной рамкой, ореол выбора и пульсация. Полная полевая приёмка на базе ~55 устройств остаётся финальным gate Sprint 46.
+- Pass 3 execution order is fixed: first rebuild and review the state gallery from `docs/UI_DESIGN_RULES.md` §9; second establish the shared style system across §§4–§8, including accessibility; only then apply the point shell, map and panel remediations listed below. The point list does not override this order.
 - Pass 3 ограничен оболочкой, картой и панелями: breadcrumbs, zoom artifact, edge dots, общий focus style, единый термин `Размещение`, plain SNMP-profile readout, validation пустого discovery range, статусы `Оборудования`, Monitoring/Alerts layout и Location editor.
 - Новые неблокирующие замечания, найденные во время финальной приёмки, фиксируются в `FRICTION_LOG.md` и будущих спринтах; они не расширяют Sprint 46.
 
@@ -1284,4 +1285,5 @@ Sprint 46 остаётся UI/UX-рекомпозицией существующ
 
 - После визуальной приёмки Pass 2 делается промежуточный code checkpoint только явными путями `src/...` и `tests/...`.
 - Sprint 46 можно закрывать только после side-by-side проверки четырёх макетов, финальной 55-device field acceptance, реального Server 2012 R2, PNG/CSV export, MAC/IP search и restart viewport.
+- Pass 3 visual acceptance follows `docs/UI_DESIGN_RULES.md` §10 and therefore requires the §9 state gallery to be rebuilt and reviewed before acceptance.
 - Sprint 50 impact analysis должен учитывать не только физическую связность, но и текущую пригодность пути по известному failure/STP state; недопустимо объявлять обход через уже отказавшую или известную заблокированной/недоступной связь.
