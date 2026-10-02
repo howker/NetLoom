@@ -295,7 +295,7 @@
     <value>Цикл пересылки</value>
   </data>
   <data name="AlertKindRingProtectionDegraded" xml:space="preserve">
-    <value>Защита кольца деградировала</value>
+    <value>Кольцо без резерва</value>
   </data>
   <data name="AlertReasonConfirmedForwardingCycle" xml:space="preserve">
     <value>Подтверждён цикл пересылки</value>
@@ -418,7 +418,7 @@
     <value>Показана диагностика из последнего успешного обновления {0:G}.</value>
   </data>
   <data name="DiagnosticStateTitle" xml:space="preserve">
-    <value>Состояние</value>
+    <value>Сведения</value>
   </data>
   <data name="DiagnosticInterfacesTitle" xml:space="preserve">
     <value>Интерфейсы</value>
@@ -439,10 +439,10 @@
     <value>Последнее наблюдение</value>
   </data>
   <data name="DiagnosticFieldLastResolved" xml:space="preserve">
-    <value>Последнее разрешение топологии</value>
+    <value>Подтверждена</value>
   </data>
   <data name="DiagnosticFieldLastConfirmed" xml:space="preserve">
-    <value>Последнее подтверждение</value>
+    <value>Подтверждена</value>
   </data>
   <data name="DiagnosticFieldConnections" xml:space="preserve">
     <value>Физических связей</value>
@@ -999,10 +999,10 @@
     <value>IP управления</value>
   </data>
   <data name="DiagnosticInterfaceType" xml:space="preserve">
-    <value>Тип IF-MIB: {0}</value>
+    <value>Тип: {0}</value>
   </data>
   <data name="DiagnosticInterfaceIfName" xml:space="preserve">
-    <value>Имя порта (ifName): {0}</value>
+    <value>Имя порта: {0}</value>
   </data>
   <data name="DiagnosticInterfaceIfAlias" xml:space="preserve">
     <value>Описание оператора (ifAlias): {0}</value>
@@ -1588,10 +1588,10 @@
     <value>ifName</value>
   </data>
   <data name="InspectorFieldIfAlias" xml:space="preserve">
-    <value>ifAlias</value>
+    <value>Описание оператора</value>
   </data>
   <data name="InspectorFieldIfDescription" xml:space="preserve">
-    <value>ifDescr</value>
+    <value>Описание устройства</value>
   </data>
   <data name="InspectorFieldMac" xml:space="preserve">
     <value>MAC</value>
@@ -1609,7 +1609,7 @@
     <value>Качество</value>
   </data>
   <data name="InspectorFieldIfType" xml:space="preserve">
-    <value>Тип IF-MIB</value>
+    <value>Тип</value>
   </data>
   <data name="DiagnosticNoEvidenceDevice" xml:space="preserve">
     <value>Для устройства нет текущих подтверждающих данных.</value>
@@ -1787,5 +1787,221 @@
   </data>
   <data name="DiscoveryProfileDeleteFailed" xml:space="preserve">
     <value>Не удалось удалить профиль: {0}</value>
+  </data>
+  <data name="ShellAllEventsAction" xml:space="preserve">
+    <value>Все события ›</value>
+  </data>
+  <data name="ShellEventResolvedTitle" xml:space="preserve">
+    <value>Устранено: {0}</value>
+  </data>
+  <data name="InspectorProblemNone" xml:space="preserve">
+    <value>Активных проблем для объекта нет.</value>
+  </data>
+  <data name="InspectorProblemForwardingCycle" xml:space="preserve">
+    <value>Петля: объект входит в цикл пересылки {0}. STP не блокирует ни одного порта в цикле.</value>
+  </data>
+  <data name="InspectorProblemGeneric" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="InspectorShowLoopAction" xml:space="preserve">
+    <value>Показать петлю</value>
+  </data>
+  <data name="InspectorAvailabilityMonitoringStopped" xml:space="preserve">
+    <value>■ Мониторинг остановлен · данные {0}</value>
+  </data>
+  <data name="InspectorAvailabilityNoData" xml:space="preserve">
+    <value>? Нет данных</value>
+  </data>
+  <data name="InspectorAvailabilityIndirect" xml:space="preserve">
+    <value>◌ Наблюдается косвенно — последний контакт {0}</value>
+  </data>
+  <data name="InspectorRelativeNow" xml:space="preserve">
+    <value>Только что</value>
+  </data>
+  <data name="InspectorRelativeMinutes" xml:space="preserve">
+    <value>{0} мин назад</value>
+  </data>
+  <data name="InspectorRelativeHours" xml:space="preserve">
+    <value>{0} ч назад</value>
+  </data>
+  <data name="InspectorRelativeDays" xml:space="preserve">
+    <value>{0} дн назад</value>
+  </data>
+  <data name="InspectorLocationProblemCount" xml:space="preserve">
+    <value>Проблемы</value>
+  </data>
+  <data name="InspectorLocationNoProblems" xml:space="preserve">
+    <value>● Активных проблем нет</value>
+  </data>
+  <data name="InspectorLocationProblems" xml:space="preserve">
+    <value>! Активных проблем: {0}</value>
+  </data>
+  <data name="InspectorIfTypeEthernet" xml:space="preserve">
+    <value>Ethernet</value>
+  </data>
+  <data name="InspectorIfTypeLoopback" xml:space="preserve">
+    <value>Loopback</value>
+  </data>
+  <data name="InspectorIfTypeVirtual" xml:space="preserve">
+    <value>Виртуальный интерфейс</value>
+  </data>
+  <data name="InspectorIfTypeFastEthernet" xml:space="preserve">
+    <value>Fast Ethernet</value>
+  </data>
+  <data name="InspectorIfTypeWifi" xml:space="preserve">
+    <value>Wi‑Fi</value>
+  </data>
+  <data name="InspectorIfTypeGigabitEthernet" xml:space="preserve">
+    <value>Gigabit Ethernet</value>
+  </data>
+  <data name="InspectorIfTypeTunnel" xml:space="preserve">
+    <value>Туннель</value>
+  </data>
+  <data name="InspectorIfTypeVlan" xml:space="preserve">
+    <value>VLAN</value>
+  </data>
+  <data name="InspectorIfTypeLag" xml:space="preserve">
+    <value>Агрегация каналов</value>
+  </data>
+  <data name="InspectorIfTypeOther" xml:space="preserve">
+    <value>Тип интерфейса {0}</value>
+  </data>
+  <data name="InspectorAvailabilityMonitoringStoppedNoData" xml:space="preserve">
+    <value>■ Мониторинг остановлен · данных нет</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleDeviceTitle" xml:space="preserve">
+    <value>Петля: устройство входит в цикл пересылки</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleLinkTitle" xml:space="preserve">
+    <value>Петля: связь входит в цикл пересылки</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleGenericTitle" xml:space="preserve">
+    <value>Петля: выбранный объект связан с циклом пересылки</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleScope" xml:space="preserve">
+    <value>Цикл: {0}.</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleExplanation" xml:space="preserve">
+    <value>STP не блокирует ни одного порта в цикле.</value>
+  </data>
+  <data name="DiagnosticFieldDescription" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="DiagnosticLocationNotAssigned" xml:space="preserve">
+    <value>Не назначено</value>
+  </data>
+  <data name="DiagnosticFieldPortA" xml:space="preserve">
+    <value>Порт A</value>
+  </data>
+  <data name="DiagnosticFieldPortB" xml:space="preserve">
+    <value>Порт B</value>
+  </data>
+  <data name="DiagnosticFieldLocationA" xml:space="preserve">
+    <value>Размещение A</value>
+  </data>
+  <data name="DiagnosticFieldLocationB" xml:space="preserve">
+    <value>Размещение B</value>
+  </data>
+  <data name="DiagnosticEndpointPortValue" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="InspectorPortColumnPort" xml:space="preserve">
+    <value>Порт</value>
+  </data>
+  <data name="InspectorPortColumnState" xml:space="preserve">
+    <value>Состояние</value>
+  </data>
+  <data name="InspectorPortColumnSpeed" xml:space="preserve">
+    <value>Скорость</value>
+  </data>
+  <data name="InspectorPortColumnStp" xml:space="preserve">
+    <value>STP</value>
+  </data>
+  <data name="InspectorPortColumnNeighbor" xml:space="preserve">
+    <value>Сосед</value>
+  </data>
+  <data name="InspectorPortIfIndex" xml:space="preserve">
+    <value>ifIndex {0}</value>
+  </data>
+  <data name="InspectorPortMac" xml:space="preserve">
+    <value>MAC {0}</value>
+  </data>
+  <data name="InspectorPortLastSeen" xml:space="preserve">
+    <value>Наблюдение {0}</value>
+  </data>
+  <data name="InspectorPortNeighbor" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="InspectorPortStatusUp" xml:space="preserve">
+    <value>Работает</value>
+  </data>
+  <data name="InspectorPortStatusDown" xml:space="preserve">
+    <value>Не работает</value>
+  </data>
+  <data name="InspectorPortStatusUnknown" xml:space="preserve">
+    <value>Нет данных</value>
+  </data>
+  <data name="InspectorRelativeMinutesOne" xml:space="preserve">
+    <value>{0} минуту назад</value>
+  </data>
+  <data name="InspectorRelativeMinutesFew" xml:space="preserve">
+    <value>{0} минуты назад</value>
+  </data>
+  <data name="InspectorRelativeMinutesMany" xml:space="preserve">
+    <value>{0} минут назад</value>
+  </data>
+  <data name="InspectorRelativeMinutesOther" xml:space="preserve">
+    <value>{0} минуты назад</value>
+  </data>
+  <data name="InspectorRelativeHoursOne" xml:space="preserve">
+    <value>{0} час назад</value>
+  </data>
+  <data name="InspectorRelativeHoursFew" xml:space="preserve">
+    <value>{0} часа назад</value>
+  </data>
+  <data name="InspectorRelativeHoursMany" xml:space="preserve">
+    <value>{0} часов назад</value>
+  </data>
+  <data name="InspectorRelativeHoursOther" xml:space="preserve">
+    <value>{0} часа назад</value>
+  </data>
+  <data name="InspectorRelativeDaysOne" xml:space="preserve">
+    <value>{0} день назад</value>
+  </data>
+  <data name="InspectorRelativeDaysFew" xml:space="preserve">
+    <value>{0} дня назад</value>
+  </data>
+  <data name="InspectorRelativeDaysMany" xml:space="preserve">
+    <value>{0} дней назад</value>
+  </data>
+  <data name="InspectorRelativeDaysOther" xml:space="preserve">
+    <value>{0} дня назад</value>
+  </data>
+  <data name="DiagnosticFieldPort" xml:space="preserve">
+    <value>Порт</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpBroken" xml:space="preserve">
+    <value>× Ошибка STP на {0} · данные {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpDisabled" xml:space="preserve">
+    <value>■ Отключена STP на {0} · данные {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpBlocking" xml:space="preserve">
+    <value>⊘ Заблокирована STP на {0} · данные {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpTransition" xml:space="preserve">
+    <value>↻ STP перестраивает путь на {0} · данные {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityForwarding" xml:space="preserve">
+    <value>✓ Передаёт трафик · данные {0}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityUnknown" xml:space="preserve">
+    <value>? Состояние передачи неизвестно · данные {0}</value>
+  </data>
+  <data name="InspectorPortSummary" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="InspectorPortNeighborLine" xml:space="preserve">
+    <value>→ {0}</value>
   </data>
 </root>

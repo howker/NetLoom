@@ -17,6 +17,7 @@ using NetLoom.Application.Topology;
 using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.Diagnostics;
+using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
@@ -2212,16 +2213,31 @@ namespace NetLoom.Tests.Unit
                             window,
                             firstId);
 
-                        Assert.AreEqual(
-                            UiText.Get(
-                                "OperatorStatusGlyphCritical") +
-                            " " +
-                            UiText.Get(
-                                "OperatorStatusCritical"),
+                        var inspectorStatus =
                             ((TextBlock)window.FindName(
                                 "InspectorOperationalStatusText"))
-                            .Text,
-                            "Inspector must use the same critical label and glyph as the map.");
+                            .Text;
+
+                        Assert.IsFalse(
+                            inspectorStatus.Contains(
+                                UiText.Get(
+                                    "OperatorStatusCritical")),
+                            "Inspector device availability must not reuse alert severity as the device state.");
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((TextBlock)window.FindName(
+                                "InspectorProblemText"))
+                            .Visibility,
+                            "Inspector must expose the active problem separately from availability.");
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "InspectorShowLoopAction"),
+                            ((Button)window.FindName(
+                                "InspectorPrimaryActionButton"))
+                            .Content,
+                            "Forwarding-cycle problems must expose one clear primary action.");
 
                         var alertRow =
                             ((ItemsControl)window.FindName(
@@ -2482,20 +2498,40 @@ namespace NetLoom.Tests.Unit
                             technical,
                             "cist");
 
-                        var eventText =
-                            ((TextBlock)window.FindName(
-                                "AlertTransitionText"))
-                            .Text;
+                        var shellEvents =
+                            (ItemsControl)window.FindName(
+                                "ShellEventList");
+
+                        Assert.AreEqual(
+                            1,
+                            shellEvents.Items.Count);
+
+                        var shellEvent =
+                            shellEvents.Items[0];
+                        var shellEventTitle =
+                            (string)shellEvent.GetType()
+                                .GetProperty(
+                                    "Title")
+                                .GetValue(
+                                    shellEvent,
+                                    null);
+                        var shellEventScope =
+                            (string)shellEvent.GetType()
+                                .GetProperty(
+                                    "Scope")
+                                .GetValue(
+                                    shellEvent,
+                                    null);
 
                         StringAssert.Contains(
-                            eventText,
+                            shellEventScope,
                             "Switch critical A");
                         Assert.IsFalse(
-                            eventText.Contains(
+                            shellEventTitle.Contains(
                                 physicalLinkId.ToString(
                                     "D")));
                         Assert.IsFalse(
-                            eventText.Contains(
+                            shellEventScope.Contains(
                                 "cist"));
 
                         SelectDevice(
@@ -2659,6 +2695,873 @@ namespace NetLoom.Tests.Unit
                         Assert.IsTrue(
                             refreshedExpander.IsExpanded,
                             "Refreshing an unchanged alert must preserve the operator's expanded technical-details state.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            InspectorTechnicalDetailsExpansionSurvivesUnchangedRefresh()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6450-6450-6450-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6451-6451-6451-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6452-6452-6452-464646464646");
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    firstId) != null);
+
+                        SelectDevice(
+                            window,
+                            firstId);
+
+                        var expander =
+                            (Expander)window.FindName(
+                                "InspectorTechnicalDetailsExpander");
+
+                        expander.IsExpanded =
+                            true;
+
+                        var showSelected =
+                            typeof(MainWindow).GetMethod(
+                                "ShowSelectedDiagnostic",
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.NonPublic);
+
+                        Assert.IsNotNull(
+                            showSelected);
+
+                        showSelected.Invoke(
+                            window,
+                            null);
+
+                        PumpDispatcher();
+
+                        Assert.IsTrue(
+                            expander.IsExpanded,
+                            "Refreshing the same inspector entity must preserve the operator's expanded technical-details state.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            AlertEventTimeDoesNotDriftOnUnchangedRefresh()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6460-6460-6460-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6461-6461-6461-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6462-6462-6462-464646464646");
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        var shellEvents =
+                            (ItemsControl)window.FindName(
+                                "ShellEventList");
+
+                        WaitForCondition(
+                            () =>
+                                shellEvents.Items.Count == 1);
+
+                        var firstEvent =
+                            shellEvents.Items[0];
+                        var timeProperty =
+                            firstEvent.GetType()
+                                .GetProperty(
+                                    "TimeText");
+
+                        Assert.IsNotNull(
+                            timeProperty);
+
+                        var originalTime =
+                            (string)timeProperty.GetValue(
+                                firstEvent,
+                                null);
+
+                        var laterSnapshot =
+                            new TopologyAlertSnapshot(
+                                Now.AddMinutes(5),
+                                "cist",
+                                new[]
+                                {
+                                    new TopologyAlert(
+                                        "critical-link",
+                                        TopologyAlertKind.ForwardingCycle,
+                                        TopologyAlertSeverity.Critical,
+                                        "cist",
+                                        new string[0],
+                                        new[]
+                                        {
+                                            physicalLinkId
+                                        },
+                                        new[]
+                                        {
+                                            TopologyAlertReason
+                                                .ConfirmedForwardingCycle
+                                        })
+                                });
+
+                        var showAlerts =
+                            typeof(MainWindow).GetMethod(
+                                "ShowAlerts",
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.NonPublic);
+
+                        Assert.IsNotNull(
+                            showAlerts);
+
+                        var transitionType =
+                            showAlerts.GetParameters()[1]
+                                .ParameterType;
+
+                        showAlerts.Invoke(
+                            window,
+                            new[]
+                            {
+                                (object)laterSnapshot,
+                                Activator.CreateInstance(
+                                    transitionType)
+                            });
+
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            1,
+                            shellEvents.Items.Count,
+                            "An unchanged alert must not create another shell event.");
+
+                        var refreshedTime =
+                            (string)timeProperty.GetValue(
+                                shellEvents.Items[0],
+                                null);
+
+                        Assert.AreEqual(
+                            originalTime,
+                            refreshedTime,
+                            "Event time must represent the transition, not the latest refresh.");
+
+                        var alertRow =
+                            ((ItemsControl)window.FindName(
+                                "AlertList"))
+                            .Items[0];
+                        var alertTime =
+                            (string)alertRow.GetType()
+                                .GetProperty(
+                                    "TimeText")
+                                .GetValue(
+                                    alertRow,
+                                    null);
+
+                        Assert.AreEqual(
+                            originalTime,
+                            alertTime,
+                            "The current alert card must keep its first-seen time across unchanged refreshes.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            InspectorSeparatesAvailabilitySeverityAndExplanation()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6470-6470-6470-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6471-6471-6471-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6472-6472-6472-464646464646");
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    firstId) != null);
+
+                        SelectDevice(
+                            window,
+                            firstId);
+
+                        var availability =
+                            ((TextBlock)window.FindName(
+                                "InspectorOperationalStatusText"))
+                            .Text;
+                        var availabilityPrefix =
+                            UiText.Get(
+                                    "InspectorAvailabilityMonitoringStopped")
+                                .Split('{')[0]
+                                .Trim();
+
+                        StringAssert.StartsWith(
+                            availability,
+                            availabilityPrefix,
+                            "Global monitoring stop must be named as stopped monitoring and include data age.");
+                        Assert.IsFalse(
+                            availability.Contains(
+                                UiText.Get(
+                                    "OperatorStatusCritical")),
+                            "Device availability must remain separate from alert severity.");
+
+                        var problem =
+                            (TextBlock)window.FindName(
+                                "InspectorProblemText");
+                        var expectedSeverity =
+                            UiText.Get(
+                                "OperatorStatusGlyphCritical") +
+                            " " +
+                            UiText.Get(
+                                "OperatorStatusCritical");
+                        var deviceProblemPrefix =
+                            UiText.Get(
+                                    "InspectorProblemForwardingCycleDeviceTitle")
+                                .Split('{')[0]
+                                .Trim();
+
+                        StringAssert.StartsWith(
+                            problem.Text,
+                            expectedSeverity + " — ",
+                            "Problem importance must be explicit text plus glyph, not color-only.");
+                        StringAssert.Contains(
+                            problem.Text,
+                            deviceProblemPrefix,
+                            "Device loop wording must name the device rather than a generic object.");
+
+                        var explanation =
+                            ((TextBlock)window.FindName(
+                                "InspectorProblemExplanationText"))
+                            .Text;
+                        StringAssert.Contains(
+                            explanation,
+                            "Switch critical A");
+                        StringAssert.Contains(
+                            explanation,
+                            "Switch critical B");
+                        StringAssert.Contains(
+                            explanation,
+                            UiText.Get(
+                                "InspectorProblemForwardingCycleExplanation"),
+                            "Loop explanation must remain a separate neutral text line.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            InspectorDeviceDetailsShowDescriptionPlacementAndPortTable()
+        {
+            RunOnSta(
+                () =>
+                {
+                    Guid firstId;
+                    Guid secondId;
+                    Guid firstInterfaceId;
+                    Guid secondInterfaceId;
+                    Guid linkId;
+                    var snapshot =
+                        Pass2InspectorSnapshot(
+                            out firstId,
+                            out secondId,
+                            out firstInterfaceId,
+                            out secondInterfaceId,
+                            out linkId);
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                snapshot),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    firstId) != null);
+
+                        SelectDevice(
+                            window,
+                            firstId);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiagnosticStateTitle"),
+                            ((TextBlock)window.FindName(
+                                "DiagnosticPrimaryTitleText"))
+                            .Text);
+
+                        var fields =
+                            (ItemsControl)window.FindName(
+                                "DiagnosticFieldsList");
+                        var description =
+                            FindDiagnosticFieldValue(
+                                fields,
+                                UiText.Get(
+                                    "DiagnosticFieldDescription"));
+                        var location =
+                            FindDiagnosticFieldValue(
+                                fields,
+                                UiText.Get(
+                                    "DiagnosticFieldLocation"));
+
+                        Assert.AreEqual(
+                            "NetLoom Sprint39 Acceptance",
+                            description,
+                            "Description must be a labeled detail row rather than an unlabeled subtitle.");
+                        StringAssert.Contains(
+                            location,
+                            "Rack A",
+                            "Assigned device location must be visible in details.");
+
+                        Assert.AreEqual(
+                            string.Empty,
+                            ((TextBlock)window.FindName(
+                                "DiagnosticElementSubtitleText"))
+                            .Text,
+                            "Device description must not remain as an unlabeled subtitle.");
+
+                        var portsScrollViewer =
+                            (ScrollViewer)window.FindName(
+                                "InspectorInterfacesScrollViewer");
+                        Assert.AreEqual(
+                            ScrollBarVisibility.Disabled,
+                            portsScrollViewer.HorizontalScrollBarVisibility,
+                            "Narrow Inspector port rows must not require horizontal scrolling.");
+
+                        var ports =
+                            (ItemsControl)window.FindName(
+                                "DiagnosticInterfaceList");
+                        Assert.AreEqual(
+                            1,
+                            ports.Items.Count);
+
+                        var row =
+                            ports.Items[0];
+                        var portName =
+                            DiagnosticRowString(
+                                row,
+                                "PortName");
+                        var portMeta =
+                            DiagnosticRowString(
+                                row,
+                                "PortMeta");
+                        var portStatus =
+                            DiagnosticRowString(
+                                row,
+                                "PortStatus");
+                        var portStp =
+                            DiagnosticRowString(
+                                row,
+                                "PortStp");
+                        var portNeighbor =
+                            DiagnosticRowString(
+                                row,
+                                "PortNeighbor");
+                        var portStatusGlyph =
+                            DiagnosticRowString(
+                                row,
+                                "PortStatusGlyph");
+                        var portSummary =
+                            DiagnosticRowString(
+                                row,
+                                "PortSummary");
+                        var portNeighborLine =
+                            DiagnosticRowString(
+                                row,
+                                "PortNeighborLine");
+
+                        Assert.AreEqual(
+                            "Gi0/1",
+                            portName,
+                            "Inspector port title must not duplicate ifIndex.");
+                        Assert.AreEqual(
+                            1,
+                            CountOccurrences(
+                                portMeta,
+                                "ifIndex 1"),
+                            "ifIndex must appear exactly once in port metadata.");
+                        StringAssert.Contains(
+                            portMeta,
+                            "MAC 00:11:22:33:44:55");
+                        StringAssert.Contains(
+                            portMeta,
+                            UiText.FormatCount(
+                                "InspectorRelativeDays",
+                                12),
+                            "Port observation age must use the natural localized relative-time form.");
+                        Assert.IsFalse(
+                            portMeta.Contains(
+                                "IF-MIB"),
+                            "Port table must not expose IF-MIB implementation wording.");
+                        StringAssert.StartsWith(
+                            portStatus,
+                            UiText.Get(
+                                "OperatorStatusGlyphNormal"),
+                            "Port state must include a non-color status glyph.");
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiagnosticStpForwarding"),
+                            portStp);
+                        StringAssert.Contains(
+                            portNeighbor,
+                            "Switch B");
+                        Assert.IsTrue(
+                            DiagnosticRowBool(
+                                row,
+                                "IsRiskyStp"),
+                            "Forwarding STP on the active forwarding-cycle link must be marked risky.");
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "OperatorStatusGlyphNormal"),
+                            portStatusGlyph);
+                        StringAssert.Contains(
+                            portSummary,
+                            UiText.Get(
+                                "DiagnosticStpForwarding"));
+                        StringAssert.Contains(
+                            portSummary,
+                            UiText.Format(
+                                "DiagnosticSpeedGbps",
+                                1.0));
+                        StringAssert.StartsWith(
+                            portNeighborLine,
+                            "→ ");
+                        StringAssert.Contains(
+                            portNeighborLine,
+                            "Switch B");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            InspectorLinkUsesCurrentFreshnessAndEndpointRows()
+        {
+            RunOnSta(
+                () =>
+                {
+                    Guid firstId;
+                    Guid secondId;
+                    Guid firstInterfaceId;
+                    Guid secondInterfaceId;
+                    Guid linkId;
+                    var snapshot =
+                        Pass2InspectorSnapshot(
+                            out firstId,
+                            out secondId,
+                            out firstInterfaceId,
+                            out secondInterfaceId,
+                            out linkId);
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                snapshot),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var showLink =
+                            typeof(MainWindow).GetMethod(
+                                "ShowLinkDiagnostic",
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.NonPublic);
+
+                        Assert.IsNotNull(
+                            showLink);
+
+                        showLink.Invoke(
+                            window,
+                            new object[]
+                            {
+                                snapshot.DiagnosticSnapshot.Links[0]
+                            });
+                        PumpDispatcher();
+
+                        var fields =
+                            (ItemsControl)window.FindName(
+                                "DiagnosticFieldsList");
+
+                        var freshness =
+                            FindDiagnosticFieldValue(
+                                fields,
+                                UiText.Get(
+                                    "DiagnosticFieldFreshness"));
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "FreshnessStale"),
+                            freshness,
+                            "A link last seen 12 days ago must be stale even if the cached map snapshot still says Fresh.");
+
+                        Assert.AreEqual(
+                            2,
+                            CountDiagnosticSections(
+                                fields),
+                            "Link endpoint details must be grouped into two named device sections.");
+
+                        Assert.IsTrue(
+                            DiagnosticSectionExists(
+                                fields,
+                                "Switch A"),
+                            "First endpoint section must use the device name, not side A/B.");
+                        Assert.IsTrue(
+                            DiagnosticSectionExists(
+                                fields,
+                                "Switch B"),
+                            "Second endpoint section must use the device name, not side A/B.");
+
+                        StringAssert.Contains(
+                            FindDiagnosticFieldValueAfterSection(
+                                fields,
+                                "Switch A",
+                                UiText.Get(
+                                    "DiagnosticFieldPort")),
+                            "Gi0/1");
+                        StringAssert.Contains(
+                            FindDiagnosticFieldValueAfterSection(
+                                fields,
+                                "Switch A",
+                                UiText.Get(
+                                    "DiagnosticFieldLocation")),
+                            "Rack A");
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiagnosticLocationNotAssigned"),
+                            FindDiagnosticFieldValueAfterSection(
+                                fields,
+                                "Switch B",
+                                UiText.Get(
+                                    "DiagnosticFieldLocation")));
+
+                        Assert.AreEqual(
+                            string.Empty,
+                            ((TextBlock)window.FindName(
+                                "DiagnosticElementSubtitleText"))
+                            .Text,
+                            "Endpoint ports belong in grouped details, not an unlabeled gray subtitle.");
+
+                        var statusText =
+                            ((TextBlock)window.FindName(
+                                "InspectorOperationalStatusText"))
+                            .Text;
+                        StringAssert.Contains(
+                            statusText,
+                            UiText.Get(
+                                    "InspectorLinkAvailabilityForwarding")
+                                .Split('{')[0]
+                                .Trim(),
+                            "Link state must describe forwarding state rather than repeat alert severity.");
+                        Assert.IsFalse(
+                            statusText.Contains(
+                                UiText.Get(
+                                    "AlertSeverityCritical")),
+                            "Link state line must not repeat problem importance.");
+
+                        var problemText =
+                            ((TextBlock)window.FindName(
+                                "InspectorProblemText"))
+                            .Text;
+                        StringAssert.Contains(
+                            problemText,
+                            UiText.Get(
+                                "InspectorProblemForwardingCycleLinkTitle"),
+                            "Link loop wording must name the link rather than a generic object.");
+
+                        var explanationText =
+                            ((TextBlock)window.FindName(
+                                "InspectorProblemExplanationText"))
+                            .Text;
+                        StringAssert.Contains(
+                            explanationText,
+                            "Switch A");
+                        StringAssert.Contains(
+                            explanationText,
+                            "Switch B");
+                        Assert.IsFalse(
+                            problemText.Contains(
+                                "Switch A"),
+                            "Cycle member list must stay in the neutral explanation line rather than the severity-colored title.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            InspectorLinkStateUsesDisabledStpEndpointInsteadOfProblemSeverity()
+        {
+            RunOnSta(
+                () =>
+                {
+                    Guid firstId;
+                    Guid secondId;
+                    Guid firstInterfaceId;
+                    Guid secondInterfaceId;
+                    Guid linkId;
+                    var snapshot =
+                        Pass2InspectorSnapshot(
+                            out firstId,
+                            out secondId,
+                            out firstInterfaceId,
+                            out secondInterfaceId,
+                            out linkId);
+                    var original =
+                        snapshot.DiagnosticSnapshot.Links[0];
+                    var disabledLink =
+                        new PhysicalLinkDiagnostic(
+                            original.PhysicalLinkId,
+                            original.DeviceAId,
+                            original.DeviceBId,
+                            original.InterfaceAId,
+                            original.InterfaceBId,
+                            original.DeviceAName,
+                            original.DeviceBName,
+                            original.InterfaceAName,
+                            original.InterfaceBName,
+                            original.Strength,
+                            original.Freshness,
+                            original.MediaType,
+                            original.SpeedBps,
+                            original.SourceSummary,
+                            original.LastSeenUtc,
+                            original.LastConfirmedUtc,
+                            StpTreePortState.Disabled,
+                            StpTreePortState.Forwarding,
+                            original.Evidence,
+                            original.IsBridge,
+                            original.SideADeviceCount,
+                            original.SideBDeviceCount,
+                            original.SeparatedDevicePairCount);
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                snapshot),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var showLink =
+                            typeof(MainWindow).GetMethod(
+                                "ShowLinkDiagnostic",
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.NonPublic);
+                        Assert.IsNotNull(
+                            showLink);
+
+                        showLink.Invoke(
+                            window,
+                            new object[]
+                            {
+                                disabledLink
+                            });
+                        PumpDispatcher();
+
+                        var state =
+                            ((TextBlock)window.FindName(
+                                "InspectorOperationalStatusText"))
+                            .Text;
+                        StringAssert.Contains(
+                            state,
+                            "Switch A");
+                        StringAssert.Contains(
+                            state,
+                            UiText.Get(
+                                    "InspectorLinkAvailabilityStpDisabled")
+                                .Split('{')[0]
+                                .Trim());
+                        Assert.IsFalse(
+                            state.Contains(
+                                UiText.Get(
+                                    "AlertSeverityCritical")),
+                            "Disabled STP state must not be replaced by critical alert severity.");
+
+                        StringAssert.Contains(
+                            ((TextBlock)window.FindName(
+                                "InspectorProblemText"))
+                            .Text,
+                            UiText.Get(
+                                "AlertSeverityCritical"));
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            CriticalShellEventIsPresentedBeforeWarning()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var criticalLink =
+                        Guid.Parse(
+                            "46464646-6490-6490-6490-464646464646");
+                    var warningLink =
+                        Guid.Parse(
+                            "46464646-6491-6491-6491-464646464646");
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var alertSnapshot =
+                            new TopologyAlertSnapshot(
+                                Now,
+                                "cist",
+                                new[]
+                                {
+                                    new TopologyAlert(
+                                        "warning-first",
+                                        TopologyAlertKind.RingProtectionDegraded,
+                                        TopologyAlertSeverity.Warning,
+                                        "cist",
+                                        new[] { "region-warning" },
+                                        new[] { warningLink },
+                                        new[]
+                                        {
+                                            TopologyAlertReason.DisabledRingLink
+                                        }),
+                                    new TopologyAlert(
+                                        "critical-second",
+                                        TopologyAlertKind.ForwardingCycle,
+                                        TopologyAlertSeverity.Critical,
+                                        "cist",
+                                        new string[0],
+                                        new[] { criticalLink },
+                                        new[]
+                                        {
+                                            TopologyAlertReason.ConfirmedForwardingCycle
+                                        })
+                                });
+
+                        var showAlerts =
+                            typeof(MainWindow).GetMethod(
+                                "ShowAlerts",
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.NonPublic);
+                        Assert.IsNotNull(
+                            showAlerts);
+
+                        var transitionType =
+                            showAlerts.GetParameters()[1]
+                                .ParameterType;
+                        showAlerts.Invoke(
+                            window,
+                            new[]
+                            {
+                                (object)alertSnapshot,
+                                Activator.CreateInstance(
+                                    transitionType)
+                            });
+                        PumpDispatcher();
+
+                        var events =
+                            (ItemsControl)window.FindName(
+                                "ShellEventList");
+                        Assert.AreEqual(
+                            2,
+                            events.Items.Count);
+                        Assert.IsTrue(
+                            DiagnosticRowBool(
+                                events.Items[0],
+                                "IsCritical"),
+                            "Critical active event must be presented before warning events regardless of arrival order.");
                     }
                     finally
                     {
@@ -3717,6 +4620,229 @@ namespace NetLoom.Tests.Unit
         }
 
         private static TopologyRefreshSnapshot
+            Pass2InspectorSnapshot(
+                out Guid firstId,
+                out Guid secondId,
+                out Guid firstInterfaceId,
+                out Guid secondInterfaceId,
+                out Guid physicalLinkId)
+        {
+            firstId =
+                Guid.Parse(
+                    "46464646-6480-6480-6480-464646464646");
+            secondId =
+                Guid.Parse(
+                    "46464646-6481-6481-6481-464646464646");
+            firstInterfaceId =
+                Guid.Parse(
+                    "46464646-6482-6482-6482-464646464646");
+            secondInterfaceId =
+                Guid.Parse(
+                    "46464646-6483-6483-6483-464646464646");
+            physicalLinkId =
+                Guid.Parse(
+                    "46464646-6484-6484-6484-464646464646");
+
+            var siteId =
+                Guid.Parse(
+                    "46464646-6485-6485-6485-464646464646");
+            var rackId =
+                Guid.Parse(
+                    "46464646-6486-6486-6486-464646464646");
+            var observedUtc =
+                DateTime.UtcNow.AddDays(
+                    -12);
+            var firstKey =
+                firstId.ToString(
+                    "D");
+            var secondKey =
+                secondId.ToString(
+                    "D");
+
+            var firstInterface =
+                new InterfaceDiagnostic(
+                    firstInterfaceId,
+                    firstId,
+                    1,
+                    "Gi0/1",
+                    "00:11:22:33:44:55",
+                    "up",
+                    "up",
+                    1000000000L,
+                    observedUtc,
+                    NetLoom.Contracts.StpTree
+                        .StpTreePortState
+                        .Forwarding,
+                    DiagnosticDegradationStatus.Healthy,
+                    observedUtc,
+                    new DiagnosticDegradationReason[0],
+                    "Gi0/1",
+                    "Uplink",
+                    6,
+                    "GigabitEthernet0/1");
+            var secondInterface =
+                new InterfaceDiagnostic(
+                    secondInterfaceId,
+                    secondId,
+                    2,
+                    "Gi0/2",
+                    "00:11:22:33:44:66",
+                    "up",
+                    "up",
+                    1000000000L,
+                    observedUtc,
+                    NetLoom.Contracts.StpTree
+                        .StpTreePortState
+                        .Forwarding,
+                    DiagnosticDegradationStatus.Healthy,
+                    observedUtc,
+                    new DiagnosticDegradationReason[0],
+                    "Gi0/2",
+                    "Downlink",
+                    6,
+                    "GigabitEthernet0/2");
+
+            return new TopologyRefreshSnapshot(
+                new MapSnapshot(
+                    DateTime.UtcNow,
+                    new[]
+                    {
+                        new MapNode(
+                            firstKey,
+                            "Switch A",
+                            "NetLoom Sprint39 Acceptance",
+                            100.0,
+                            100.0,
+                            rackId,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            firstId,
+                            "192.0.2.180"),
+                        new MapNode(
+                            secondKey,
+                            "Switch B",
+                            null,
+                            420.0,
+                            100.0,
+                            null,
+                            MapNodeOrigin.Automatic,
+                            MapMonitoringCapability.Unknown,
+                            MapNodeCategory.Unknown,
+                            secondId,
+                            "192.0.2.181")
+                    },
+                    new[]
+                    {
+                        new MapLink(
+                            physicalLinkId.ToString(
+                                "D"),
+                            firstKey,
+                            secondKey,
+                            null,
+                            null,
+                            MapConfidence.High,
+                            MapFreshness.Fresh,
+                            new MapEvidenceItem[0],
+                            physicalLinkId)
+                    },
+                    new[]
+                    {
+                        new MapLocation(
+                            siteId,
+                            null,
+                            "Site A",
+                            null),
+                        new MapLocation(
+                            rackId,
+                            siteId,
+                            "Rack A",
+                            null)
+                    }),
+                new TopologyAlertSnapshot(
+                    DateTime.UtcNow,
+                    "cist",
+                    new[]
+                    {
+                        new TopologyAlert(
+                            "pass2-critical-link",
+                            TopologyAlertKind.ForwardingCycle,
+                            TopologyAlertSeverity.Critical,
+                            "cist",
+                            new string[0],
+                            new[]
+                            {
+                                physicalLinkId
+                            },
+                            new[]
+                            {
+                                TopologyAlertReason
+                                    .ConfirmedForwardingCycle
+                            })
+                    }),
+                new NetworkDiagnosticSnapshot(
+                    DateTime.UtcNow,
+                    new[]
+                    {
+                        new DeviceDiagnostic(
+                            firstId,
+                            "Switch A",
+                            "NetLoom Sprint39 Acceptance",
+                            "Rack A",
+                            observedUtc,
+                            observedUtc,
+                            new[]
+                            {
+                                firstInterface
+                            },
+                            "192.0.2.180"),
+                        new DeviceDiagnostic(
+                            secondId,
+                            "Switch B",
+                            null,
+                            null,
+                            observedUtc,
+                            observedUtc,
+                            new[]
+                            {
+                                secondInterface
+                            },
+                            "192.0.2.181")
+                    },
+                    new[]
+                    {
+                        new PhysicalLinkDiagnostic(
+                            physicalLinkId,
+                            firstId,
+                            secondId,
+                            firstInterfaceId,
+                            secondInterfaceId,
+                            "Switch A",
+                            "Switch B",
+                            "Gi0/1",
+                            "Gi0/2",
+                            DiagnosticLinkStrength.Confirmed,
+                            MapFreshness.Fresh,
+                            "Ethernet",
+                            1000000000L,
+                            "LLDP",
+                            observedUtc,
+                            observedUtc,
+                            NetLoom.Contracts.StpTree
+                                .StpTreePortState
+                                .Forwarding,
+                            NetLoom.Contracts.StpTree
+                                .StpTreePortState
+                                .Forwarding,
+                            new DiagnosticEvidenceItem[0],
+                            false,
+                            0,
+                            0,
+                            0L)
+                    }));
+        }
+
+        private static TopologyRefreshSnapshot
             CriticalLinkSnapshot(
                 Guid firstId,
                 Guid secondId,
@@ -3866,6 +4992,190 @@ namespace NetLoom.Tests.Unit
             }
 
             return null;
+        }
+
+        private static int CountOccurrences(
+            string value,
+            string token)
+        {
+            if (string.IsNullOrEmpty(
+                    value) ||
+                string.IsNullOrEmpty(
+                    token))
+            {
+                return 0;
+            }
+
+            var count =
+                0;
+            var index =
+                0;
+
+            while ((index =
+                    value.IndexOf(
+                        token,
+                        index,
+                        StringComparison.Ordinal)) >= 0)
+            {
+                count++;
+                index += token.Length;
+            }
+
+            return count;
+        }
+
+        private static int CountDiagnosticSections(
+            ItemsControl fields)
+        {
+            var count =
+                0;
+
+            foreach (var row in fields.Items)
+            {
+                if (DiagnosticRowBool(
+                    row,
+                    "IsSectionHeader"))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool DiagnosticSectionExists(
+            ItemsControl fields,
+            string title)
+        {
+            foreach (var row in fields.Items)
+            {
+                if (DiagnosticRowBool(
+                        row,
+                        "IsSectionHeader") &&
+                    string.Equals(
+                        DiagnosticRowString(
+                            row,
+                            "Label"),
+                        title,
+                        StringComparison.CurrentCulture))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string FindDiagnosticFieldValueAfterSection(
+            ItemsControl fields,
+            string sectionTitle,
+            string label)
+        {
+            var inSection =
+                false;
+
+            foreach (var row in fields.Items)
+            {
+                var isSection =
+                    DiagnosticRowBool(
+                        row,
+                        "IsSectionHeader");
+
+                if (isSection)
+                {
+                    inSection =
+                        string.Equals(
+                            DiagnosticRowString(
+                                row,
+                                "Label"),
+                            sectionTitle,
+                            StringComparison.CurrentCulture);
+                    continue;
+                }
+
+                if (inSection &&
+                    string.Equals(
+                        DiagnosticRowString(
+                            row,
+                            "Label"),
+                        label,
+                        StringComparison.CurrentCulture))
+                {
+                    return DiagnosticRowString(
+                        row,
+                        "Value");
+                }
+            }
+
+            Assert.Fail(
+                "Diagnostic field not found in section: " +
+                sectionTitle +
+                " / " +
+                label);
+            return null;
+        }
+
+        private static string FindDiagnosticFieldValue(
+            ItemsControl fields,
+            string label)
+        {
+            foreach (var row in fields.Items)
+            {
+                if (string.Equals(
+                    DiagnosticRowString(
+                        row,
+                        "Label"),
+                    label,
+                    StringComparison.CurrentCulture))
+                {
+                    return DiagnosticRowString(
+                        row,
+                        "Value");
+                }
+            }
+
+            Assert.Fail(
+                "Diagnostic field not found: " +
+                label);
+            return null;
+        }
+
+        private static string DiagnosticRowString(
+            object row,
+            string propertyName)
+        {
+            var property =
+                row.GetType()
+                    .GetProperty(
+                        propertyName);
+
+            Assert.IsNotNull(
+                property,
+                "Diagnostic row property not found: " +
+                propertyName);
+
+            return (string)property.GetValue(
+                row,
+                null);
+        }
+
+        private static bool DiagnosticRowBool(
+            object row,
+            string propertyName)
+        {
+            var property =
+                row.GetType()
+                    .GetProperty(
+                        propertyName);
+
+            Assert.IsNotNull(
+                property,
+                "Diagnostic row property not found: " +
+                propertyName);
+
+            return (bool)property.GetValue(
+                row,
+                null);
         }
 
         private static void SelectDevice(

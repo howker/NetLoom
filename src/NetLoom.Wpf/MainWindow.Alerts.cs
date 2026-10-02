@@ -16,6 +16,22 @@ public partial class MainWindow
     private readonly TopologyAlertTransitionTracker
         _alertTransitionTracker;
 
+    private readonly Dictionary<string, AlertEventState>
+        _activeAlertEventStateByKey =
+            new Dictionary<string, AlertEventState>(
+                StringComparer.Ordinal);
+
+    private readonly Dictionary<string, DateTime>
+        _alertFirstSeenUtcByKey =
+            new Dictionary<string, DateTime>(
+                StringComparer.Ordinal);
+
+    private readonly List<ShellEventRow>
+        _shellEventRows =
+            new List<ShellEventRow>();
+
+    private TopologyAlertSnapshot _lastAlertSnapshot;
+
     private static string AlertSeverityText(
         TopologyAlertSeverity severity)
     {
@@ -287,7 +303,9 @@ public partial class MainWindow
                 alert),
             BuildAlertReasonSummary(
                 alert),
-            generatedUtc
+            AlertFirstSeenUtc(
+                    alert,
+                    generatedUtc)
                 .ToLocalTime()
                 .ToString(
                     "HH:mm",
@@ -304,21 +322,205 @@ public partial class MainWindow
                 "AlertTechnicalDetails"));
     }
 
-    private static string BuildShellAlertEvent(
-        AlertRow row)
+    private DateTime AlertFirstSeenUtc(
+        TopologyAlert alert,
+        DateTime fallbackUtc)
     {
-        return UiText.Format(
-            "ShellAlertEvent",
-            row.TimeText,
-            row.SeverityText,
-            row.Title,
-            row.Scope);
+        DateTime firstSeenUtc;
+
+        return _alertFirstSeenUtcByKey.TryGetValue(
+                alert.AlertKey,
+                out firstSeenUtc)
+            ? firstSeenUtc
+            : fallbackUtc;
+    }
+
+    private void CaptureAlertEvents(
+        TopologyAlertSnapshot snapshot)
+    {
+        var currentByKey =
+            snapshot.Alerts.ToDictionary(
+                alert => alert.AlertKey,
+                StringComparer.Ordinal);
+
+        foreach (var pair in currentByKey)
+        {
+            if (_activeAlertEventStateByKey.ContainsKey(
+                pair.Key))
+            {
+                continue;
+            }
+
+            var state =
+                AlertEventState.FromAlert(
+                    pair.Value,
+                    BuildAlertScope(
+                        pair.Value),
+                    BuildAlertReasonSummary(
+                        pair.Value));
+
+            _activeAlertEventStateByKey[
+                pair.Key] =
+                    state;
+
+            _alertFirstSeenUtcByKey[
+                pair.Key] =
+                    snapshot.GeneratedUtc;
+
+            AddShellEvent(
+                state,
+                snapshot.GeneratedUtc,
+                false);
+        }
+
+        var resolvedKeys =
+            _activeAlertEventStateByKey.Keys
+                .Where(
+                    key =>
+                        !currentByKey.ContainsKey(
+                            key))
+                .ToArray();
+
+        foreach (var key in resolvedKeys)
+        {
+            var state =
+                _activeAlertEventStateByKey[key];
+
+            AddShellEvent(
+                state,
+                snapshot.GeneratedUtc,
+                true);
+
+            _activeAlertEventStateByKey.Remove(
+                key);
+            _alertFirstSeenUtcByKey.Remove(
+                key);
+        }
+
+        ShellEventList.ItemsSource =
+            _shellEventRows
+                .OrderByDescending(
+                    row =>
+                        !row.IsResolved &&
+                        row.IsCritical)
+                .ThenByDescending(
+                    row =>
+                        !row.IsResolved &&
+                        row.IsWarning)
+                .Take(3)
+                .ToArray();
+
+        ShellEventEmptyText.Visibility =
+            _shellEventRows.Count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+    }
+
+    private void AddShellEvent(
+        AlertEventState state,
+        DateTime occurredUtc,
+        bool isResolved)
+    {
+        _shellEventRows.Insert(
+            0,
+            new ShellEventRow(
+                state.AlertKey,
+                occurredUtc
+                    .ToLocalTime()
+                    .ToString(
+                        "HH:mm",
+                        CultureInfo.CurrentCulture),
+                isResolved
+                    ? UiText.Format(
+                        "ShellEventResolvedTitle",
+                        state.Title)
+                    : state.Title,
+                state.Scope,
+                state.PhysicalLinkIds,
+                state.IsCritical,
+                !state.IsCritical && !isResolved,
+                isResolved));
+
+        const int maxEventRows = 20;
+
+        if (_shellEventRows.Count >
+            maxEventRows)
+        {
+            _shellEventRows.RemoveRange(
+                maxEventRows,
+                _shellEventRows.Count -
+                maxEventRows);
+        }
+    }
+
+    private void OnShellEventClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        var button =
+            sender as Button;
+        var row =
+            button == null
+                ? null
+                : button.DataContext as ShellEventRow;
+
+        ShowShellSection(
+            ShellSection.Alerts);
+
+        if (row == null ||
+            row.PhysicalLinkIds.Length == 0)
+        {
+            return;
+        }
+
+        SelectAlertPhysicalContext(
+            row.PhysicalLinkIds[0]);
+    }
+
+    private void OnShellAllEventsClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ShowShellSection(
+            ShellSection.Alerts);
+    }
+
+    private void SelectAlertPhysicalContext(
+        Guid physicalLinkId)
+    {
+        if (physicalLinkId == Guid.Empty)
+        {
+            return;
+        }
+
+        StopStartupTopologyFit();
+
+        _highlightedDeviceId =
+            null;
+        _selectedDeviceId =
+            null;
+        _selectedInterfaceId =
+            null;
+        _selectedPhysicalLinkId =
+            physicalLinkId;
+        _selectedLocationId =
+            null;
+
+        RedrawCurrentMap();
+        ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
     }
 
     private void ShowAlerts(
         TopologyAlertSnapshot snapshot,
         TopologyAlertTransitionKind transition)
     {
+        _lastAlertSnapshot =
+            snapshot;
+
+        CaptureAlertEvents(
+            snapshot);
+
         var expandedAlertKeys =
             new HashSet<string>(
                 AlertList.Items
@@ -391,37 +593,6 @@ public partial class MainWindow
             rows.Length,
             alertBrushKey);
 
-        if (rows.Length > 0)
-        {
-            AlertTransitionText.Text =
-                BuildShellAlertEvent(
-                    rows[0]);
-
-            if (transition ==
-                TopologyAlertTransitionKind.FirstAppearance)
-            {
-                AnimatePulse(
-                    AlertTransitionText,
-                    MapMotionKind.AlertPulse);
-            }
-
-            return;
-        }
-
-        switch (transition)
-        {
-            case TopologyAlertTransitionKind.Resolved:
-                AlertTransitionText.Text =
-                    UiText.Get(
-                        "AlertTransitionResolved");
-                break;
-
-            default:
-                AlertTransitionText.Text =
-                    UiText.Get(
-                        "ShellEventIdle");
-                break;
-        }
     }
 
     private void ConfigureShellAlertBadge(
@@ -481,22 +652,8 @@ public partial class MainWindow
             return;
         }
 
-        StopStartupTopologyFit();
-
-        _highlightedDeviceId =
-            null;
-        _selectedDeviceId =
-            null;
-        _selectedInterfaceId =
-            null;
-        _selectedPhysicalLinkId =
-            row.PrimaryPhysicalLinkId;
-        _selectedLocationId =
-            null;
-
-        RedrawCurrentMap();
-        ShowSelectedDiagnostic();
-        UpdateSelectedLayoutControl();
+        SelectAlertPhysicalContext(
+            row.PrimaryPhysicalLinkId);
 
         FocusAlertContextToViewport(
             row.PhysicalLinkIds,
@@ -657,6 +814,96 @@ public partial class MainWindow
             AnimateDiscoveryFocus(
                 node.DeviceId.Value);
         }
+    }
+
+    private sealed class AlertEventState
+    {
+        private AlertEventState(
+            string alertKey,
+            string title,
+            string scope,
+            string reason,
+            Guid[] physicalLinkIds,
+            bool isCritical)
+        {
+            AlertKey = alertKey;
+            Title = title;
+            Scope = scope;
+            Reason = reason;
+            PhysicalLinkIds =
+                physicalLinkIds ??
+                new Guid[0];
+            IsCritical = isCritical;
+        }
+
+        public string AlertKey { get; }
+
+        public string Title { get; }
+
+        public string Scope { get; }
+
+        public string Reason { get; }
+
+        public Guid[] PhysicalLinkIds { get; }
+
+        public bool IsCritical { get; }
+
+        public static AlertEventState FromAlert(
+            TopologyAlert alert,
+            string scope,
+            string reason)
+        {
+            return new AlertEventState(
+                alert.AlertKey,
+                AlertKindText(
+                    alert.Kind),
+                scope,
+                reason,
+                alert.PhysicalLinkIds.ToArray(),
+                alert.Severity ==
+                    TopologyAlertSeverity.Critical);
+        }
+    }
+
+    private sealed class ShellEventRow
+    {
+        public ShellEventRow(
+            string alertKey,
+            string timeText,
+            string title,
+            string scope,
+            Guid[] physicalLinkIds,
+            bool isCritical,
+            bool isWarning,
+            bool isResolved)
+        {
+            AlertKey = alertKey;
+            TimeText = timeText;
+            Title = title;
+            Scope = scope;
+            PhysicalLinkIds =
+                physicalLinkIds ??
+                new Guid[0];
+            IsCritical = isCritical;
+            IsWarning = isWarning;
+            IsResolved = isResolved;
+        }
+
+        public string AlertKey { get; }
+
+        public string TimeText { get; }
+
+        public string Title { get; }
+
+        public string Scope { get; }
+
+        public Guid[] PhysicalLinkIds { get; }
+
+        public bool IsCritical { get; }
+
+        public bool IsWarning { get; }
+
+        public bool IsResolved { get; }
     }
 
     private sealed class AlertRow

@@ -1090,21 +1090,37 @@
                     <StackPanel Grid.Row="0">
                         <TextBlock x:Name="DiagnosticTitleText"
                                    Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                        <TextBlock x:Name="InspectorEntityTypeText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
                         <TextBlock x:Name="DiagnosticElementTitleText"
-                                   Style="{StaticResource NetLoom.Style.SubsectionLabel}"
-                                   Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
+                                   Style="{StaticResource NetLoom.Style.SectionTitle}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                    TextWrapping="Wrap" />
                         <TextBlock x:Name="InspectorOperationalStatusText"
                                    Style="{StaticResource NetLoom.Style.StatusEmphasis}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                   TextWrapping="Wrap"
                                    Visibility="Collapsed" />
+                        <TextBlock x:Name="InspectorProblemText"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Visibility="Collapsed" />
+                        <TextBlock x:Name="InspectorProblemExplanationText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   TextWrapping="Wrap"
+                                   Visibility="Collapsed" />
+                        <Button x:Name="InspectorPrimaryActionButton"
+                                HorizontalAlignment="Left"
+                                Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                Visibility="Collapsed"
+                                Click="OnInspectorPrimaryActionClick" />
                         <TextBlock x:Name="DiagnosticElementSubtitleText"
                                    Style="{StaticResource NetLoom.Style.MutedText}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                    TextWrapping="Wrap" />
-                        <TextBlock x:Name="InspectorEntityTypeText"
-                                   Style="{StaticResource NetLoom.Style.MutedText}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
                         <TextBlock x:Name="DiagnosticStatusText"
                                    Style="{StaticResource NetLoom.Style.MutedText}"
                                    Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
@@ -1126,12 +1142,42 @@
                                     <ItemsControl x:Name="DiagnosticFieldsList">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
-                                                    <TextBlock Text="{Binding Label}"
-                                                               Style="{StaticResource NetLoom.Style.MutedText}" />
-                                                    <TextBlock Text="{Binding Value}"
+                                                <Grid Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="InspectorFieldLabelText"
+                                                               Text="{Binding Label}"
+                                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                                               Margin="0,0,12,0" />
+                                                    <TextBlock x:Name="InspectorFieldValueText"
+                                                               Grid.Column="1"
+                                                               Text="{Binding Value}"
+                                                               HorizontalAlignment="Right"
+                                                               TextAlignment="Right"
                                                                TextWrapping="Wrap" />
-                                                </StackPanel>
+                                                    <TextBlock x:Name="InspectorFieldSectionText"
+                                                               Grid.ColumnSpan="2"
+                                                               Text="{Binding Label}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"
+                                                               Visibility="Collapsed" />
+                                                </Grid>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSectionHeader}"
+                                                                 Value="True">
+                                                        <Setter TargetName="InspectorFieldLabelText"
+                                                                Property="Visibility"
+                                                                Value="Collapsed" />
+                                                        <Setter TargetName="InspectorFieldValueText"
+                                                                Property="Visibility"
+                                                                Value="Collapsed" />
+                                                        <Setter TargetName="InspectorFieldSectionText"
+                                                                Property="Visibility"
+                                                                Value="Visible" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -1154,18 +1200,79 @@
 
                         <TabItem x:Name="InspectorInterfacesTab"
                                  Style="{StaticResource NetLoom.Style.InspectorTab}">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer x:Name="InspectorInterfacesScrollViewer"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
                                 <ItemsControl x:Name="DiagnosticInterfaceList">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                                     Margin="{DynamicResource NetLoom.Thickness.ListRow}"
-                                                    HorizontalContentAlignment="Left"
+                                                    HorizontalContentAlignment="Stretch"
                                                     Tag="{Binding EntityId}"
+                                                    ToolTip="{Binding PortMeta}"
                                                     IsEnabled="{Binding IsEnabled}"
                                                     Click="OnDiagnosticInterfaceClick">
-                                                <TextBlock Text="{Binding Text}"
-                                                           TextWrapping="Wrap" />
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding PortStatusGlyph}"
+                                                                   Margin="0,0,6,0">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground"
+                                                                            Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsPortDegraded}" Value="True">
+                                                                            <Setter Property="Foreground"
+                                                                                    Value="{DynamicResource NetLoom.Brush.Warning}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding IsPortDown}" Value="True">
+                                                                            <Setter Property="Foreground"
+                                                                                    Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding PortName}"
+                                                                   FontWeight="SemiBold"
+                                                                   TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding PortSummary}"
+                                                               Margin="8,0,0,0"
+                                                               TextAlignment="Right"
+                                                               TextWrapping="NoWrap">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground"
+                                                                        Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsRiskyStp}" Value="True">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                                                        <Setter Property="FontWeight"
+                                                                                Value="SemiBold" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Row="1"
+                                                               Grid.ColumnSpan="2"
+                                                               Text="{Binding PortNeighborLine}"
+                                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                                               TextWrapping="Wrap" />
+                                                </Grid>
                                             </Button>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -1232,15 +1339,78 @@
                 Style="{StaticResource NetLoom.Style.Panel}"
                 Padding="{DynamicResource NetLoom.Thickness.ShellEventPadding}"
                 BorderThickness="{DynamicResource NetLoom.Thickness.BorderTop}">
-            <DockPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
                 <TextBlock x:Name="ShellEventTitleText"
-                           DockPanel.Dock="Left"
-                           Style="{StaticResource NetLoom.Style.MutedText}" />
+                           Style="{StaticResource NetLoom.Style.MutedText}"
+                           VerticalAlignment="Center" />
+
+                <Grid Grid.Column="1"
+                      Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                    <TextBlock x:Name="ShellEventEmptyText"
+                               Style="{StaticResource NetLoom.Style.MutedText}"
+                               VerticalAlignment="Center" />
+                    <ItemsControl x:Name="ShellEventList">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        Margin="0,0,8,0"
+                                        DataContext="{Binding}"
+                                        Click="OnShellEventClick">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="EventGlyph"
+                                                   Text="●"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding TimeText}"
+                                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                                   Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding Title}" />
+                                    </StackPanel>
+                                </Button>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsCritical}"
+                                                 Value="True">
+                                        <Setter TargetName="EventGlyph"
+                                                Property="Foreground"
+                                                Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsWarning}"
+                                                 Value="True">
+                                        <Setter TargetName="EventGlyph"
+                                                Property="Foreground"
+                                                Value="{DynamicResource NetLoom.Brush.Warning}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsResolved}"
+                                                 Value="True">
+                                        <Setter TargetName="EventGlyph"
+                                                Property="Foreground"
+                                                Value="{DynamicResource NetLoom.Brush.Positive}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+
                 <TextBlock x:Name="AlertTransitionText"
-                           Style="{StaticResource NetLoom.Style.StatusEmphasis}"
-                           Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                           TextTrimming="CharacterEllipsis" />
-            </DockPanel>
+                           Grid.Column="1"
+                           Visibility="Collapsed" />
+
+                <Button x:Name="ShellAllEventsButton"
+                        Grid.Column="2"
+                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                        Click="OnShellAllEventsClick" />
+            </Grid>
         </Border>
     </Grid>
 </Window>

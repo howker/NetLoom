@@ -116,14 +116,17 @@ namespace NetLoom.Wpf
             ShellEventTitleText.Text =
                 UiText.Get(
                     "ShellEventsLabel");
+            ShellEventEmptyText.Text =
+                UiText.Get(
+                    "ShellEventIdle");
+            ShellAllEventsButton.Content =
+                UiText.Get(
+                    "ShellAllEventsAction");
 
             ShellAlertCountText.Text =
                 UiText.Format(
                     "ShellAlertCount",
                     0);
-            AlertTransitionText.Text =
-                UiText.Get(
-                    "ShellEventIdle");
 
             ApplyShellState(
                 LoadShellState());

@@ -31,6 +31,17 @@ namespace NetLoom.Wpf;
 
 public partial class MainWindow : Window
 {
+    private Guid? _inspectorEntityId;
+
+    private TopologyAlert _inspectorPrimaryAlert;
+
+    private enum InspectorProblemSubject
+    {
+        Generic = 0,
+        Device = 1,
+        Link = 2
+    }
+
     private void ShowSelectedDiagnostic()
     {
         UpdateShellBreadcrumb();
@@ -289,6 +300,15 @@ public partial class MainWindow : Window
         string typeKey,
         Guid entityId)
     {
+        var preserveExpanded =
+            _inspectorEntityId.HasValue &&
+            _inspectorEntityId.Value ==
+                entityId &&
+            InspectorTechnicalDetailsExpander.IsExpanded;
+
+        _inspectorEntityId =
+            entityId;
+
         InspectorEntityTypeText.Text =
             UiText.Get(
                 typeKey);
@@ -301,11 +321,27 @@ public partial class MainWindow : Window
         InspectorTechnicalDetailsExpander.Visibility =
             Visibility.Visible;
         InspectorTechnicalDetailsExpander.IsExpanded =
-            false;
+            preserveExpanded;
     }
 
     private void ClearInspectorEntity()
     {
+        _inspectorEntityId =
+            null;
+        _inspectorPrimaryAlert =
+            null;
+
+        InspectorProblemText.Text =
+            string.Empty;
+        InspectorProblemText.Visibility =
+            Visibility.Collapsed;
+        InspectorProblemExplanationText.Text =
+            string.Empty;
+        InspectorProblemExplanationText.Visibility =
+            Visibility.Collapsed;
+        InspectorPrimaryActionButton.Visibility =
+            Visibility.Collapsed;
+
         InspectorEntityTypeText.Text =
             string.Empty;
 
@@ -497,12 +533,17 @@ public partial class MainWindow : Window
                     locationId);
 
         DiagnosticStatusText.Visibility =
-            Visibility.Visible;
+            Visibility.Collapsed;
         DiagnosticStatusText.Text =
-            UiText.Get(
-                "MapLocationSelectedStatus");
+            string.Empty;
 
-        ClearInspectorOperatorStatus();
+        SetInspectorLocationStatus(
+            locationId);
+
+        ConfigureInspectorProblem(
+            InspectorAlertForLocation(
+                locationId),
+            InspectorProblemSubject.Generic);
 
         DiagnosticElementTitleText.Text =
             location.Name;
@@ -528,7 +569,14 @@ public partial class MainWindow : Window
                     UiText.Get(
                         "MapLocationChildCount"),
                     childLocations.ToString(
-                        CultureInfo.CurrentCulture))
+                        CultureInfo.CurrentCulture)),
+                new DiagnosticFieldRow(
+                    UiText.Get(
+                        "InspectorLocationProblemCount"),
+                    CountLocationAlerts(
+                        locationId)
+                        .ToString(
+                            CultureInfo.CurrentCulture))
             };
 
         if (visual != null)
@@ -643,15 +691,23 @@ public partial class MainWindow : Window
             true,
             true);
 
+        SetInspectorPortHeaders();
+
         DiagnosticStatusText.Text =
             string.Empty;
         DiagnosticStatusText.Visibility =
             Visibility.Collapsed;
 
-        SetInspectorOperatorStatus(
-            NodeStatusSemantic(
-                NodeDegradationState(
-                    device.DeviceId)));
+        SetInspectorDeviceAvailability(
+            device);
+
+        var inspectorAlert =
+            InspectorAlertForDevice(
+                device.DeviceId);
+
+        ConfigureInspectorProblem(
+            inspectorAlert,
+            InspectorProblemSubject.Device);
 
         DiagnosticElementTitleText.Text =
             string.IsNullOrWhiteSpace(
@@ -660,10 +716,7 @@ public partial class MainWindow : Window
                 : device.DisplayName;
 
         DiagnosticElementSubtitleText.Text =
-            string.IsNullOrWhiteSpace(
-                device.SecondaryText)
-                ? string.Empty
-                : device.SecondaryText;
+            string.Empty;
 
         DiagnosticPrimaryTitleText.Text =
             UiText.Get("DiagnosticStateTitle");
@@ -682,31 +735,38 @@ public partial class MainWindow : Window
                 "DiagnosticFieldManagementAddress",
                 device.ManagementAddress));
 
-        if (!string.IsNullOrWhiteSpace(
-            device.LocationName))
+        stateFields.Add(
+            Field(
+                "DiagnosticFieldDescription",
+                device.SecondaryText));
+
+        var deviceLocationPath =
+            LocationPathForDevice(
+                device.DeviceId);
+
+        if (string.IsNullOrWhiteSpace(
+            deviceLocationPath))
         {
-            stateFields.Add(
-                Field(
-                    "DiagnosticFieldLocation",
-                    device.LocationName));
+            deviceLocationPath =
+                string.IsNullOrWhiteSpace(
+                    device.LocationName)
+                    ? UiText.Get(
+                        "DiagnosticLocationNotAssigned")
+                    : device.LocationName;
         }
+
+        stateFields.Add(
+            Field(
+                "DiagnosticFieldLocation",
+                deviceLocationPath));
 
         if (device.LastSeenUtc.HasValue)
         {
             stateFields.Add(
                 Field(
                     "DiagnosticFieldLastSeen",
-                    LocalTimeText(
+                    RelativeTimeText(
                         device.LastSeenUtc)));
-        }
-
-        if (device.LastResolvedUtc.HasValue)
-        {
-            stateFields.Add(
-                Field(
-                    "DiagnosticFieldLastResolved",
-                    LocalTimeText(
-                        device.LastResolvedUtc)));
         }
 
         var connectedLinks =
@@ -757,17 +817,18 @@ public partial class MainWindow : Window
             device.Interfaces.Count == 0
                 ? new[]
                 {
-                    DiagnosticEntityRow.Disabled(
+                    DiagnosticEntityRow.DisabledPort(
                         UiText.Get(
                             "DiagnosticNoInterfaces"))
                 }
                 : device.Interfaces
                     .Select(
                         item =>
-                            new DiagnosticEntityRow(
-                                item.InterfaceId,
-                                BuildInterfaceDiagnosticText(
-                                    item)))
+                            BuildDiagnosticPortRow(
+                                device.DeviceId,
+                                item,
+                                connectedLinks,
+                                inspectorAlert))
                     .ToArray();
 
         DiagnosticLinkList.ItemsSource =
@@ -829,6 +890,8 @@ public partial class MainWindow : Window
             true,
             true);
 
+        SetInspectorPortHeaders();
+
         DiagnosticStatusText.Text =
             string.Empty;
         DiagnosticStatusText.Visibility =
@@ -837,6 +900,11 @@ public partial class MainWindow : Window
         SetInspectorOperatorStatus(
             InterfaceStatusSemantic(
                 item.DegradationStatus));
+
+        ConfigureInspectorProblem(
+            InspectorAlertForDevice(
+                device.DeviceId),
+            InspectorProblemSubject.Device);
 
         DiagnosticElementTitleText.Text =
             InterfaceIdentity(
@@ -866,9 +934,6 @@ public partial class MainWindow : Window
                             CultureInfo.CurrentCulture)
                         : null),
                 Field(
-                    "InspectorFieldIfName",
-                    item.IfName),
-                Field(
                     "InspectorFieldIfAlias",
                     item.IfAlias),
                 Field(
@@ -895,7 +960,7 @@ public partial class MainWindow : Window
                         item.SpeedBps)),
                 Field(
                     "DiagnosticFieldLastSeen",
-                    LocalTimeText(
+                    RelativeTimeText(
                         item.LastSeenUtc)),
                 Field(
                     "InspectorFieldStp",
@@ -913,37 +978,50 @@ public partial class MainWindow : Window
         DiagnosticSecondaryList.ItemsSource =
             new DiagnosticTextRow[0];
 
-        DiagnosticInterfaceList.ItemsSource =
-            device.Interfaces.Count == 0
-                ? new[]
-                {
-                    DiagnosticEntityRow.Disabled(
-                        UiText.Get(
-                            "DiagnosticNoInterfaces"))
-                }
-                : device.Interfaces
-                    .Select(
-                        candidate =>
-                            new DiagnosticEntityRow(
-                                candidate.InterfaceId,
-                                BuildInterfaceDiagnosticText(
-                                    candidate)))
-                    .ToArray();
-
-        var connectedLinks =
+        var deviceConnectedLinks =
             _lastDiagnosticSnapshot.Links
                 .Where(
                     link =>
-                        link.InterfaceAId ==
-                            item.InterfaceId ||
-                        link.InterfaceBId ==
-                            item.InterfaceId)
+                        link.DeviceAId == device.DeviceId ||
+                        link.DeviceBId == device.DeviceId)
                 .OrderBy(
                     link =>
                         PeerName(
                             link,
                             device.DeviceId),
                     StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
+
+        var interfaceAlert =
+            InspectorAlertForDevice(
+                device.DeviceId);
+
+        DiagnosticInterfaceList.ItemsSource =
+            device.Interfaces.Count == 0
+                ? new[]
+                {
+                    DiagnosticEntityRow.DisabledPort(
+                        UiText.Get(
+                            "DiagnosticNoInterfaces"))
+                }
+                : device.Interfaces
+                    .Select(
+                        candidate =>
+                            BuildDiagnosticPortRow(
+                                device.DeviceId,
+                                candidate,
+                                deviceConnectedLinks,
+                                interfaceAlert))
+                    .ToArray();
+
+        var connectedLinks =
+            deviceConnectedLinks
+                .Where(
+                    link =>
+                        link.InterfaceAId ==
+                            item.InterfaceId ||
+                        link.InterfaceBId ==
+                            item.InterfaceId)
                 .ToArray();
 
         DiagnosticLinkList.ItemsSource =
@@ -1015,10 +1093,13 @@ public partial class MainWindow : Window
         DiagnosticStatusText.Visibility =
             Visibility.Collapsed;
 
-        SetInspectorOperatorStatus(
-            LinkStatusSemantic(
-                LinkOperationalState(
-                    link.PhysicalLinkId)));
+        SetInspectorLinkAvailability(
+            link);
+
+        ConfigureInspectorProblem(
+            InspectorAlertForPhysicalLink(
+                link.PhysicalLinkId),
+            InspectorProblemSubject.Link);
 
         DiagnosticElementTitleText.Text =
             UiText.Format(
@@ -1029,36 +1110,66 @@ public partial class MainWindow : Window
                     link.DeviceBName));
 
         DiagnosticElementSubtitleText.Text =
-            UiText.Format(
-                "DiagnosticLinkPorts",
-                DisplayLinkEndpointInterface(
-                    link.InterfaceAId,
-                    link.InterfaceAName),
-                DisplayLinkEndpointInterface(
-                    link.InterfaceBId,
-                    link.InterfaceBName));
+            string.Empty;
 
         DiagnosticPrimaryTitleText.Text =
             UiText.Get("DiagnosticStateTitle");
 
+        var sideALocation =
+            DisplayLocationForDevice(
+                link.DeviceAId);
+        var sideBLocation =
+            DisplayLocationForDevice(
+                link.DeviceBId);
+
         DiagnosticFieldsList.ItemsSource =
             new[]
             {
+                Section(
+                    DisplayDeviceName(
+                        link.DeviceAName)),
+                Field(
+                    "DiagnosticFieldPort",
+                    DisplayLinkEndpointInterfaceName(
+                        link.InterfaceAId,
+                        link.InterfaceAName)),
+                Field(
+                    "InspectorFieldStp",
+                    StpStateText(
+                        link.StpStateA)),
+                Field(
+                    "DiagnosticFieldLocation",
+                    sideALocation),
+                Section(
+                    DisplayDeviceName(
+                        link.DeviceBName)),
+                Field(
+                    "DiagnosticFieldPort",
+                    DisplayLinkEndpointInterfaceName(
+                        link.InterfaceBId,
+                        link.InterfaceBName)),
+                Field(
+                    "InspectorFieldStp",
+                    StpStateText(
+                        link.StpStateB)),
+                Field(
+                    "DiagnosticFieldLocation",
+                    sideBLocation),
                 Field(
                     "DiagnosticFieldStrength",
                     LinkStrengthText(
                         link.Strength)),
                 Field(
                     "DiagnosticFieldFreshness",
-                    FreshnessText(
-                        link.Freshness)),
+                    CurrentFreshnessText(
+                        link)),
                 Field(
                     "DiagnosticFieldLastSeen",
-                    LocalTimeText(
+                    RelativeTimeText(
                         link.LastSeenUtc)),
                 Field(
                     "DiagnosticFieldLastConfirmed",
-                    LocalTimeText(
+                    RelativeTimeText(
                         link.LastConfirmedUtc)),
                 Field(
                     "DiagnosticFieldMedia",
@@ -1069,15 +1180,7 @@ public partial class MainWindow : Window
                         link.SpeedBps)),
                 Field(
                     "DiagnosticFieldSourceSummary",
-                    link.SourceSummary),
-                Field(
-                    "DiagnosticFieldStpSideA",
-                    StpStateText(
-                        link.StpStateA)),
-                Field(
-                    "DiagnosticFieldStpSideB",
-                    StpStateText(
-                        link.StpStateB))
+                    link.SourceSummary)
             };
 
         DiagnosticSecondaryTitleText.Text =
@@ -1133,6 +1236,786 @@ public partial class MainWindow : Window
                     .ToArray();
     }
 
+    private void SetInspectorLinkAvailability(
+        PhysicalLinkDiagnostic link)
+    {
+        var age =
+            RelativeTimeText(
+                link.LastSeenUtc);
+
+        string text;
+        OperatorStatusSemantic semantic;
+
+        if (link.StpStateA ==
+                StpTreePortState.Broken ||
+            link.StpStateB ==
+                StpTreePortState.Broken)
+        {
+            text =
+                UiText.Format(
+                    "InspectorLinkAvailabilityStpBroken",
+                    LinkEndpointNameForState(
+                        link,
+                        StpTreePortState.Broken),
+                    age);
+            semantic =
+                OperatorStatusSemantic.Critical;
+        }
+        else if (link.StpStateA ==
+                     StpTreePortState.Disabled ||
+                 link.StpStateB ==
+                     StpTreePortState.Disabled)
+        {
+            text =
+                UiText.Format(
+                    "InspectorLinkAvailabilityStpDisabled",
+                    LinkEndpointNameForState(
+                        link,
+                        StpTreePortState.Disabled),
+                    age);
+            semantic =
+                OperatorStatusSemantic.Stopped;
+        }
+        else if (link.StpStateA ==
+                     StpTreePortState.Blocking ||
+                 link.StpStateB ==
+                     StpTreePortState.Blocking)
+        {
+            text =
+                UiText.Format(
+                    "InspectorLinkAvailabilityStpBlocking",
+                    LinkEndpointNameForState(
+                        link,
+                        StpTreePortState.Blocking),
+                    age);
+            semantic =
+                OperatorStatusSemantic.Blocked;
+        }
+        else if (IsTransitionalStpState(
+                     link.StpStateA) ||
+                 IsTransitionalStpState(
+                     link.StpStateB))
+        {
+            text =
+                UiText.Format(
+                    "InspectorLinkAvailabilityStpTransition",
+                    IsTransitionalStpState(
+                        link.StpStateA)
+                        ? DisplayDeviceName(
+                            link.DeviceAName)
+                        : DisplayDeviceName(
+                            link.DeviceBName),
+                    age);
+            semantic =
+                OperatorStatusSemantic.Transition;
+        }
+        else if (link.StpStateA ==
+                     StpTreePortState.Forwarding ||
+                 link.StpStateB ==
+                     StpTreePortState.Forwarding)
+        {
+            text =
+                UiText.Format(
+                    "InspectorLinkAvailabilityForwarding",
+                    age);
+            semantic =
+                OperatorStatusSemantic.Normal;
+        }
+        else
+        {
+            text =
+                UiText.Format(
+                    "InspectorLinkAvailabilityUnknown",
+                    age);
+            semantic =
+                OperatorStatusSemantic.Unknown;
+        }
+
+        InspectorOperationalStatusText.Text =
+            text;
+        InspectorOperationalStatusText.SetResourceReference(
+            TextBlock.ForegroundProperty,
+            OperatorStatusBrushKey(
+                semantic));
+        InspectorOperationalStatusText.Visibility =
+            Visibility.Visible;
+    }
+
+    private static bool IsTransitionalStpState(
+        StpTreePortState state)
+    {
+        return state ==
+                   StpTreePortState.Listening ||
+               state ==
+                   StpTreePortState.Learning;
+    }
+
+    private static string LinkEndpointNameForState(
+        PhysicalLinkDiagnostic link,
+        StpTreePortState state)
+    {
+        return DisplayDeviceName(
+            link.StpStateA == state
+                ? link.DeviceAName
+                : link.DeviceBName);
+    }
+
+    private void SetInspectorDeviceAvailability(
+        DeviceDiagnostic device)
+    {
+        string text;
+        string brushKey;
+
+        if (_monitoringControl.Current.State ==
+            NetLoom.Application.MonitoringControl.MonitoringControlState.Stopped)
+        {
+            text =
+                device.LastSeenUtc.HasValue
+                    ? UiText.Format(
+                        "InspectorAvailabilityMonitoringStopped",
+                        RelativeTimeText(
+                            device.LastSeenUtc))
+                    : UiText.Get(
+                        "InspectorAvailabilityMonitoringStoppedNoData");
+            brushKey =
+                "NetLoom.Brush.ShellRailTextMuted";
+        }
+        else if (!device.LastSeenUtc.HasValue)
+        {
+            text =
+                UiText.Get(
+                    "InspectorAvailabilityNoData");
+            brushKey =
+                "NetLoom.Brush.ShellRailTextMuted";
+        }
+        else
+        {
+            text =
+                UiText.Format(
+                    "InspectorAvailabilityIndirect",
+                    RelativeTimeText(
+                        device.LastSeenUtc));
+            brushKey =
+                "NetLoom.Brush.Warning";
+        }
+
+        InspectorOperationalStatusText.Text =
+            text;
+        InspectorOperationalStatusText.SetResourceReference(
+            TextBlock.ForegroundProperty,
+            brushKey);
+        InspectorOperationalStatusText.Visibility =
+            Visibility.Visible;
+    }
+
+    private void SetInspectorLocationStatus(
+        Guid locationId)
+    {
+        var problemCount =
+            CountLocationAlerts(
+                locationId);
+
+        InspectorOperationalStatusText.Text =
+            problemCount == 0
+                ? UiText.Get(
+                    "InspectorLocationNoProblems")
+                : UiText.Format(
+                    "InspectorLocationProblems",
+                    problemCount);
+
+        InspectorOperationalStatusText.SetResourceReference(
+            TextBlock.ForegroundProperty,
+            problemCount == 0
+                ? "NetLoom.Brush.Positive"
+                : "NetLoom.Brush.Warning");
+        InspectorOperationalStatusText.Visibility =
+            Visibility.Visible;
+    }
+
+    private void ConfigureInspectorProblem(
+        TopologyAlert alert,
+        InspectorProblemSubject subject)
+    {
+        _inspectorPrimaryAlert =
+            alert;
+
+        if (alert == null)
+        {
+            InspectorProblemText.Text =
+                UiText.Get(
+                    "InspectorProblemNone");
+            InspectorProblemText.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                "NetLoom.Brush.TextSecondary");
+            InspectorProblemText.Visibility =
+                Visibility.Visible;
+            InspectorProblemExplanationText.Text =
+                string.Empty;
+            InspectorProblemExplanationText.Visibility =
+                Visibility.Collapsed;
+            InspectorPrimaryActionButton.Visibility =
+                Visibility.Collapsed;
+            return;
+        }
+
+        InspectorProblemText.Text =
+            AlertSeverityText(
+                alert.Severity) +
+            " — " +
+            BuildInspectorProblemTitle(
+                alert,
+                subject);
+        InspectorProblemText.SetResourceReference(
+            TextBlock.ForegroundProperty,
+            alert.Severity ==
+                TopologyAlertSeverity.Critical
+                ? "NetLoom.Brush.Critical"
+                : "NetLoom.Brush.Warning");
+        InspectorProblemText.Visibility =
+            Visibility.Visible;
+
+        var explanation =
+            BuildInspectorProblemExplanation(
+                alert);
+
+        InspectorProblemExplanationText.Text =
+            explanation;
+        InspectorProblemExplanationText.Visibility =
+            string.IsNullOrWhiteSpace(
+                explanation)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+        InspectorPrimaryActionButton.Content =
+            UiText.Get(
+                alert.Kind ==
+                    TopologyAlertKind.ForwardingCycle
+                    ? "InspectorShowLoopAction"
+                    : "AlertShowOnMapAction");
+        InspectorPrimaryActionButton.Visibility =
+            Visibility.Visible;
+    }
+
+    private string BuildInspectorProblemTitle(
+        TopologyAlert alert,
+        InspectorProblemSubject subject)
+    {
+        if (alert.Kind ==
+            TopologyAlertKind.ForwardingCycle)
+        {
+            var resourceKey =
+                subject == InspectorProblemSubject.Device
+                    ? "InspectorProblemForwardingCycleDeviceTitle"
+                    : subject == InspectorProblemSubject.Link
+                        ? "InspectorProblemForwardingCycleLinkTitle"
+                        : "InspectorProblemForwardingCycleGenericTitle";
+
+            return UiText.Get(
+                resourceKey);
+        }
+
+        return AlertKindText(
+            alert.Kind);
+    }
+
+    private string BuildInspectorProblemExplanation(
+        TopologyAlert alert)
+    {
+        if (alert.Kind ==
+            TopologyAlertKind.ForwardingCycle)
+        {
+            return UiText.Format(
+                       "InspectorProblemForwardingCycleScope",
+                       BuildAlertScope(
+                           alert)) +
+                   Environment.NewLine +
+                   UiText.Get(
+                       "InspectorProblemForwardingCycleExplanation");
+        }
+
+        return BuildAlertReasonSummary(
+            alert);
+    }
+
+    private TopologyAlert InspectorAlertForPhysicalLink(
+        Guid physicalLinkId)
+    {
+        return _lastAlertSnapshot == null
+            ? null
+            : _lastAlertSnapshot.Alerts
+                .FirstOrDefault(
+                    alert =>
+                        alert.PhysicalLinkIds.Contains(
+                            physicalLinkId));
+    }
+
+    private TopologyAlert InspectorAlertForDevice(
+        Guid deviceId)
+    {
+        if (_lastAlertSnapshot == null ||
+            _lastMapSnapshot == null)
+        {
+            return null;
+        }
+
+        var node =
+            _lastMapSnapshot.Nodes
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId.HasValue &&
+                        item.DeviceId.Value ==
+                            deviceId);
+
+        if (node == null)
+        {
+            return null;
+        }
+
+        var linkIds =
+            new HashSet<Guid>(
+                _lastMapSnapshot.Links
+                    .Where(
+                        link =>
+                            link.PhysicalLinkId.HasValue &&
+                            (
+                                string.Equals(
+                                    link.SourceNodeKey,
+                                    node.Key,
+                                    StringComparison.Ordinal) ||
+                                string.Equals(
+                                    link.TargetNodeKey,
+                                    node.Key,
+                                    StringComparison.Ordinal)
+                            ))
+                    .Select(
+                        link =>
+                            link.PhysicalLinkId.Value));
+
+        return _lastAlertSnapshot.Alerts
+            .FirstOrDefault(
+                alert =>
+                    alert.PhysicalLinkIds.Any(
+                        linkIds.Contains));
+    }
+
+    private TopologyAlert InspectorAlertForLocation(
+        Guid locationId)
+    {
+        if (_lastAlertSnapshot == null ||
+            _lastMapSnapshot == null)
+        {
+            return null;
+        }
+
+        var locationIds =
+            DescendantLocationIds(
+                locationId);
+        locationIds.Add(
+            locationId);
+
+        var nodeKeys =
+            new HashSet<string>(
+                _lastMapSnapshot.Nodes
+                    .Where(
+                        node =>
+                            node.LocationId.HasValue &&
+                            locationIds.Contains(
+                                node.LocationId.Value))
+                    .Select(
+                        node => node.Key),
+                StringComparer.Ordinal);
+
+        var linkIds =
+            new HashSet<Guid>(
+                _lastMapSnapshot.Links
+                    .Where(
+                        link =>
+                            link.PhysicalLinkId.HasValue &&
+                            (
+                                nodeKeys.Contains(
+                                    link.SourceNodeKey) ||
+                                nodeKeys.Contains(
+                                    link.TargetNodeKey)
+                            ))
+                    .Select(
+                        link =>
+                            link.PhysicalLinkId.Value));
+
+        return _lastAlertSnapshot.Alerts
+            .FirstOrDefault(
+                alert =>
+                    alert.PhysicalLinkIds.Any(
+                        linkIds.Contains));
+    }
+
+    private int CountLocationAlerts(
+        Guid locationId)
+    {
+        if (_lastAlertSnapshot == null ||
+            _lastMapSnapshot == null)
+        {
+            return 0;
+        }
+
+        var locationIds =
+            DescendantLocationIds(
+                locationId);
+        locationIds.Add(
+            locationId);
+
+        var nodeKeys =
+            new HashSet<string>(
+                _lastMapSnapshot.Nodes
+                    .Where(
+                        node =>
+                            node.LocationId.HasValue &&
+                            locationIds.Contains(
+                                node.LocationId.Value))
+                    .Select(
+                        node => node.Key),
+                StringComparer.Ordinal);
+
+        var linkIds =
+            new HashSet<Guid>(
+                _lastMapSnapshot.Links
+                    .Where(
+                        link =>
+                            link.PhysicalLinkId.HasValue &&
+                            (
+                                nodeKeys.Contains(
+                                    link.SourceNodeKey) ||
+                                nodeKeys.Contains(
+                                    link.TargetNodeKey)
+                            ))
+                    .Select(
+                        link =>
+                            link.PhysicalLinkId.Value));
+
+        return _lastAlertSnapshot.Alerts.Count(
+            alert =>
+                alert.PhysicalLinkIds.Any(
+                    linkIds.Contains));
+    }
+
+    private void OnInspectorPrimaryActionClick(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (_inspectorPrimaryAlert == null ||
+            _inspectorPrimaryAlert.PhysicalLinkIds.Count == 0)
+        {
+            return;
+        }
+
+        var linkIds =
+            _inspectorPrimaryAlert.PhysicalLinkIds
+                .ToArray();
+
+        SelectAlertPhysicalContext(
+            linkIds[0]);
+
+        FocusAlertContextToViewport(
+            linkIds,
+            () =>
+                PulseAlertContext(
+                    linkIds));
+    }
+
+    private static string RelativeTimeText(
+        DateTime? valueUtc)
+    {
+        if (!valueUtc.HasValue)
+        {
+            return UiText.Get(
+                "DiagnosticNotAvailable");
+        }
+
+        var age =
+            DateTime.UtcNow -
+            valueUtc.Value;
+
+        if (age < TimeSpan.Zero)
+        {
+            age = TimeSpan.Zero;
+        }
+
+        if (age < TimeSpan.FromMinutes(1))
+        {
+            return UiText.Get(
+                "InspectorRelativeNow");
+        }
+
+        if (age < TimeSpan.FromHours(1))
+        {
+            return UiText.FormatCount(
+                "InspectorRelativeMinutes",
+                Math.Max(
+                    1,
+                    (int)Math.Floor(
+                        age.TotalMinutes)));
+        }
+
+        if (age < TimeSpan.FromDays(1))
+        {
+            return UiText.FormatCount(
+                "InspectorRelativeHours",
+                Math.Max(
+                    1,
+                    (int)Math.Floor(
+                        age.TotalHours)));
+        }
+
+        return UiText.FormatCount(
+            "InspectorRelativeDays",
+            Math.Max(
+                1,
+                (int)Math.Floor(
+                    age.TotalDays)));
+    }
+
+    private string DisplayLocationForDevice(
+        Guid deviceId)
+    {
+        var path =
+            LocationPathForDevice(
+                deviceId);
+
+        if (!string.IsNullOrWhiteSpace(
+            path))
+        {
+            return path;
+        }
+
+        var device =
+            _lastDiagnosticSnapshot == null
+                ? null
+                : _lastDiagnosticSnapshot.Devices
+                    .FirstOrDefault(
+                        item =>
+                            item.DeviceId == deviceId);
+
+        return device != null &&
+               !string.IsNullOrWhiteSpace(
+                   device.LocationName)
+            ? device.LocationName
+            : UiText.Get(
+                "DiagnosticLocationNotAssigned");
+    }
+
+    private static string CurrentFreshnessText(
+        PhysicalLinkDiagnostic link)
+    {
+        if (link == null)
+        {
+            return UiText.Get(
+                "FreshnessStale");
+        }
+
+        if (link.Strength ==
+            DiagnosticLinkStrength.Manual)
+        {
+            return FreshnessText(
+                link.Freshness);
+        }
+
+        var age =
+            DateTime.UtcNow -
+            link.LastSeenUtc;
+
+        if (age < TimeSpan.Zero)
+        {
+            age = TimeSpan.Zero;
+        }
+
+        if (age >=
+            TimeSpan.FromMinutes(15))
+        {
+            return FreshnessText(
+                MapFreshness.Stale);
+        }
+
+        if (age >=
+                TimeSpan.FromMinutes(5) &&
+            link.Freshness ==
+                MapFreshness.Fresh)
+        {
+            return FreshnessText(
+                MapFreshness.Aging);
+        }
+
+        return FreshnessText(
+            link.Freshness);
+    }
+
+    private void SetInspectorPortHeaders()
+    {
+    }
+
+    private DiagnosticEntityRow BuildDiagnosticPortRow(
+        Guid selectedDeviceId,
+        InterfaceDiagnostic item,
+        IReadOnlyList<PhysicalLinkDiagnostic> connectedLinks,
+        TopologyAlert alert)
+    {
+        var interfaceLinks =
+            connectedLinks
+                .Where(
+                    link =>
+                        link.InterfaceAId == item.InterfaceId ||
+                        link.InterfaceBId == item.InterfaceId)
+                .ToArray();
+
+        var neighborText =
+            interfaceLinks.Length == 0
+                ? UiText.Get(
+                    "DiagnosticNotAvailable")
+                : string.Join(
+                    "; ",
+                    interfaceLinks
+                        .Select(
+                            link =>
+                                BuildPortNeighborText(
+                                    selectedDeviceId,
+                                    link))
+                        .Distinct(
+                            StringComparer.CurrentCultureIgnoreCase));
+
+        var meta =
+            new List<string>();
+
+        if (item.IfIndex.HasValue)
+        {
+            meta.Add(
+                UiText.Format(
+                    "InspectorPortIfIndex",
+                    item.IfIndex.Value));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+            item.MacAddress))
+        {
+            meta.Add(
+                UiText.Format(
+                    "InspectorPortMac",
+                    item.MacAddress));
+        }
+
+        if (item.LastSeenUtc.HasValue)
+        {
+            meta.Add(
+                UiText.Format(
+                    "InspectorPortLastSeen",
+                    RelativeTimeText(
+                        item.LastSeenUtc)));
+        }
+
+        var alertLinkIds =
+            alert == null
+                ? null
+                : new HashSet<Guid>(
+                    alert.PhysicalLinkIds);
+
+        var isRiskyStp =
+            item.StpState ==
+                StpTreePortState.Forwarding &&
+            alertLinkIds != null &&
+            interfaceLinks.Any(
+                link =>
+                    alertLinkIds.Contains(
+                        link.PhysicalLinkId));
+
+        return DiagnosticEntityRow.Port(
+            item.InterfaceId,
+            DisplayInterfaceName(
+                item.DisplayName),
+            string.Join(
+                " · ",
+                meta),
+            PortStatusText(
+                item.OperStatus),
+            SpeedText(
+                item.SpeedBps),
+            StpStateText(
+                item.StpState),
+            neighborText,
+            isRiskyStp,
+            PortStatusIsDown(
+                item.OperStatus),
+            item.DegradationStatus ==
+                DiagnosticDegradationStatus.Degraded);
+    }
+
+    private string BuildPortNeighborText(
+        Guid selectedDeviceId,
+        PhysicalLinkDiagnostic link)
+    {
+        var selectedIsA =
+            link.DeviceAId ==
+                selectedDeviceId;
+
+        return UiText.Format(
+            "InspectorPortNeighbor",
+            DisplayDeviceName(
+                selectedIsA
+                    ? link.DeviceBName
+                    : link.DeviceAName),
+            DisplayLinkEndpointInterface(
+                selectedIsA
+                    ? link.InterfaceBId
+                    : link.InterfaceAId,
+                selectedIsA
+                    ? link.InterfaceBName
+                    : link.InterfaceAName));
+    }
+
+    private static string PortStatusText(
+        string operStatus)
+    {
+        if (string.Equals(
+            operStatus,
+            "up",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return OperatorStatusGlyph(
+                       OperatorStatusSemantic.Normal) +
+                   " " +
+                   UiText.Get(
+                       "InspectorPortStatusUp");
+        }
+
+        if (PortStatusIsDown(
+            operStatus))
+        {
+            return OperatorStatusGlyph(
+                       OperatorStatusSemantic.Critical) +
+                   " " +
+                   UiText.Get(
+                       "InspectorPortStatusDown");
+        }
+
+        return OperatorStatusGlyph(
+                   OperatorStatusSemantic.Unknown) +
+               " " +
+               (string.IsNullOrWhiteSpace(
+                    operStatus)
+                    ? UiText.Get(
+                        "InspectorPortStatusUnknown")
+                    : operStatus);
+    }
+
+    private static bool PortStatusIsDown(
+        string operStatus)
+    {
+        return string.Equals(
+                   operStatus,
+                   "down",
+                   StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(
+                   operStatus,
+                   "lowerLayerDown",
+                   StringComparison.OrdinalIgnoreCase);
+    }
+
     private static DiagnosticFieldRow Field(
         string labelKey,
         string value)
@@ -1142,6 +2025,15 @@ public partial class MainWindow : Window
             string.IsNullOrWhiteSpace(value)
                 ? UiText.Get("DiagnosticNotAvailable")
                 : value);
+    }
+
+    private static DiagnosticFieldRow Section(
+        string title)
+    {
+        return new DiagnosticFieldRow(
+            title,
+            string.Empty,
+            true);
     }
 
     private static DiagnosticTextRow Row(
@@ -1249,7 +2141,7 @@ public partial class MainWindow : Window
             details.Add(
                 UiText.Format(
                     "DiagnosticInterfaceLastSeen",
-                    LocalTimeText(
+                    RelativeTimeText(
                         item.LastSeenUtc)));
         }
 
@@ -1341,56 +2233,72 @@ public partial class MainWindow : Window
                 interfaceId.Value));
     }
 
+    private string DisplayLinkEndpointInterfaceName(
+        Guid? interfaceId,
+        string interfaceName)
+    {
+        if (interfaceId.HasValue &&
+            _lastDiagnosticSnapshot != null)
+        {
+            var diagnostic =
+                _lastDiagnosticSnapshot.Devices
+                    .SelectMany(
+                        device =>
+                            device.Interfaces)
+                    .FirstOrDefault(
+                        item =>
+                            item.InterfaceId ==
+                                interfaceId.Value);
+
+            if (diagnostic != null)
+            {
+                return DisplayInterfaceName(
+                    diagnostic.DisplayName);
+            }
+        }
+
+        return DisplayInterfaceName(
+            interfaceName);
+    }
+
     private static string IfTypeText(
         int ifType)
     {
-        string name;
-
         switch (ifType)
         {
             case 6:
-                name = "ethernetCsmacd";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeEthernet");
             case 24:
-                name = "softwareLoopback";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeLoopback");
             case 53:
-                name = "propVirtual";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeVirtual");
             case 62:
-                name = "fastEther";
-                break;
             case 69:
-                name = "fastEtherFX";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeFastEthernet");
             case 71:
-                name = "ieee80211";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeWifi");
             case 117:
-                name = "gigabitEthernet";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeGigabitEthernet");
             case 131:
-                name = "tunnel";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeTunnel");
             case 135:
-                name = "l2vlan";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeVlan");
             case 161:
-                name = "ieee8023adLag";
-                break;
+                return UiText.Get(
+                    "InspectorIfTypeLag");
             default:
-                name = null;
-                break;
+                return UiText.Format(
+                    "InspectorIfTypeOther",
+                    ifType);
         }
-
-        return name == null
-            ? ifType.ToString(
-                CultureInfo.InvariantCulture)
-            : ifType.ToString(
-                CultureInfo.InvariantCulture) +
-              " (" +
-              name +
-              ")";
     }
 
     private static string ShortIdentifier(
@@ -1441,8 +2349,8 @@ public partial class MainWindow : Window
                 peer,
                 localPort,
                 peerPort,
-                FreshnessText(
-                    link.Freshness));
+                CurrentFreshnessText(
+                    link));
         }
 
         var across =
@@ -1455,8 +2363,8 @@ public partial class MainWindow : Window
             peer,
             localPort,
             peerPort,
-            FreshnessText(
-                link.Freshness),
+            CurrentFreshnessText(
+                link),
             UiText.FormatCount(
                 "DiagnosticDeviceCount",
                 across));
@@ -1696,14 +2604,28 @@ public partial class MainWindow : Window
         public DiagnosticFieldRow(
             string label,
             string value)
+            : this(
+                label,
+                value,
+                false)
+        {
+        }
+
+        public DiagnosticFieldRow(
+            string label,
+            string value,
+            bool isSectionHeader)
         {
             Label = label;
             Value = value;
+            IsSectionHeader = isSectionHeader;
         }
 
         public string Label { get; }
 
         public string Value { get; }
+
+        public bool IsSectionHeader { get; }
     }
 
     private sealed class DiagnosticEntityRow
@@ -1714,18 +2636,45 @@ public partial class MainWindow : Window
             : this(
                 entityId,
                 text,
-                true)
+                true,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                false,
+                false)
         {
         }
 
         private DiagnosticEntityRow(
             Guid entityId,
             string text,
-            bool isEnabled)
+            bool isEnabled,
+            string portName,
+            string portMeta,
+            string portStatus,
+            string portSpeed,
+            string portStp,
+            string portNeighbor,
+            bool isRiskyStp,
+            bool isPortDown,
+            bool isPortDegraded)
         {
             EntityId = entityId;
             Text = text;
             IsEnabled = isEnabled;
+            PortName = portName;
+            PortMeta = portMeta;
+            PortStatus = portStatus;
+            PortSpeed = portSpeed;
+            PortStp = portStp;
+            PortNeighbor = portNeighbor;
+            IsRiskyStp = isRiskyStp;
+            IsPortDown = isPortDown;
+            IsPortDegraded = isPortDegraded;
         }
 
         public Guid EntityId { get; }
@@ -1734,12 +2683,130 @@ public partial class MainWindow : Window
 
         public bool IsEnabled { get; }
 
+        public string PortName { get; }
+
+        public string PortMeta { get; }
+
+        public string PortStatus { get; }
+
+        public string PortSpeed { get; }
+
+        public string PortStp { get; }
+
+        public string PortNeighbor { get; }
+
+        public string PortStatusGlyph
+        {
+            get
+            {
+                return string.IsNullOrWhiteSpace(
+                           PortStatus)
+                    ? string.Empty
+                    : PortStatus.Substring(
+                        0,
+                        1);
+            }
+        }
+
+        public string PortSummary
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(
+                    PortSpeed))
+                {
+                    return PortStp;
+                }
+
+                if (string.IsNullOrWhiteSpace(
+                    PortStp))
+                {
+                    return PortSpeed;
+                }
+
+                return UiText.Format(
+                    "InspectorPortSummary",
+                    PortSpeed,
+                    PortStp);
+            }
+        }
+
+        public string PortNeighborLine
+        {
+            get
+            {
+                return UiText.Format(
+                    "InspectorPortNeighborLine",
+                    PortNeighbor);
+            }
+        }
+
+        public bool IsRiskyStp { get; }
+
+        public bool IsPortDown { get; }
+
+        public bool IsPortDegraded { get; }
+
+        public static DiagnosticEntityRow Port(
+            Guid entityId,
+            string name,
+            string meta,
+            string status,
+            string speed,
+            string stp,
+            string neighbor,
+            bool isRiskyStp,
+            bool isPortDown,
+            bool isPortDegraded)
+        {
+            return new DiagnosticEntityRow(
+                entityId,
+                null,
+                true,
+                name,
+                meta,
+                status,
+                speed,
+                stp,
+                neighbor,
+                isRiskyStp,
+                isPortDown,
+                isPortDegraded);
+        }
+
         public static DiagnosticEntityRow Disabled(
             string text)
         {
             return new DiagnosticEntityRow(
                 Guid.Empty,
                 text,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                false,
+                false);
+        }
+
+        public static DiagnosticEntityRow DisabledPort(
+            string text)
+        {
+            return new DiagnosticEntityRow(
+                Guid.Empty,
+                null,
+                false,
+                text,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                false,
                 false);
         }
     }

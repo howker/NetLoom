@@ -295,7 +295,7 @@
     <value>Forwarding cycle</value>
   </data>
   <data name="AlertKindRingProtectionDegraded" xml:space="preserve">
-    <value>Ring protection degraded</value>
+    <value>Ring without redundancy</value>
   </data>
   <data name="AlertReasonConfirmedForwardingCycle" xml:space="preserve">
     <value>Confirmed forwarding cycle</value>
@@ -418,7 +418,7 @@
     <value>Showing diagnostics from the last successful refresh at {0:G}.</value>
   </data>
   <data name="DiagnosticStateTitle" xml:space="preserve">
-    <value>State</value>
+    <value>Details</value>
   </data>
   <data name="DiagnosticInterfacesTitle" xml:space="preserve">
     <value>Interfaces</value>
@@ -439,10 +439,10 @@
     <value>Last seen</value>
   </data>
   <data name="DiagnosticFieldLastResolved" xml:space="preserve">
-    <value>Last resolved</value>
+    <value>Confirmed</value>
   </data>
   <data name="DiagnosticFieldLastConfirmed" xml:space="preserve">
-    <value>Last confirmed</value>
+    <value>Confirmed</value>
   </data>
   <data name="DiagnosticFieldConnections" xml:space="preserve">
     <value>Connections</value>
@@ -999,10 +999,10 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Management IP</value>
   </data>
   <data name="DiagnosticInterfaceType" xml:space="preserve">
-    <value>IF-MIB type: {0}</value>
+    <value>Type: {0}</value>
   </data>
   <data name="DiagnosticInterfaceIfName" xml:space="preserve">
-    <value>ifName: {0}</value>
+    <value>Port name: {0}</value>
   </data>
   <data name="DiagnosticInterfaceIfAlias" xml:space="preserve">
     <value>ifAlias: {0}</value>
@@ -1588,10 +1588,10 @@ Poll: {2}</value>
     <value>ifName</value>
   </data>
   <data name="InspectorFieldIfAlias" xml:space="preserve">
-    <value>ifAlias</value>
+    <value>Operator description</value>
   </data>
   <data name="InspectorFieldIfDescription" xml:space="preserve">
-    <value>ifDescr</value>
+    <value>Device description</value>
   </data>
   <data name="InspectorFieldMac" xml:space="preserve">
     <value>MAC</value>
@@ -1609,7 +1609,7 @@ Poll: {2}</value>
     <value>Degradation</value>
   </data>
   <data name="InspectorFieldIfType" xml:space="preserve">
-    <value>IF-MIB type</value>
+    <value>Type</value>
   </data>
   <data name="DiagnosticNoEvidenceDevice" xml:space="preserve">
     <value>No current supporting evidence is available for this device.</value>
@@ -1787,5 +1787,221 @@ Poll: {2}</value>
   </data>
   <data name="DiscoveryProfileDeleteFailed" xml:space="preserve">
     <value>Could not delete profile: {0}</value>
+  </data>
+  <data name="ShellAllEventsAction" xml:space="preserve">
+    <value>All events ›</value>
+  </data>
+  <data name="ShellEventResolvedTitle" xml:space="preserve">
+    <value>Resolved: {0}</value>
+  </data>
+  <data name="InspectorProblemNone" xml:space="preserve">
+    <value>No active problems for this object.</value>
+  </data>
+  <data name="InspectorProblemForwardingCycle" xml:space="preserve">
+    <value>Loop: this object is part of forwarding cycle {0}. STP does not block any port in the cycle.</value>
+  </data>
+  <data name="InspectorProblemGeneric" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="InspectorShowLoopAction" xml:space="preserve">
+    <value>Show loop</value>
+  </data>
+  <data name="InspectorAvailabilityMonitoringStopped" xml:space="preserve">
+    <value>■ Monitoring stopped · data {0}</value>
+  </data>
+  <data name="InspectorAvailabilityNoData" xml:space="preserve">
+    <value>? No data</value>
+  </data>
+  <data name="InspectorAvailabilityIndirect" xml:space="preserve">
+    <value>◌ Observed indirectly — last contact {0}</value>
+  </data>
+  <data name="InspectorRelativeNow" xml:space="preserve">
+    <value>just now</value>
+  </data>
+  <data name="InspectorRelativeMinutes" xml:space="preserve">
+    <value>{0} min ago</value>
+  </data>
+  <data name="InspectorRelativeHours" xml:space="preserve">
+    <value>{0} h ago</value>
+  </data>
+  <data name="InspectorRelativeDays" xml:space="preserve">
+    <value>{0} d ago</value>
+  </data>
+  <data name="InspectorLocationProblemCount" xml:space="preserve">
+    <value>Problems</value>
+  </data>
+  <data name="InspectorLocationNoProblems" xml:space="preserve">
+    <value>● No active problems</value>
+  </data>
+  <data name="InspectorLocationProblems" xml:space="preserve">
+    <value>! Active problems: {0}</value>
+  </data>
+  <data name="InspectorIfTypeEthernet" xml:space="preserve">
+    <value>Ethernet</value>
+  </data>
+  <data name="InspectorIfTypeLoopback" xml:space="preserve">
+    <value>Loopback</value>
+  </data>
+  <data name="InspectorIfTypeVirtual" xml:space="preserve">
+    <value>Virtual interface</value>
+  </data>
+  <data name="InspectorIfTypeFastEthernet" xml:space="preserve">
+    <value>Fast Ethernet</value>
+  </data>
+  <data name="InspectorIfTypeWifi" xml:space="preserve">
+    <value>Wi‑Fi</value>
+  </data>
+  <data name="InspectorIfTypeGigabitEthernet" xml:space="preserve">
+    <value>Gigabit Ethernet</value>
+  </data>
+  <data name="InspectorIfTypeTunnel" xml:space="preserve">
+    <value>Tunnel</value>
+  </data>
+  <data name="InspectorIfTypeVlan" xml:space="preserve">
+    <value>VLAN</value>
+  </data>
+  <data name="InspectorIfTypeLag" xml:space="preserve">
+    <value>Link aggregation</value>
+  </data>
+  <data name="InspectorIfTypeOther" xml:space="preserve">
+    <value>Interface type {0}</value>
+  </data>
+  <data name="InspectorAvailabilityMonitoringStoppedNoData" xml:space="preserve">
+    <value>■ Monitoring stopped · no data</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleDeviceTitle" xml:space="preserve">
+    <value>Loop: the device is part of a forwarding cycle</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleLinkTitle" xml:space="preserve">
+    <value>Loop: the link is part of a forwarding cycle</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleGenericTitle" xml:space="preserve">
+    <value>Loop: the selected object is associated with a forwarding cycle</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleScope" xml:space="preserve">
+    <value>Cycle: {0}.</value>
+  </data>
+  <data name="InspectorProblemForwardingCycleExplanation" xml:space="preserve">
+    <value>STP does not block any port in the cycle.</value>
+  </data>
+  <data name="DiagnosticFieldDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="DiagnosticLocationNotAssigned" xml:space="preserve">
+    <value>Not assigned</value>
+  </data>
+  <data name="DiagnosticFieldPortA" xml:space="preserve">
+    <value>Port A</value>
+  </data>
+  <data name="DiagnosticFieldPortB" xml:space="preserve">
+    <value>Port B</value>
+  </data>
+  <data name="DiagnosticFieldLocationA" xml:space="preserve">
+    <value>Location A</value>
+  </data>
+  <data name="DiagnosticFieldLocationB" xml:space="preserve">
+    <value>Location B</value>
+  </data>
+  <data name="DiagnosticEndpointPortValue" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="InspectorPortColumnPort" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="InspectorPortColumnState" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="InspectorPortColumnSpeed" xml:space="preserve">
+    <value>Speed</value>
+  </data>
+  <data name="InspectorPortColumnStp" xml:space="preserve">
+    <value>STP</value>
+  </data>
+  <data name="InspectorPortColumnNeighbor" xml:space="preserve">
+    <value>Neighbor</value>
+  </data>
+  <data name="InspectorPortIfIndex" xml:space="preserve">
+    <value>ifIndex {0}</value>
+  </data>
+  <data name="InspectorPortMac" xml:space="preserve">
+    <value>MAC {0}</value>
+  </data>
+  <data name="InspectorPortLastSeen" xml:space="preserve">
+    <value>Seen {0}</value>
+  </data>
+  <data name="InspectorPortNeighbor" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="InspectorPortStatusUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="InspectorPortStatusDown" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="InspectorPortStatusUnknown" xml:space="preserve">
+    <value>No data</value>
+  </data>
+  <data name="InspectorRelativeMinutesOne" xml:space="preserve">
+    <value>{0} minute ago</value>
+  </data>
+  <data name="InspectorRelativeMinutesFew" xml:space="preserve">
+    <value>{0} minutes ago</value>
+  </data>
+  <data name="InspectorRelativeMinutesMany" xml:space="preserve">
+    <value>{0} minutes ago</value>
+  </data>
+  <data name="InspectorRelativeMinutesOther" xml:space="preserve">
+    <value>{0} minutes ago</value>
+  </data>
+  <data name="InspectorRelativeHoursOne" xml:space="preserve">
+    <value>{0} hour ago</value>
+  </data>
+  <data name="InspectorRelativeHoursFew" xml:space="preserve">
+    <value>{0} hours ago</value>
+  </data>
+  <data name="InspectorRelativeHoursMany" xml:space="preserve">
+    <value>{0} hours ago</value>
+  </data>
+  <data name="InspectorRelativeHoursOther" xml:space="preserve">
+    <value>{0} hours ago</value>
+  </data>
+  <data name="InspectorRelativeDaysOne" xml:space="preserve">
+    <value>{0} day ago</value>
+  </data>
+  <data name="InspectorRelativeDaysFew" xml:space="preserve">
+    <value>{0} days ago</value>
+  </data>
+  <data name="InspectorRelativeDaysMany" xml:space="preserve">
+    <value>{0} days ago</value>
+  </data>
+  <data name="InspectorRelativeDaysOther" xml:space="preserve">
+    <value>{0} days ago</value>
+  </data>
+  <data name="DiagnosticFieldPort" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpBroken" xml:space="preserve">
+    <value>× STP error on {0} · data {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpDisabled" xml:space="preserve">
+    <value>■ STP disabled on {0} · data {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpBlocking" xml:space="preserve">
+    <value>⊘ STP blocked on {0} · data {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityStpTransition" xml:space="preserve">
+    <value>↻ STP transition on {0} · data {1}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityForwarding" xml:space="preserve">
+    <value>✓ Forwarding traffic · data {0}</value>
+  </data>
+  <data name="InspectorLinkAvailabilityUnknown" xml:space="preserve">
+    <value>? Forwarding state unknown · data {0}</value>
+  </data>
+  <data name="InspectorPortSummary" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="InspectorPortNeighborLine" xml:space="preserve">
+    <value>→ {0}</value>
   </data>
 </root>
