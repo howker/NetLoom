@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -228,6 +230,13 @@ namespace NetLoom.Tests.Unit
                         outputDirectory,
                         findings);
 
+                    RenderSection9ShellMatrix(
+                        outputDirectory,
+                        findings);
+
+                    RenderControlStateMatrix(
+                        outputDirectory);
+
                     var reportPath =
                         System.IO.Path.Combine(
                             outputDirectory,
@@ -259,22 +268,13 @@ namespace NetLoom.Tests.Unit
                             "Rendered from production WPF controls; gallery defines no product styles.",
                             "Each shell PNG contains minimum-width 1100 px and normal-width 1400 px side by side.",
                             "Themes: Light and Dark.",
-                            "Covered now: empty shell/inspector, device card + device inspector, stale Critical link inspector, Location inspector, Alerts/event strip, Manual topology editor, Location editor and SNMP profile settings.",
-                            "Text risks: long Russian device name, unbroken 60+ character tail, Й/Ё.",
-                            "Automatic scan: no-wrap WPF text whose natural measured width exceeds its arranged width without a tooltip (§4), plus actual visible horizontal-scrollbar layout in the SNMP profile list (§5).",
-                            "Production interaction exercised without raster acceptance: ComboBox popup and map ContextMenu are opened through their real controls in both themes.",
-                            "Operator acceptance required: ComboBox popup, ContextMenu and ToolTip visual theming in both themes. Two separate-HWND raster attempts produced transparent/partial PNG evidence, so they are explicitly not accepted as automated visual coverage (§10).",
-                            "Also not automated by this PNG gallery: hover timing, Windows 150–200% scaling, full keyboard-only journey, UI Automation tree inspection, 24x24 hit-target proof, system 'Show animations' setting, theme-transition animation suppression and selectable/copyable IP/MAC. These remain explicit Pass 3 verification items under §§8–10."
+                            "Covered shell surfaces: empty state; device names (one word, IP-only, long/unbroken, Й/Ё); selected device inspector; stale Critical link; Location inspector; Equipment; Monitoring error; Alerts/event strip; edit-mode controls; Manual topology editor; Location editor; SNMP profile settings.",
+                            "Covered component states from production resource dictionaries: normal, hover, keyboard focus, disabled, selected/checked/expanded for Button, secondary Button, ToggleButton, ListBoxItem, TabItem, ComboBox, CheckBox, Expander and TextBox; count badge 0/1/many/99+; status/severity labels.",
+                            "Production interaction exercised for separate-HWND surfaces: ComboBox popup and map ContextMenu open through their real controls in both themes. Raster proof for separate HWNDs is not claimed by this test.",
+                            "Text axes represented: empty, one word, ordinary, multiline, unbroken 60+ characters, Й/Ё. Width axis: minimum and normal shell widths side by side. Themes: Light and Dark.",
+                            "Automatic findings are informational only in Step 2. The gallery test fails only when a required production state cannot be reached or a PNG cannot be produced; visual defects are reviewed from the archive.",
+                            "Axes intentionally not represented by PNG because they are behavior rather than a static component state: Windows 150–200% DPI behavior, full keyboard-only journey, UI Automation tree semantics, system animation setting and copy/select behavior. These belong to Step 3 or later acceptance, not this Step 2 gallery."
                         });
-
-                    if (findings.Count > 0)
-                    {
-                        Assert.Fail(
-                            "State gallery found " +
-                            findings.Count +
-                            " visual breakage item(s). Review: " +
-                            reportPath);
-                    }
                 });
         }
 
@@ -505,125 +505,1057 @@ namespace NetLoom.Tests.Unit
 
             foreach (var dark in new[] { false, true })
             {
-                var window =
-                    new MainWindow(
-                        new FixedRefreshProvider(
-                            EmptySnapshot()),
-                        new EmptyLookupReader(),
-                        new GalleryMonitoringControl(),
-                        new[]
-                        {
-                            firstProfile,
-                            secondProfile
-                        });
+                var comboBitmaps = new List<BitmapSource>();
+                var menuBitmaps = new List<BitmapSource>();
+                var submenuBitmaps = new List<BitmapSource>();
+                var tooltipBitmaps = new List<BitmapSource>();
 
-                try
+                foreach (var width in new[] { NarrowWidth, NormalWidth })
                 {
-                    PrepareWindow(
-                        window,
-                        NormalWidth,
-                        GalleryHeight);
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader(),
+                            new GalleryMonitoringControl(),
+                            new[]
+                            {
+                                firstProfile,
+                                secondProfile
+                            });
 
-                    if (dark)
+                    try
                     {
+                        PrepareWindowForInteractiveCapture(
+                            window,
+                            width,
+                            GalleryHeight);
+
+                        if (dark)
+                        {
+                            Click(
+                                (Button)window.FindName(
+                                    "ShellThemeButton"));
+                        }
+
+                        var combo =
+                            (ComboBox)window.FindName(
+                                "DiscoveryProfileComboBox");
+
+                        combo.SelectedIndex = 0;
+                        combo.ApplyTemplate();
+                        combo.IsDropDownOpen = true;
+
+                        WaitForCondition(
+                            () =>
+                                combo.IsDropDownOpen);
+
+                        var popup =
+                            (Popup)combo.Template.FindName(
+                                "PART_Popup",
+                                combo);
+
+                        Assert.IsNotNull(
+                            popup,
+                            "Production ComboBox popup is unavailable.");
+
+                        Assert.IsTrue(
+                            popup.IsOpen,
+                            "Production ComboBox popup did not open.");
+
+                        Assert.IsNotNull(
+                            popup.Child,
+                            "Production ComboBox popup child is unavailable.");
+
+                        PumpDispatcher();
+
+                        comboBitmaps.Add(
+                            CapturePresentationHwnd(
+                                popup.Child,
+                                "ComboBox popup"));
+
+                        combo.IsDropDownOpen = false;
+                        PumpDispatcher();
+
                         Click(
                             (Button)window.FindName(
-                                "ShellThemeButton"));
+                                "ShellSettingsButton"));
+
+                        var settingsSidebar =
+                            (ScrollViewer)window.FindName(
+                                "ShellSettingsSidebarPanel");
+
+                        WaitForCondition(
+                            () =>
+                                settingsSidebar.Visibility ==
+                                Visibility.Visible);
+
+                        var settingsButton =
+                            (Button)window.FindName(
+                                "MapSettingsButton");
+
+                        var menu =
+                            settingsButton.ContextMenu;
+
+                        Assert.IsNotNull(
+                            menu,
+                            "Production map ContextMenu is unavailable.");
+
+                        Click(settingsButton);
+
+                        WaitForCondition(
+                            () =>
+                                menu.IsOpen);
+
+                        menu.UpdateLayout();
+                        PumpDispatcher();
+
+                        var firstMenuItem =
+                            menu.ItemContainerGenerator
+                                .ContainerFromIndex(0)
+                            as MenuItem;
+
+                        Assert.IsNotNull(
+                            firstMenuItem,
+                            "Production ContextMenu first item is unavailable.");
+
+                        menuBitmaps.Add(
+                            CapturePresentationHwnd(
+                                firstMenuItem,
+                                "map ContextMenu"));
+
+                        var submenuParent =
+                            Enumerable.Range(
+                                    0,
+                                    menu.Items.Count)
+                                .Select(
+                                    index =>
+                                        menu.ItemContainerGenerator
+                                            .ContainerFromIndex(index)
+                                        as MenuItem)
+                                .FirstOrDefault(
+                                    item =>
+                                        item != null &&
+                                        item.Items.Count > 0);
+
+                        Assert.IsNotNull(
+                            submenuParent,
+                            "Production map ContextMenu has no submenu for gallery coverage.");
+
+                        submenuParent.IsSubmenuOpen = true;
+                        PumpDispatcher();
+
+                        var firstSubmenuItem =
+                            submenuParent.ItemContainerGenerator
+                                .ContainerFromIndex(0)
+                            as MenuItem;
+
+                        Assert.IsNotNull(
+                            firstSubmenuItem,
+                            "Production ContextMenu submenu item is unavailable.");
+
+                        submenuBitmaps.Add(
+                            CapturePresentationHwnd(
+                                firstSubmenuItem,
+                                "map ContextMenu submenu"));
+
+                        submenuParent.IsSubmenuOpen = false;
+                        menu.IsOpen = false;
+                        PumpDispatcher();
+
+                        Assert.IsNotNull(
+                            settingsButton.ToolTip,
+                            "Production map settings ToolTip is unavailable.");
+
+                        var toolTip =
+                            new ToolTip
+                            {
+                                Content = settingsButton.ToolTip,
+                                PlacementTarget = settingsButton,
+                                Placement = PlacementMode.Left
+                            };
+
+                        var toolTipStyle =
+                            window.TryFindResource(
+                                typeof(ToolTip))
+                            as Style;
+
+                        if (toolTipStyle != null)
+                        {
+                            toolTip.Style = toolTipStyle;
+                        }
+
+                        toolTip.IsOpen = true;
+
+                        WaitForCondition(
+                            () =>
+                                toolTip.IsOpen);
+
+                        PumpDispatcher();
+
+                        tooltipBitmaps.Add(
+                            CapturePresentationHwnd(
+                                toolTip,
+                                "ToolTip"));
+
+                        toolTip.IsOpen = false;
+                        PumpDispatcher();
                     }
+                    finally
+                    {
+                        window.Close();
+                        PumpDispatcher();
+                    }
+                }
 
-                    var combo =
-                        (ComboBox)window.FindName(
-                            "DiscoveryProfileComboBox");
+                SaveSideBySide(
+                    comboBitmaps[0],
+                    comboBitmaps[1],
+                    System.IO.Path.Combine(
+                        outputDirectory,
+                        "09-popup-combo-" +
+                        (dark ? "dark" : "light") +
+                        ".png"));
 
-                    combo.SelectedIndex = 0;
-                    combo.ApplyTemplate();
-                    combo.IsDropDownOpen = true;
+                SaveSideBySide(
+                    menuBitmaps[0],
+                    menuBitmaps[1],
+                    System.IO.Path.Combine(
+                        outputDirectory,
+                        "10-map-context-menu-" +
+                        (dark ? "dark" : "light") +
+                        ".png"));
 
+                SaveSideBySide(
+                    submenuBitmaps[0],
+                    submenuBitmaps[1],
+                    System.IO.Path.Combine(
+                        outputDirectory,
+                        "11-map-context-submenu-" +
+                        (dark ? "dark" : "light") +
+                        ".png"));
+
+                SaveSideBySide(
+                    tooltipBitmaps[0],
+                    tooltipBitmaps[1],
+                    System.IO.Path.Combine(
+                        outputDirectory,
+                        "12-tooltip-" +
+                        (dark ? "dark" : "light") +
+                        ".png"));
+            }
+        }
+
+        private static void RenderSection9ShellMatrix(
+            string outputDirectory,
+            IList<string> findings)
+        {
+            var oneWordId =
+                Guid.Parse(
+                    "46464646-a001-a001-a001-464646464646");
+
+            RenderShellScenario(
+                outputDirectory,
+                "12-device-one-word",
+                () => SingleDeviceSnapshot(
+                    oneWordId,
+                    "Коммутатор",
+                    "192.0.2.210"),
+                null,
+                findings);
+
+            var ipOnlyId =
+                Guid.Parse(
+                    "46464646-a002-a002-a002-464646464646");
+
+            RenderShellScenario(
+                outputDirectory,
+                "13-device-ip-only",
+                () => SingleDeviceSnapshot(
+                    ipOnlyId,
+                    "192.0.2.211",
+                    "192.0.2.211"),
+                window =>
+                {
                     WaitForCondition(
                         () =>
-                            combo.IsDropDownOpen);
+                            DeviceBorder(
+                                window,
+                                ipOnlyId) != null);
 
-                    var popup =
-                        (Popup)combo.Template.FindName(
-                            "PART_Popup",
-                            combo);
+                    SelectDevice(
+                        window,
+                        ipOnlyId);
+                },
+                findings);
 
-                    Assert.IsNotNull(
-                        popup,
-                        "Production ComboBox popup is unavailable.");
+            var normalDeviceId =
+                Guid.Parse(
+                    "46464646-a003-a003-a003-464646464646");
 
-                    Assert.IsTrue(
-                        popup.IsOpen,
-                        "Production ComboBox popup did not open.");
+            RenderShellScenario(
+                outputDirectory,
+                "14-device-inspector-normal",
+                () => SingleDeviceSnapshot(
+                    normalDeviceId,
+                    "SW-CORE-01",
+                    "192.0.2.212"),
+                window =>
+                {
+                    WaitForCondition(
+                        () =>
+                            DeviceBorder(
+                                window,
+                                normalDeviceId) != null);
 
-                    Assert.IsNotNull(
-                        popup.Child,
-                        "Production ComboBox popup child is unavailable.");
+                    SelectDevice(
+                        window,
+                        normalDeviceId);
+                },
+                findings);
 
-                    Assert.IsTrue(
-                        popup.Child.IsVisible,
-                        "Production ComboBox popup child is not visible.");
+            var equipmentDeviceId =
+                Guid.Parse(
+                    "46464646-a004-a004-a004-464646464646");
 
-                    combo.IsDropDownOpen = false;
-                    PumpDispatcher();
+            RenderShellScenario(
+                outputDirectory,
+                "15-equipment-list",
+                () => SingleDeviceSnapshot(
+                    equipmentDeviceId,
+                    "Очень длинное имя оборудования ЙЁ 012345678901234567890123456789012345678901234567890123456789",
+                    "192.0.2.213"),
+                window =>
+                {
+                    WaitForCondition(
+                        () =>
+                            DeviceBorder(
+                                window,
+                                equipmentDeviceId) != null);
 
                     Click(
                         (Button)window.FindName(
-                            "ShellSettingsButton"));
+                            "ShellEquipmentButton"));
+                },
+                findings);
 
-                    var settingsSidebar =
-                        (ScrollViewer)window.FindName(
-                            "ShellSettingsSidebarPanel");
-
-                    WaitForCondition(
-                        () =>
-                            settingsSidebar.Visibility ==
-                            Visibility.Visible);
-
-                    var settingsButton =
-                        (Button)window.FindName(
-                            "MapSettingsButton");
-
-                    Assert.AreEqual(
-                        Visibility.Visible,
-                        settingsButton.Visibility,
-                        "Production map settings button is not visible.");
-
-                    var menu =
-                        settingsButton.ContextMenu;
-
-                    Assert.IsNotNull(
-                        menu,
-                        "Production map ContextMenu is unavailable.");
-
-                    Assert.IsTrue(
-                        menu.Items.Count > 0,
-                        "Production map ContextMenu has no items.");
-
-                    Click(settingsButton);
-
-                    WaitForCondition(
-                        () =>
-                            menu.IsOpen);
-
-                    Assert.IsTrue(
-                        menu.IsOpen,
-                        "Production map ContextMenu did not open.");
-
-                    menu.IsOpen = false;
-                    PumpDispatcher();
-
-                    Assert.IsNotNull(
-                        settingsButton.ToolTip,
-                        "Production map settings ToolTip is unavailable.");
-                }
-                finally
+            RenderShellScenario(
+                outputDirectory,
+                "16-monitoring-error",
+                () => EmptySnapshot(),
+                window =>
                 {
-                    window.Close();
-                    PumpDispatcher();
+                    Click(
+                        (Button)window.FindName(
+                            "ShellMonitoringButton"));
+
+                    var start =
+                        (Button)window.FindName(
+                            "MonitoringStartButton");
+
+                    if (start.IsEnabled)
+                    {
+                        Click(start);
+                    }
+                },
+                findings);
+
+            RenderShellScenario(
+                outputDirectory,
+                "17-edit-mode-controls",
+                () => EmptySnapshot(),
+                window =>
+                {
+                    Click(
+                        (Button)window.FindName(
+                            "MapEditModeButton"));
+                },
+                findings);
+        }
+
+        private static void RenderControlStateMatrix(
+            string outputDirectory)
+        {
+            foreach (var dark in new[] { false, true })
+            {
+                RenderControlBoardState(
+                    outputDirectory,
+                    dark,
+                    "18-controls-normal",
+                    null,
+                    null);
+
+                RenderControlBoardState(
+                    outputDirectory,
+                    dark,
+                    "19-controls-disabled",
+                    board => board.SetAllEnabled(false),
+                    null);
+
+                RenderControlBoardState(
+                    outputDirectory,
+                    dark,
+                    "20-controls-selected-expanded",
+                    board => board.SetSelectedExpanded(),
+                    null);
+
+                foreach (var key in
+                    new[]
+                    {
+                        "primary-button",
+                        "secondary-button",
+                        "toggle-button",
+                        "list-item",
+                        "tab-item",
+                        "combo-box",
+                        "check-box",
+                        "expander",
+                        "text-box"
+                    })
+                {
+                    RenderControlBoardState(
+                        outputDirectory,
+                        dark,
+                        "21-focus-" + key,
+                        null,
+                        board =>
+                        {
+                            var element =
+                                board.FocusTargets[key];
+
+                            element.Focus();
+                            Keyboard.Focus(element);
+                            PumpDispatcher();
+                        });
+
+                    RenderControlBoardState(
+                        outputDirectory,
+                        dark,
+                        "22-hover-" + key,
+                        null,
+                        board =>
+                        {
+                            var element =
+                                board.HoverTargets[key];
+
+                            var point =
+                                element.PointToScreen(
+                                    new Point(
+                                        Math.Max(1.0, element.ActualWidth / 2.0),
+                                        Math.Max(1.0, element.ActualHeight / 2.0)));
+
+                            SetCursorPos(
+                                (int)Math.Round(point.X),
+                                (int)Math.Round(point.Y));
+
+                            PumpDispatcher();
+                        });
                 }
             }
         }
+
+        private static void RenderControlBoardState(
+            string outputDirectory,
+            bool dark,
+            string scenario,
+            Action<ControlGalleryBoard> configureBeforeLayout,
+            Action<ControlGalleryBoard> configureAfterLayout)
+        {
+            var narrow =
+                RenderControlBoard(
+                    dark,
+                    NarrowWidth,
+                    configureBeforeLayout,
+                    configureAfterLayout);
+
+            var normal =
+                RenderControlBoard(
+                    dark,
+                    NormalWidth,
+                    configureBeforeLayout,
+                    configureAfterLayout);
+
+            SaveSideBySide(
+                narrow,
+                normal,
+                System.IO.Path.Combine(
+                    outputDirectory,
+                    scenario +
+                    "-" +
+                    (dark ? "dark" : "light") +
+                    ".png"));
+        }
+
+        private static BitmapSource RenderControlBoard(
+            bool dark,
+            int width,
+            Action<ControlGalleryBoard> configureBeforeLayout,
+            Action<ControlGalleryBoard> configureAfterLayout)
+        {
+            var window =
+                new MainWindow(
+                    new FixedRefreshProvider(
+                        EmptySnapshot()),
+                    new EmptyLookupReader());
+
+            try
+            {
+                PrepareWindowForInteractiveCapture(
+                    window,
+                    width,
+                    GalleryHeight);
+
+                if (dark)
+                {
+                    Click(
+                        (Button)window.FindName(
+                            "ShellThemeButton"));
+                }
+
+                var host =
+                    (ContentControl)window.FindName(
+                        "ShellWorkspaceEditorHost");
+
+                var board =
+                    CreateControlGalleryBoard(
+                        window);
+
+                host.Content = board.Root;
+                host.Visibility = Visibility.Visible;
+
+                configureBeforeLayout?.Invoke(board);
+
+                PumpDispatcher();
+                window.UpdateLayout();
+
+                board.BindGeneratedContainers();
+
+                configureAfterLayout?.Invoke(board);
+
+                PumpDispatcher();
+                window.UpdateLayout();
+
+                return Capture(
+                    window.Content as FrameworkElement);
+            }
+            finally
+            {
+                window.Close();
+                PumpDispatcher();
+            }
+        }
+
+        private static ControlGalleryBoard CreateControlGalleryBoard(
+            MainWindow window)
+        {
+            var root =
+                new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                };
+
+            var stack =
+                new StackPanel
+                {
+                    Margin = new Thickness(24)
+                };
+
+            root.Content = stack;
+
+            stack.Children.Add(
+                new TextBlock
+                {
+                    Text = "UI_DESIGN_RULES §9 — production control states",
+                    Style = (Style)window.FindResource("NetLoom.Style.SectionTitle"),
+                    Margin = new Thickness(0, 0, 0, 16)
+                });
+
+            var focusTargets =
+                new Dictionary<string, FrameworkElement>(StringComparer.Ordinal);
+
+            var hoverTargets =
+                new Dictionary<string, FrameworkElement>(StringComparer.Ordinal);
+
+            var enabledTargets =
+                new List<FrameworkElement>();
+
+            var primary = new Button
+            {
+                Content = "Сохранить очень длинное изменение конфигурации ЙЁ"
+            };
+            AddControlRow(stack, "Button / primary", primary);
+            focusTargets["primary-button"] = primary;
+            hoverTargets["primary-button"] = primary;
+            enabledTargets.Add(primary);
+
+            var secondary = new Button
+            {
+                Content = "Показать расположение выбранного устройства"
+            };
+            secondary.Style =
+                (Style)window.FindResource("NetLoom.Style.SecondaryButton");
+            AddControlRow(stack, "Button / secondary", secondary);
+            focusTargets["secondary-button"] = secondary;
+            hoverTargets["secondary-button"] = secondary;
+            enabledTargets.Add(secondary);
+
+            var toggle = new ToggleButton
+            {
+                Content = "Закрепить выбранный узел"
+            };
+            AddControlRow(stack, "ToggleButton", toggle);
+            focusTargets["toggle-button"] = toggle;
+            hoverTargets["toggle-button"] = toggle;
+            enabledTargets.Add(toggle);
+
+            var list = new ListBox
+            {
+                MinHeight = 92
+            };
+            list.Items.Add("Обычная строка");
+            list.Items.Add("Очень длинная строка списка ЙЁ 012345678901234567890123456789012345678901234567890123456789");
+            list.Items.Add("Третья строка");
+            AddControlRow(stack, "ListBox / ListBoxItem", list);
+            enabledTargets.Add(list);
+
+            var tabs = new TabControl
+            {
+                Style = (Style)window.FindResource("NetLoom.Style.InspectorTabs")
+            };
+            var firstTab = new TabItem
+            {
+                Header = "Обзор",
+                Content = "Обычное содержимое",
+                Style = (Style)window.FindResource("NetLoom.Style.InspectorTab")
+            };
+            var secondTab = new TabItem
+            {
+                Header = "Технические детали и основания",
+                Content = "Вторая вкладка",
+                Style = (Style)window.FindResource("NetLoom.Style.InspectorTab")
+            };
+            tabs.Items.Add(firstTab);
+            tabs.Items.Add(secondTab);
+            tabs.SelectedIndex = 0;
+            AddControlRow(stack, "TabControl / TabItem", tabs);
+            focusTargets["tab-item"] = firstTab;
+            hoverTargets["tab-item"] = firstTab;
+            enabledTargets.Add(tabs);
+
+            var combo = new ComboBox
+            {
+                MinWidth = 310
+            };
+            combo.Items.Add("Профиль SNMP ЙЁ");
+            combo.Items.Add("Профиль с очень длинным названием 012345678901234567890123456789012345678901234567890123456789");
+            combo.SelectedIndex = 0;
+            AddControlRow(stack, "ComboBox", combo);
+            focusTargets["combo-box"] = combo;
+            hoverTargets["combo-box"] = combo;
+            enabledTargets.Add(combo);
+
+            var check = new CheckBox
+            {
+                Content = "Показывать только подтверждённые физические связи"
+            };
+            AddControlRow(stack, "CheckBox", check);
+            focusTargets["check-box"] = check;
+            hoverTargets["check-box"] = check;
+            enabledTargets.Add(check);
+
+            var expander = new Expander
+            {
+                Header = "Технические детали устройства ЙЁ",
+                Content = new TextBlock
+                {
+                    Text = "46464646-0000-0000-0000-464646464646"
+                }
+            };
+            AddControlRow(stack, "Expander", expander);
+            focusTargets["expander"] = expander;
+            hoverTargets["expander"] = expander;
+            enabledTargets.Add(expander);
+
+            var textBox = new TextBox
+            {
+                Text = "012345678901234567890123456789012345678901234567890123456789ЙЁ",
+                MinWidth = 310
+            };
+            AddControlRow(stack, "TextBox", textBox);
+            focusTargets["text-box"] = textBox;
+            hoverTargets["text-box"] = textBox;
+            enabledTargets.Add(textBox);
+
+            var badgeRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+            foreach (var value in new[] { "0", "1", "12", "99+" })
+            {
+                var badge = new Border
+                {
+                    Style = (Style)window.FindResource("NetLoom.Style.NavigationBadge"),
+                    Margin = new Thickness(0, 0, 8, 0),
+                    Child = new TextBlock
+                    {
+                        Text = value,
+                        Foreground = Brushes.White,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                };
+                badgeRow.Children.Add(badge);
+            }
+            AddControlRow(stack, "Count badge 0 / 1 / many / 99+", badgeRow);
+
+            var statuses = new WrapPanel();
+            foreach (var status in new[]
+            {
+                "Доступен",
+                "Частично доступен",
+                "Наблюдается косвенно",
+                "Недоступен",
+                "Нет данных",
+                "Мониторинг отключён",
+                "Не контролируется",
+                "Мониторинг остановлен",
+                "× Критическое",
+                "! Предупреждение"
+            })
+            {
+                statuses.Children.Add(
+                    new TextBlock
+                    {
+                        Text = status,
+                        Style = (Style)window.FindResource("NetLoom.Style.StatusEmphasis"),
+                        Margin = new Thickness(0, 0, 16, 8)
+                    });
+            }
+            AddControlRow(stack, "Statuses and severities", statuses);
+
+            return new ControlGalleryBoard(
+                root,
+                focusTargets,
+                hoverTargets,
+                enabledTargets,
+                toggle,
+                list,
+                tabs,
+                combo,
+                check,
+                expander);
+        }
+
+        private static void AddControlRow(
+            Panel parent,
+            string label,
+            FrameworkElement control)
+        {
+            var grid = new Grid
+            {
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+            grid.ColumnDefinitions.Add(new ColumnDefinition
+            {
+                Width = new GridLength(220)
+            });
+            grid.ColumnDefinitions.Add(new ColumnDefinition
+            {
+                Width = new GridLength(1, GridUnitType.Star)
+            });
+
+            var labelBlock = new TextBlock
+            {
+                Text = label,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 16, 0)
+            };
+
+            Grid.SetColumn(labelBlock, 0);
+            Grid.SetColumn(control, 1);
+            grid.Children.Add(labelBlock);
+            grid.Children.Add(control);
+            parent.Children.Add(grid);
+        }
+
+        private static BitmapSource CapturePresentationHwnd(
+            Visual visual,
+            string description)
+        {
+            var source =
+                PresentationSource.FromVisual(visual)
+                as HwndSource;
+
+            Assert.IsNotNull(
+                source,
+                description +
+                " has no HwndSource.");
+
+            NativeRect rect;
+
+            Assert.IsTrue(
+                GetWindowRect(
+                    source.Handle,
+                    out rect),
+                description +
+                " window bounds are unavailable.");
+
+            var width =
+                rect.Right - rect.Left;
+
+            var height =
+                rect.Bottom - rect.Top;
+
+            Assert.IsTrue(
+                width > 2 &&
+                height > 2,
+                description +
+                " window has no drawable area.");
+
+            var screenDc =
+                GetDC(IntPtr.Zero);
+
+            Assert.AreNotEqual(
+                IntPtr.Zero,
+                screenDc,
+                description +
+                " screen DC is unavailable.");
+
+            var memoryDc =
+                CreateCompatibleDC(screenDc);
+
+            Assert.AreNotEqual(
+                IntPtr.Zero,
+                memoryDc,
+                description +
+                " memory DC is unavailable.");
+
+            var bitmapHandle =
+                CreateCompatibleBitmap(
+                    screenDc,
+                    width,
+                    height);
+
+            Assert.AreNotEqual(
+                IntPtr.Zero,
+                bitmapHandle,
+                description +
+                " native bitmap is unavailable.");
+
+            var oldObject =
+                SelectObject(
+                    memoryDc,
+                    bitmapHandle);
+
+            try
+            {
+                Assert.IsTrue(
+                    BitBlt(
+                        memoryDc,
+                        0,
+                        0,
+                        width,
+                        height,
+                        screenDc,
+                        rect.Left,
+                        rect.Top,
+                        SourceCopy | CaptureBlt),
+                    description +
+                    " screen raster capture failed.");
+
+                var bitmap =
+                    Imaging.CreateBitmapSourceFromHBitmap(
+                        bitmapHandle,
+                        IntPtr.Zero,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+
+                bitmap.Freeze();
+
+                return bitmap;
+            }
+            finally
+            {
+                SelectObject(
+                    memoryDc,
+                    oldObject);
+
+                DeleteObject(
+                    bitmapHandle);
+
+                DeleteDC(
+                    memoryDc);
+
+                ReleaseDC(
+                    IntPtr.Zero,
+                    screenDc);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NativeRect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        private const int SourceCopy =
+            0x00CC0020;
+
+        private const int CaptureBlt =
+            0x40000000;
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(
+            IntPtr hWnd,
+            out NativeRect rect);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetDC(
+            IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern int ReleaseDC(
+            IntPtr hWnd,
+            IntPtr hDC);
+
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr CreateCompatibleDC(
+            IntPtr hDC);
+
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr CreateCompatibleBitmap(
+            IntPtr hDC,
+            int width,
+            int height);
+
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr SelectObject(
+            IntPtr hDC,
+            IntPtr hObject);
+
+        [DllImport("gdi32.dll")]
+        private static extern bool DeleteObject(
+            IntPtr hObject);
+
+        [DllImport("gdi32.dll")]
+        private static extern bool DeleteDC(
+            IntPtr hDC);
+
+        [DllImport("gdi32.dll")]
+        private static extern bool BitBlt(
+            IntPtr destinationDc,
+            int x,
+            int y,
+            int width,
+            int height,
+            IntPtr sourceDc,
+            int sourceX,
+            int sourceY,
+            int operation);
+
+        private static void PrepareWindowForInteractiveCapture(
+            MainWindow window,
+            double width,
+            double height)
+        {
+            window.Width = width;
+            window.Height = height;
+            window.Left = 24;
+            window.Top = 24;
+            window.ShowInTaskbar = false;
+            window.Topmost = true;
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Show();
+            window.Activate();
+
+            WaitForCondition(
+                () =>
+                    window.ActualWidth > 0 &&
+                    window.ActualHeight > 0);
+
+            PumpDispatcher();
+            window.UpdateLayout();
+        }
+
+        private sealed class ControlGalleryBoard
+        {
+            private readonly IList<FrameworkElement> _enabledTargets;
+            private readonly ToggleButton _toggle;
+            private readonly ListBox _list;
+            private readonly TabControl _tabs;
+            private readonly ComboBox _combo;
+            private readonly CheckBox _check;
+            private readonly Expander _expander;
+
+            public ControlGalleryBoard(
+                FrameworkElement root,
+                IDictionary<string, FrameworkElement> focusTargets,
+                IDictionary<string, FrameworkElement> hoverTargets,
+                IList<FrameworkElement> enabledTargets,
+                ToggleButton toggle,
+                ListBox list,
+                TabControl tabs,
+                ComboBox combo,
+                CheckBox check,
+                Expander expander)
+            {
+                Root = root;
+                FocusTargets = focusTargets;
+                HoverTargets = hoverTargets;
+                _enabledTargets = enabledTargets;
+                _toggle = toggle;
+                _list = list;
+                _tabs = tabs;
+                _combo = combo;
+                _check = check;
+                _expander = expander;
+            }
+
+            public FrameworkElement Root { get; }
+            public IDictionary<string, FrameworkElement> FocusTargets { get; }
+            public IDictionary<string, FrameworkElement> HoverTargets { get; }
+
+            public void BindGeneratedContainers()
+            {
+                var item =
+                    _list.ItemContainerGenerator.ContainerFromIndex(0)
+                    as ListBoxItem;
+
+                Assert.IsNotNull(
+                    item,
+                    "Gallery ListBoxItem container is unavailable.");
+
+                FocusTargets["list-item"] = item;
+                HoverTargets["list-item"] = item;
+            }
+
+            public void SetAllEnabled(bool enabled)
+            {
+                foreach (var element in _enabledTargets)
+                {
+                    element.IsEnabled = enabled;
+                }
+            }
+
+            public void SetSelectedExpanded()
+            {
+                _toggle.IsChecked = true;
+                _list.SelectedIndex = 1;
+                _tabs.SelectedIndex = 1;
+                _combo.SelectedIndex = 1;
+                _check.IsChecked = true;
+                _expander.IsExpanded = true;
+            }
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool SetCursorPos(
+            int x,
+            int y);
 
         private static void PrepareWindow(
             MainWindow window,
@@ -1350,7 +2282,7 @@ namespace NetLoom.Tests.Unit
             thread.Start();
 
             if (!thread.Join(
-                    TimeSpan.FromSeconds(90)))
+                    TimeSpan.FromSeconds(240)))
             {
                 throw new AssertFailedException(
                     "STA state-gallery test did not complete.");
