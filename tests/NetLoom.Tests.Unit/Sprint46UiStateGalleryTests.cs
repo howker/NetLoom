@@ -270,7 +270,7 @@ namespace NetLoom.Tests.Unit
                             "Themes: Light and Dark.",
                             "Covered shell surfaces: empty state; device names (one word, IP-only, long/unbroken, Й/Ё); selected device inspector; stale Critical link; Location inspector; Equipment; Monitoring error; Alerts/event strip; edit-mode controls; Manual topology editor; Location editor; SNMP profile settings.",
                             "Covered component states from production resource dictionaries: normal, hover, keyboard focus, disabled, selected/checked/expanded for Button, secondary Button, ToggleButton, ListBoxItem, TabItem, ComboBox, CheckBox, Expander and TextBox; count badge 0/1/many/99+; status/severity labels.",
-                            "Separate-HWND raster proof: production ComboBox popup, ContextMenu (normal and disabled item), submenu and ToolTip are captured from their own native popup HWND in both themes; the test rejects owner-window substitution and mostly transparent captures.",
+                            "Separate-HWND raster proof: production ComboBox popup, ContextMenu (normal and disabled item), submenu and ToolTip are located by their own native popup HWND and captured from the composed desktop region in both themes; the test rejects owner-window substitution, mostly transparent captures and visually flat/black captures.",
                             "Text axes represented: empty, one word, ordinary, multiline, unbroken 60+ characters, Й/Ё. Width axis: minimum and normal shell widths side by side. Themes: Light and Dark.",
                             "Automatic findings are informational only in Step 2. The gallery test fails only when a required production state cannot be reached or a PNG cannot be produced; visual defects are reviewed from the archive.",
                             "Discarded static axes where they do not apply: ToolTip has no disabled/selected state; submenu has no separate focus state beyond MenuItem focus; count scenarios apply only to count-bearing controls. Behavior-only axes not represented by PNG: Windows 150–200% DPI behavior, full keyboard-only journey, UI Automation tree semantics, system animation setting and copy/select behavior. These belong to Step 3 or later acceptance, not this Step 2 gallery."
@@ -1361,19 +1361,23 @@ namespace NetLoom.Tests.Unit
                 description +
                 " window has no drawable area.");
 
-            var windowDc =
-                GetWindowDC(
-                    source.Handle);
+            PumpDispatcher();
+            Thread.Sleep(75);
+            PumpDispatcher();
+
+            var screenDc =
+                GetDC(
+                    IntPtr.Zero);
 
             Assert.AreNotEqual(
                 IntPtr.Zero,
-                windowDc,
+                screenDc,
                 description +
-                " window DC is unavailable.");
+                " screen DC is unavailable.");
 
             var memoryDc =
                 CreateCompatibleDC(
-                    windowDc);
+                    screenDc);
 
             Assert.AreNotEqual(
                 IntPtr.Zero,
@@ -1383,7 +1387,7 @@ namespace NetLoom.Tests.Unit
 
             var bitmapHandle =
                 CreateCompatibleBitmap(
-                    windowDc,
+                    screenDc,
                     width,
                     height);
 
@@ -1400,32 +1404,20 @@ namespace NetLoom.Tests.Unit
 
             try
             {
-                PumpDispatcher();
-                Thread.Sleep(50);
-                PumpDispatcher();
-
-                var printed =
-                    PrintWindow(
-                        source.Handle,
+                Assert.IsTrue(
+                    BitBlt(
                         memoryDc,
-                        PrintWindowFullContent);
-
-                if (!printed)
-                {
-                    Assert.IsTrue(
-                        BitBlt(
-                            memoryDc,
-                            0,
-                            0,
-                            width,
-                            height,
-                            windowDc,
-                            0,
-                            0,
-                            SourceCopy),
-                        description +
-                        " native raster capture failed.");
-                }
+                        0,
+                        0,
+                        width,
+                        height,
+                        screenDc,
+                        rect.Left,
+                        rect.Top,
+                        SourceCopy |
+                        CaptureBlt),
+                    description +
+                    " composed desktop raster capture failed.");
 
                 var bitmap =
                     Imaging.CreateBitmapSourceFromHBitmap(
@@ -1455,8 +1447,8 @@ namespace NetLoom.Tests.Unit
                     memoryDc);
 
                 ReleaseDC(
-                    source.Handle,
-                    windowDc);
+                    IntPtr.Zero,
+                    screenDc);
             }
         }
 
@@ -1487,8 +1479,8 @@ namespace NetLoom.Tests.Unit
                 0);
 
             var opaquePixels = 0;
-            var lightPixels = 0;
-            var darkPixels = 0;
+            var minimumLuminance = int.MaxValue;
+            var maximumLuminance = int.MinValue;
 
             for (var index = 0;
                  index + 3 < pixels.Length;
@@ -1511,15 +1503,15 @@ namespace NetLoom.Tests.Unit
                     green +
                     blue;
 
-                if (luminance >= 600)
-                {
-                    lightPixels++;
-                }
+                minimumLuminance =
+                    Math.Min(
+                        minimumLuminance,
+                        luminance);
 
-                if (luminance <= 240)
-                {
-                    darkPixels++;
-                }
+                maximumLuminance =
+                    Math.Max(
+                        maximumLuminance,
+                        luminance);
             }
 
             Assert.IsTrue(
@@ -1533,10 +1525,11 @@ namespace NetLoom.Tests.Unit
                 " raster is mostly transparent.");
 
             Assert.IsTrue(
-                lightPixels > 0 ||
-                darkPixels > 0,
+                minimumLuminance != int.MaxValue &&
+                maximumLuminance != int.MinValue &&
+                maximumLuminance - minimumLuminance >= 48,
                 description +
-                " raster contains no visible contrast.");
+                " raster is visually flat and does not contain the popup surface/text.");
         }
 
         [StructLayout(LayoutKind.Sequential)]
