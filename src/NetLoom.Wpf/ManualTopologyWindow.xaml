@@ -48,11 +48,13 @@
                 Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
                 BorderThickness="{DynamicResource NetLoom.Thickness.BorderTop}">
             <Button x:Name="ManualTopologyCloseButton"
+                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
                     HorizontalAlignment="Right"
                     Click="OnCloseClick" />
         </Border>
 
         <TabControl x:Name="ManualTopologyTabs"
+                    Style="{StaticResource NetLoom.Style.SurfaceTabs}"
                     Margin="{DynamicResource NetLoom.Thickness.PanelPadding}"
                     SelectionChanged="OnManualTopologyTabsSelectionChanged">
             <TabItem x:Name="ManualDevicesTab">
@@ -112,6 +114,7 @@
                             <StackPanel Orientation="Horizontal"
                                         Margin="{DynamicResource NetLoom.Thickness.StatusTop}">
                                 <Button x:Name="ManualDeviceNewButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Click="OnNewDeviceClick" />
                                 <Button x:Name="ManualDeviceCreateButton"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
@@ -120,6 +123,7 @@
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnSaveDeviceClick" />
                                 <Button x:Name="ManualDeviceDeleteButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnDeleteDeviceClick" />
                             </StackPanel>
@@ -186,6 +190,7 @@
                             <StackPanel Orientation="Horizontal"
                                         Margin="{DynamicResource NetLoom.Thickness.StatusTop}">
                                 <Button x:Name="ManualPortNewButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Click="OnNewPortClick" />
                                 <Button x:Name="ManualPortCreateButton"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
@@ -194,6 +199,7 @@
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnSavePortClick" />
                                 <Button x:Name="ManualPortDeleteButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnDeletePortClick" />
                             </StackPanel>
@@ -276,6 +282,7 @@
                             <StackPanel Orientation="Horizontal"
                                         Margin="{DynamicResource NetLoom.Thickness.StatusTop}">
                                 <Button x:Name="ManualLinkNewButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Click="OnNewLinkClick" />
                                 <Button x:Name="ManualLinkCreateButton"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
@@ -284,6 +291,7 @@
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnSaveLinkClick" />
                                 <Button x:Name="ManualLinkDeleteButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnDeleteLinkClick" />
                             </StackPanel>

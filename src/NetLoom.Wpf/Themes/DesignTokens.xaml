@@ -11,6 +11,8 @@
     <sys:Double x:Key="NetLoom.FontSize.MapNodeTitle">13</sys:Double>
     <sys:Double x:Key="NetLoom.FontSize.SectionTitle">17</sys:Double>
     <sys:Double x:Key="NetLoom.FontSize.WindowTitle">20</sys:Double>
+    <sys:Double x:Key="NetLoom.FontSize.EntityTitle">18</sys:Double>
+    <sys:Double x:Key="NetLoom.FontSize.SectionLabel">11</sys:Double>
     <sys:Double x:Key="NetLoom.Type.OpticalOffsetY">0</sys:Double>
 
     <sys:Double x:Key="NetLoom.Spacing.Xs">4</sys:Double>
@@ -88,6 +90,8 @@
     <sys:Double x:Key="NetLoom.Shell.WindowMinHeight">650</sys:Double>
     <GridLength x:Key="NetLoom.Grid.FieldGap">12</GridLength>
     <GridLength x:Key="NetLoom.Grid.ButtonGap">12</GridLength>
+    <GridLength x:Key="NetLoom.Grid.MenuIconColumn">18</GridLength>
+    <GridLength x:Key="NetLoom.Grid.MenuArrowColumn">14</GridLength>
 
     <GridLength x:Key="NetLoom.Shell.RailWidth">200</GridLength>
     <GridLength x:Key="NetLoom.Shell.SidebarWidth">380</GridLength>
@@ -103,6 +107,18 @@
     <Thickness x:Key="NetLoom.Thickness.CardBodyInset">14,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.PillPadding">9,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ResultRowPadding">0,6</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.SectionLabel">0,20,0,8</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.GroupGap">0,16,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.GroupInset">12,0,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.StatusChipPadding">8,3</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ImpactCardPadding">12</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.SurfaceTabPadding">14,8</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.SurfaceTabHeaderGap">0,0,0,8</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MenuPadding">4</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MenuItemPadding">12,7</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MenuHeaderMargin">6,0,12,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MenuSeparatorMargin">8,4</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ToolTipPadding">10,7</Thickness>
 
     <CornerRadius x:Key="NetLoom.Radius.Card">8</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.Pill">12</CornerRadius>
@@ -123,6 +139,11 @@
     <Thickness x:Key="NetLoom.Thickness.NavigationBadgePaddingMulti">5,0</Thickness>
     <GridLength x:Key="NetLoom.Alert.StripeWidth">4</GridLength>
     <sys:Double x:Key="NetLoom.Discovery.ResultsMaxHeight">220</sys:Double>
+    <sys:Double x:Key="NetLoom.Menu.CheckWidth">10</sys:Double>
+    <sys:Double x:Key="NetLoom.Menu.CheckHeight">8</sys:Double>
+    <sys:Double x:Key="NetLoom.Menu.ArrowWidth">6</sys:Double>
+    <sys:Double x:Key="NetLoom.Menu.ArrowHeight">10</sys:Double>
+    <sys:Double x:Key="NetLoom.Menu.SeparatorHeight">1</sys:Double>
 
     <sys:Double x:Key="NetLoom.Map.CanvasWidth">1000000</sys:Double>
     <sys:Double x:Key="NetLoom.Map.CanvasHeight">1000000</sys:Double>

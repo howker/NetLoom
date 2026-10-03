@@ -937,6 +937,7 @@
                                     Click="OnShellProfileSettingsAddClick" />
                             <ListBox x:Name="ShellProfileSettingsList"
                                      Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      SelectionMode="Single"
                                      SelectionChanged="OnShellProfileSettingsSelectionChanged">
                                 <ListBox.ItemTemplate>
@@ -1066,16 +1067,17 @@
                                 Height="{DynamicResource NetLoom.Map.CanvasHeight}" />
                     </ScrollViewer>
 
-                    <ContentControl x:Name="ShellWorkspaceEditorHost"
-                                    Grid.RowSpan="2"
-                                    Panel.ZIndex="20"
-                                    Visibility="Collapsed"
-                                    HorizontalContentAlignment="Stretch"
-                                    VerticalContentAlignment="Stretch"
-                                    Background="{DynamicResource NetLoom.Brush.Window}" />
                 </Grid>
             </Grid>
 
+            <ContentControl x:Name="ShellWorkspaceEditorHost"
+                            Grid.Column="2"
+                            Grid.ColumnSpan="2"
+                            Panel.ZIndex="20"
+                            Visibility="Collapsed"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"
+                            Background="{DynamicResource NetLoom.Brush.Window}" />
             <Border Grid.Column="3"
                     Style="{StaticResource NetLoom.Style.Panel}"
                     Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"

@@ -48,11 +48,13 @@
                 Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
                 BorderThickness="{DynamicResource NetLoom.Thickness.BorderTop}">
             <Button x:Name="LocationTopologyCloseButton"
+                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
                     HorizontalAlignment="Right"
                     Click="OnCloseClick" />
         </Border>
 
         <TabControl x:Name="LocationTopologyTabs"
+                    Style="{StaticResource NetLoom.Style.SurfaceTabs}"
                     Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
             <TabItem x:Name="LocationsTab">
                 <Grid Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
@@ -114,8 +116,10 @@
                             <StackPanel Orientation="Horizontal"
                                         Margin="{DynamicResource NetLoom.Thickness.StatusTop}">
                                 <Button x:Name="LocationNewButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Click="OnNewLocationClick" />
                                 <Button x:Name="LocationEditButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnEditLocationClick" />
                                 <Button x:Name="LocationCreateButton"
@@ -125,9 +129,11 @@
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnSaveLocationClick" />
                                 <Button x:Name="LocationCancelButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnCancelLocationClick" />
                                 <Button x:Name="LocationDeleteButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
                                         Click="OnDeleteLocationClick" />
                             </StackPanel>
