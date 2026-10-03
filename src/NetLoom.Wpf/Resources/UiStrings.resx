@@ -1259,7 +1259,7 @@ Drag the header to move this location together with its child locations and assi
     <value>STP</value>
   </data>
   <data name="MonitoringStartAction" xml:space="preserve">
-    <value>Start monitoring</value>
+    <value>Start</value>
   </data>
   <data name="MonitoringStopAction" xml:space="preserve">
     <value>Stop</value>
@@ -2003,5 +2003,26 @@ Poll: {2}</value>
   </data>
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
+  </data>
+  <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
+    <value>Global search</value>
+  </data>
+  <data name="ShellMapFocusAction" xml:space="preserve">
+    <value>Show: all</value>
+  </data>
+  <data name="ShellMapExportAction" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="ShellMapRefreshAction" xml:space="preserve">
+    <value>Refresh data</value>
+  </data>
+  <data name="ShellMapEditModeCompact" xml:space="preserve">
+    <value>Edit mode · Esc — exit</value>
+  </data>
+  <data name="ShellInspectorCollapseAction" xml:space="preserve">
+    <value>Collapse properties</value>
+  </data>
+  <data name="ShellInspectorRevealAction" xml:space="preserve">
+    <value>Show properties</value>
   </data>
 </root>

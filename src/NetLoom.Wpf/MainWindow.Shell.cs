@@ -134,6 +134,8 @@ namespace NetLoom.Wpf
             DiscoveryProfileComboBox.SelectionChanged +=
                 OnShellProfileSelectionChanged;
 
+            InitializeAdr083ShellFrame();
+
             ShowShellSection(
                 ShellSection.Map);
 
@@ -768,6 +770,9 @@ namespace NetLoom.Wpf
                 ShellSettingsButton,
                 section ==
                     ShellSection.Settings);
+
+            UpdateAdr083SectionPresentation(
+                section);
         }
 
         private void UpdateShellEquipmentPresentation(
@@ -904,14 +909,37 @@ namespace NetLoom.Wpf
 
             ManualTopologyButton.IsEnabled =
                 editing;
-
-            LocationsButton.IsEnabled =
-                editing;
-
-            MapLockSelectedCheckBox.Visibility =
+            ManualTopologyButton.Visibility =
                 editing
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+
+            LocationsButton.IsEnabled =
+                editing;
+            LocationsButton.Visibility =
+                editing
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            MapOperationalFocusButton.Visibility =
+                editing
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            MapExportButton.Visibility =
+                editing
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            MapRefreshDataButton.Visibility =
+                editing
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            Adr083MapEditModeIndicator.Visibility =
+                editing
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            MapLockSelectedCheckBox.Visibility =
+                Visibility.Collapsed;
         }
 
         private static void SetMapModeSelection(
@@ -1028,18 +1056,15 @@ namespace NetLoom.Wpf
                     targetCount,
                     lastPoll);
 
-            var brushKey =
-                OperatorStatusBrushKey(
-                    monitoringStatus);
-
             ShellMonitoringHeaderText
                 .SetResourceReference(
                     TextBlock.ForegroundProperty,
-                    brushKey);
+                    "NetLoom.Brush.TextPrimary");
             ShellMonitoringRailText
                 .SetResourceReference(
                     TextBlock.ForegroundProperty,
-                    brushKey);
+                    OperatorStatusBrushKey(
+                        monitoringStatus));
         }
 
 

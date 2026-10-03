@@ -361,8 +361,9 @@ namespace NetLoom.Tests.Unit
                             locations.IsEnabled);
 
                         Assert.AreEqual(
-                            Visibility.Visible,
-                            lockSelected.Visibility);
+                            Visibility.Collapsed,
+                            lockSelected.Visibility,
+                            "ADR-083 removes the legacy lock-selected control from the map toolbar; edit mode remains explicit through its dedicated actions and indicator.");
 
                         Assert.AreEqual(
                             Visibility.Visible,
@@ -895,13 +896,9 @@ namespace NetLoom.Tests.Unit
                                     window,
                                     deviceId) != null);
 
-                        Click(
-                            (Button)window.FindName(
-                                "ShellMonitoringButton"));
-
                         var startButton =
                             (Button)window.FindName(
-                                "MonitoringStartButton");
+                                "ShellMonitoringStartButton");
 
                         startButton.Measure(
                             new Size(
@@ -911,55 +908,27 @@ namespace NetLoom.Tests.Unit
                         Assert.IsTrue(
                             double.IsNaN(
                                 startButton.Width),
-                            "Text actions must not use a fixed Width.");
+                            "The always-visible monitoring action must size from content instead of using a fixed Width.");
 
                         Assert.IsTrue(
-                            startButton.MinWidth > 0.0,
-                            "Text actions may use a minimum width.");
-
-                        Assert.IsTrue(
-                            startButton.ActualWidth + 0.5 >=
+                            startButton.ActualWidth +
+                                startButton.Margin.Left +
+                                startButton.Margin.Right +
+                                0.5 >=
                             startButton.DesiredSize.Width,
-                            "The longest visible monitoring action must fit instead of losing Russian letters.");
+                            "The always-visible monitoring action must fit instead of losing Russian letters.");
 
-                        var pollNowButton =
-                            (Button)window.FindName(
-                                "MonitoringPollNowButton");
-
-                        var monitoringPanel =
-                            (ScrollViewer)window.FindName(
-                                "ShellMonitoringSidebarPanel");
-
-                        PumpDispatcher();
-
-                        var pollRight =
-                            pollNowButton
-                                .TransformToAncestor(
-                                    monitoringPanel)
-                                .Transform(
-                                    new Point(
-                                        pollNowButton.ActualWidth,
-                                        0.0))
-                                .X;
-
-                        Assert.IsTrue(
-                            pollRight <=
-                            monitoringPanel.ViewportWidth + 0.5,
-                            "The secondary monitoring action must stay inside the sidebar instead of clipping its right border.");
-
-                        var longLabel =
+                        var monitoringHeader =
                             (TextBlock)window.FindName(
-                                "MonitoringActiveTargetLabelText");
+                                "ShellMonitoringHeaderText");
 
                         Assert.IsTrue(
                             double.IsNaN(
-                                longLabel.Width));
-                        Assert.AreEqual(
-                            TextWrapping.Wrap,
-                            longLabel.TextWrapping);
+                                monitoringHeader.Width),
+                            "ADR-083 moves monitoring state to the always-visible header instead of a fixed-width section panel.");
                         Assert.AreEqual(
                             TextTrimming.None,
-                            longLabel.TextTrimming);
+                            monitoringHeader.TextTrimming);
 
                         SelectDevice(
                             window,
@@ -3826,9 +3795,108 @@ namespace NetLoom.Tests.Unit
                                 "NetLoom.Shell.SidebarWidth");
 
                         Assert.AreEqual(
-                            380.0,
+                            0.0,
                             sidebarWidth.Value,
-                            0.01);
+                            0.01,
+                            "ADR-083 removes the permanent section sidebar from the shell frame.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            Adr083FrameGivesMapSpaceAndUsesSectionInspectorDefaults()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Width =
+                            1366;
+                        window.Height =
+                            820;
+                        window.Show();
+                        PumpDispatcher();
+
+                        var workspace =
+                            (Grid)window.FindName(
+                                "ShellWorkspaceGrid");
+                        var map =
+                            (Grid)window.FindName(
+                                "ShellMapSurface");
+                        var inspector =
+                            (Border)window.FindName(
+                                "ShellInspectorPanel");
+                        var editor =
+                            (ContentControl)window.FindName(
+                                "ShellWorkspaceEditorHost");
+
+                        Assert.IsTrue(
+                            map.ActualWidth + 0.5 >=
+                            workspace.ActualWidth * 0.60,
+                            "ADR-083 requires the map to keep at least 60% of the available window width at 1366 px.");
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            inspector.Visibility);
+                        Assert.AreEqual(
+                            1,
+                            Grid.GetColumn(
+                                editor));
+                        Assert.AreEqual(
+                            2,
+                            Grid.GetColumnSpan(
+                                editor),
+                            "Sprint 46 editors must occupy the center view and must not cover the inspector column.");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellAlertsButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((Border)window.FindName(
+                                "ShellSectionSurface"))
+                            .Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            inspector.Visibility,
+                            "Warnings open with the inspector collapsed by ADR-083.");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellEquipmentButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            inspector.Visibility,
+                            "Equipment opens with the shared inspector visible by ADR-083.");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellInspectorCollapseButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            inspector.Visibility);
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((Button)window.FindName(
+                                "ShellInspectorRevealButton"))
+                            .Visibility);
                     }
                     finally
                     {
@@ -3948,7 +4016,7 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
-            RailUsesVectorIconsBadgeAndReadableMapTokens()
+            RailUsesAdr083IconOnlyGeometryAndAccessibleNames()
         {
             RunOnSta(
                 () =>
@@ -3964,6 +4032,60 @@ namespace NetLoom.Tests.Unit
                         window.Show();
                         PumpDispatcher();
 
+                        Assert.AreEqual(
+                            56.0,
+                            ((GridLength)window.FindResource(
+                                "NetLoom.Shell.RailWidth"))
+                            .Value,
+                            0.01);
+
+                        foreach (var name in
+                            new[]
+                            {
+                                "ShellMapButton",
+                                "ShellEquipmentButton",
+                                "ShellAlertsButton",
+                                "ShellDiscoveryButton",
+                                "ShellSettingsButton"
+                            })
+                        {
+                            var button =
+                                (Button)window.FindName(
+                                    name);
+
+                            Assert.AreEqual(
+                                44.0,
+                                button.Width,
+                                0.01);
+                            Assert.AreEqual(
+                                44.0,
+                                button.Height,
+                                0.01);
+                            Assert.IsFalse(
+                                string.IsNullOrWhiteSpace(
+                                    System.Windows.Automation.AutomationProperties
+                                        .GetName(
+                                            button)),
+                                name +
+                                " must expose an AutomationProperties.Name in the icon-only rail.");
+                        }
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((TextBlock)window.FindName(
+                                "ShellAlertsButtonText"))
+                            .Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((Button)window.FindName(
+                                "ShellMonitoringButton"))
+                            .Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((Button)window.FindName(
+                                "ShellSearchButton"))
+                            .Visibility);
+
                         Assert.IsNotNull(
                             window.FindResource(
                                 "NetLoom.Icon.ShellMap"));
@@ -3971,72 +4093,14 @@ namespace NetLoom.Tests.Unit
                             window.FindResource(
                                 "NetLoom.Icon.ShellAlerts"));
 
-                        var alertsButton =
-                            (Button)window.FindName(
-                                "ShellAlertsButton");
-                        var alertsText =
-                            (TextBlock)window.FindName(
-                                "ShellAlertsButtonText");
-                        var alertsContentGrid =
-                            (Grid)VisualTreeHelper.GetParent(
-                                alertsText);
-
-                        Assert.IsNotNull(
-                            alertsContentGrid);
-                        Assert.IsTrue(
-                            alertsContentGrid.ColumnDefinitions.Count >= 2,
-                            "Navigation content must expose a dedicated text column.");
-
-                        var arrangedTextWidth =
-                            alertsContentGrid
-                                .ColumnDefinitions[1]
-                                .ActualWidth;
-
-                        alertsText.Measure(
-                            new Size(
-                                double.PositiveInfinity,
-                                double.PositiveInfinity));
-
-                        Assert.IsTrue(
-                            arrangedTextWidth + 0.5 >=
-                            alertsText.DesiredSize.Width,
-                            "The warning navigation label must fit its rendered text instead of losing letters.");
-
-                        Assert.AreEqual(
-                            TextTrimming.None,
-                            alertsText.TextTrimming,
-                            "Primary navigation labels must not hide clipping with ellipsis.");
-
-                        Assert.AreEqual(
-                            TextWrapping.NoWrap,
-                            alertsText.TextWrapping);
-
-                        Assert.AreSame(
-                            alertsButton.Foreground,
-                            alertsText.Foreground,
-                            "Navigation text must inherit the button foreground so light and dark rail contrast stay consistent.");
-
-                        Assert.AreEqual(
-                            Visibility.Collapsed,
-                            ((FrameworkElement)window.FindName(
-                                "ShellAlertsBadge"))
-                            .Visibility);
-
                         Assert.AreEqual(
                             "−",
                             UiText.Get(
-                                "MapZoomOutAction"),
-                            "Zoom out must use the typographic minus sign so it visually matches the plus control.");
-
+                                "MapZoomOutAction"));
                         Assert.AreEqual(
                             0.75,
                             (double)window.FindResource(
                                 "NetLoom.Map.ReadableZoomMin"),
-                            0.001);
-                        Assert.AreEqual(
-                            0.95,
-                            (double)window.FindResource(
-                                "NetLoom.Map.LinkLabelMinZoom"),
                             0.001);
                     }
                     finally

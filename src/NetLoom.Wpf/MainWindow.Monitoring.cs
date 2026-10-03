@@ -615,6 +615,15 @@ namespace NetLoom.Wpf
                     ? Visibility.Visible
                     : Visibility.Collapsed;
 
+            ShellMonitoringStartButton.IsEnabled =
+                MonitoringStartButton.IsEnabled;
+            ShellMonitoringStopButton.IsEnabled =
+                MonitoringStopButton.IsEnabled;
+            ShellMonitoringStartButton.Visibility =
+                MonitoringStartButton.Visibility;
+            ShellMonitoringStopButton.Visibility =
+                MonitoringStopButton.Visibility;
+
             MonitoringPollNowButton.IsEnabled =
                 snapshot.State ==
                     MonitoringControlState.Running ||

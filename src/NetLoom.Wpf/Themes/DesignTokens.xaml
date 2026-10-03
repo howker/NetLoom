@@ -93,10 +93,10 @@
     <GridLength x:Key="NetLoom.Grid.MenuIconColumn">18</GridLength>
     <GridLength x:Key="NetLoom.Grid.MenuArrowColumn">14</GridLength>
 
-    <GridLength x:Key="NetLoom.Shell.RailWidth">200</GridLength>
-    <GridLength x:Key="NetLoom.Shell.SidebarWidth">380</GridLength>
-    <GridLength x:Key="NetLoom.Shell.InspectorWidth">340</GridLength>
-    <sys:Double x:Key="NetLoom.Shell.ProfileWidth">240</sys:Double>
+    <GridLength x:Key="NetLoom.Shell.RailWidth">56</GridLength>
+    <GridLength x:Key="NetLoom.Shell.SidebarWidth">0</GridLength>
+    <GridLength x:Key="NetLoom.Shell.InspectorWidth">360</GridLength>
+    <sys:Double x:Key="NetLoom.Shell.ProfileWidth">140</sys:Double>
 
     <Thickness x:Key="NetLoom.Thickness.CardGapTop">0,16,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardSectionGap">0,16,0,0</Thickness>

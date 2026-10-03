@@ -34,8 +34,10 @@
                 BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="240" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
@@ -43,48 +45,118 @@
                            Style="{StaticResource NetLoom.Style.WindowTitle}"
                            VerticalAlignment="Center" />
 
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                    <TextBlock x:Name="DiscoveryProfileLabelText"
-                               Style="{StaticResource NetLoom.Style.MutedText}"
-                               VerticalAlignment="Center" />
-                    <ComboBox x:Name="DiscoveryProfileComboBox"
-                              Width="{DynamicResource NetLoom.Shell.ProfileWidth}"
-                              Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                              DisplayMemberPath="DisplayName" />
-                    <Button x:Name="ShellProfileAddButton"
-                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                            Visibility="Collapsed"
-                            Click="OnShellProfileManageClick" />
-                    <TextBlock x:Name="ShellProfileStatusText"
-                               Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                               VerticalAlignment="Center"
-                               Style="{StaticResource NetLoom.Style.StatusEmphasis}" />
-                </StackPanel>
+                <TextBlock x:Name="ShellBreadcrumbText"
+                           Grid.Column="1"
+                           Margin="16,0,12,0"
+                           MaxWidth="240"
+                           Style="{StaticResource NetLoom.Style.MutedText}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
 
-                <StackPanel Grid.Column="2"
+                <Grid Grid.Column="2"
+                      Width="360"
+                      MinWidth="260"
+                      MaxWidth="420"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                    <TextBox x:Name="ShellGlobalSearchTextBox"
+                             Height="32"
+                             Padding="30,4,54,4"
+                             VerticalContentAlignment="Center"
+                             TextChanged="OnShellGlobalSearchTextChanged" />
+                    <Path Width="14"
+                          Height="14"
+                          Margin="10,0,0,0"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Center"
+                          Stroke="{DynamicResource NetLoom.Brush.TextSecondary}"
+                          StrokeThickness="1.5"
+                          Data="M 9,9 C 12.314,9 15,6.314 15,3 C 15,-0.314 12.314,-3 9,-3 C 5.686,-3 3,-0.314 3,3 C 3,6.314 5.686,9 9,9 Z M 13.5,7.5 L 18,12" />
+                    <Border HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0,0,6,0"
+                            Padding="7,2"
+                            BorderBrush="{DynamicResource NetLoom.Brush.BorderStrong}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            IsHitTestVisible="False">
+                        <TextBlock Text="Ctrl K"
+                                   Style="{StaticResource NetLoom.Style.MutedText}" />
+                    </Border>
+                    <Popup x:Name="ShellGlobalSearchPopup"
+                           Placement="Bottom"
+                           PlacementTarget="{Binding ElementName=ShellGlobalSearchTextBox}"
+                           StaysOpen="False"
+                           AllowsTransparency="True">
+                        <Border Width="520"
+                                MaxHeight="420"
+                                Margin="0,4,0,0"
+                                Padding="12"
+                                Background="{DynamicResource NetLoom.Brush.Surface}"
+                                BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <StackPanel>
+                                <TextBlock x:Name="ShellGlobalSearchStatusText"
+                                           Style="{StaticResource NetLoom.Style.MutedText}" />
+                                <ListBox x:Name="ShellGlobalSearchResultsList"
+                                         Margin="0,8,0,0"
+                                         DisplayMemberPath="Summary"
+                                         SelectionChanged="OnShellGlobalSearchSelectionChanged" />
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </Grid>
+
+                <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
-                            VerticalAlignment="Center">
+                            VerticalAlignment="Center"
+                            Margin="16,0,8,0">
                     <TextBlock x:Name="ShellMonitoringHeaderText"
                                Style="{StaticResource NetLoom.Style.MutedText}"
                                VerticalAlignment="Center" />
-                    <Button x:Name="ShellThemeButton"
+                    <Button x:Name="ShellMonitoringStartButton"
                             Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                            Margin="12,0,0,0"
+                            Click="OnMonitoringStartClick" />
+                    <Button x:Name="ShellMonitoringStopButton"
+                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                            Margin="12,0,0,0"
+                            Visibility="Collapsed"
+                            Click="OnMonitoringStopClick" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="4"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock x:Name="DiscoveryProfileLabelText"
+                               Visibility="Collapsed" />
+                    <ComboBox x:Name="DiscoveryProfileComboBox"
+                              Width="{DynamicResource NetLoom.Shell.ProfileWidth}"
+                              DisplayMemberPath="DisplayName" />
+                    <Button x:Name="ShellProfileAddButton"
+                            Visibility="Collapsed"
+                            Click="OnShellProfileManageClick" />
+                    <TextBlock x:Name="ShellProfileStatusText"
+                               Visibility="Collapsed" />
+                    <Button x:Name="ShellThemeButton"
+                            Visibility="Collapsed"
                             Click="OnShellThemeClick" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
+        <Grid x:Name="ShellWorkspaceGrid"
+              Grid.Row="1"
+              SizeChanged="OnShellWorkspaceSizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="{DynamicResource NetLoom.Shell.RailWidth}" />
                 <ColumnDefinition Width="{DynamicResource NetLoom.Shell.SidebarWidth}" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="{DynamicResource NetLoom.Shell.InspectorWidth}" />
+                <ColumnDefinition x:Name="ShellInspectorColumn"
+                                  Width="{DynamicResource NetLoom.Shell.InspectorWidth}"
+                                  MinWidth="0"
+                                  MaxWidth="520" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
@@ -93,73 +165,58 @@
                     BorderThickness="{DynamicResource NetLoom.Thickness.BorderRight}">
                 <DockPanel LastChildFill="False">
                     <StackPanel DockPanel.Dock="Top"
-                                Margin="{DynamicResource NetLoom.Thickness.ShellRailInset}">
+                                Margin="6">
                         <Button x:Name="ShellMapButton"
+                                Width="44"
+                                Height="44"
+                                Margin="0,0,0,4"
+                                HorizontalAlignment="Center"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
                                 Click="OnShellMapClick">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
                                 <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
                                       Data="{StaticResource NetLoom.Icon.ShellMap}" />
                                 <TextBlock x:Name="ShellMapButtonText"
-                                           Grid.Column="1"
-                                           Style="{StaticResource NetLoom.Style.NavigationText}"
-                                           VerticalAlignment="Center" />
+                                           Visibility="Collapsed" />
                             </Grid>
                         </Button>
                         <Button x:Name="ShellEquipmentButton"
+                                Width="44"
+                                Height="44"
+                                Margin="0,0,0,4"
+                                HorizontalAlignment="Center"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
                                 Click="OnShellEquipmentClick">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
                                 <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
                                       Data="{StaticResource NetLoom.Icon.ShellEquipment}" />
                                 <TextBlock x:Name="ShellEquipmentButtonText"
-                                           Grid.Column="1"
-                                           Style="{StaticResource NetLoom.Style.NavigationText}"
-                                           VerticalAlignment="Center" />
+                                           Visibility="Collapsed" />
                             </Grid>
                         </Button>
                         <Button x:Name="ShellMonitoringButton"
-                                Style="{StaticResource NetLoom.Style.NavigationButton}"
+                                Visibility="Collapsed"
                                 Click="OnShellMonitoringClick">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
-                                      Data="{StaticResource NetLoom.Icon.ShellMonitoring}" />
-                                <TextBlock x:Name="ShellMonitoringButtonText"
-                                           Grid.Column="1"
-                                           Style="{StaticResource NetLoom.Style.NavigationText}"
-                                           VerticalAlignment="Center" />
-                            </Grid>
+                            <TextBlock x:Name="ShellMonitoringButtonText"
+                                       Visibility="Collapsed" />
                         </Button>
                         <Button x:Name="ShellAlertsButton"
+                                Width="44"
+                                Height="44"
+                                Margin="0,0,0,4"
+                                HorizontalAlignment="Center"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
                                 Click="OnShellAlertsClick">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
                                 <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
                                       Data="{StaticResource NetLoom.Icon.ShellAlerts}" />
                                 <TextBlock x:Name="ShellAlertsButtonText"
-                                           Grid.Column="1"
-                                           Style="{StaticResource NetLoom.Style.NavigationText}"
-                                           VerticalAlignment="Center" />
+                                           Visibility="Collapsed" />
                                 <Border x:Name="ShellAlertsBadge"
-                                        Grid.Column="2"
                                         Style="{StaticResource NetLoom.Style.NavigationBadge}"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,-4,-5,0"
                                         Visibility="Collapsed">
                                     <TextBlock x:Name="ShellAlertsBadgeText"
                                                Foreground="{DynamicResource NetLoom.Brush.Window}"
@@ -177,132 +234,75 @@
                             </Grid>
                         </Button>
                         <Button x:Name="ShellDiscoveryButton"
+                                Width="44"
+                                Height="44"
+                                Margin="0,0,0,4"
+                                HorizontalAlignment="Center"
                                 Style="{StaticResource NetLoom.Style.NavigationButton}"
                                 Click="OnShellDiscoveryClick">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
                                 <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
                                       Data="{StaticResource NetLoom.Icon.ShellDiscovery}" />
                                 <TextBlock x:Name="ShellDiscoveryButtonText"
-                                           Grid.Column="1"
-                                           Style="{StaticResource NetLoom.Style.NavigationText}"
-                                           VerticalAlignment="Center" />
+                                           Visibility="Collapsed" />
                             </Grid>
                         </Button>
                         <Button x:Name="ShellSearchButton"
-                                Style="{StaticResource NetLoom.Style.NavigationButton}"
+                                Visibility="Collapsed"
                                 Click="OnShellSearchClick">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
-                                      Data="{StaticResource NetLoom.Icon.ShellSearch}" />
-                                <TextBlock x:Name="ShellSearchButtonText"
-                                           Grid.Column="1"
-                                           Style="{StaticResource NetLoom.Style.NavigationText}"
-                                           VerticalAlignment="Center" />
-                            </Grid>
-                        </Button>
-                        <Button x:Name="ShellSettingsButton"
-                                Style="{StaticResource NetLoom.Style.NavigationButton}"
-                                Click="OnShellSettingsClick">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
-                                      Data="{StaticResource NetLoom.Icon.ShellSettings}" />
-                                <TextBlock x:Name="ShellSettingsButtonText"
-                                           Grid.Column="1"
-                                           Style="{StaticResource NetLoom.Style.NavigationText}"
-                                           VerticalAlignment="Center" />
-                            </Grid>
+                            <TextBlock x:Name="ShellSearchButtonText"
+                                       Visibility="Collapsed" />
                         </Button>
                     </StackPanel>
 
-                    <Border DockPanel.Dock="Bottom"
-                            Padding="{DynamicResource NetLoom.Thickness.ShellRailSummary}"
-                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderTop}"
-                            BorderBrush="{DynamicResource NetLoom.Brush.ShellRailBorder}">
-                        <StackPanel>
-                            <TextBlock x:Name="ShellMonitoringRailTitleText"
-                                       Foreground="{DynamicResource NetLoom.Brush.ShellRailTextMuted}" />
-                            <TextBlock x:Name="ShellMonitoringRailText"
-                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                       TextWrapping="Wrap" />
-                            <TextBlock x:Name="ShellAlertCountText"
-                                       Style="{StaticResource NetLoom.Style.StatusEmphasis}"
-                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+                    <StackPanel DockPanel.Dock="Bottom"
+                                Margin="6">
+                        <Button x:Name="ShellSettingsButton"
+                                Width="44"
+                                Height="44"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource NetLoom.Style.NavigationButton}"
+                                Click="OnShellSettingsClick">
+                            <Grid>
+                                <Path Style="{StaticResource NetLoom.Style.NavigationIcon}"
+                                      Data="{StaticResource NetLoom.Icon.ShellSettings}" />
+                                <TextBlock x:Name="ShellSettingsButtonText"
+                                           Visibility="Collapsed" />
+                            </Grid>
+                        </Button>
+                        <StackPanel Visibility="Collapsed">
+                            <TextBlock x:Name="ShellMonitoringRailTitleText" />
+                            <TextBlock x:Name="ShellMonitoringRailText" />
+                            <TextBlock x:Name="ShellAlertCountText" />
                         </StackPanel>
-                    </Border>
+                    </StackPanel>
                 </DockPanel>
             </Border>
 
-            <Border Grid.Column="1"
+            <Border x:Name="ShellSectionSurface"
+                    Grid.Column="1"
+                    Grid.ColumnSpan="2"
+                    Panel.ZIndex="10"
+                    Visibility="Collapsed"
                     Style="{StaticResource NetLoom.Style.Panel}"
-                    BorderThickness="{DynamicResource NetLoom.Thickness.BorderRight}">
+                    BorderThickness="0">
                 <Grid>
                     <ScrollViewer x:Name="ShellMapSidebarPanel"
                                   VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="{DynamicResource NetLoom.Thickness.PanelPadding}">
                             <TextBlock x:Name="MapInteractionModeLabelText"
-                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
-                            <Grid Margin="{DynamicResource NetLoom.Thickness.GapXsTop}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Button x:Name="MapViewModeButton"
-                                        Grid.Column="0"
-                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                        HorizontalAlignment="Stretch"
-                                        Click="OnMapViewModeClick" />
-                                <Button x:Name="MapEditModeButton"
-                                        Grid.Column="2"
-                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                        HorizontalAlignment="Stretch"
-                                        Click="OnMapEditModeClick" />
-                            </Grid>
+                                       Visibility="Collapsed" />
                             <Border x:Name="MapEditModeIndicator"
-                                    Style="{StaticResource NetLoom.Style.OperatorCard}"
-                                    Margin="{DynamicResource NetLoom.Thickness.CardGapTop}"
-                                    Background="{DynamicResource NetLoom.Brush.WarningSoft}"
-                                    BorderBrush="{DynamicResource NetLoom.Brush.Warning}"
                                     Visibility="Collapsed">
                                 <StackPanel>
-                                    <TextBlock x:Name="MapEditModeIndicatorText"
-                                               Style="{StaticResource NetLoom.Style.StatusEmphasis}"
-                                               Foreground="{DynamicResource NetLoom.Brush.Warning}" />
-                                    <TextBlock x:Name="MapEditModeHintText"
-                                               Style="{StaticResource NetLoom.Style.MutedText}"
-                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
-                                               TextWrapping="Wrap" />
+                                    <TextBlock x:Name="MapEditModeIndicatorText" />
+                                    <TextBlock x:Name="MapEditModeHintText" />
                                 </StackPanel>
                             </Border>
                             <TextBlock x:Name="ShellMapActionsTitleText"
-                                       Style="{StaticResource NetLoom.Style.SectionTitle}"
-                                       Margin="{DynamicResource NetLoom.Thickness.CardGapTop}" />
-                            <Button x:Name="ManualTopologyButton"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                                    HorizontalAlignment="Stretch"
-                                    Click="OnManualTopologyClick" />
-                            <Button x:Name="LocationsButton"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                                    HorizontalAlignment="Stretch"
-                                    Click="OnLocationsClick" />
+                                       Visibility="Collapsed" />
                             <Button x:Name="MapHelpButton"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                                    HorizontalAlignment="Stretch"
+                                    Visibility="Collapsed"
                                     Click="OnMapHelpClick" />
                         </StackPanel>
                     </ScrollViewer>
@@ -979,106 +979,160 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Column="2"
+            <Grid x:Name="ShellMapSurface"
+                  Grid.Column="2"
                   Background="{DynamicResource NetLoom.Brush.Canvas}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0"
-                        Style="{StaticResource NetLoom.Style.Panel}"
-                        Padding="{DynamicResource NetLoom.Thickness.ShellMapHeaderPadding}"
+                <Border x:Name="Adr083MapToolbar"
+                        Grid.Row="0"
+                        Padding="12,10"
+                        Background="{DynamicResource NetLoom.Brush.Surface}"
+                        BorderBrush="{DynamicResource NetLoom.Brush.Border}"
                         BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}">
-                    <StackPanel>
-                        <TextBlock x:Name="ShellBreadcrumbText"
-                                   Style="{StaticResource NetLoom.Style.MutedText}"
-                                   TextTrimming="CharacterEllipsis" />
-                        <TextBlock x:Name="MapTitleText"
-                                   Style="{StaticResource NetLoom.Style.SectionTitle}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
-                        <TextBlock x:Name="MapStatusText"
-                                   Style="{StaticResource NetLoom.Style.MutedText}"
-                                   Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
-                    </StackPanel>
-                </Border>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                <Grid Grid.Row="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                        <WrapPanel VerticalAlignment="Center">
+                            <Button x:Name="MapViewModeButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="0,0,8,0"
+                                    Click="OnMapViewModeClick" />
+                            <Button x:Name="MapEditModeButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="0,0,8,0"
+                                    Click="OnMapEditModeClick" />
+                            <Button x:Name="MapOperationalFocusButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="0,0,8,0"
+                                    Click="OnAdr083MapOperationalFocusClick" />
+                            <Button x:Name="MapExportButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="0,0,8,0"
+                                    Click="OnSiteExportClick" />
+                            <Button x:Name="MapRefreshDataButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="0,0,8,0"
+                                    Click="OnMonitoringRefreshTopologyClick" />
+                            <Button x:Name="ManualTopologyButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="0,0,8,0"
+                                    Visibility="Collapsed"
+                                    Click="OnManualTopologyClick" />
+                            <Button x:Name="LocationsButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    Margin="0,0,8,0"
+                                    Visibility="Collapsed"
+                                    Click="OnLocationsClick" />
+                            <Border x:Name="Adr083MapEditModeIndicator"
+                                    Padding="10,5"
+                                    Background="{DynamicResource NetLoom.Brush.WarningSoft}"
+                                    BorderBrush="{DynamicResource NetLoom.Brush.Warning}"
+                                    BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                                    CornerRadius="{DynamicResource NetLoom.Radius.Panel}"
+                                    Visibility="Collapsed">
+                                <TextBlock x:Name="Adr083MapEditModeIndicatorText"
+                                           Foreground="{DynamicResource NetLoom.Brush.Warning}" />
+                            </Border>
+                        </WrapPanel>
 
-                    <Border Grid.Row="0"
-                            HorizontalAlignment="Right"
-                            Margin="{DynamicResource NetLoom.Thickness.ShellMapControlsMargin}"
-                            Padding="{DynamicResource NetLoom.Thickness.ShellMapControlsPadding}"
-                            Background="{DynamicResource NetLoom.Brush.Surface}"
-                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
-                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
-                            CornerRadius="{DynamicResource NetLoom.Radius.Panel}">
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
                             <CheckBox x:Name="MapLockSelectedCheckBox"
-                                      VerticalAlignment="Center"
+                                      Visibility="Collapsed"
                                       IsEnabled="False"
                                       Checked="OnMapLockSelectedChanged"
                                       Unchecked="OnMapLockSelectedChanged" />
                             <TextBlock x:Name="MapZoomLabelText"
-                                       Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                       VerticalAlignment="Center"
-                                       Style="{StaticResource NetLoom.Style.MutedText}" />
+                                       Visibility="Collapsed" />
                             <Button x:Name="MapZoomOutButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                    Margin="8,0,0,0"
                                     Click="OnMapZoomOutClick" />
                             <TextBlock x:Name="MapZoomValueText"
-                                       Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                       Margin="10,0,2,0"
                                        VerticalAlignment="Center"
                                        FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
                             <Button x:Name="MapZoomInButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                    Margin="8,0,0,0"
                                     Click="OnMapZoomInClick" />
                             <Button x:Name="MapFitAllButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                    Margin="8,0,0,0"
                                     Click="OnMapFitAllClick" />
                         </StackPanel>
-                    </Border>
 
-                    <ScrollViewer x:Name="MapScrollViewer"
-                                  Grid.Row="1"
-                                  Style="{StaticResource NetLoom.Style.MapScrollViewer}"
-                                  Background="{DynamicResource NetLoom.Brush.Canvas}"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Auto"
-                                  PreviewMouseWheel="OnMapPreviewMouseWheel"
-                                  PreviewMouseDown="OnMapPreviewMouseDown"
-                                  PreviewMouseMove="OnMapPreviewMouseMove"
-                                  PreviewMouseUp="OnMapPreviewMouseUp">
-                        <ScrollViewer.Resources>
-                            <Style TargetType="{x:Type ScrollBar}"
-                                   BasedOn="{StaticResource NetLoom.Style.MapScrollBar}" />
-                        </ScrollViewer.Resources>
-                        <Canvas x:Name="MapCanvas"
-                                Background="{DynamicResource NetLoom.Brush.Canvas}"
-                                MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
-                                Width="{DynamicResource NetLoom.Map.CanvasWidth}"
-                                Height="{DynamicResource NetLoom.Map.CanvasHeight}" />
-                    </ScrollViewer>
+                        <StackPanel Visibility="Collapsed">
+                            <TextBlock x:Name="MapTitleText" />
+                            <TextBlock x:Name="MapStatusText" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-                </Grid>
+                <ScrollViewer x:Name="MapScrollViewer"
+                              Grid.Row="1"
+                              Style="{StaticResource NetLoom.Style.MapScrollViewer}"
+                              Background="{DynamicResource NetLoom.Brush.Canvas}"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              PreviewMouseWheel="OnMapPreviewMouseWheel"
+                              PreviewMouseDown="OnMapPreviewMouseDown"
+                              PreviewMouseMove="OnMapPreviewMouseMove"
+                              PreviewMouseUp="OnMapPreviewMouseUp">
+                    <ScrollViewer.Resources>
+                        <Style TargetType="{x:Type ScrollBar}"
+                               BasedOn="{StaticResource NetLoom.Style.MapScrollBar}" />
+                    </ScrollViewer.Resources>
+                    <Canvas x:Name="MapCanvas"
+                            Background="{DynamicResource NetLoom.Brush.Canvas}"
+                            MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
+                            Width="{DynamicResource NetLoom.Map.CanvasWidth}"
+                            Height="{DynamicResource NetLoom.Map.CanvasHeight}" />
+                </ScrollViewer>
             </Grid>
 
             <ContentControl x:Name="ShellWorkspaceEditorHost"
-                            Grid.Column="2"
+                            Grid.Column="1"
                             Grid.ColumnSpan="2"
-                            Panel.ZIndex="20"
+                            Panel.ZIndex="30"
                             Visibility="Collapsed"
                             HorizontalContentAlignment="Stretch"
                             VerticalContentAlignment="Stretch"
                             Background="{DynamicResource NetLoom.Brush.Window}" />
-            <Border Grid.Column="3"
+            <Button x:Name="ShellInspectorRevealButton"
+                    Grid.Column="2"
+                    Width="32"
+                    Height="28"
+                    Margin="0,12,12,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                    Visibility="Collapsed"
+                    Panel.ZIndex="40"
+                    Click="OnShellInspectorRevealClick">›</Button>
+            <GridSplitter x:Name="ShellInspectorSplitter"
+                          Grid.Column="3"
+                          Width="5"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Stretch"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndCurrent"
+                          Background="Transparent"
+                          Panel.ZIndex="25"
+                          DragCompleted="OnShellInspectorSplitterDragCompleted" />
+            <Border x:Name="ShellInspectorPanel"
+                    Grid.Column="3"
+                    MinWidth="320"
+                    MaxWidth="520"
+                    Panel.ZIndex="20"
                     Style="{StaticResource NetLoom.Style.Panel}"
                     Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
                     BorderThickness="{DynamicResource NetLoom.Thickness.BorderLeft}">
@@ -1090,8 +1144,16 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0">
+                        <Button x:Name="ShellInspectorCollapseButton"
+                                Width="32"
+                                Height="28"
+                                HorizontalAlignment="Right"
+                                Margin="0,0,0,6"
+                                Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                Click="OnShellInspectorCollapseClick">‹</Button>
                         <TextBlock x:Name="DiagnosticTitleText"
-                                   Style="{StaticResource NetLoom.Style.SectionTitle}" />
+                                   Style="{StaticResource NetLoom.Style.SectionTitle}"
+                                   Visibility="Collapsed" />
                         <TextBlock x:Name="InspectorEntityTypeText"
                                    Style="{StaticResource NetLoom.Style.MutedText}"
                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />

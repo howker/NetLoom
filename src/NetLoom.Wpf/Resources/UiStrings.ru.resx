@@ -1259,7 +1259,7 @@
     <value>STP</value>
   </data>
   <data name="MonitoringStartAction" xml:space="preserve">
-    <value>Запустить мониторинг</value>
+    <value>Запустить</value>
   </data>
   <data name="MonitoringStopAction" xml:space="preserve">
     <value>Остановить</value>
@@ -2003,5 +2003,26 @@
   </data>
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
+  </data>
+  <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
+    <value>Глобальный поиск</value>
+  </data>
+  <data name="ShellMapFocusAction" xml:space="preserve">
+    <value>Показать: всё</value>
+  </data>
+  <data name="ShellMapExportAction" xml:space="preserve">
+    <value>Экспорт</value>
+  </data>
+  <data name="ShellMapRefreshAction" xml:space="preserve">
+    <value>Обновить данные</value>
+  </data>
+  <data name="ShellMapEditModeCompact" xml:space="preserve">
+    <value>Режим правки · Esc — выйти</value>
+  </data>
+  <data name="ShellInspectorCollapseAction" xml:space="preserve">
+    <value>Свернуть свойства</value>
+  </data>
+  <data name="ShellInspectorRevealAction" xml:space="preserve">
+    <value>Показать свойства</value>
   </data>
 </root>

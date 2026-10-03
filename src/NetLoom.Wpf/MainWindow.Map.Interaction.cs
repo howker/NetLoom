@@ -225,6 +225,15 @@ public partial class MainWindow
         object sender,
         KeyEventArgs e)
     {
+        if (e.Key == Key.K &&
+            (Keyboard.Modifiers & ModifierKeys.Control) ==
+                ModifierKeys.Control)
+        {
+            FocusAdr083GlobalSearch();
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape)
         {
             e.Handled = true;
