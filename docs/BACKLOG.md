@@ -264,16 +264,19 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Closure baseline: `f475fec`; Sprint 45 closed with 543 tests and 21 migrations.
 
 - [ ] Sprint 46 — new shell and shared operator context.
-  - Operator outcome: the operator understands where they are, which SNMP profile is active and what the system is doing without the old top toolbar, separate editor windows or hidden cross-panel dependencies.
-  - Current checkpoint: shell structure, embedded editors, unified inspector, resilient map viewport, warning-count badge, shared status remediation, persistent active SNMP profile, unified SNMP profile management (`Добавить` / `Изменить` / `Удалить`), alert focus that preserves the `Предупреждения` section, incident-context map focus, motion-aware halo selection, themed map scrollbars and the accepted visual fixes through `db6f8cf34ad94e3276a1e3717dd5e7684a6ca503`. This commit is explicitly **remediation progress 2 (not accepted)**; Sprint 46 remains open.
-  - Inspector before closure: keep device availability/state from §10 separate from alert severity; show an explicit severity marker plus a concise problem reason from active alerts; show the Location hierarchy path; render device ports as a table rather than a prose block; expose `Основания` only from identity claims already present in stored observations; support a Location inspector summary; keep operator text free of internal implementation jargon; preserve expanded UI state across data refresh. Sprint 46 does not add collection, storage or migrations merely to populate missing Inspector fields.
-  - Event strip before closure: use each event's own occurrence time rather than refresh time; show all new state-transition events without duplicating the same event; reserve severity color for the severity marker rather than the whole text; provide `Все события ›` navigation into `Предупреждения` while preserving the selected entity/context.
-  - Remaining shell work before closure: explicit View/Edit modes from ADR-080, one status grammar from ADR-081, a compact zoom cluster (`−`, percent, `+`, `Show all`), distinct operator names for data refresh versus layout rebuild, and Location breadcrumbs. The Map-side Location tree and layer filters are explicitly deferred to Sprint 49 together with focus-neighborhood and semantic zoom; they are not an open Sprint 46 decision.
-  - Automatic map opening keeps a readable useful context and does not shrink below approximately 75%; explicit `Show all` is a separate operator command and fits all visible topology even when that requires a lower zoom.
-  - Pass 2 boundary: Inspector/status grammar only — availability and problem are separate rows; freshness is computed from current time; `Сведения`, `Описание` and `Размещение` are explicit; physical-link endpoint ports are property rows; the device `Порты` tab is a §57 table using already stored interface data; critical events are ordered before warning events. No new collection, schema or migration is allowed for this pass.
-  - Immediately after Pass 2 visual acceptance, run a short real Windows Server 2012 R2 smoke through slow RDP: launch, both themes, custom-frame dialogs, selection halo and pulse. This early smoke is a risk gate, not the final field acceptance.
-  - Pass 3 boundary: shell/map/panels only — breadcrumbs, zoom-cluster artifact, viewport edge dots, shared focus style, one `Размещение` vocabulary, plain active-SNMP readout, discovery empty-address validation, status/severity in `Оборудование`, monitoring panel mock alignment, warnings layout and Location editor cleanup.
-  - Final acceptance: functional and visual criteria in `docs/sprint46-ui-ux-redesign.md`, with side-by-side screenshots against all four Sprint 46 design references (`obolochka`, `paneli`, `badge`, `inspector`). Re-run the field database / 55-device workflow, real Windows Server 2012 R2 deployment/RDP checks, restart viewport, PNG/CSV export and MAC/IP search. New non-blocking findings discovered during this acceptance go to `FRICTION_LOG.md` and later work instead of expanding Sprint 46.
+  - Operator outcome: the operator understands where they are, which SNMP profile is active and what the system is doing while the current working view receives the main window width.
+  - ADR-083 is the canonical shell structure. The old permanent 198 px rail + 380 px section sidebar + 342 px inspector layout is superseded. The old `obolochka` / `paneli` mockups are no longer acceptance references.
+  - Step 1 — documentation and checkpoint: commit the current `src`/`tests` state; add ADR-083, replace `UI_DESIGN_RULES.md`, add all 16 `netloom-v2-*` Light/Dark mockups, and update the Sprint plan, backlog, AI rules and friction log in a separate documentation commit.
+  - Step 2 — shell framework only, using mockups 1, 2, 4, 5, 6, 7 and 8: 56 px icon rail (`Карта`, `Оборудование`, `Предупреждения`, `Обнаружение`, settings at the bottom); top row with breadcrumbs, Ctrl+K global search, monitoring state + Start/Stop and active SNMP-profile chip; one central view at a time; inspector 320–520 px with collapse behavior; editors as central views; neutral normal state; operator term `Размещения`.
+  - Inspector defaults from ADR-083: open on `Карта` and `Оборудование`, collapsed on `Предупреждения` and `Обнаружение`, hidden on `Настройки`. On narrow windows the map stays at least 60% of window width; if a column inspector violates this, it becomes an overlay drawer.
+  - ADR-082 remains binding: Sprint 46 uses already persisted data only and does not add collection, storage semantics or SQLite migrations merely to populate the UI. `Модель или описание` uses already stored `sysDescr` when available; missing evidence stays missing.
+  - Normal state is neutral. Red/yellow are deviations only. Device/link state and active-alert severity remain separate. The unresolved blocker where a card shows yellow/problem semantics while Inspector and the warnings count provide no explainable active cause remains a Sprint 46 closure blocker.
+  - Monitoring progress `N / total`, current target and cycle counters remain Sprint 47. Sprint 46 shows only the always-visible monitoring state and Start/Stop surface required by ADR-083.
+  - Step 2 acceptance is owner review, but only from a committed state: provide commit hash, exact changed-file list, `сделано — файлы` / `не сделано` for every requested item, and screenshots of all seven implemented views in Light/Dark at 1920 and 1366. If Segoe UI does not fit where Carlito did in the mockups, apply ADR-083 §5 narrow-window behavior rather than clipping.
+  - Step 3 starts only after shell-framework acceptance: rebuild the §9 state gallery on the new framework; after gallery acceptance establish the shared §§4–§8 style/accessibility system; only then fix remaining Pass 3 defects that were not eliminated by ADR-083.
+  - ADR-083 eliminates five old-shell Pass 3 items as local-remediation tasks: the monitoring section panel, the narrow equipment list, map bleed around editor overlays, export hidden in settings, and a separate Search section.
+  - Remaining product/UI obligations still include the event occurrence-time contract, explainable state/severity grammar, stale wording, evidence-only description/identity presentation, restart viewport, PNG/CSV export, MAC/IP lookup and the real Windows Server 2012 R2 delivery fix before the next field visit.
+  - Final acceptance follows `docs/sprint46-ui-ux-redesign.md`, ADR-083 and `docs/UI_DESIGN_RULES.md` §10 on the field database / ~55-device workflow and real Windows Server 2012 R2.
 
 - [ ] Sprint 47 — visible monitoring progress.
   - Operator outcome: one glance shows whether polling is running, the current device, completed/remaining work, errors and whether the cycle finished.
@@ -281,13 +284,13 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Show `N / total`, progress bar, current device and address, successful/error/remaining counts, and cycle start/end time.
   - Cycle events go to the bottom event strip.
   - Context actions: `Poll selected` when stopped; `Start cycle now` when the scheduler is running.
-  - The rail summary and monitoring card follow the Sprint 46 panel design.
+  - The Sprint 46 top-row monitoring state is extended with cycle progress; Sprint 47 does not reintroduce a permanent monitoring section/panel.
   - If separate ICMP / SNMP / TCP availability cannot be presented from data already persisted by Sprint 46, the required new collection/projection belongs here with visible polling results; Sprint 46 must not add a new collection path just to fill Inspector fields.
 
 - [ ] Sprint 48 — discovery with explainable results and an inbox.
   - Operator outcome: after discovery the operator can tell what is new, changed, ambiguous, missing, excluded or failed, why it happened, and can resolve results in bulk; a profile can be validated before use.
   - Inbox groups: New, Changed, Ambiguous, Missing, Excluded, Error.
-  - Required bulk actions: accept selected, ignore, mark unmanaged, assign Location.
+  - Required bulk actions: accept selected, ignore, mark unmanaged, assign placement (`Размещение` in operator-facing UI).
   - Every row shows a concrete reason and retry context; `Missing` means a known device was not found in this run, and `Excluded` names the matching profile rule.
   - New devices appear on the map immediately as unconfirmed until the operator resolves them in the inbox.
   - Profile validation reports availability and MIB coverage for sysName/sysObjectID, IF-MIB, LLDP-MIB, BRIDGE-MIB and Q-BRIDGE-MIB where applicable.
@@ -297,13 +300,13 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Operator outcome: on 55+ devices the map remains readable without mass overlap, and the operator can see incomplete evidence and manual-versus-observed conflicts.
   - Primary principle: show less instead of building a universal layout engine.
   - Focus neighborhood around the selected node, with explicit `Expand up`, `Expand down` and `Whole site` actions.
-  - Add the Map-side Location tree and layer filters deferred from Sprint 46; they share the same large-site navigation model as focus-neighborhood and semantic zoom.
-  - Four semantic zoom levels: distant, medium, close and detailed; device/link/Location detail changes by level.
+  - Any large-site placement/layer navigation must fit the ADR-083 shell and must not reintroduce a permanent section sidebar; its exact Sprint 49 surface is decided together with focus-neighborhood and semantic zoom.
+  - Four semantic zoom levels: distant, medium, close and detailed; device/link/placement detail changes by level.
   - Show a topology-quality line with reasons for incomplete data.
   - Present ADR-079 manual-versus-observed conflicts with explicit actions.
   - Preserve manual positions; automatic anti-overlap applies only to new nodes.
-  - Keep parallel links separate; highlight both ports when a link is focused; support shortest-path inspection and Location fit interactions described in the Sprint plan.
-  - Carry optional Sprint 46 convenience items here if they were not completed: Ctrl+K search, collapsible inspector, selection history.
+  - Keep parallel links separate; highlight both ports when a link is focused; support shortest-path inspection and placement-fit interactions described in the Sprint plan.
+  - Selection history remains an optional convenience candidate here if it is not completed earlier. Ctrl+K search and the collapsible inspector are mandatory Sprint 46 shell behavior under ADR-083.
 
 - [ ] Sprint 50 — network redundancy: rings and single points of failure.
   - Operator outcome: selecting a ring or a predicted single point of failure immediately explains the protection state and the topology impact in operator terms.
@@ -315,7 +318,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Ring history remains after the topology change journal, not in Sprint 50.
 
 - [ ] Sprint 51 — polling policies and profile templates.
-  - Operator outcome: polling behavior can be assigned per device or Location, including an explicit no-active-polling policy.
+  - Operator outcome: polling behavior can be assigned per device or placement, including an explicit no-active-polling policy.
   - Templates are policy only and never ship credentials: secure SNMPv3, industrial v2c, one-time audit, scheduled topology, no active polling.
   - Policies may vary polling cadence for health versus LLDP/CDP/FDB/ARP/STP work.
   - Passwords and community strings are never embedded in templates.
@@ -349,6 +352,7 @@ After Sprint 47, keep `Что отвалилось сейчас` as a candidate 
 11. **Deterministic demo stand with seeded failures**, also used as regression evidence.
 12. **Raw observation retention review**; the current 24-hour window may be insufficient for some repair/replay workflows.
 13. **Operator notes on devices and physical links** — requires an explicit persistent storage/write-path decision and is therefore outside Sprint 46.
+14. **Правка прямо на карте** — кандидат только после Sprint 51 по ADR-083 и макету `netloom-v2-3-pravka-na-karte`: видимые `+ Устройство`, `+ Связь`, `+ Размещение`; те же действия через правый щелчок и `Shift+F10`; связь протягивается мышью или выбирается портом в инспекторе; ручные элементы — пунктиром и со значком руки; свойства — в инспекторе. Место в будущей последовательности определяется отдельно по ADR-078.
 
 #### Market-entry direction — ADR-078, not commitments
 
