@@ -270,10 +270,10 @@ namespace NetLoom.Tests.Unit
                             "Themes: Light and Dark.",
                             "Covered shell surfaces: empty state; device names (one word, IP-only, long/unbroken, Й/Ё); selected device inspector; stale Critical link; Location inspector; Equipment; Monitoring error; Alerts/event strip; edit-mode controls; Manual topology editor; Location editor; SNMP profile settings.",
                             "Covered component states from production resource dictionaries: normal, hover, keyboard focus, disabled, selected/checked/expanded for Button, secondary Button, ToggleButton, ListBoxItem, TabItem, ComboBox, CheckBox, Expander and TextBox; count badge 0/1/many/99+; status/severity labels.",
-                            "Production interaction exercised for separate-HWND surfaces: ComboBox popup and map ContextMenu open through their real controls in both themes. Raster proof for separate HWNDs is not claimed by this test.",
+                            "Separate-HWND raster proof: production ComboBox popup, ContextMenu (normal and disabled item), submenu and ToolTip are captured from their own native popup HWND in both themes; the test rejects owner-window substitution and mostly transparent captures.",
                             "Text axes represented: empty, one word, ordinary, multiline, unbroken 60+ characters, Й/Ё. Width axis: minimum and normal shell widths side by side. Themes: Light and Dark.",
                             "Automatic findings are informational only in Step 2. The gallery test fails only when a required production state cannot be reached or a PNG cannot be produced; visual defects are reviewed from the archive.",
-                            "Axes intentionally not represented by PNG because they are behavior rather than a static component state: Windows 150–200% DPI behavior, full keyboard-only journey, UI Automation tree semantics, system animation setting and copy/select behavior. These belong to Step 3 or later acceptance, not this Step 2 gallery."
+                            "Discarded static axes where they do not apply: ToolTip has no disabled/selected state; submenu has no separate focus state beyond MenuItem focus; count scenarios apply only to count-bearing controls. Behavior-only axes not represented by PNG: Windows 150–200% DPI behavior, full keyboard-only journey, UI Automation tree semantics, system animation setting and copy/select behavior. These belong to Step 3 or later acceptance, not this Step 2 gallery."
                         });
                 });
         }
@@ -507,6 +507,7 @@ namespace NetLoom.Tests.Unit
             {
                 var comboBitmaps = new List<BitmapSource>();
                 var menuBitmaps = new List<BitmapSource>();
+                var disabledMenuBitmaps = new List<BitmapSource>();
                 var submenuBitmaps = new List<BitmapSource>();
                 var tooltipBitmaps = new List<BitmapSource>();
 
@@ -530,6 +531,15 @@ namespace NetLoom.Tests.Unit
                             window,
                             width,
                             GalleryHeight);
+
+                        var ownerHandle =
+                            new WindowInteropHelper(window)
+                                .Handle;
+
+                        Assert.AreNotEqual(
+                            IntPtr.Zero,
+                            ownerHandle,
+                            "Gallery owner window handle is unavailable.");
 
                         if (dark)
                         {
@@ -572,7 +582,8 @@ namespace NetLoom.Tests.Unit
                         comboBitmaps.Add(
                             CapturePresentationHwnd(
                                 popup.Child,
-                                "ComboBox popup"));
+                                "ComboBox popup",
+                                ownerHandle));
 
                         combo.IsDropDownOpen = false;
                         PumpDispatcher();
@@ -622,7 +633,20 @@ namespace NetLoom.Tests.Unit
                         menuBitmaps.Add(
                             CapturePresentationHwnd(
                                 firstMenuItem,
-                                "map ContextMenu"));
+                                "map ContextMenu",
+                                ownerHandle));
+
+                        firstMenuItem.IsEnabled = false;
+                        PumpDispatcher();
+
+                        disabledMenuBitmaps.Add(
+                            CapturePresentationHwnd(
+                                firstMenuItem,
+                                "disabled map ContextMenu",
+                                ownerHandle));
+
+                        firstMenuItem.IsEnabled = true;
+                        PumpDispatcher();
 
                         var submenuParent =
                             Enumerable.Range(
@@ -657,7 +681,8 @@ namespace NetLoom.Tests.Unit
                         submenuBitmaps.Add(
                             CapturePresentationHwnd(
                                 firstSubmenuItem,
-                                "map ContextMenu submenu"));
+                                "map ContextMenu submenu",
+                                ownerHandle));
 
                         submenuParent.IsSubmenuOpen = false;
                         menu.IsOpen = false;
@@ -696,7 +721,8 @@ namespace NetLoom.Tests.Unit
                         tooltipBitmaps.Add(
                             CapturePresentationHwnd(
                                 toolTip,
-                                "ToolTip"));
+                                "ToolTip",
+                                ownerHandle));
 
                         toolTip.IsOpen = false;
                         PumpDispatcher();
@@ -723,6 +749,15 @@ namespace NetLoom.Tests.Unit
                     System.IO.Path.Combine(
                         outputDirectory,
                         "10-map-context-menu-" +
+                        (dark ? "dark" : "light") +
+                        ".png"));
+
+                SaveSideBySide(
+                    disabledMenuBitmaps[0],
+                    disabledMenuBitmaps[1],
+                    System.IO.Path.Combine(
+                        outputDirectory,
+                        "10a-map-context-menu-disabled-" +
                         (dark ? "dark" : "light") +
                         ".png"));
 
@@ -1036,7 +1071,7 @@ namespace NetLoom.Tests.Unit
                 window.UpdateLayout();
 
                 return Capture(
-                    window.Content as FrameworkElement);
+                    board.Root);
             }
             finally
             {
@@ -1281,7 +1316,8 @@ namespace NetLoom.Tests.Unit
 
         private static BitmapSource CapturePresentationHwnd(
             Visual visual,
-            string description)
+            string description,
+            IntPtr ownerHandle)
         {
             var source =
                 PresentationSource.FromVisual(visual)
@@ -1291,6 +1327,18 @@ namespace NetLoom.Tests.Unit
                 source,
                 description +
                 " has no HwndSource.");
+
+            Assert.AreNotEqual(
+                IntPtr.Zero,
+                source.Handle,
+                description +
+                " has no native window handle.");
+
+            Assert.AreNotEqual(
+                ownerHandle,
+                source.Handle,
+                description +
+                " resolved to the owner window instead of its popup HWND.");
 
             NativeRect rect;
 
@@ -1313,17 +1361,19 @@ namespace NetLoom.Tests.Unit
                 description +
                 " window has no drawable area.");
 
-            var screenDc =
-                GetDC(IntPtr.Zero);
+            var windowDc =
+                GetWindowDC(
+                    source.Handle);
 
             Assert.AreNotEqual(
                 IntPtr.Zero,
-                screenDc,
+                windowDc,
                 description +
-                " screen DC is unavailable.");
+                " window DC is unavailable.");
 
             var memoryDc =
-                CreateCompatibleDC(screenDc);
+                CreateCompatibleDC(
+                    windowDc);
 
             Assert.AreNotEqual(
                 IntPtr.Zero,
@@ -1333,7 +1383,7 @@ namespace NetLoom.Tests.Unit
 
             var bitmapHandle =
                 CreateCompatibleBitmap(
-                    screenDc,
+                    windowDc,
                     width,
                     height);
 
@@ -1350,19 +1400,32 @@ namespace NetLoom.Tests.Unit
 
             try
             {
-                Assert.IsTrue(
-                    BitBlt(
+                PumpDispatcher();
+                Thread.Sleep(50);
+                PumpDispatcher();
+
+                var printed =
+                    PrintWindow(
+                        source.Handle,
                         memoryDc,
-                        0,
-                        0,
-                        width,
-                        height,
-                        screenDc,
-                        rect.Left,
-                        rect.Top,
-                        SourceCopy | CaptureBlt),
-                    description +
-                    " screen raster capture failed.");
+                        PrintWindowFullContent);
+
+                if (!printed)
+                {
+                    Assert.IsTrue(
+                        BitBlt(
+                            memoryDc,
+                            0,
+                            0,
+                            width,
+                            height,
+                            windowDc,
+                            0,
+                            0,
+                            SourceCopy),
+                        description +
+                        " native raster capture failed.");
+                }
 
                 var bitmap =
                     Imaging.CreateBitmapSourceFromHBitmap(
@@ -1372,6 +1435,10 @@ namespace NetLoom.Tests.Unit
                         BitmapSizeOptions.FromEmptyOptions());
 
                 bitmap.Freeze();
+
+                AssertPopupRaster(
+                    bitmap,
+                    description);
 
                 return bitmap;
             }
@@ -1388,9 +1455,88 @@ namespace NetLoom.Tests.Unit
                     memoryDc);
 
                 ReleaseDC(
-                    IntPtr.Zero,
-                    screenDc);
+                    source.Handle,
+                    windowDc);
             }
+        }
+
+        private static void AssertPopupRaster(
+            BitmapSource bitmap,
+            string description)
+        {
+            var converted =
+                new FormatConvertedBitmap(
+                    bitmap,
+                    PixelFormats.Bgra32,
+                    null,
+                    0);
+
+            converted.Freeze();
+
+            var stride =
+                converted.PixelWidth * 4;
+
+            var pixels =
+                new byte[
+                    stride *
+                    converted.PixelHeight];
+
+            converted.CopyPixels(
+                pixels,
+                stride,
+                0);
+
+            var opaquePixels = 0;
+            var lightPixels = 0;
+            var darkPixels = 0;
+
+            for (var index = 0;
+                 index + 3 < pixels.Length;
+                 index += 4)
+            {
+                var blue = pixels[index];
+                var green = pixels[index + 1];
+                var red = pixels[index + 2];
+                var alpha = pixels[index + 3];
+
+                if (alpha < 32)
+                {
+                    continue;
+                }
+
+                opaquePixels++;
+
+                var luminance =
+                    red +
+                    green +
+                    blue;
+
+                if (luminance >= 600)
+                {
+                    lightPixels++;
+                }
+
+                if (luminance <= 240)
+                {
+                    darkPixels++;
+                }
+            }
+
+            Assert.IsTrue(
+                opaquePixels >
+                    Math.Max(
+                        16,
+                        converted.PixelWidth *
+                        converted.PixelHeight /
+                        20),
+                description +
+                " raster is mostly transparent.");
+
+            Assert.IsTrue(
+                lightPixels > 0 ||
+                darkPixels > 0,
+                description +
+                " raster contains no visible contrast.");
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -1408,6 +1554,9 @@ namespace NetLoom.Tests.Unit
         private const int CaptureBlt =
             0x40000000;
 
+        private const uint PrintWindowFullContent =
+            0x00000002;
+
         [DllImport("user32.dll")]
         private static extern bool GetWindowRect(
             IntPtr hWnd,
@@ -1416,6 +1565,16 @@ namespace NetLoom.Tests.Unit
         [DllImport("user32.dll")]
         private static extern IntPtr GetDC(
             IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetWindowDC(
+            IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool PrintWindow(
+            IntPtr hWnd,
+            IntPtr hdcBlt,
+            uint flags);
 
         [DllImport("user32.dll")]
         private static extern int ReleaseDC(
