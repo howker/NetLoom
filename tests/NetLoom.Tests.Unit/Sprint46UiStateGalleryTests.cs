@@ -270,7 +270,7 @@ namespace NetLoom.Tests.Unit
                             "Themes: Light and Dark.",
                             "Covered shell surfaces: empty state; device names (one word, IP-only, long/unbroken, Й/Ё); selected device inspector; stale Critical link; Location inspector; Equipment; Monitoring error; Alerts/event strip; edit-mode controls; Manual topology editor; Location editor; SNMP profile settings.",
                             "Covered component states from production resource dictionaries: normal, hover, keyboard focus, disabled, selected/checked/expanded for Button, secondary Button, ToggleButton, ListBoxItem, TabItem, ComboBox, CheckBox, Expander and TextBox; count badge 0/1/many/99+; status/severity labels.",
-                            "Separate-HWND raster proof: production ComboBox popup, ContextMenu (normal and disabled item), submenu and ToolTip are located by their own native popup HWND and captured from the composed desktop region in both themes; the test rejects owner-window substitution, mostly transparent captures and visually flat/black captures.",
+                            "Separate-HWND identity + WPF visual-root raster proof: production ComboBox popup, ContextMenu (normal and disabled item), submenu and ToolTip are located through their live production popup HwndSource and rasterized from that source's live WPF RootVisual in both themes; the test rejects owner-window substitution, mostly transparent captures and visually flat/black captures.",
                             "Text axes represented: empty, one word, ordinary, multiline, unbroken 60+ characters, Й/Ё. Width axis: minimum and normal shell widths side by side. Themes: Light and Dark.",
                             "Automatic findings are informational only in Step 2. The gallery test fails only when a required production state cannot be reached or a PNG cannot be produced; visual defects are reviewed from the archive.",
                             "Discarded static axes where they do not apply: ToolTip has no disabled/selected state; submenu has no separate focus state beyond MenuItem focus; count scenarios apply only to count-bearing controls. Behavior-only axes not represented by PNG: Windows 150–200% DPI behavior, full keyboard-only journey, UI Automation tree semantics, system animation setting and copy/select behavior. These belong to Step 3 or later acceptance, not this Step 2 gallery."
@@ -1340,116 +1340,35 @@ namespace NetLoom.Tests.Unit
                 description +
                 " resolved to the owner window instead of its popup HWND.");
 
-            NativeRect rect;
+            var root =
+                source.RootVisual
+                as FrameworkElement;
 
-            Assert.IsTrue(
-                GetWindowRect(
-                    source.Handle,
-                    out rect),
+            Assert.IsNotNull(
+                root,
                 description +
-                " window bounds are unavailable.");
-
-            var width =
-                rect.Right - rect.Left;
-
-            var height =
-                rect.Bottom - rect.Top;
-
-            Assert.IsTrue(
-                width > 2 &&
-                height > 2,
-                description +
-                " window has no drawable area.");
+                " popup HwndSource has no FrameworkElement RootVisual.");
 
             PumpDispatcher();
             Thread.Sleep(75);
             PumpDispatcher();
 
-            var screenDc =
-                GetDC(
-                    IntPtr.Zero);
+            root.UpdateLayout();
 
-            Assert.AreNotEqual(
-                IntPtr.Zero,
-                screenDc,
+            Assert.IsTrue(
+                root.ActualWidth > 2 &&
+                root.ActualHeight > 2,
                 description +
-                " screen DC is unavailable.");
+                " popup RootVisual has no drawable area.");
 
-            var memoryDc =
-                CreateCompatibleDC(
-                    screenDc);
+            var bitmap =
+                Capture(root);
 
-            Assert.AreNotEqual(
-                IntPtr.Zero,
-                memoryDc,
-                description +
-                " memory DC is unavailable.");
+            AssertPopupRaster(
+                bitmap,
+                description);
 
-            var bitmapHandle =
-                CreateCompatibleBitmap(
-                    screenDc,
-                    width,
-                    height);
-
-            Assert.AreNotEqual(
-                IntPtr.Zero,
-                bitmapHandle,
-                description +
-                " native bitmap is unavailable.");
-
-            var oldObject =
-                SelectObject(
-                    memoryDc,
-                    bitmapHandle);
-
-            try
-            {
-                Assert.IsTrue(
-                    BitBlt(
-                        memoryDc,
-                        0,
-                        0,
-                        width,
-                        height,
-                        screenDc,
-                        rect.Left,
-                        rect.Top,
-                        SourceCopy |
-                        CaptureBlt),
-                    description +
-                    " composed desktop raster capture failed.");
-
-                var bitmap =
-                    Imaging.CreateBitmapSourceFromHBitmap(
-                        bitmapHandle,
-                        IntPtr.Zero,
-                        Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-
-                bitmap.Freeze();
-
-                AssertPopupRaster(
-                    bitmap,
-                    description);
-
-                return bitmap;
-            }
-            finally
-            {
-                SelectObject(
-                    memoryDc,
-                    oldObject);
-
-                DeleteObject(
-                    bitmapHandle);
-
-                DeleteDC(
-                    memoryDc);
-
-                ReleaseDC(
-                    IntPtr.Zero,
-                    screenDc);
-            }
+            return bitmap;
         }
 
         private static void AssertPopupRaster(
