@@ -3907,6 +3907,151 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            Adr083CentralViewsUseFullCenterAndAlertsShareMap()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Width =
+                            1366;
+                        window.Height =
+                            820;
+                        window.Show();
+                        PumpDispatcher();
+
+                        var surface =
+                            (Border)window.FindName(
+                                "ShellSectionSurface");
+                        var map =
+                            (Grid)window.FindName(
+                                "ShellMapSurface");
+                        var inspector =
+                            (Border)window.FindName(
+                                "ShellInspectorPanel");
+                        var reveal =
+                            (Button)window.FindName(
+                                "ShellInspectorRevealButton");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellEquipmentButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((FrameworkElement)window.FindName(
+                                "ShellEquipmentSidebarPanel"))
+                            .Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            map.Visibility,
+                            "Equipment is a center view, not a narrow panel beside the map.");
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            inspector.Visibility);
+                        Assert.IsNotNull(
+                            window.FindName(
+                                "EquipmentFilterTextBox"));
+                        Assert.IsNotNull(
+                            window.FindName(
+                                "EquipmentExportCsvButton"));
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellAlertsButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            map.Visibility,
+                            "Alerts keep the map as the right-hand context surface.");
+                        Assert.AreEqual(
+                            HorizontalAlignment.Left,
+                            surface.HorizontalAlignment);
+                        Assert.IsTrue(
+                            surface.Width >= 380.0 &&
+                            surface.Width <= 460.0,
+                            "ADR-083 keeps the warning-card column near 420 px without turning an approximate mock dimension into an exact contract.");
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((FrameworkElement)window.FindName(
+                                "Adr083MapPrimaryToolbar"))
+                            .Visibility,
+                            "The alerts map keeps navigation controls but not the full map action toolbar.");
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            inspector.Visibility);
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            reveal.Visibility);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellDiscoveryButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            HorizontalAlignment.Stretch,
+                            surface.HorizontalAlignment);
+                        Assert.IsTrue(
+                            double.IsNaN(
+                                surface.Width));
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            map.Visibility);
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            ((FrameworkElement)window.FindName(
+                                "DiscoveryResultsEmptyCard"))
+                            .Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            ((FrameworkElement)window.FindName(
+                                "DiscoveryResultsPanel"))
+                            .Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            inspector.Visibility);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellSettingsButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            inspector.Visibility);
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            reveal.Visibility,
+                            "Settings hide the inspector instead of merely collapsing it.");
+
+                        var settingsContent =
+                            (FrameworkElement)window.FindName(
+                                "ShellSettingsContent");
+
+                        Assert.IsTrue(
+                            settingsContent.MaxWidth <=
+                            720.0 + 0.5,
+                            "ADR-083 keeps the settings content column at 720 px or less.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             ThemeToggleChangesSemanticPaletteAndPersistsSelection()
         {
             RunOnSta(

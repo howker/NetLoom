@@ -559,6 +559,15 @@ public partial class MainWindow
                     alert.Severity ==
                     TopologyAlertSeverity.Warning);
 
+        AlertCriticalCountText.Text =
+            UiText.Format(
+                "AlertCriticalCountChip",
+                criticalCount);
+        AlertWarningCountText.Text =
+            UiText.Format(
+                "AlertWarningCountChip",
+                warningCount);
+
         if (rows.Length == 0)
         {
             AlertStatusText.Text =
@@ -593,6 +602,8 @@ public partial class MainWindow
             rows.Length,
             alertBrushKey);
 
+        UpdateShellEquipmentPresentation(
+            _lastMapSnapshot);
     }
 
     private void ConfigureShellAlertBadge(

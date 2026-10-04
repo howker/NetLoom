@@ -1623,6 +1623,72 @@
   <data name="ShellEquipmentSummary" xml:space="preserve">
     <value>Устройств: {0}</value>
   </data>
+  <data name="EquipmentFilterPlaceholder" xml:space="preserve">
+    <value>Фильтр: имя, IP, модель…</value>
+  </data>
+  <data name="EquipmentFilterAll" xml:space="preserve">
+    <value>Все · {0}</value>
+  </data>
+  <data name="EquipmentFilterProblems" xml:space="preserve">
+    <value>С проблемами · {0}</value>
+  </data>
+  <data name="EquipmentFilterNoData" xml:space="preserve">
+    <value>Нет данных · {0}</value>
+  </data>
+  <data name="EquipmentFilterManual" xml:space="preserve">
+    <value>Ручные · {0}</value>
+  </data>
+  <data name="EquipmentExportCsvAction" xml:space="preserve">
+    <value>Экспорт CSV</value>
+  </data>
+  <data name="EquipmentColumnName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="EquipmentColumnAddress" xml:space="preserve">
+    <value>Адрес</value>
+  </data>
+  <data name="EquipmentColumnCategory" xml:space="preserve">
+    <value>Категория</value>
+  </data>
+  <data name="EquipmentColumnDescription" xml:space="preserve">
+    <value>Модель / описание</value>
+  </data>
+  <data name="EquipmentColumnLocation" xml:space="preserve">
+    <value>Размещение</value>
+  </data>
+  <data name="EquipmentColumnConnections" xml:space="preserve">
+    <value>Связей</value>
+  </data>
+  <data name="EquipmentColumnUpdated" xml:space="preserve">
+    <value>Обновлено</value>
+  </data>
+  <data name="EquipmentExportCsvFilter" xml:space="preserve">
+    <value>Файлы CSV (*.csv)|*.csv|Все файлы (*.*)|*.*</value>
+  </data>
+  <data name="EquipmentExportCsvTitle" xml:space="preserve">
+    <value>Экспорт оборудования в CSV</value>
+  </data>
+  <data name="EquipmentExportCsvFailedTitle" xml:space="preserve">
+    <value>Ошибка экспорта оборудования</value>
+  </data>
+  <data name="EquipmentExportCsvFailed" xml:space="preserve">
+    <value>Не удалось экспортировать оборудование в CSV: {0}</value>
+  </data>
+  <data name="AlertCriticalCountChip" xml:space="preserve">
+    <value>Критических · {0}</value>
+  </data>
+  <data name="AlertWarningCountChip" xml:space="preserve">
+    <value>Предупреждений · {0}</value>
+  </data>
+  <data name="DiscoveryProfileSettingsAction" xml:space="preserve">
+    <value>Изменить в настройках</value>
+  </data>
+  <data name="DiscoveryEmptyTitle" xml:space="preserve">
+    <value>Здесь появятся результаты обнаружения</value>
+  </data>
+  <data name="DiscoveryEmptyBody" xml:space="preserve">
+    <value>Новые, изменившиеся и недоступные адреса появятся после запуска по диапазону слева.</value>
+  </data>
   <data name="OperatorTechnicalDetails" xml:space="preserve">
     <value>Технические детали</value>
   </data>

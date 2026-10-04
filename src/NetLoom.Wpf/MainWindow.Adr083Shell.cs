@@ -15,6 +15,9 @@ namespace NetLoom.Wpf
         private const double Adr083InspectorMinWidth = 320.0;
         private const double Adr083InspectorMaxWidth = 520.0;
         private const double Adr083MapMinimumWindowRatio = 0.60;
+        private const double Adr083AlertsListWidth = 420.0;
+        private const double Adr083EquipmentHideDescriptionWidth = 980.0;
+        private const double Adr083EquipmentHideCategoryWidth = 820.0;
 
         private double _adr083InspectorPreferredWidth =
             Adr083InspectorDefaultWidth;
@@ -258,18 +261,48 @@ namespace NetLoom.Wpf
             SizeChangedEventArgs e)
         {
             UpdateAdr083InspectorLayout();
+            UpdateAdr083EquipmentResponsiveColumns();
         }
 
         private void UpdateAdr083SectionPresentation(
             ShellSection section)
         {
+            ShellSectionSurface.ClearValue(
+                FrameworkElement.WidthProperty);
+            ShellSectionSurface.HorizontalAlignment =
+                HorizontalAlignment.Stretch;
+
+            ShellMapSurface.Margin =
+                new Thickness(0.0);
+            Adr083MapPrimaryToolbar.Visibility =
+                Visibility.Visible;
+
             ShellSectionSurface.Visibility =
                 section == ShellSection.Map
                     ? Visibility.Collapsed
                     : Visibility.Visible;
 
             ShellMapSurface.Visibility =
-                Visibility.Visible;
+                section == ShellSection.Map ||
+                section == ShellSection.Alerts
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            if (section == ShellSection.Alerts)
+            {
+                ShellSectionSurface.Width =
+                    Adr083AlertsListWidth;
+                ShellSectionSurface.HorizontalAlignment =
+                    HorizontalAlignment.Left;
+                ShellMapSurface.Margin =
+                    new Thickness(
+                        Adr083AlertsListWidth,
+                        0.0,
+                        0.0,
+                        0.0);
+                Adr083MapPrimaryToolbar.Visibility =
+                    Visibility.Collapsed;
+            }
 
             switch (section)
             {
@@ -308,6 +341,46 @@ namespace NetLoom.Wpf
             }
 
             UpdateAdr083InspectorLayout();
+            UpdateAdr083EquipmentResponsiveColumns();
+        }
+
+        private void UpdateAdr083EquipmentResponsiveColumns()
+        {
+            if (ShellSectionSurface == null)
+            {
+                return;
+            }
+
+            var width =
+                ShellSectionSurface.ActualWidth;
+
+            if (width <= 0.0)
+            {
+                width =
+                    ShellWorkspaceGrid.ColumnDefinitions.Count > 2
+                        ? ShellWorkspaceGrid
+                            .ColumnDefinitions[2]
+                            .ActualWidth
+                        : 0.0;
+            }
+
+            Resources[
+                "NetLoom.Equipment.DescriptionColumnWidth"] =
+                width <
+                    Adr083EquipmentHideDescriptionWidth
+                    ? new GridLength(0.0)
+                    : new GridLength(
+                        1.35,
+                        GridUnitType.Star);
+
+            Resources[
+                "NetLoom.Equipment.CategoryColumnWidth"] =
+                width <
+                    Adr083EquipmentHideCategoryWidth
+                    ? new GridLength(0.0)
+                    : new GridLength(
+                        1.1,
+                        GridUnitType.Star);
         }
 
         private void UpdateAdr083InspectorLayout()

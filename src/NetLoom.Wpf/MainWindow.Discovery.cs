@@ -59,7 +59,11 @@ namespace NetLoom.Wpf
             DiscoverySidebarProfileLabelText.Text =
                 UiText.Get("DiscoveryProfileLabel");
             DiscoveryProfileAddButton.Content =
-                UiText.Get("DiscoveryProfileManageAction");
+                UiText.Get("DiscoveryProfileSettingsAction");
+            DiscoveryEmptyTitleText.Text =
+                UiText.Get("DiscoveryEmptyTitle");
+            DiscoveryEmptyBodyText.Text =
+                UiText.Get("DiscoveryEmptyBody");
             DiscoveryStartButton.Content =
                 UiText.Get("DiscoveryStartAction");
             DiscoveryStopButton.Content =
@@ -1572,6 +1576,9 @@ namespace NetLoom.Wpf
                     TextBlock.ForegroundProperty,
                     "NetLoom.Brush.Critical");
             }
+
+            UpdateDiscoveryResultsSurface(
+                snapshot);
         }
 
         private void RefreshDiscoveryCandidateRows()
@@ -1583,6 +1590,36 @@ namespace NetLoom.Wpf
                             row.Address,
                         StringComparer.OrdinalIgnoreCase)
                     .ToArray();
+
+            UpdateDiscoveryResultsSurface(
+                _discoveryControl.Current);
+        }
+
+        private void UpdateDiscoveryResultsSurface(
+            DiscoveryControlSnapshot snapshot)
+        {
+            if (snapshot == null ||
+                DiscoveryResultsEmptyCard == null ||
+                DiscoveryResultsPanel == null)
+            {
+                return;
+            }
+
+            var isBeforeFirstRun =
+                _discoveryCandidateRows.Count == 0 &&
+                snapshot.State ==
+                    DiscoveryControlState.Idle &&
+                snapshot.TotalAddresses == 0 &&
+                snapshot.ProcessedAddresses == 0;
+
+            DiscoveryResultsEmptyCard.Visibility =
+                isBeforeFirstRun
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            DiscoveryResultsPanel.Visibility =
+                isBeforeFirstRun
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
         }
 
         private void ShowDiscoveryActionFailure(

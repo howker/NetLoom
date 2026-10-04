@@ -1623,6 +1623,72 @@ Poll: {2}</value>
   <data name="ShellEquipmentSummary" xml:space="preserve">
     <value>{0} devices</value>
   </data>
+  <data name="EquipmentFilterPlaceholder" xml:space="preserve">
+    <value>Filter: name, IP, model…</value>
+  </data>
+  <data name="EquipmentFilterAll" xml:space="preserve">
+    <value>All · {0}</value>
+  </data>
+  <data name="EquipmentFilterProblems" xml:space="preserve">
+    <value>With problems · {0}</value>
+  </data>
+  <data name="EquipmentFilterNoData" xml:space="preserve">
+    <value>No data · {0}</value>
+  </data>
+  <data name="EquipmentFilterManual" xml:space="preserve">
+    <value>Manual · {0}</value>
+  </data>
+  <data name="EquipmentExportCsvAction" xml:space="preserve">
+    <value>Export CSV</value>
+  </data>
+  <data name="EquipmentColumnName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="EquipmentColumnAddress" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="EquipmentColumnCategory" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="EquipmentColumnDescription" xml:space="preserve">
+    <value>Model / description</value>
+  </data>
+  <data name="EquipmentColumnLocation" xml:space="preserve">
+    <value>Placement</value>
+  </data>
+  <data name="EquipmentColumnConnections" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="EquipmentColumnUpdated" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="EquipmentExportCsvFilter" xml:space="preserve">
+    <value>CSV files (*.csv)|*.csv|All files (*.*)|*.*</value>
+  </data>
+  <data name="EquipmentExportCsvTitle" xml:space="preserve">
+    <value>Export equipment CSV</value>
+  </data>
+  <data name="EquipmentExportCsvFailedTitle" xml:space="preserve">
+    <value>Equipment export failed</value>
+  </data>
+  <data name="EquipmentExportCsvFailed" xml:space="preserve">
+    <value>Could not export equipment CSV: {0}</value>
+  </data>
+  <data name="AlertCriticalCountChip" xml:space="preserve">
+    <value>Critical · {0}</value>
+  </data>
+  <data name="AlertWarningCountChip" xml:space="preserve">
+    <value>Warnings · {0}</value>
+  </data>
+  <data name="DiscoveryProfileSettingsAction" xml:space="preserve">
+    <value>Change in settings</value>
+  </data>
+  <data name="DiscoveryEmptyTitle" xml:space="preserve">
+    <value>Discovery results will appear here</value>
+  </data>
+  <data name="DiscoveryEmptyBody" xml:space="preserve">
+    <value>New, changed, and unavailable addresses will appear after a scan is started from the range on the left.</value>
+  </data>
   <data name="OperatorTechnicalDetails" xml:space="preserve">
     <value>Technical details</value>
   </data>

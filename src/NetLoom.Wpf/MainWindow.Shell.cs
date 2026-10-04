@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
+using Microsoft.Win32;
 using System.Windows.Controls;
 using System.Windows.Media;
 using NetLoom.Application.MonitoringControl;
@@ -23,6 +27,12 @@ namespace NetLoom.Wpf
 
         private MapInteractionMode _mapInteractionMode =
             MapInteractionMode.View;
+
+        private ShellEquipmentRow[] _equipmentRows =
+            new ShellEquipmentRow[0];
+
+        private EquipmentFilterMode _equipmentFilterMode =
+            EquipmentFilterMode.All;
 
         private bool IsMapEditMode =>
             _mapInteractionMode ==
@@ -92,12 +102,43 @@ namespace NetLoom.Wpf
                     0);
             EquipmentList.ItemsSource =
                 new ShellEquipmentRow[0];
+            EquipmentFilterTextBox.ToolTip =
+                UiText.Get(
+                    "EquipmentFilterPlaceholder");
+            EquipmentExportCsvButton.Content =
+                UiText.Get(
+                    "EquipmentExportCsvAction");
+            EquipmentNameHeaderText.Text =
+                UiText.Get(
+                    "EquipmentColumnName");
+            EquipmentAddressHeaderText.Text =
+                UiText.Get(
+                    "EquipmentColumnAddress");
+            EquipmentCategoryHeaderText.Text =
+                UiText.Get(
+                    "EquipmentColumnCategory");
+            EquipmentDescriptionHeaderText.Text =
+                UiText.Get(
+                    "EquipmentColumnDescription");
+            EquipmentLocationHeaderText.Text =
+                UiText.Get(
+                    "EquipmentColumnLocation");
+            EquipmentConnectionsHeaderText.Text =
+                UiText.Get(
+                    "EquipmentColumnConnections");
+            EquipmentUpdatedHeaderText.Text =
+                UiText.Get(
+                    "EquipmentColumnUpdated");
+            UpdateEquipmentFilterLabels();
             ShellProfileAddButton.Content =
                 UiText.Get(
                     "DiscoveryProfileManageAction");
             ShellSettingsTitleText.Text =
                 UiText.Get(
                     "ShellSettingsSection");
+            ShellSettingsMapTitleText.Text =
+                UiText.Get(
+                    "ShellMapSection");
             ShellProfileSettingsTitleText.Text =
                 UiText.Get(
                     "DiscoveryProfileSettingsTitle");
@@ -126,6 +167,14 @@ namespace NetLoom.Wpf
             ShellAlertCountText.Text =
                 UiText.Format(
                     "ShellAlertCount",
+                    0);
+            AlertCriticalCountText.Text =
+                UiText.Format(
+                    "AlertCriticalCountChip",
+                    0);
+            AlertWarningCountText.Text =
+                UiText.Format(
+                    "AlertWarningCountChip",
                     0);
 
             ApplyShellState(
@@ -396,7 +445,7 @@ namespace NetLoom.Wpf
                         ? (hasProfiles
                             ? "NetLoom.Brush.Warning"
                             : "NetLoom.Brush.TextSecondary")
-                        : "NetLoom.Brush.Success");
+                        : "NetLoom.Brush.TextPrimary");
 
 
             DiscoveryProfileSummaryText.Text =
@@ -409,14 +458,10 @@ namespace NetLoom.Wpf
                     : UiText.Get("DiscoveryProfileReady");
             DiscoveryProfileSummaryText.SetResourceReference(
                 TextBlock.ForegroundProperty,
-                selected == null
-                    ? "NetLoom.Brush.TextPrimary"
-                    : "NetLoom.Brush.Success");
+                "NetLoom.Brush.TextPrimary");
             DiscoveryProfileCard.SetResourceReference(
                 Border.BorderBrushProperty,
-                selected == null
-                    ? "NetLoom.Brush.Border"
-                    : "NetLoom.Brush.Success");
+                "NetLoom.Brush.Border");
 
             RefreshProfileSettingsList(
                 selected);
@@ -780,16 +825,19 @@ namespace NetLoom.Wpf
         {
             if (snapshot == null)
             {
+                _equipmentRows =
+                    new ShellEquipmentRow[0];
+
                 EquipmentSummaryText.Text =
                     UiText.Format(
                         "ShellEquipmentSummary",
                         0);
-                EquipmentList.ItemsSource =
-                    new ShellEquipmentRow[0];
+
+                ApplyEquipmentFilter();
                 return;
             }
 
-            var rows =
+            _equipmentRows =
                 snapshot.Nodes
                     .OrderBy(
                         node => node.Label,
@@ -799,22 +847,412 @@ namespace NetLoom.Wpf
                         StringComparer.Ordinal)
                     .Select(
                         node =>
-                            new ShellEquipmentRow(
-                                node.DeviceId,
-                                node.Label,
-                                node.ManagementAddress,
-                                node.DeviceId.HasValue &&
-                                _selectedDeviceId.HasValue &&
-                                node.DeviceId.Value ==
-                                    _selectedDeviceId.Value))
+                            BuildShellEquipmentRow(
+                                snapshot,
+                                node))
                     .ToArray();
 
             EquipmentSummaryText.Text =
                 UiText.Format(
                     "ShellEquipmentSummary",
-                    rows.Length);
+                    _equipmentRows.Length);
+
+            UpdateEquipmentFilterLabels();
+            ApplyEquipmentFilter();
+        }
+
+        private ShellEquipmentRow BuildShellEquipmentRow(
+            MapSnapshot snapshot,
+            MapNode node)
+        {
+            var diagnostic =
+                node.DeviceId.HasValue &&
+                _lastDiagnosticSnapshot != null
+                    ? _lastDiagnosticSnapshot.Devices
+                        .FirstOrDefault(
+                            item =>
+                                item.DeviceId ==
+                                node.DeviceId.Value)
+                    : null;
+
+            var alert =
+                node.DeviceId.HasValue
+                    ? InspectorAlertForDevice(
+                        node.DeviceId.Value)
+                    : null;
+
+            var isCriticalProblem =
+                alert != null &&
+                alert.Severity ==
+                    NetLoom.Contracts.Alerts
+                        .TopologyAlertSeverity.Critical;
+
+            var isWarningProblem =
+                alert != null &&
+                alert.Severity ==
+                    NetLoom.Contracts.Alerts
+                        .TopologyAlertSeverity.Warning;
+
+            var location =
+                node.DeviceId.HasValue
+                    ? LocationPathForDevice(
+                        node.DeviceId.Value)
+                    : node.LocationId.HasValue
+                        ? LocationPath(
+                            node.LocationId.Value)
+                        : null;
+
+            if (string.IsNullOrWhiteSpace(
+                    location))
+            {
+                location =
+                    UiText.Get(
+                        "DiagnosticLocationNotAssigned");
+            }
+
+            var connectionCount =
+                snapshot.Links.Count(
+                    link =>
+                        string.Equals(
+                            link.SourceNodeKey,
+                            node.Key,
+                            StringComparison.Ordinal) ||
+                        string.Equals(
+                            link.TargetNodeKey,
+                            node.Key,
+                            StringComparison.Ordinal));
+
+            var hasNoData =
+                diagnostic == null ||
+                !diagnostic.LastSeenUtc.HasValue;
+
+            var isManual =
+                node.Origin ==
+                    MapNodeOrigin.Manual;
+
+            var problemText =
+                alert == null
+                    ? string.Empty
+                    : AlertSeverityText(
+                        alert.Severity) +
+                      " · " +
+                      BuildAlertReasonSummary(
+                          alert);
+
+            var stateGlyph =
+                isCriticalProblem
+                    ? UiText.Get(
+                        "OperatorStatusGlyphCritical")
+                    : isWarningProblem
+                        ? UiText.Get(
+                            "OperatorStatusGlyphWarning")
+                        : hasNoData
+                            ? UiText.Get(
+                                "OperatorStatusGlyphIdle")
+                            : UiText.Get(
+                                "OperatorStatusGlyphActive");
+
+            return new ShellEquipmentRow(
+                node.DeviceId,
+                node.Label,
+                node.ManagementAddress,
+                NodeCategoryIconToolTip(
+                    node.Category),
+                diagnostic == null
+                    ? null
+                    : diagnostic.SecondaryText,
+                location,
+                connectionCount,
+                diagnostic != null &&
+                diagnostic.LastSeenUtc.HasValue
+                    ? RelativeTimeText(
+                        diagnostic.LastSeenUtc)
+                    : UiText.Get(
+                        "DiagnosticNotAvailable"),
+                problemText,
+                stateGlyph,
+                isCriticalProblem,
+                isWarningProblem,
+                hasNoData,
+                isManual,
+                node.DeviceId.HasValue &&
+                _selectedDeviceId.HasValue &&
+                node.DeviceId.Value ==
+                    _selectedDeviceId.Value);
+        }
+
+        private void OnEquipmentFilterTextChanged(
+            object sender,
+            TextChangedEventArgs e)
+        {
+            ApplyEquipmentFilter();
+        }
+
+        private void OnEquipmentFilterModeClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var button =
+                sender as Button;
+
+            var tag =
+                button == null
+                    ? null
+                    : button.Tag as string;
+
+            switch (tag)
+            {
+                case "Problems":
+                    _equipmentFilterMode =
+                        EquipmentFilterMode.Problems;
+                    break;
+
+                case "NoData":
+                    _equipmentFilterMode =
+                        EquipmentFilterMode.NoData;
+                    break;
+
+                case "Manual":
+                    _equipmentFilterMode =
+                        EquipmentFilterMode.Manual;
+                    break;
+
+                default:
+                    _equipmentFilterMode =
+                        EquipmentFilterMode.All;
+                    break;
+            }
+
+            ApplyEquipmentFilter();
+        }
+
+        private void ApplyEquipmentFilter()
+        {
+            if (EquipmentList == null)
+            {
+                return;
+            }
+
+            var query =
+                EquipmentFilterTextBox == null ||
+                EquipmentFilterTextBox.Text == null
+                    ? string.Empty
+                    : EquipmentFilterTextBox.Text
+                        .Trim();
+
+            var filtered =
+                _equipmentRows
+                    .Where(
+                        row =>
+                            EquipmentFilterMatches(
+                                row) &&
+                            (
+                                query.Length == 0 ||
+                                row.Contains(
+                                    query)
+                            ))
+                    .ToArray();
+
             EquipmentList.ItemsSource =
-                rows;
+                filtered;
+
+            UpdateEquipmentFilterLabels();
+
+            SetMapModeSelection(
+                EquipmentFilterAllButton,
+                _equipmentFilterMode ==
+                    EquipmentFilterMode.All);
+            SetMapModeSelection(
+                EquipmentFilterProblemsButton,
+                _equipmentFilterMode ==
+                    EquipmentFilterMode.Problems);
+            SetMapModeSelection(
+                EquipmentFilterNoDataButton,
+                _equipmentFilterMode ==
+                    EquipmentFilterMode.NoData);
+            SetMapModeSelection(
+                EquipmentFilterManualButton,
+                _equipmentFilterMode ==
+                    EquipmentFilterMode.Manual);
+        }
+
+        private bool EquipmentFilterMatches(
+            ShellEquipmentRow row)
+        {
+            switch (_equipmentFilterMode)
+            {
+                case EquipmentFilterMode.Problems:
+                    return row.HasProblem;
+
+                case EquipmentFilterMode.NoData:
+                    return row.HasNoData;
+
+                case EquipmentFilterMode.Manual:
+                    return row.IsManual;
+
+                default:
+                    return true;
+            }
+        }
+
+        private void UpdateEquipmentFilterLabels()
+        {
+            if (EquipmentFilterAllButton == null)
+            {
+                return;
+            }
+
+            EquipmentFilterAllButton.Content =
+                UiText.Format(
+                    "EquipmentFilterAll",
+                    _equipmentRows.Length);
+            EquipmentFilterProblemsButton.Content =
+                UiText.Format(
+                    "EquipmentFilterProblems",
+                    _equipmentRows.Count(
+                        row =>
+                            row.HasProblem));
+            EquipmentFilterNoDataButton.Content =
+                UiText.Format(
+                    "EquipmentFilterNoData",
+                    _equipmentRows.Count(
+                        row =>
+                            row.HasNoData));
+            EquipmentFilterManualButton.Content =
+                UiText.Format(
+                    "EquipmentFilterManual",
+                    _equipmentRows.Count(
+                        row =>
+                            row.IsManual));
+        }
+
+        private void OnEquipmentExportCsvClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var dialog =
+                new SaveFileDialog
+                {
+                    AddExtension = true,
+                    DefaultExt = ".csv",
+                    Filter =
+                        UiText.Get(
+                            "EquipmentExportCsvFilter"),
+                    FileName =
+                        "netloom-equipment-" +
+                        DateTime.Now.ToString(
+                            "yyyyMMdd-HHmmss",
+                            CultureInfo.InvariantCulture) +
+                        ".csv",
+                    OverwritePrompt = true,
+                    Title =
+                        UiText.Get(
+                            "EquipmentExportCsvTitle")
+                };
+
+            if (dialog.ShowDialog(this) !=
+                true)
+            {
+                return;
+            }
+
+            try
+            {
+                var rows =
+                    EquipmentList.Items
+                        .OfType<ShellEquipmentRow>()
+                        .ToArray();
+
+                var builder =
+                    new StringBuilder();
+
+                builder.AppendLine(
+                    string.Join(
+                        ",",
+                        new[]
+                        {
+                            CsvValue(
+                                UiText.Get(
+                                    "EquipmentColumnName")),
+                            CsvValue(
+                                UiText.Get(
+                                    "EquipmentColumnAddress")),
+                            CsvValue(
+                                UiText.Get(
+                                    "EquipmentColumnCategory")),
+                            CsvValue(
+                                UiText.Get(
+                                    "EquipmentColumnDescription")),
+                            CsvValue(
+                                UiText.Get(
+                                    "EquipmentColumnLocation")),
+                            CsvValue(
+                                UiText.Get(
+                                    "EquipmentColumnConnections")),
+                            CsvValue(
+                                UiText.Get(
+                                    "EquipmentColumnUpdated"))
+                        }));
+
+                foreach (var row in rows)
+                {
+                    builder.AppendLine(
+                        string.Join(
+                            ",",
+                            new[]
+                            {
+                                CsvValue(
+                                    row.Name),
+                                CsvValue(
+                                    row.Address),
+                                CsvValue(
+                                    row.Category),
+                                CsvValue(
+                                    row.Description),
+                                CsvValue(
+                                    row.Location),
+                                CsvValue(
+                                    row.Connections),
+                                CsvValue(
+                                    row.Updated)
+                            }));
+                }
+
+                File.WriteAllText(
+                    dialog.FileName,
+                    builder.ToString(),
+                    new UTF8Encoding(
+                        true));
+            }
+            catch (Exception error)
+            {
+                System.Diagnostics.Trace.TraceError(
+                    error.ToString());
+
+                MessageBox.Show(
+                    this,
+                    UiText.Format(
+                        "EquipmentExportCsvFailed",
+                        error.Message),
+                    UiText.Get(
+                        "EquipmentExportCsvFailedTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private static string CsvValue(
+            string value)
+        {
+            var safe =
+                value ?? string.Empty;
+
+            return
+                "\"" +
+                safe.Replace(
+                    "\"",
+                    "\"\"") +
+                "\"";
         }
 
         private void OnShellEquipmentDeviceClick(
@@ -1085,12 +1523,31 @@ namespace NetLoom.Wpf
             Settings = 6
         }
 
+        private enum EquipmentFilterMode
+        {
+            All = 0,
+            Problems = 1,
+            NoData = 2,
+            Manual = 3
+        }
+
         private sealed class ShellEquipmentRow
         {
             public ShellEquipmentRow(
                 Guid? deviceId,
                 string name,
                 string address,
+                string category,
+                string description,
+                string location,
+                int connections,
+                string updated,
+                string problemText,
+                string stateGlyph,
+                bool isCriticalProblem,
+                bool isWarningProblem,
+                bool hasNoData,
+                bool isManual,
                 bool isSelected)
             {
                 DeviceId =
@@ -1102,8 +1559,46 @@ namespace NetLoom.Wpf
                         : name;
                 Address =
                     string.IsNullOrWhiteSpace(address)
-                        ? string.Empty
+                        ? UiText.Get(
+                            "DiagnosticNotAvailable")
                         : address;
+                Category =
+                    string.IsNullOrWhiteSpace(category)
+                        ? UiText.Get(
+                            "CategoryUnknown")
+                        : category;
+                Description =
+                    string.IsNullOrWhiteSpace(description)
+                        ? UiText.Get(
+                            "DiagnosticNotAvailable")
+                        : description;
+                Location =
+                    string.IsNullOrWhiteSpace(location)
+                        ? UiText.Get(
+                            "DiagnosticLocationNotAssigned")
+                        : location;
+                Connections =
+                    connections.ToString(
+                        CultureInfo.CurrentCulture);
+                Updated =
+                    string.IsNullOrWhiteSpace(updated)
+                        ? UiText.Get(
+                            "DiagnosticNotAvailable")
+                        : updated;
+                ProblemText =
+                    problemText ??
+                    string.Empty;
+                StateGlyph =
+                    stateGlyph ??
+                    string.Empty;
+                IsCriticalProblem =
+                    isCriticalProblem;
+                IsWarningProblem =
+                    isWarningProblem;
+                HasNoData =
+                    hasNoData;
+                IsManual =
+                    isManual;
                 IsSelected =
                     isSelected;
             }
@@ -1114,10 +1609,79 @@ namespace NetLoom.Wpf
 
             public string Address { get; }
 
+            public string Category { get; }
+
+            public string Description { get; }
+
+            public string Location { get; }
+
+            public string Connections { get; }
+
+            public string Updated { get; }
+
+            public string ProblemText { get; }
+
+            public string StateGlyph { get; }
+
+            public bool IsCriticalProblem { get; }
+
+            public bool IsWarningProblem { get; }
+
+            public bool HasProblem =>
+                IsCriticalProblem ||
+                IsWarningProblem;
+
+            public Visibility ProblemVisibility =>
+                HasProblem
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            public bool HasNoData { get; }
+
+            public bool IsManual { get; }
+
             public bool IsSelected { get; }
 
             public bool IsSelectable =>
                 DeviceId.HasValue;
+
+            public bool Contains(
+                string query)
+            {
+                return
+                    Contains(
+                        Name,
+                        query) ||
+                    Contains(
+                        Address,
+                        query) ||
+                    Contains(
+                        Category,
+                        query) ||
+                    Contains(
+                        Description,
+                        query) ||
+                    Contains(
+                        Location,
+                        query) ||
+                    Contains(
+                        ProblemText,
+                        query);
+            }
+
+            private static bool Contains(
+                string value,
+                string query)
+            {
+                return
+                    !string.IsNullOrWhiteSpace(
+                        value) &&
+                    value.IndexOf(
+                        query,
+                        StringComparison
+                            .CurrentCultureIgnoreCase) >=
+                    0;
+            }
         }
     }
 }

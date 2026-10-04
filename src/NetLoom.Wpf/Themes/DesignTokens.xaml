@@ -97,6 +97,11 @@
     <GridLength x:Key="NetLoom.Shell.SidebarWidth">0</GridLength>
     <GridLength x:Key="NetLoom.Shell.InspectorWidth">360</GridLength>
     <sys:Double x:Key="NetLoom.Shell.ProfileWidth">140</sys:Double>
+    <sys:Double x:Key="NetLoom.Alerts.ListWidth">420</sys:Double>
+    <GridLength x:Key="NetLoom.Discovery.FormWidth">440</GridLength>
+    <sys:Double x:Key="NetLoom.Settings.ContentMaxWidth">720</sys:Double>
+    <GridLength x:Key="NetLoom.Equipment.CategoryColumnWidth">1.1*</GridLength>
+    <GridLength x:Key="NetLoom.Equipment.DescriptionColumnWidth">1.35*</GridLength>
 
     <Thickness x:Key="NetLoom.Thickness.CardGapTop">0,16,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardSectionGap">0,16,0,0</Thickness>
