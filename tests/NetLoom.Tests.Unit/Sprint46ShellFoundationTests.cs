@@ -213,7 +213,7 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
-            MissingGlobalProfileBlocksMonitoringBeforeControlInvocation()
+            SingleAvailableProfileWithoutSavedSelectionAutoSelectsPersistsAndRestores()
         {
             RunOnSta(
                 () =>
@@ -221,11 +221,117 @@ namespace NetLoom.Tests.Unit
                     var profile =
                         new AccessProfile(
                             Guid.Parse(
-                                "46464646-4444-5555-6666-464646464646"),
-                            "Available profile",
+                                "46464646-3333-4444-5555-464646464646"),
+                            "Only profile",
                             true,
                             SnmpVersion.V2C,
                             null);
+
+                    var stateStore =
+                        new MemoryShellStateStore(
+                            UiShellState.Default);
+
+                    var firstWindow =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader(),
+                            new RecordingMonitoringControl(),
+                            new EmptyDiscoveryControl(),
+                            new[]
+                            {
+                                profile
+                            },
+                            new NoopCandidateMaterializer(),
+                            stateStore);
+
+                    try
+                    {
+                        firstWindow.Show();
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            0,
+                            ((ComboBox)firstWindow.FindName(
+                                "DiscoveryProfileComboBox"))
+                            .SelectedIndex,
+                            "A single available profile must be selected automatically when no valid saved selection exists.");
+
+                        Assert.IsNotNull(
+                            stateStore.LastSaved,
+                            "Automatic profile resolution must use the same persisted UiShellState path as a manual selection.");
+
+                        Assert.AreEqual(
+                            profile.Id,
+                            stateStore.LastSaved
+                                .AccessProfileId);
+                    }
+                    finally
+                    {
+                        firstWindow.Close();
+                    }
+
+                    var secondWindow =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader(),
+                            new RecordingMonitoringControl(),
+                            new EmptyDiscoveryControl(),
+                            new[]
+                            {
+                                profile
+                            },
+                            new NoopCandidateMaterializer(),
+                            stateStore);
+
+                    try
+                    {
+                        secondWindow.Show();
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            0,
+                            ((ComboBox)secondWindow.FindName(
+                                "DiscoveryProfileComboBox"))
+                            .SelectedIndex,
+                            "The automatically selected profile must restore from UiShellState after restart.");
+                    }
+                    finally
+                    {
+                        secondWindow.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            UnresolvedGlobalProfileShowsPlaceholderAndDisablesMonitoringAndDiscoveryStarts()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var firstProfile =
+                        new AccessProfile(
+                            Guid.Parse(
+                                "46464646-4444-5555-6666-464646464646"),
+                            "Available profile A",
+                            true,
+                            SnmpVersion.V2C,
+                            null);
+
+                    var secondProfile =
+                        new AccessProfile(
+                            Guid.Parse(
+                                "46464646-4444-5555-7777-464646464646"),
+                            "Available profile B",
+                            true,
+                            SnmpVersion.V1,
+                            null);
+
+                    var staleProfileId =
+                        Guid.Parse(
+                            "46464646-4444-5555-8888-464646464646");
 
                     var deviceId =
                         Guid.Parse(
@@ -233,6 +339,12 @@ namespace NetLoom.Tests.Unit
 
                     var monitoring =
                         new RecordingMonitoringControl();
+
+                    var stateStore =
+                        new MemoryShellStateStore(
+                            new UiShellState(
+                                staleProfileId,
+                                UiShellTheme.Light));
 
                     var window =
                         new MainWindow(
@@ -246,11 +358,11 @@ namespace NetLoom.Tests.Unit
                             new EmptyDiscoveryControl(),
                             new[]
                             {
-                                profile
+                                firstProfile,
+                                secondProfile
                             },
                             new NoopCandidateMaterializer(),
-                            new MemoryShellStateStore(
-                                UiShellState.Default));
+                            stateStore);
 
                     try
                     {
@@ -263,37 +375,123 @@ namespace NetLoom.Tests.Unit
                                     deviceId) !=
                                 null);
 
+                        var profiles =
+                            (ComboBox)window.FindName(
+                                "DiscoveryProfileComboBox");
+
                         Assert.AreEqual(
                             -1,
-                            ((ComboBox)window.FindName(
-                                "DiscoveryProfileComboBox"))
-                            .SelectedIndex);
+                            profiles.SelectedIndex,
+                            "A missing saved profile must stay unresolved when two or more valid profiles remain.");
+
+                        profiles.ApplyTemplate();
+                        PumpDispatcher();
+
+                        var placeholder =
+                            (TextBlock)profiles.Template.FindName(
+                                "PlaceholderPresenter",
+                                profiles);
+
+                        Assert.IsNotNull(
+                            placeholder,
+                            "The shared ComboBox style must provide the unresolved-state placeholder.");
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            placeholder.Visibility);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "ShellProfilePlaceholder"),
+                            placeholder.Text);
+
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.TextSecondary"),
+                            placeholder.Foreground);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "ShellNoProfile"),
+                            ((TextBlock)window.FindName(
+                                "ShellProfileStatusText"))
+                            .Text);
 
                         SelectDevice(
                             window,
                             deviceId);
 
-                        Click(
-                            (Button)window.FindName(
-                                "MonitoringStartButton"));
-
                         PumpDispatcher();
+
+                        var monitoringStart =
+                            (Button)window.FindName(
+                                "MonitoringStartButton");
+                        var shellMonitoringStart =
+                            (Button)window.FindName(
+                                "ShellMonitoringStartButton");
+
+                        Assert.IsFalse(
+                            monitoringStart.IsEnabled,
+                            "Monitoring start must be disabled until the unresolved profile is selected.");
+
+                        Assert.IsFalse(
+                            shellMonitoringStart.IsEnabled);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "MonitoringValidationProfileRequired"),
+                            monitoringStart.ToolTip);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "MonitoringValidationProfileRequired"),
+                            shellMonitoringStart.ToolTip);
 
                         Assert.IsNull(
                             monitoring.StartPolicy,
-                            "Monitoring control must not be invoked without the global SNMP profile.");
+                            "Disabled monitoring start must not invoke the monitoring control.");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellDiscoveryButton"));
+
+                        PumpDispatcher();
+
+                        var discoveryStart =
+                            (Button)window.FindName(
+                                "DiscoveryStartButton");
 
                         Assert.IsFalse(
-                            string.IsNullOrWhiteSpace(
-                                ((TextBlock)window.FindName(
-                                    "MonitoringMessageText"))
-                                .Text));
+                            discoveryStart.IsEnabled,
+                            "Discovery start must be disabled until the unresolved profile is selected.");
 
-                        Assert.IsFalse(
-                            string.IsNullOrWhiteSpace(
-                                ((TextBlock)window.FindName(
-                                    "ShellProfileStatusText"))
-                                .Text));
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiscoveryValidationProfileRequired"),
+                            discoveryStart.ToolTip);
+
+                        profiles.SelectedIndex =
+                            0;
+
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            firstProfile.Id,
+                            stateStore.LastSaved
+                                .AccessProfileId,
+                            "Explicit profile selection must persist through UiShellState.");
+
+                        Assert.IsTrue(
+                            monitoringStart.IsEnabled,
+                            "Selecting a profile must immediately re-enable monitoring start when the remaining monitoring inputs are valid.");
+
+                        Assert.IsTrue(
+                            discoveryStart.IsEnabled,
+                            "Selecting a profile must immediately re-enable discovery start.");
+
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            placeholder.Visibility);
                     }
                     finally
                     {

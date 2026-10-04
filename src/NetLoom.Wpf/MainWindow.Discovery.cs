@@ -157,7 +157,7 @@ namespace NetLoom.Wpf
             DiscoveryProfileComboBox.ItemsSource =
                 options;
 
-            DiscoveryProfileComboBox.SelectedIndex =
+            var selectedIndex =
                 selectedProfileId.HasValue
                     ? Array.FindIndex(
                         options,
@@ -165,6 +165,16 @@ namespace NetLoom.Wpf
                             option.Profile.Id ==
                             selectedProfileId.Value)
                     : -1;
+
+            if (selectedIndex < 0 &&
+                options.Length == 1)
+            {
+                selectedIndex =
+                    0;
+            }
+
+            DiscoveryProfileComboBox.SelectedIndex =
+                selectedIndex;
 
             DiscoveryMessageText.Text =
                 string.Empty;
@@ -367,9 +377,7 @@ namespace NetLoom.Wpf
 
             var nextActiveProfileId =
                 deletingActive
-                    ? (fallback == null
-                        ? (Guid?)null
-                        : fallback.Id)
+                    ? (Guid?)null
                     : activeProfileId;
 
             _profileSettingsSelectedId =
@@ -785,8 +793,7 @@ namespace NetLoom.Wpf
                             savedProfile.Id;
 
                         RefreshDiscoveryProfileOptions(
-                            activeProfileId ??
-                            savedProfile.Id);
+                            activeProfileId);
 
                         UpdateDiscoveryPresentation(
                             _discoveryControl.Current);
@@ -1581,13 +1588,26 @@ namespace NetLoom.Wpf
                 canStart;
             DiscoverySubnetMaskTextBox.IsEnabled =
                 canStart;
+            var hasSelectedProfile =
+                DiscoveryProfileComboBox.SelectedItem
+                    is DiscoveryProfileOption;
+
             DiscoveryProfileComboBox.IsEnabled =
-                canStart;
+                canStart &&
+                _discoveryProfiles.Count > 0;
             DiscoveryProfileAddButton.IsEnabled =
                 canStart;
             DiscoveryStartButton.IsEnabled =
                 canStart &&
-                _discoveryProfiles.Count > 0;
+                hasSelectedProfile;
+            DiscoveryStartButton.ToolTip =
+                canStart &&
+                !hasSelectedProfile
+                    ? UiText.Get(
+                        _discoveryProfiles.Count > 0
+                            ? "DiscoveryValidationProfileRequired"
+                            : "DiscoveryNoProfiles")
+                    : null;
             DiscoveryStopButton.IsEnabled =
                 snapshot.State ==
                     DiscoveryControlState.Starting ||

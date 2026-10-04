@@ -107,6 +107,19 @@
                                         <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
                                     </ContentPresenter.RenderTransform>
                                 </ContentPresenter>
+                                <TextBlock x:Name="PlaceholderPresenter"
+                                           Text="{TemplateBinding Tag}"
+                                           Foreground="{DynamicResource NetLoom.Brush.TextSecondary}"
+                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                           VerticalAlignment="Center"
+                                           Margin="{TemplateBinding Padding}"
+                                           TextTrimming="CharacterEllipsis"
+                                           IsHitTestVisible="False"
+                                           Visibility="Collapsed">
+                                    <TextBlock.RenderTransform>
+                                        <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
                                 <Path HorizontalAlignment="Right"
                                       VerticalAlignment="Center"
                                       Margin="{DynamicResource NetLoom.Thickness.ComboBoxArrowMargin}"
@@ -150,6 +163,12 @@
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="SelectedIndex"
+                                 Value="-1">
+                            <Setter TargetName="PlaceholderPresenter"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </Trigger>
                         <Trigger Property="IsMouseOver"
                                  Value="True">
                             <Setter Property="BorderBrush"
@@ -168,6 +187,9 @@
                                     Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
                             <Setter Property="BorderBrush"
                                     Value="{DynamicResource NetLoom.Brush.Border}" />
+                            <Setter TargetName="PlaceholderPresenter"
+                                    Property="Foreground"
+                                    Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

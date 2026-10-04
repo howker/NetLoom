@@ -1552,6 +1552,9 @@ Drag the header to move this placement together with its child placements and as
   <data name="ShellNoProfile" xml:space="preserve">
     <value>Not selected</value>
   </data>
+  <data name="ShellProfilePlaceholder" xml:space="preserve">
+    <value>Select profile</value>
+  </data>
   <data name="ShellMonitoringHeader" xml:space="preserve">
     <value>Monitoring: {0}</value>
   </data>

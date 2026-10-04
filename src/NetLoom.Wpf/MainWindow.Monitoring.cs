@@ -573,6 +573,10 @@ namespace NetLoom.Wpf
             var hasSelectedDevice =
                 _monitoringInputDeviceId.HasValue;
 
+            var hasSelectedProfile =
+                DiscoveryProfileComboBox.SelectedItem
+                    is DiscoveryProfileOption;
+
             MonitoringTargetAddressTextBox.IsEnabled =
                 canEdit &&
                 hasSelectedDevice;
@@ -610,9 +614,22 @@ namespace NetLoom.Wpf
 
             MonitoringStartButton.IsEnabled =
                 canEdit &&
+                hasSelectedProfile &&
                 (multiTargetControl != null
                     ? CurrentMonitoringTargetSetCandidateCount() > 0
                     : hasSelectedDevice);
+
+            var profileRequiredHint =
+                canEdit &&
+                !hasSelectedProfile
+                    ? UiText.Get(
+                        "MonitoringValidationProfileRequired")
+                    : null;
+
+            MonitoringStartButton.ToolTip =
+                profileRequiredHint;
+            ShellMonitoringStartButton.ToolTip =
+                profileRequiredHint;
 
             MonitoringStopButton.IsEnabled =
                 snapshot.State ==

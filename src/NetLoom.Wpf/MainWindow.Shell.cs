@@ -134,6 +134,9 @@ namespace NetLoom.Wpf
             ShellProfileAddButton.Content =
                 UiText.Get(
                     "DiscoveryProfileManageAction");
+            DiscoveryProfileComboBox.Tag =
+                UiText.Get(
+                    "ShellProfilePlaceholder");
             ShellSettingsTitleText.Text =
                 UiText.Get(
                     "ShellSettingsSection");
@@ -383,28 +386,62 @@ namespace NetLoom.Wpf
             ApplyShellTheme(
                 effectiveState.Theme);
 
-            DiscoveryProfileOption selected =
-                null;
+            bool autoSelected;
 
-            if (effectiveState.AccessProfileId
-                .HasValue)
-            {
-                selected =
-                    DiscoveryProfileComboBox
-                        .Items
-                        .OfType<DiscoveryProfileOption>()
-                        .FirstOrDefault(
-                            option =>
-                                option.Profile.Id ==
-                                effectiveState
-                                    .AccessProfileId
-                                    .Value);
-            }
+            var selected =
+                ResolveShellProfileOption(
+                    effectiveState.AccessProfileId,
+                    out autoSelected);
 
             DiscoveryProfileComboBox.SelectedItem =
                 selected;
 
             UpdateShellProfilePresentation();
+
+            if (autoSelected)
+            {
+                SaveShellState();
+            }
+
+            UpdateDiscoveryPresentation(
+                _discoveryControl.Current);
+
+            UpdateMonitoringControlAvailability(
+                _monitoringControl.Current);
+        }
+
+        private DiscoveryProfileOption
+            ResolveShellProfileOption(
+                Guid? profileId,
+                out bool autoSelected)
+        {
+            autoSelected =
+                false;
+
+            var options =
+                DiscoveryProfileComboBox.Items
+                    .OfType<DiscoveryProfileOption>()
+                    .ToArray();
+
+            var selected =
+                profileId.HasValue
+                    ? options.FirstOrDefault(
+                        option =>
+                            option.Profile.Id ==
+                            profileId.Value)
+                    : null;
+
+            if (selected == null &&
+                options.Length == 1)
+            {
+                selected =
+                    options[0];
+
+                autoSelected =
+                    true;
+            }
+
+            return selected;
         }
 
         private void SaveShellState()
@@ -446,6 +483,9 @@ namespace NetLoom.Wpf
                 selected);
 
             SaveShellState();
+
+            UpdateDiscoveryPresentation(
+                _discoveryControl.Current);
 
             UpdateMonitoringControlAvailability(
                 _monitoringControl.Current);
@@ -524,11 +564,17 @@ namespace NetLoom.Wpf
 
             DiscoveryProfileSummaryText.Text =
                 selected == null
-                    ? UiText.Get("ShellProfilesEmpty")
+                    ? UiText.Get(
+                        hasProfiles
+                            ? "ShellNoProfile"
+                            : "ShellProfilesEmpty")
                     : selected.DisplayName;
             DiscoveryProfileHintText.Text =
                 selected == null
-                    ? UiText.Get("DiscoveryProfileHintMissing")
+                    ? UiText.Get(
+                        hasProfiles
+                            ? "DiscoveryValidationProfileRequired"
+                            : "DiscoveryProfileHintMissing")
                     : UiText.Get("DiscoveryProfileReady");
             DiscoveryProfileSummaryText.SetResourceReference(
                 TextBlock.ForegroundProperty,

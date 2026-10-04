@@ -1552,6 +1552,9 @@
   <data name="ShellNoProfile" xml:space="preserve">
     <value>Не выбран</value>
   </data>
+  <data name="ShellProfilePlaceholder" xml:space="preserve">
+    <value>Выберите профиль</value>
+  </data>
   <data name="ShellMonitoringHeader" xml:space="preserve">
     <value>Мониторинг: {0}</value>
   </data>
