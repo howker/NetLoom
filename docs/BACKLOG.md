@@ -272,6 +272,14 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - ADR-082 remains binding: Sprint 46 uses already persisted data only and does not add collection, storage semantics or SQLite migrations merely to populate the UI. `Модель или описание` uses already stored `sysDescr` when available; missing evidence stays missing.
   - Normal state is neutral. Red/yellow are deviations only. Device/link state and active-alert severity remain separate. The unresolved blocker where a card shows yellow/problem semantics while Inspector and the warnings count provide no explainable active cause remains a Sprint 46 closure blocker.
   - Monitoring progress `N / total`, current target and cycle counters remain Sprint 47. Sprint 46 shows only the always-visible monitoring state and Start/Stop surface required by ADR-083.
+  - Access-profile resolution must be completed before the §9 gallery/style pass, using the ADR-083 amendment:
+    - [ ] restore a valid persisted `UiShellState.AccessProfileId`;
+    - [ ] preserve the existing `0 profiles` state (`Добавить профиль`; no new empty-state pattern);
+    - [ ] with exactly one profile and no valid saved selection, auto-select it and persist it through the same `UiShellState` path as manual selection, including restart coverage;
+    - [ ] with `2+ profiles` and no valid saved selection, including a deleted saved profile, keep `SelectedIndex = -1`, show `Выберите профиль`, and never silently choose the first profile;
+    - [ ] while the profile is unresolved, monitoring start and discovery start are disabled with an operator explanation; profile-independent views remain usable;
+    - [ ] the placeholder comes from the shared `ComboBox` style and has the same Light/Dark semantics; this targeted style state is a gallery prerequisite, not the full §§4–§8 style pass;
+    - [ ] §9 gallery covers `0 profiles`, `1 profile auto-selected`, and `2+ profiles unresolved` with the disabled profile-dependent start actions visible.
   - Step 2 acceptance is owner review, but only from a committed state: provide commit hash, exact changed-file list, `сделано — файлы` / `не сделано` for every requested item, and screenshots of all seven implemented views in Light/Dark at 1920 and 1366. If Segoe UI does not fit where Carlito did in the mockups, apply ADR-083 §5 narrow-window behavior rather than clipping.
   - Step 3 starts only after shell-framework acceptance: rebuild the §9 state gallery on the new framework; after gallery acceptance establish the shared §§4–§8 style/accessibility system; only then fix remaining Pass 3 defects that were not eliminated by ADR-083.
   - ADR-083 eliminates five old-shell Pass 3 items as local-remediation tasks: the monitoring section panel, the narrow equipment list, map bleed around editor overlays, export hidden in settings, and a separate Search section.

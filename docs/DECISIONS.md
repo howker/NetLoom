@@ -1345,6 +1345,23 @@ Sprint 46 остаётся UI/UX-рекомпозицией существующ
 
 **8. Правка прямо на карте** — отдельная работа после Sprint 51, решение о месте в последовательности — по ADR-078. Цель — макет 3: видимые «+ Устройство», «+ Связь», «+ Размещение»; те же действия в меню по правому щелчку и по Shift+F10; связь протягивается мышью или выбирается портом в инспекторе; ручные элементы — пунктиром и со значком руки; свойства — в инспекторе.
 
+### Access-profile resolution amendment — 2026-10-04
+
+This amendment is accepted by the product owner and is part of ADR-083.
+
+The global access-profile selector has four explicit resolution outcomes:
+
+1. If `UiShellState.AccessProfileId` resolves to an existing profile, restore that profile.
+2. If there are no profiles, keep the existing zero-profile state: hide the selector and show the existing `Добавить профиль` action. Do not introduce a second empty-state pattern.
+3. If exactly one profile exists and there is no valid saved selection, select that sole profile automatically and persist its `AccessProfileId` through the same `UiShellState` path used by a manual selection.
+4. If two or more profiles exist and there is no valid saved selection — including when the previously saved profile was deleted — keep the selection unresolved. Do not silently choose the first profile. The selector shows the placeholder `Выберите профиль`.
+
+An unresolved profile is an explicit operator state, not an error-recovery guess. Any action that starts Engine work requiring credentials, including monitoring start and discovery start, is disabled until a profile is resolved. The disabled action must explain the reason with operator wording equivalent to `Выберите профиль доступа`. Profile-independent navigation and read-only views remain available. A stop/cancel action for work that is already running must not be disabled merely because the profile later becomes unresolved.
+
+The unresolved placeholder is presentation supplied by the shared `ComboBox` style, not a synthetic list item. It must render consistently in Light and Dark themes and preserve `SelectedIndex = -1`. This targeted shared-style state is a prerequisite for the profile gallery and does not start the broader §§4–§8 style-system pass.
+
+The §9 state gallery must include the existing zero-profile state, the single-profile auto-selected state, and the two-or-more-profiles unresolved state with the profile-dependent start actions visibly disabled. This gallery coverage is required before the shared §§4–§8 style pass proceeds.
+
 ### Эталонные макеты
 
 Каждый — в светлой и тёмной теме (`…-dark.png`), в `docs/design`:
