@@ -10,6 +10,7 @@ using System.Windows.Media;
 using NetLoom.Application.MonitoringControl;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.MapInteraction;
 using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf
@@ -151,6 +152,71 @@ namespace NetLoom.Wpf
             ShellProfileDeleteButton.Content =
                 UiText.Get(
                     "DiscoveryProfileDeleteAction");
+            SettingsPollingTitleText.Text =
+                UiText.Get(
+                    "SettingsPollingSectionTitle");
+            SettingsMonitoringIntervalLabelText.Text =
+                UiText.Get(
+                    "MonitoringIntervalLabel");
+            SettingsMonitoringTimeoutLabelText.Text =
+                UiText.Get(
+                    "MonitoringTimeoutLabel");
+            SettingsMonitoringRetriesLabelText.Text =
+                UiText.Get(
+                    "MonitoringRetriesLabel");
+            SettingsMonitoringMaxRepetitionsLabelText.Text =
+                UiText.Get(
+                    "MonitoringMaxRepetitionsLabel");
+            SettingsMonitoringKindsLabelText.Text =
+                UiText.Get(
+                    "MonitoringKindsLabel");
+            SettingsMonitoringKindLldpCheckBox.Content =
+                UiText.Get(
+                    "MonitoringKindLldp");
+            SettingsMonitoringKindCdpCheckBox.Content =
+                UiText.Get(
+                    "MonitoringKindCdp");
+            SettingsMonitoringKindFdbCheckBox.Content =
+                UiText.Get(
+                    "MonitoringKindFdb");
+            SettingsMonitoringKindArpCheckBox.Content =
+                UiText.Get(
+                    "MonitoringKindArp");
+            SettingsMonitoringKindHealthCheckBox.Content =
+                UiText.Get(
+                    "MonitoringKindHealth");
+            SettingsMonitoringKindInterfaceCheckBox.Content =
+                UiText.Get(
+                    "MonitoringKindInterface");
+            SettingsMonitoringKindStpCheckBox.Content =
+                UiText.Get(
+                    "MonitoringKindStp");
+            SettingsMonitoringSaveButton.Content =
+                UiText.Get(
+                    "SettingsPollingSaveAction");
+            SettingsMonitoringStatusText.Text =
+                string.Empty;
+            SettingsAnimationLabelText.Text =
+                UiText.Get(
+                    "MapMotionSettings");
+            SettingsMotionNormalButton.Content =
+                UiText.Get(
+                    "MapMotionNormalAction");
+            SettingsMotionReducedButton.Content =
+                UiText.Get(
+                    "MapMotionReducedAction");
+            SettingsMotionOffButton.Content =
+                UiText.Get(
+                    "MapMotionOffAction");
+            SettingsThemeLabelText.Text =
+                UiText.Get(
+                    "SettingsThemeLabel");
+            SettingsThemeLightButton.Content =
+                UiText.Get(
+                    "SettingsThemeLight");
+            SettingsThemeDarkButton.Content =
+                UiText.Get(
+                    "SettingsThemeDark");
             ShellMonitoringRailTitleText.Text =
                 UiText.Get(
                     "ShellMonitoringLabel");
@@ -308,6 +374,12 @@ namespace NetLoom.Wpf
                 state ??
                 UiShellState.Default;
 
+            ApplyPollingSettings(
+                effectiveState.PollingSettings);
+
+            SetMotionMode(
+                effectiveState.MotionMode);
+
             ApplyShellTheme(
                 effectiveState.Theme);
 
@@ -348,7 +420,9 @@ namespace NetLoom.Wpf
                         selected == null
                             ? (Guid?)null
                             : selected.Profile.Id,
-                        _shellTheme));
+                        _shellTheme,
+                        _persistedPollingSettings,
+                        _motionMode));
             }
             catch (Exception error)
             {
@@ -633,6 +707,118 @@ namespace NetLoom.Wpf
                 themeText;
             ShellSettingsThemeButton.Tag =
                 targetTheme;
+
+            UpdateSettingsChoicePresentation();
+        }
+
+        private void OnSettingsThemeLightClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ApplyShellTheme(
+                UiShellTheme.Light);
+
+            SaveShellState();
+        }
+
+        private void OnSettingsThemeDarkClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            ApplyShellTheme(
+                UiShellTheme.Dark);
+
+            SaveShellState();
+        }
+
+        private void OnSettingsMotionNormalClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetMotionMode(
+                MapMotionMode.Normal);
+            UpdateSettingsChoicePresentation();
+            SaveShellState();
+        }
+
+        private void OnSettingsMotionReducedClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetMotionMode(
+                MapMotionMode.Reduced);
+            UpdateSettingsChoicePresentation();
+            SaveShellState();
+        }
+
+        private void OnSettingsMotionOffClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            SetMotionMode(
+                MapMotionMode.Off);
+            UpdateSettingsChoicePresentation();
+            SaveShellState();
+        }
+
+        private void UpdateSettingsChoicePresentation()
+        {
+            if (SettingsThemeLightButton == null ||
+                SettingsThemeDarkButton == null ||
+                SettingsMotionNormalButton == null ||
+                SettingsMotionReducedButton == null ||
+                SettingsMotionOffButton == null)
+            {
+                return;
+            }
+
+            SetSettingsChoiceSelection(
+                SettingsThemeLightButton,
+                _shellTheme ==
+                    UiShellTheme.Light);
+            SetSettingsChoiceSelection(
+                SettingsThemeDarkButton,
+                _shellTheme ==
+                    UiShellTheme.Dark);
+
+            SetSettingsChoiceSelection(
+                SettingsMotionNormalButton,
+                _motionMode ==
+                    MapMotionMode.Normal);
+            SetSettingsChoiceSelection(
+                SettingsMotionReducedButton,
+                _motionMode ==
+                    MapMotionMode.Reduced);
+            SetSettingsChoiceSelection(
+                SettingsMotionOffButton,
+                _motionMode ==
+                    MapMotionMode.Off);
+        }
+
+        private static void SetSettingsChoiceSelection(
+            Button button,
+            bool selected)
+        {
+            if (selected)
+            {
+                button.SetResourceReference(
+                    Control.BackgroundProperty,
+                    "NetLoom.Brush.AccentSoft");
+                button.SetResourceReference(
+                    Control.BorderBrushProperty,
+                    "NetLoom.Brush.Accent");
+                button.SetResourceReference(
+                    Control.ForegroundProperty,
+                    "NetLoom.Brush.TextPrimary");
+                return;
+            }
+
+            button.ClearValue(
+                Control.BackgroundProperty);
+            button.ClearValue(
+                Control.BorderBrushProperty);
+            button.ClearValue(
+                Control.ForegroundProperty);
         }
 
         private void ShowShellTopologyEditor(

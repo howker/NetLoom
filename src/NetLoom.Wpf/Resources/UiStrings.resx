@@ -1513,6 +1513,24 @@ Drag the header to move this placement together with its child placements and as
   <data name="ShellSearchSection" xml:space="preserve">
     <value>Search</value>
   </data>
+  <data name="SettingsPollingSectionTitle" xml:space="preserve">
+    <value>Polling</value>
+  </data>
+  <data name="SettingsPollingSaveAction" xml:space="preserve">
+    <value>Save polling parameters</value>
+  </data>
+  <data name="SettingsPollingSaved" xml:space="preserve">
+    <value>Polling parameters saved.</value>
+  </data>
+  <data name="SettingsThemeLabel" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="SettingsThemeLight" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="SettingsThemeDark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
   <data name="ShellSettingsSection" xml:space="preserve">
     <value>Settings</value>
   </data>

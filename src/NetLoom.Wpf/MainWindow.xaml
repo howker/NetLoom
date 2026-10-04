@@ -1208,52 +1208,182 @@
                                      SelectionChanged="OnShellProfileSettingsSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding DisplayName}"
-                                                       TextWrapping="Wrap" />
-                                            <TextBlock Text="{Binding ActiveText}"
-                                                       Visibility="{Binding ActiveVisibility}"
-                                                       Foreground="{DynamicResource NetLoom.Brush.Accent}"
-                                                       FontWeight="SemiBold"
-                                                       FontSize="{DynamicResource NetLoom.FontSize.Caption}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
-                                        </StackPanel>
+                                        <Border Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                                Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DisplayName}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding ActiveText}"
+                                                               Visibility="{Binding ActiveVisibility}"
+                                                               Foreground="{DynamicResource NetLoom.Brush.Accent}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+                                                </StackPanel>
+                                                <Button Grid.Column="1"
+                                                        Margin="12,0,0,0"
+                                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Content="{Binding EditAction}"
+                                                        Click="OnShellProfileRowEditClick" />
+                                                <Button Grid.Column="2"
+                                                        Margin="8,0,0,0"
+                                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Content="{Binding DeleteAction}"
+                                                        Foreground="{DynamicResource NetLoom.Brush.Critical}"
+                                                        BorderBrush="{DynamicResource NetLoom.Brush.Critical}"
+                                                        Click="OnShellProfileRowDeleteClick" />
+                                            </Grid>
+                                        </Border>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
+
+                            <Grid Visibility="Collapsed">
+                                <Button x:Name="ShellProfileEditButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        Click="OnShellProfileEditClick" />
+                                <Button x:Name="ShellProfileDeleteButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        Click="OnShellProfileDeleteClick" />
+                            </Grid>
+
+                            <TextBlock x:Name="SettingsPollingTitleText"
+                                       Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}" />
 
                             <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
+                                    <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Button x:Name="ShellProfileEditButton"
-                                        Grid.Column="0"
-                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                        HorizontalAlignment="Stretch"
-                                        Click="OnShellProfileEditClick" />
-                                <Button x:Name="ShellProfileDeleteButton"
-                                        Grid.Column="2"
-                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                        HorizontalAlignment="Stretch"
-                                        Foreground="{DynamicResource NetLoom.Brush.Critical}"
-                                        BorderBrush="{DynamicResource NetLoom.Brush.Critical}"
-                                        Click="OnShellProfileDeleteClick" />
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock x:Name="SettingsMonitoringIntervalLabelText"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                    <TextBox x:Name="SettingsMonitoringIntervalTextBox"
+                                             Text="{Binding Text, ElementName=MonitoringIntervalTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock x:Name="SettingsMonitoringTimeoutLabelText"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                    <TextBox x:Name="SettingsMonitoringTimeoutTextBox"
+                                             Text="{Binding Text, ElementName=MonitoringTimeoutTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock x:Name="SettingsMonitoringRetriesLabelText"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                    <TextBox x:Name="SettingsMonitoringRetriesTextBox"
+                                             Text="{Binding Text, ElementName=MonitoringRetriesTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="6">
+                                    <TextBlock x:Name="SettingsMonitoringMaxRepetitionsLabelText"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                    <TextBox x:Name="SettingsMonitoringMaxRepetitionsTextBox"
+                                             Text="{Binding Text, ElementName=MonitoringMaxRepetitionsTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
                             </Grid>
+
+                            <TextBlock x:Name="SettingsMonitoringKindsLabelText"
+                                       Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                       Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}" />
+                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapXsTop}">
+                                <CheckBox x:Name="SettingsMonitoringKindLldpCheckBox"
+                                          IsChecked="{Binding IsChecked, ElementName=MonitoringKindLldpCheckBox, Mode=TwoWay}" />
+                                <CheckBox x:Name="SettingsMonitoringKindCdpCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                          IsChecked="{Binding IsChecked, ElementName=MonitoringKindCdpCheckBox, Mode=TwoWay}" />
+                                <CheckBox x:Name="SettingsMonitoringKindFdbCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                          IsChecked="{Binding IsChecked, ElementName=MonitoringKindFdbCheckBox, Mode=TwoWay}" />
+                                <CheckBox x:Name="SettingsMonitoringKindArpCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                          IsChecked="{Binding IsChecked, ElementName=MonitoringKindArpCheckBox, Mode=TwoWay}" />
+                                <CheckBox x:Name="SettingsMonitoringKindHealthCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                          IsChecked="{Binding IsChecked, ElementName=MonitoringKindHealthCheckBox, Mode=TwoWay}" />
+                                <CheckBox x:Name="SettingsMonitoringKindInterfaceCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                          IsChecked="{Binding IsChecked, ElementName=MonitoringKindInterfaceCheckBox, Mode=TwoWay}" />
+                                <CheckBox x:Name="SettingsMonitoringKindStpCheckBox"
+                                          Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                          IsChecked="{Binding IsChecked, ElementName=MonitoringKindStpCheckBox, Mode=TwoWay}" />
+                            </WrapPanel>
+
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}">
+                                <Button x:Name="SettingsMonitoringSaveButton"
+                                        Click="OnSettingsMonitoringSaveClick" />
+                                <TextBlock x:Name="SettingsMonitoringStatusText"
+                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                           Margin="12,0,0,0"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
 
                             <TextBlock x:Name="ShellSettingsMapTitleText"
                                        Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                        Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}" />
+
+                            <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="190" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="SettingsAnimationLabelText"
+                                           Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                           VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal">
+                                    <Button x:Name="SettingsMotionNormalButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Click="OnSettingsMotionNormalClick" />
+                                    <Button x:Name="SettingsMotionReducedButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Margin="8,0,0,0"
+                                            Click="OnSettingsMotionReducedClick" />
+                                    <Button x:Name="SettingsMotionOffButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Margin="8,0,0,0"
+                                            Click="OnSettingsMotionOffClick" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="190" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="SettingsThemeLabelText"
+                                           Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                           VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal">
+                                    <Button x:Name="SettingsThemeLightButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Click="OnSettingsThemeLightClick" />
+                                    <Button x:Name="SettingsThemeDarkButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Margin="8,0,0,0"
+                                            Click="OnSettingsThemeDarkClick" />
+                                </StackPanel>
+                            </Grid>
+
                             <Button x:Name="MapSettingsButton"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                                    HorizontalAlignment="Left"
+                                    Visibility="Collapsed"
                                     Click="OnMapSettingsClick" />
                             <Button x:Name="ShellSettingsThemeButton"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                                    HorizontalAlignment="Left"
+                                    Visibility="Collapsed"
                                     Click="OnShellThemeClick" />
                         </StackPanel>
                     </ScrollViewer>

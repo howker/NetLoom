@@ -230,6 +230,56 @@ namespace NetLoom.Wpf
                 selected.Profile);
         }
 
+        private void OnShellProfileRowEditClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var button =
+                sender as Button;
+            var row =
+                button == null
+                    ? null
+                    : button.DataContext
+                        as ProfileSettingsRow;
+
+            if (row == null)
+            {
+                return;
+            }
+
+            ShellProfileSettingsList.SelectedItem =
+                row;
+
+            OnShellProfileEditClick(
+                sender,
+                e);
+        }
+
+        private void OnShellProfileRowDeleteClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var button =
+                sender as Button;
+            var row =
+                button == null
+                    ? null
+                    : button.DataContext
+                        as ProfileSettingsRow;
+
+            if (row == null)
+            {
+                return;
+            }
+
+            ShellProfileSettingsList.SelectedItem =
+                row;
+
+            OnShellProfileDeleteClick(
+                sender,
+                e);
+        }
+
         private void OnShellProfileDeleteClick(
             object sender,
             RoutedEventArgs e)
@@ -1848,6 +1898,14 @@ namespace NetLoom.Wpf
             public string ActiveText { get; }
 
             public Visibility ActiveVisibility { get; }
+
+            public string EditAction =>
+                UiText.Get(
+                    "DiscoveryProfileEditAction");
+
+            public string DeleteAction =>
+                UiText.Get(
+                    "DiscoveryProfileDeleteAction");
         }
 
         private sealed class DiscoveryProfileOption

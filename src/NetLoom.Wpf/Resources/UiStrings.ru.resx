@@ -1513,6 +1513,24 @@
   <data name="ShellSearchSection" xml:space="preserve">
     <value>Поиск</value>
   </data>
+  <data name="SettingsPollingSectionTitle" xml:space="preserve">
+    <value>Опрос</value>
+  </data>
+  <data name="SettingsPollingSaveAction" xml:space="preserve">
+    <value>Сохранить параметры опроса</value>
+  </data>
+  <data name="SettingsPollingSaved" xml:space="preserve">
+    <value>Параметры опроса сохранены.</value>
+  </data>
+  <data name="SettingsThemeLabel" xml:space="preserve">
+    <value>Тема</value>
+  </data>
+  <data name="SettingsThemeLight" xml:space="preserve">
+    <value>Светлая</value>
+  </data>
+  <data name="SettingsThemeDark" xml:space="preserve">
+    <value>Тёмная</value>
+  </data>
   <data name="ShellSettingsSection" xml:space="preserve">
     <value>Настройки</value>
   </data>

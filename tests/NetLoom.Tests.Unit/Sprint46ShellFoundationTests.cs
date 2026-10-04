@@ -23,6 +23,7 @@ using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.MapInteraction;
 using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Tests.Unit
@@ -4588,7 +4589,128 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
-            FileShellStateStoreRoundTripsOnlyProfileIdAndTheme()
+            Adr083SettingsPageSavesPollingAndDirectMapPreferences()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var stateStore =
+                        new MemoryShellStateStore(
+                            UiShellState.Default);
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader(),
+                            new RecordingMonitoringControl(),
+                            new EmptyDiscoveryControl(),
+                            new AccessProfile[0],
+                            new NoopCandidateMaterializer(),
+                            stateStore);
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellSettingsButton"));
+                        PumpDispatcher();
+
+                        var interval =
+                            (TextBox)window.FindName(
+                                "SettingsMonitoringIntervalTextBox");
+                        var timeout =
+                            (TextBox)window.FindName(
+                                "SettingsMonitoringTimeoutTextBox");
+                        var retries =
+                            (TextBox)window.FindName(
+                                "SettingsMonitoringRetriesTextBox");
+                        var maxRepetitions =
+                            (TextBox)window.FindName(
+                                "SettingsMonitoringMaxRepetitionsTextBox");
+
+                        interval.Text = "75";
+                        timeout.Text = "1750";
+                        retries.Text = "2";
+                        maxRepetitions.Text = "30";
+
+                        Click(
+                            (Button)window.FindName(
+                                "SettingsMonitoringSaveButton"));
+                        PumpDispatcher();
+
+                        Assert.IsNotNull(
+                            stateStore.LastSaved);
+                        Assert.AreEqual(
+                            75,
+                            stateStore.LastSaved
+                                .PollingSettings
+                                .IntervalSeconds);
+                        Assert.AreEqual(
+                            1750,
+                            stateStore.LastSaved
+                                .PollingSettings
+                                .TimeoutMilliseconds);
+                        Assert.AreEqual(
+                            2,
+                            stateStore.LastSaved
+                                .PollingSettings
+                                .RetryCount);
+                        Assert.AreEqual(
+                            30,
+                            stateStore.LastSaved
+                                .PollingSettings
+                                .MaxRepetitions);
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "SettingsPollingSaved"),
+                            ((TextBlock)window.FindName(
+                                "SettingsMonitoringStatusText"))
+                            .Text);
+
+                        Click(
+                            (Button)window.FindName(
+                                "SettingsMotionOffButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            MapMotionMode.Off,
+                            stateStore.LastSaved.MotionMode);
+
+                        Click(
+                            (Button)window.FindName(
+                                "SettingsThemeDarkButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiShellTheme.Dark,
+                            stateStore.LastSaved.Theme);
+
+                        var lightButton =
+                            (Button)window.FindName(
+                                "SettingsThemeLightButton");
+                        var darkButton =
+                            (Button)window.FindName(
+                                "SettingsThemeDarkButton");
+
+                        Assert.AreNotEqual(
+                            lightButton.Background,
+                            darkButton.Background,
+                            "The settings page must show which theme is selected instead of only exposing a toggle action.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            FileShellStateStoreRoundTripsProfileThemePollingAndMotion()
         {
             var directory =
                 Path.Combine(
@@ -4615,7 +4737,20 @@ namespace NetLoom.Tests.Unit
                 store.Save(
                     new UiShellState(
                         profileId,
-                        UiShellTheme.Dark));
+                        UiShellTheme.Dark,
+                        new UiPollingSettings(
+                            90,
+                            1500,
+                            2,
+                            33,
+                            true,
+                            false,
+                            true,
+                            false,
+                            true,
+                            true,
+                            false),
+                        MapMotionMode.Reduced));
 
                 var restored =
                     store.Load();
@@ -4626,6 +4761,35 @@ namespace NetLoom.Tests.Unit
                 Assert.AreEqual(
                     UiShellTheme.Dark,
                     restored.Theme);
+                Assert.AreEqual(
+                    MapMotionMode.Reduced,
+                    restored.MotionMode);
+                Assert.AreEqual(
+                    90,
+                    restored.PollingSettings.IntervalSeconds);
+                Assert.AreEqual(
+                    1500,
+                    restored.PollingSettings.TimeoutMilliseconds);
+                Assert.AreEqual(
+                    2,
+                    restored.PollingSettings.RetryCount);
+                Assert.AreEqual(
+                    33,
+                    restored.PollingSettings.MaxRepetitions);
+                Assert.IsTrue(
+                    restored.PollingSettings.Lldp);
+                Assert.IsFalse(
+                    restored.PollingSettings.Cdp);
+                Assert.IsTrue(
+                    restored.PollingSettings.Fdb);
+                Assert.IsFalse(
+                    restored.PollingSettings.Arp);
+                Assert.IsTrue(
+                    restored.PollingSettings.Health);
+                Assert.IsTrue(
+                    restored.PollingSettings.Interfaces);
+                Assert.IsFalse(
+                    restored.PollingSettings.Stp);
 
                 var persisted =
                     File.ReadAllText(
@@ -4637,6 +4801,15 @@ namespace NetLoom.Tests.Unit
                 StringAssert.Contains(
                     persisted,
                     "theme=Dark");
+                StringAssert.Contains(
+                    persisted,
+                    "motion=Reduced");
+                StringAssert.Contains(
+                    persisted,
+                    "pollIntervalSeconds=90");
+                StringAssert.Contains(
+                    persisted,
+                    "pollTimeoutMilliseconds=1500");
                 Assert.IsFalse(
                     persisted.Contains(
                         "community"),

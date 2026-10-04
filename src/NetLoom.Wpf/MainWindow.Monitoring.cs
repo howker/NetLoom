@@ -11,6 +11,7 @@ using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf
 {
@@ -30,6 +31,8 @@ namespace NetLoom.Wpf
         private bool _monitoringTargetSetSessionActive;
         private bool _monitoringStandalonePollActive;
         private bool _monitoringClosed;
+        private UiPollingSettings _persistedPollingSettings =
+            UiPollingSettings.Default;
 
         private void InitializeMonitoringPanel()
         {
@@ -588,6 +591,19 @@ namespace NetLoom.Wpf
             MonitoringKindInterfaceCheckBox.IsEnabled = canEdit;
             MonitoringKindStpCheckBox.IsEnabled = canEdit;
 
+            SettingsMonitoringIntervalTextBox.IsEnabled = canEdit;
+            SettingsMonitoringTimeoutTextBox.IsEnabled = canEdit;
+            SettingsMonitoringRetriesTextBox.IsEnabled = canEdit;
+            SettingsMonitoringMaxRepetitionsTextBox.IsEnabled = canEdit;
+            SettingsMonitoringKindLldpCheckBox.IsEnabled = canEdit;
+            SettingsMonitoringKindCdpCheckBox.IsEnabled = canEdit;
+            SettingsMonitoringKindFdbCheckBox.IsEnabled = canEdit;
+            SettingsMonitoringKindArpCheckBox.IsEnabled = canEdit;
+            SettingsMonitoringKindHealthCheckBox.IsEnabled = canEdit;
+            SettingsMonitoringKindInterfaceCheckBox.IsEnabled = canEdit;
+            SettingsMonitoringKindStpCheckBox.IsEnabled = canEdit;
+            SettingsMonitoringSaveButton.IsEnabled = canEdit;
+
             var multiTargetControl =
                 _monitoringControl as
                     IMultiTargetMonitoringControl;
@@ -976,6 +992,144 @@ namespace NetLoom.Wpf
                     address);
 
             return true;
+        }
+
+        private void ApplyPollingSettings(
+            UiPollingSettings settings)
+        {
+            var effective =
+                settings ??
+                UiPollingSettings.Default;
+
+            _persistedPollingSettings =
+                effective;
+
+            MonitoringIntervalTextBox.Text =
+                effective.IntervalSeconds
+                    .ToString(
+                        CultureInfo.CurrentCulture);
+            MonitoringTimeoutTextBox.Text =
+                effective.TimeoutMilliseconds
+                    .ToString(
+                        CultureInfo.CurrentCulture);
+            MonitoringRetriesTextBox.Text =
+                effective.RetryCount
+                    .ToString(
+                        CultureInfo.CurrentCulture);
+            MonitoringMaxRepetitionsTextBox.Text =
+                effective.MaxRepetitions
+                    .ToString(
+                        CultureInfo.CurrentCulture);
+
+            MonitoringKindLldpCheckBox.IsChecked =
+                effective.Lldp;
+            MonitoringKindCdpCheckBox.IsChecked =
+                effective.Cdp;
+            MonitoringKindFdbCheckBox.IsChecked =
+                effective.Fdb;
+            MonitoringKindArpCheckBox.IsChecked =
+                effective.Arp;
+            MonitoringKindHealthCheckBox.IsChecked =
+                effective.Health;
+            MonitoringKindInterfaceCheckBox.IsChecked =
+                effective.Interfaces;
+            MonitoringKindStpCheckBox.IsChecked =
+                effective.Stp;
+        }
+
+        private bool TryCapturePollingSettings(
+            out UiPollingSettings settings,
+            out string validation)
+        {
+            settings = null;
+            validation = null;
+
+            int intervalSeconds;
+            int timeoutMilliseconds;
+            int retryCount;
+            int maxRepetitions;
+
+            if (!TryParseMonitoringInteger(
+                    MonitoringIntervalTextBox.Text,
+                    1,
+                    int.MaxValue,
+                    "MonitoringIntervalLabel",
+                    out intervalSeconds,
+                    out validation) ||
+                !TryParseMonitoringInteger(
+                    MonitoringTimeoutTextBox.Text,
+                    1,
+                    int.MaxValue,
+                    "MonitoringTimeoutLabel",
+                    out timeoutMilliseconds,
+                    out validation) ||
+                !TryParseMonitoringInteger(
+                    MonitoringRetriesTextBox.Text,
+                    0,
+                    int.MaxValue,
+                    "MonitoringRetriesLabel",
+                    out retryCount,
+                    out validation) ||
+                !TryParseMonitoringInteger(
+                    MonitoringMaxRepetitionsTextBox.Text,
+                    1,
+                    int.MaxValue,
+                    "MonitoringMaxRepetitionsLabel",
+                    out maxRepetitions,
+                    out validation))
+            {
+                return false;
+            }
+
+            if (SelectedMonitoringKinds().Count == 0)
+            {
+                validation =
+                    UiText.Get(
+                        "MonitoringValidationPollKind");
+                return false;
+            }
+
+            settings =
+                new UiPollingSettings(
+                    intervalSeconds,
+                    timeoutMilliseconds,
+                    retryCount,
+                    maxRepetitions,
+                    MonitoringKindLldpCheckBox.IsChecked == true,
+                    MonitoringKindCdpCheckBox.IsChecked == true,
+                    MonitoringKindFdbCheckBox.IsChecked == true,
+                    MonitoringKindArpCheckBox.IsChecked == true,
+                    MonitoringKindHealthCheckBox.IsChecked == true,
+                    MonitoringKindInterfaceCheckBox.IsChecked == true,
+                    MonitoringKindStpCheckBox.IsChecked == true);
+
+            return true;
+        }
+
+        private void OnSettingsMonitoringSaveClick(
+            object sender,
+            RoutedEventArgs e)
+        {
+            UiPollingSettings settings;
+            string validation;
+
+            if (!TryCapturePollingSettings(
+                    out settings,
+                    out validation))
+            {
+                SettingsMonitoringStatusText.Text =
+                    validation ?? string.Empty;
+                return;
+            }
+
+            _persistedPollingSettings =
+                settings;
+
+            SaveShellState();
+
+            SettingsMonitoringStatusText.Text =
+                UiText.Get(
+                    "SettingsPollingSaved");
         }
 
         private bool TryBuildMonitoringPolicy(
