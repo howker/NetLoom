@@ -816,10 +816,16 @@ namespace NetLoom.Wpf
                         : 0.0;
             }
 
+            var hideDescription =
+                width <
+                Adr083EquipmentHideDescriptionWidth;
+            var hideCategory =
+                width <
+                Adr083EquipmentHideCategoryWidth;
+
             Resources[
                 "NetLoom.Equipment.DescriptionColumnWidth"] =
-                width <
-                    Adr083EquipmentHideDescriptionWidth
+                hideDescription
                     ? new GridLength(0.0)
                     : new GridLength(
                         1.35,
@@ -827,12 +833,27 @@ namespace NetLoom.Wpf
 
             Resources[
                 "NetLoom.Equipment.CategoryColumnWidth"] =
-                width <
-                    Adr083EquipmentHideCategoryWidth
+                hideCategory
                     ? new GridLength(0.0)
                     : new GridLength(
                         1.1,
                         GridUnitType.Star);
+
+            if (EquipmentDescriptionHeaderText != null)
+            {
+                EquipmentDescriptionHeaderText.Visibility =
+                    hideDescription
+                        ? Visibility.Collapsed
+                        : Visibility.Visible;
+            }
+
+            if (EquipmentCategoryHeaderText != null)
+            {
+                EquipmentCategoryHeaderText.Visibility =
+                    hideCategory
+                        ? Visibility.Collapsed
+                        : Visibility.Visible;
+            }
         }
 
         private void UpdateAdr083InspectorLayout()

@@ -422,10 +422,10 @@
                                     <TextBlock x:Name="EquipmentAddressHeaderText"
                                                Grid.Column="2"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
-                                    <TextBlock x:Name="EquipmentCategoryHeaderText"
+                                    <TextBlock x:Name="EquipmentCategoryHeaderText" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                                Grid.Column="3"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
-                                    <TextBlock x:Name="EquipmentDescriptionHeaderText"
+                                    <TextBlock x:Name="EquipmentDescriptionHeaderText" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                                Grid.Column="4"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBlock x:Name="EquipmentLocationHeaderText"
@@ -441,10 +441,8 @@
 
                                 <ScrollViewer Grid.Row="1"
                                               VerticalScrollBarVisibility="Auto"
-                                              HorizontalScrollBarVisibility="Disabled"
-                                              VerticalContentAlignment="Top">
-                                    <ItemsControl x:Name="EquipmentList"
-                                                  VerticalAlignment="Top">
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl x:Name="EquipmentList">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Style="{StaticResource NetLoom.Style.EquipmentRowButton}"
