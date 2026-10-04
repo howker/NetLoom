@@ -441,8 +441,10 @@
 
                                 <ScrollViewer Grid.Row="1"
                                               VerticalScrollBarVisibility="Auto"
-                                              HorizontalScrollBarVisibility="Disabled">
-                                    <ItemsControl x:Name="EquipmentList">
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              VerticalContentAlignment="Top">
+                                    <ItemsControl x:Name="EquipmentList"
+                                                  VerticalAlignment="Top">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Style="{StaticResource NetLoom.Style.EquipmentRowButton}"

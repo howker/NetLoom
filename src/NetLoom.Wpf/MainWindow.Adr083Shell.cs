@@ -19,6 +19,9 @@ namespace NetLoom.Wpf
         private const double Adr083InspectorMaxWidth = 520.0;
         private const double Adr083MapMinimumWindowRatio = 0.60;
         private const double Adr083AlertsListWidth = 420.0;
+        private const double Adr083MapToolbarCompactWidth = 1000.0;
+        private const double Adr083MapToolbarDefaultRightPadding = 12.0;
+        private const double Adr083MapToolbarRevealRightPadding = 56.0;
         private const double Adr083EquipmentHideDescriptionWidth = 980.0;
         private const double Adr083EquipmentHideCategoryWidth = 820.0;
 
@@ -96,9 +99,13 @@ namespace NetLoom.Wpf
                 UiText.Get(
                     "LookupReady");
 
+            ShellMapSurface.SizeChanged +=
+                OnShellMapSurfaceSizeChanged;
+
             UpdateAdr083SectionPresentation(
                 ShellSection.Map);
             UpdateAdr083InspectorLayout();
+            UpdateAdr083MapToolbarResponsivePresentation();
         }
 
         private static void ConfigureAdr083NavigationButton(
@@ -620,6 +627,7 @@ namespace NetLoom.Wpf
             _adr083InspectorCollapsed =
                 true;
             UpdateAdr083InspectorLayout();
+            UpdateAdr083MapToolbarResponsivePresentation();
         }
 
         private void OnShellInspectorRevealClick(
@@ -631,6 +639,7 @@ namespace NetLoom.Wpf
             _adr083InspectorHiddenForSection =
                 false;
             UpdateAdr083InspectorLayout();
+            UpdateAdr083MapToolbarResponsivePresentation();
         }
 
         private void OnShellInspectorSplitterDragCompleted(
@@ -660,6 +669,13 @@ namespace NetLoom.Wpf
         {
             UpdateAdr083InspectorLayout();
             UpdateAdr083EquipmentResponsiveColumns();
+        }
+
+        private void OnShellMapSurfaceSizeChanged(
+            object sender,
+            SizeChangedEventArgs e)
+        {
+            UpdateAdr083MapToolbarResponsivePresentation();
         }
 
         private void UpdateAdr083SectionPresentation(
@@ -740,6 +756,44 @@ namespace NetLoom.Wpf
 
             UpdateAdr083InspectorLayout();
             UpdateAdr083EquipmentResponsiveColumns();
+            UpdateAdr083MapToolbarResponsivePresentation();
+        }
+
+        private void UpdateAdr083MapToolbarResponsivePresentation()
+        {
+            if (ShellMapSurface == null ||
+                Adr083MapToolbar == null ||
+                Adr083MapEditModeIndicatorText == null ||
+                ShellInspectorRevealButton == null)
+            {
+                return;
+            }
+
+            var mapWidth =
+                ShellMapSurface.ActualWidth;
+
+            Adr083MapEditModeIndicatorText.Text =
+                UiText.Get(
+                    mapWidth > 0.0 &&
+                    mapWidth < Adr083MapToolbarCompactWidth
+                        ? "ShellMapEditModeNarrow"
+                        : "ShellMapEditModeCompact");
+
+            var rightPadding =
+                ShellMapSurface.Visibility == Visibility.Visible &&
+                ShellInspectorRevealButton.Visibility == Visibility.Visible
+                    ? Adr083MapToolbarRevealRightPadding
+                    : Adr083MapToolbarDefaultRightPadding;
+
+            var padding =
+                Adr083MapToolbar.Padding;
+
+            Adr083MapToolbar.Padding =
+                new Thickness(
+                    padding.Left,
+                    padding.Top,
+                    rightPadding,
+                    padding.Bottom);
         }
 
         private void UpdateAdr083EquipmentResponsiveColumns()

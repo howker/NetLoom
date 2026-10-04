@@ -1744,7 +1744,7 @@
     <value>Просмотр</value>
   </data>
   <data name="MapInteractionModeEdit" xml:space="preserve">
-    <value>Редактирование</value>
+    <value>Правка</value>
   </data>
   <data name="MapInteractionModeViewHint" xml:space="preserve">
     <value>Просмотр и навигация по топологии без изменения раскладки и ручной топологии.</value>
@@ -2120,6 +2120,9 @@
   </data>
   <data name="ShellMapEditModeCompact" xml:space="preserve">
     <value>Режим правки · Esc — выйти</value>
+  </data>
+  <data name="ShellMapEditModeNarrow" xml:space="preserve">
+    <value>Правка · Esc — выйти</value>
   </data>
   <data name="ShellInspectorCollapseAction" xml:space="preserve">
     <value>Свернуть свойства</value>

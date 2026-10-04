@@ -2121,6 +2121,9 @@ Poll: {2}</value>
   <data name="ShellMapEditModeCompact" xml:space="preserve">
     <value>Edit mode · Esc — exit</value>
   </data>
+  <data name="ShellMapEditModeNarrow" xml:space="preserve">
+    <value>Edit · Esc — exit</value>
+  </data>
   <data name="ShellInspectorCollapseAction" xml:space="preserve">
     <value>Collapse properties</value>
   </data>
