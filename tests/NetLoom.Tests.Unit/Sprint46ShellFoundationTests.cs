@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -4042,6 +4043,182 @@ namespace NetLoom.Tests.Unit
                             settingsContent.MaxWidth <=
                             720.0 + 0.5,
                             "ADR-083 keeps the settings content column at 720 px or less.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            Adr083GlobalSearchGroupsDevicesAndPortsFromSavedSnapshot()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var siteId =
+                        Guid.Parse(
+                            "46464646-6900-6900-6900-464646464646");
+                    var rackId =
+                        Guid.Parse(
+                            "46464646-6901-6901-6901-464646464646");
+                    var deviceId =
+                        Guid.Parse(
+                            "46464646-6902-6902-6902-464646464646");
+                    var interfaceId =
+                        Guid.Parse(
+                            "46464646-6903-6903-6903-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                InspectorSnapshot(
+                                    siteId,
+                                    rackId,
+                                    deviceId,
+                                    interfaceId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    deviceId) != null);
+
+                        var search =
+                            (TextBox)window.FindName(
+                                "ShellGlobalSearchTextBox");
+                        var results =
+                            (ListBox)window.FindName(
+                                "ShellGlobalSearchResultsList");
+
+                        search.Text =
+                            "Switch A";
+                        PumpDispatcher();
+
+                        Assert.IsTrue(
+                            results.Items.Count > 0);
+                        Assert.IsTrue(
+                            results.Items.Groups
+                                .OfType<CollectionViewGroup>()
+                                .Any(
+                                    group =>
+                                        string.Equals(
+                                            group.Name as string,
+                                            UiText.Get(
+                                                "ShellGlobalSearchGroupDevices"),
+                                            StringComparison.Ordinal)),
+                            "ADR-083 global search must group saved devices instead of exposing the legacy flat lookup list.");
+
+                        search.Text =
+                            "Gi0/1";
+                        PumpDispatcher();
+
+                        Assert.IsTrue(
+                            results.Items.Groups
+                                .OfType<CollectionViewGroup>()
+                                .Any(
+                                    group =>
+                                        string.Equals(
+                                            group.Name as string,
+                                            UiText.Get(
+                                                "ShellGlobalSearchGroupPorts"),
+                                            StringComparison.Ordinal)),
+                            "ADR-083 global search must expose saved port identity without adding new collection or storage.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            Adr083NormalMapStateIsNeutralAndMonitoringStopUsesOneMapNotice()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var siteId =
+                        Guid.Parse(
+                            "46464646-6910-6910-6910-464646464646");
+                    var rackId =
+                        Guid.Parse(
+                            "46464646-6911-6911-6911-464646464646");
+                    var deviceId =
+                        Guid.Parse(
+                            "46464646-6912-6912-6912-464646464646");
+                    var interfaceId =
+                        Guid.Parse(
+                            "46464646-6913-6913-6913-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                InspectorSnapshot(
+                                    siteId,
+                                    rackId,
+                                    deviceId,
+                                    interfaceId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    deviceId) != null);
+
+                        var device =
+                            DeviceBorder(
+                                window,
+                                deviceId);
+                        var stripe =
+                            FindVisualDescendantByTag<Border>(
+                                device,
+                                "NodeStateStripe");
+                        var statusIcon =
+                            FindVisualDescendantByTag<System.Windows.Shapes.Path>(
+                                device,
+                                "NodeStatusIcon");
+
+                        Assert.IsNotNull(stripe);
+                        Assert.IsNotNull(statusIcon);
+                        Assert.AreSame(
+                            window.FindResource(
+                                "NetLoom.Brush.BorderStrong"),
+                            stripe.Background,
+                            "Normal device state must use the neutral stripe from ADR-083.");
+                        Assert.AreEqual(
+                            Visibility.Collapsed,
+                            statusIcon.Visibility,
+                            "Normal device state must not carry a status icon; color and icon are reserved for deviations.");
+
+                        var notice =
+                            (FrameworkElement)window.FindName(
+                                "Adr083MapMonitoringNotice");
+                        var noticeText =
+                            (TextBlock)window.FindName(
+                                "Adr083MapMonitoringNoticeText");
+
+                        Assert.AreEqual(
+                            Visibility.Visible,
+                            notice.Visibility);
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "ShellMapMonitoringStoppedNotice"),
+                            noticeText.Text,
+                            "Stopped monitoring must be explained once on the map instead of coloring every no-data card.");
                     }
                     finally
                     {

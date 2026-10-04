@@ -151,13 +151,13 @@
     <value>Stale</value>
   </data>
 <data name="LocationUnassigned" xml:space="preserve">
-    <value>Location: unassigned</value>
+    <value>Placement: unassigned</value>
   </data>
   <data name="LocationUnknown" xml:space="preserve">
-    <value>Location: unknown</value>
+    <value>Placement: unknown</value>
   </data>
   <data name="LocationNamed" xml:space="preserve">
-    <value>Location: {0}</value>
+    <value>Placement: {0}</value>
   </data>
   <data name="NodeOriginManual" xml:space="preserve">
     <value>Manual</value>
@@ -364,16 +364,16 @@
     <value>{0} links</value>
   </data>
   <data name="MapLocationCountOne" xml:space="preserve">
-    <value>{0} location</value>
+    <value>{0} placement</value>
   </data>
   <data name="MapLocationCountFew" xml:space="preserve">
-    <value>{0} locations</value>
+    <value>{0} placements</value>
   </data>
   <data name="MapLocationCountMany" xml:space="preserve">
-    <value>{0} locations</value>
+    <value>{0} placements</value>
   </data>
   <data name="MapLocationCountOther" xml:space="preserve">
-    <value>{0} locations</value>
+    <value>{0} placements</value>
   </data>
   <data name="EvidenceCountOne" xml:space="preserve">
     <value>{0} evidence item</value>
@@ -433,7 +433,7 @@
     <value>Evidence</value>
   </data>
   <data name="DiagnosticFieldLocation" xml:space="preserve">
-    <value>Location</value>
+    <value>Placement</value>
   </data>
   <data name="DiagnosticFieldLastSeen" xml:space="preserve">
     <value>Last seen</value>
@@ -747,7 +747,7 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Use this editor only for equipment and cables that discovery cannot represent. Automatic topology is read-only here.</value>
   </data>
   <data name="ManualTopologyClose" xml:space="preserve">
-    <value>Close</value>
+    <value>Back</value>
   </data>
   <data name="ManualTopologyDevicesTab" xml:space="preserve">
     <value>Devices</value>
@@ -1017,40 +1017,40 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>The device has unsaved changes. Save them before switching to Ports or Links?</value>
   </data>
   <data name="LocationTopologyAction" xml:space="preserve">
-    <value>Locations</value>
+    <value>Placements</value>
   </data>
   <data name="LocationTopologyMapHint" xml:space="preserve">
     <value>Create and arrange site/building/room/rack boundaries on the map.</value>
   </data>
   <data name="LocationTopologyWindowTitle" xml:space="preserve">
-    <value>Locations</value>
+    <value>Placements</value>
   </data>
   <data name="LocationTopologyTitle" xml:space="preserve">
-    <value>Locations</value>
+    <value>Placements</value>
   </data>
   <data name="LocationTopologyIntro" xml:space="preserve">
-    <value>Create nested physical locations and assign devices to them. The map preserves the physical hierarchy and layout after restart.</value>
+    <value>Create nested physical placements and assign devices to them. The map preserves the physical hierarchy and layout after restart.</value>
   </data>
   <data name="LocationTopologyInteractionHint" xml:space="preserve">
-    <value>Select a location to view it. Use Edit or double-click to change it; New starts a separate draft. On the map, dragging a location moves its whole physical subtree and assigned devices.</value>
+    <value>Select a placement to view it. Use Edit or double-click to change it; New starts a separate draft. On the map, dragging a placement moves its whole physical subtree and assigned devices.</value>
   </data>
   <data name="LocationTopologyClose" xml:space="preserve">
-    <value>Close</value>
+    <value>Back</value>
   </data>
   <data name="LocationTopologyLocationsTab" xml:space="preserve">
-    <value>Locations</value>
+    <value>Placements</value>
   </data>
   <data name="LocationTopologyDevicesTab" xml:space="preserve">
     <value>Devices</value>
   </data>
   <data name="LocationTopologyLocationsList" xml:space="preserve">
-    <value>Location hierarchy</value>
+    <value>Placement hierarchy</value>
   </data>
   <data name="LocationTopologyName" xml:space="preserve">
     <value>Name</value>
   </data>
   <data name="LocationTopologyParent" xml:space="preserve">
-    <value>Parent location</value>
+    <value>Parent placement</value>
   </data>
   <data name="LocationTopologyDescription" xml:space="preserve">
     <value>Comment / description</value>
@@ -1080,7 +1080,7 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Selected device</value>
   </data>
   <data name="LocationTopologyDeviceLocation" xml:space="preserve">
-    <value>Primary location</value>
+    <value>Primary placement</value>
   </data>
   <data name="LocationTopologyAssign" xml:space="preserve">
     <value>Assign</value>
@@ -1098,28 +1098,28 @@ Positions, zoom, viewport position and locked state are saved automatically and 
     <value>Ready.</value>
   </data>
   <data name="LocationTopologyCreated" xml:space="preserve">
-    <value>Location created.</value>
+    <value>Placement created.</value>
   </data>
   <data name="LocationTopologySaved" xml:space="preserve">
-    <value>Location saved.</value>
+    <value>Placement saved.</value>
   </data>
   <data name="LocationTopologyDeleted" xml:space="preserve">
-    <value>Location deleted.</value>
+    <value>Placement deleted.</value>
   </data>
   <data name="LocationTopologyDeviceAssigned" xml:space="preserve">
-    <value>Device location updated.</value>
+    <value>Device placement updated.</value>
   </data>
   <data name="LocationTopologyValidationName" xml:space="preserve">
-    <value>Enter a location name.</value>
+    <value>Enter a placement name.</value>
   </data>
   <data name="LocationTopologyOperationFailed" xml:space="preserve">
-    <value>The location operation could not be completed. Details were written to the log.</value>
+    <value>The placement operation could not be completed. Details were written to the log.</value>
   </data>
   <data name="LocationTopologyDeleteBlocked" xml:space="preserve">
-    <value>The location cannot be deleted while it has child locations or assigned devices.</value>
+    <value>The placement cannot be deleted while it has child placements or assigned devices.</value>
   </data>
   <data name="LocationTopologyDeleteConfirm" xml:space="preserve">
-    <value>Delete location “{0}”?</value>
+    <value>Delete placement “{0}”?</value>
   </data>
   <data name="MapLocationNoDescription" xml:space="preserve">
     <value>No description</value>
@@ -1127,7 +1127,7 @@ Positions, zoom, viewport position and locked state are saved automatically and 
   <data name="MapLocationToolTip" xml:space="preserve">
     <value>{0}
 {1}
-Drag the header to move this location together with its child locations and assigned devices.</value>
+Drag the header to move this placement together with its child placements and assigned devices.</value>
   </data>
   <data name="MapLocationCollapse" xml:space="preserve">
     <value>Collapse</value>
@@ -1142,22 +1142,22 @@ Drag the header to move this location together with its child locations and assi
     <value>Unlock position</value>
   </data>
   <data name="MapLocationEdit" xml:space="preserve">
-    <value>Edit location</value>
+    <value>Edit placement</value>
   </data>
   <data name="MapLocationLockedBadge" xml:space="preserve">
     <value>Locked</value>
   </data>
   <data name="MapLocationSelectedStatus" xml:space="preserve">
-    <value>Location selected.</value>
+    <value>Placement selected.</value>
   </data>
   <data name="MapLocationDetailsTitle" xml:space="preserve">
-    <value>Location</value>
+    <value>Placement</value>
   </data>
   <data name="MapLocationDeviceCount" xml:space="preserve">
     <value>Direct devices</value>
   </data>
   <data name="MapLocationChildCount" xml:space="preserve">
-    <value>Child locations</value>
+    <value>Child placements</value>
   </data>
   <data name="MapLocationState" xml:space="preserve">
     <value>Display</value>
@@ -1576,7 +1576,7 @@ Poll: {2}</value>
     <value>Physical link</value>
   </data>
   <data name="InspectorEntityLocation" xml:space="preserve">
-    <value>Location</value>
+    <value>Placement</value>
   </data>
   <data name="InspectorEntityId" xml:space="preserve">
     <value>ID: {0}</value>
@@ -1732,7 +1732,7 @@ Poll: {2}</value>
     <value>Inspect and navigate the topology without changing its layout or manual topology.</value>
   </data>
   <data name="MapInteractionModeEditHint" xml:space="preserve">
-    <value>Layout and manual topology changes are enabled. Location resize handles, node locking, and topology editors are available.</value>
+    <value>Layout and manual topology changes are enabled. Placement resize handles, node locking, and topology editors are available.</value>
   </data>
   <data name="MapInteractionModeEditIndicator" xml:space="preserve">
     <value>EDIT MODE</value>
@@ -1963,10 +1963,10 @@ Poll: {2}</value>
     <value>Port B</value>
   </data>
   <data name="DiagnosticFieldLocationA" xml:space="preserve">
-    <value>Location A</value>
+    <value>Placement A</value>
   </data>
   <data name="DiagnosticFieldLocationB" xml:space="preserve">
-    <value>Location B</value>
+    <value>Placement B</value>
   </data>
   <data name="DiagnosticEndpointPortValue" xml:space="preserve">
     <value>{0} · {1}</value>
@@ -2072,6 +2072,24 @@ Poll: {2}</value>
   </data>
   <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
     <value>Global search</value>
+  </data>
+  <data name="ShellGlobalSearchGroupDevices" xml:space="preserve">
+    <value>Devices</value>
+  </data>
+  <data name="ShellGlobalSearchGroupMacAddresses" xml:space="preserve">
+    <value>MAC addresses</value>
+  </data>
+  <data name="ShellGlobalSearchGroupPorts" xml:space="preserve">
+    <value>Ports</value>
+  </data>
+  <data name="ShellGlobalSearchResultCount" xml:space="preserve">
+    <value>Found: {0}</value>
+  </data>
+  <data name="ShellGlobalSearchNoResults" xml:space="preserve">
+    <value>Nothing found for “{0}”.</value>
+  </data>
+  <data name="ShellMapMonitoringStoppedNotice" xml:space="preserve">
+    <value>Monitoring is stopped — states are not being updated</value>
   </data>
   <data name="ShellMapFocusAction" xml:space="preserve">
     <value>Show: all</value>

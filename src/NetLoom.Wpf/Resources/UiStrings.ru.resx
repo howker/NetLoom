@@ -747,7 +747,7 @@
     <value>Используйте этот редактор только для оборудования и кабелей, которые Discovery не может представить. Автоматическая топология здесь доступна только для чтения.</value>
   </data>
   <data name="ManualTopologyClose" xml:space="preserve">
-    <value>Закрыть</value>
+    <value>Назад</value>
   </data>
   <data name="ManualTopologyDevicesTab" xml:space="preserve">
     <value>Устройства</value>
@@ -1017,40 +1017,40 @@
     <value>У устройства есть несохранённые изменения. Сохранить их перед переходом к «Портам» или «Связям»?</value>
   </data>
   <data name="LocationTopologyAction" xml:space="preserve">
-    <value>Локации</value>
+    <value>Размещения</value>
   </data>
   <data name="LocationTopologyMapHint" xml:space="preserve">
     <value>Создание и размещение на карте границ площадок, зданий, помещений и шкафов.</value>
   </data>
   <data name="LocationTopologyWindowTitle" xml:space="preserve">
-    <value>Локации</value>
+    <value>Размещения</value>
   </data>
   <data name="LocationTopologyTitle" xml:space="preserve">
-    <value>Локации</value>
+    <value>Размещения</value>
   </data>
   <data name="LocationTopologyIntro" xml:space="preserve">
-    <value>Создавайте вложенные физические локации и назначайте им устройства. Карта сохраняет физическую иерархию и расположение после перезапуска.</value>
+    <value>Создавайте вложенные физические размещения и назначайте им устройства. Карта сохраняет физическую иерархию и расположение после перезапуска.</value>
   </data>
   <data name="LocationTopologyInteractionHint" xml:space="preserve">
-    <value>Выбор локации только показывает её данные. Для изменения нажмите «Изменить» или дважды щёлкните; «Новая» создаёт отдельный черновик. На карте перемещение локации двигает всё её физическое поддерево и назначенные устройства.</value>
+    <value>Выбор размещения только показывает его данные. Для изменения нажмите «Изменить» или дважды щёлкните; «Новое» создаёт отдельный черновик. На карте перемещение размещения двигает всё его физическое поддерево и назначенные устройства.</value>
   </data>
   <data name="LocationTopologyClose" xml:space="preserve">
-    <value>Закрыть</value>
+    <value>Назад</value>
   </data>
   <data name="LocationTopologyLocationsTab" xml:space="preserve">
-    <value>Локации</value>
+    <value>Размещения</value>
   </data>
   <data name="LocationTopologyDevicesTab" xml:space="preserve">
     <value>Устройства</value>
   </data>
   <data name="LocationTopologyLocationsList" xml:space="preserve">
-    <value>Иерархия локаций</value>
+    <value>Иерархия размещений</value>
   </data>
   <data name="LocationTopologyName" xml:space="preserve">
     <value>Название</value>
   </data>
   <data name="LocationTopologyParent" xml:space="preserve">
-    <value>Родительская локация</value>
+    <value>Родительское размещение</value>
   </data>
   <data name="LocationTopologyDescription" xml:space="preserve">
     <value>Комментарий / описание</value>
@@ -1080,7 +1080,7 @@
     <value>Выбранное устройство</value>
   </data>
   <data name="LocationTopologyDeviceLocation" xml:space="preserve">
-    <value>Основная локация</value>
+    <value>Основное размещение</value>
   </data>
   <data name="LocationTopologyAssign" xml:space="preserve">
     <value>Назначить</value>
@@ -1098,28 +1098,28 @@
     <value>Готово.</value>
   </data>
   <data name="LocationTopologyCreated" xml:space="preserve">
-    <value>Локация создана.</value>
+    <value>Размещение создано.</value>
   </data>
   <data name="LocationTopologySaved" xml:space="preserve">
-    <value>Локация сохранена.</value>
+    <value>Размещение сохранено.</value>
   </data>
   <data name="LocationTopologyDeleted" xml:space="preserve">
-    <value>Локация удалена.</value>
+    <value>Размещение удалено.</value>
   </data>
   <data name="LocationTopologyDeviceAssigned" xml:space="preserve">
-    <value>Локация устройства обновлена.</value>
+    <value>Размещение устройства обновлено.</value>
   </data>
   <data name="LocationTopologyValidationName" xml:space="preserve">
-    <value>Укажите название локации.</value>
+    <value>Укажите название размещения.</value>
   </data>
   <data name="LocationTopologyOperationFailed" xml:space="preserve">
-    <value>Операцию с локацией выполнить не удалось. Подробности записаны в журнал.</value>
+    <value>Операцию с размещением выполнить не удалось. Подробности записаны в журнал.</value>
   </data>
   <data name="LocationTopologyDeleteBlocked" xml:space="preserve">
-    <value>Локацию нельзя удалить, пока в ней есть дочерние локации или назначенные устройства.</value>
+    <value>Размещение нельзя удалить, пока в нём есть дочерние размещения или назначенные устройства.</value>
   </data>
   <data name="LocationTopologyDeleteConfirm" xml:space="preserve">
-    <value>Удалить локацию «{0}»?</value>
+    <value>Удалить размещение «{0}»?</value>
   </data>
   <data name="MapLocationNoDescription" xml:space="preserve">
     <value>Описание не задано</value>
@@ -1127,7 +1127,7 @@
   <data name="MapLocationToolTip" xml:space="preserve">
     <value>{0}
 {1}
-Перетаскивание заголовка двигает эту локацию вместе с дочерними локациями и назначенными устройствами.</value>
+Перетаскивание заголовка двигает это размещение вместе с дочерними размещениями и назначенными устройствами.</value>
   </data>
   <data name="MapLocationCollapse" xml:space="preserve">
     <value>Свернуть</value>
@@ -1142,22 +1142,22 @@
     <value>Разблокировать положение</value>
   </data>
   <data name="MapLocationEdit" xml:space="preserve">
-    <value>Изменить локацию</value>
+    <value>Изменить размещение</value>
   </data>
   <data name="MapLocationLockedBadge" xml:space="preserve">
     <value>Заблокировано</value>
   </data>
   <data name="MapLocationSelectedStatus" xml:space="preserve">
-    <value>Выбрана локация.</value>
+    <value>Выбрано размещение.</value>
   </data>
   <data name="MapLocationDetailsTitle" xml:space="preserve">
-    <value>Локация</value>
+    <value>Размещение</value>
   </data>
   <data name="MapLocationDeviceCount" xml:space="preserve">
     <value>Устройств напрямую</value>
   </data>
   <data name="MapLocationChildCount" xml:space="preserve">
-    <value>Дочерних локаций</value>
+    <value>Дочерних размещений</value>
   </data>
   <data name="MapLocationState" xml:space="preserve">
     <value>Отображение</value>
@@ -1576,7 +1576,7 @@
     <value>Физическая связь</value>
   </data>
   <data name="InspectorEntityLocation" xml:space="preserve">
-    <value>Локация</value>
+    <value>Размещение</value>
   </data>
   <data name="InspectorEntityId" xml:space="preserve">
     <value>ID: {0}</value>
@@ -2072,6 +2072,24 @@
   </data>
   <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
     <value>Глобальный поиск</value>
+  </data>
+  <data name="ShellGlobalSearchGroupDevices" xml:space="preserve">
+    <value>Устройства</value>
+  </data>
+  <data name="ShellGlobalSearchGroupMacAddresses" xml:space="preserve">
+    <value>MAC-адреса</value>
+  </data>
+  <data name="ShellGlobalSearchGroupPorts" xml:space="preserve">
+    <value>Порты</value>
+  </data>
+  <data name="ShellGlobalSearchResultCount" xml:space="preserve">
+    <value>Найдено: {0}</value>
+  </data>
+  <data name="ShellGlobalSearchNoResults" xml:space="preserve">
+    <value>По запросу «{0}» ничего не найдено.</value>
+  </data>
+  <data name="ShellMapMonitoringStoppedNotice" xml:space="preserve">
+    <value>Мониторинг остановлен — состояния не обновляются</value>
   </data>
   <data name="ShellMapFocusAction" xml:space="preserve">
     <value>Показать: всё</value>

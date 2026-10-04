@@ -702,27 +702,50 @@ public partial class MainWindow
             NodeStatusSemantic(
                 state);
 
+        var hasProblem =
+            state == MapNodeDegradationState.Degraded ||
+            state == MapNodeDegradationState.Critical;
+
         var brushKey =
-            OperatorStatusBrushKey(
-                semantic);
+            hasProblem
+                ? OperatorStatusBrushKey(
+                    semantic)
+                : "NetLoom.Brush.BorderStrong";
 
         visual.StateStripe.SetResourceReference(
             System.Windows.Controls.Border.BackgroundProperty,
             brushKey);
 
-        visual.StatusIcon.Data =
-            FindResource(
-                OperatorStatusIconGeometryKey(
-                    semantic))
-            as Geometry;
+        visual.StatusIcon.Visibility =
+            hasProblem
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
-        visual.StatusIcon.ToolTip =
-            OperatorStatusLabel(
-                semantic);
+        if (hasProblem)
+        {
+            visual.StatusIcon.Data =
+                FindResource(
+                    OperatorStatusIconGeometryKey(
+                        semantic))
+                as Geometry;
 
-        visual.StatusIcon.SetResourceReference(
-            Path.StrokeProperty,
-            brushKey);
+            visual.StatusIcon.ToolTip =
+                OperatorStatusLabel(
+                    semantic);
+
+            visual.StatusIcon.SetResourceReference(
+                Path.StrokeProperty,
+                brushKey);
+        }
+        else
+        {
+            visual.StatusIcon.Data =
+                null;
+            visual.StatusIcon.ToolTip =
+                null;
+            visual.StatusIcon.ClearValue(
+                Path.StrokeProperty);
+        }
     }
 
     private MapNodeDegradationState
@@ -933,9 +956,9 @@ public partial class MainWindow
                 return "NetLoom.Brush.AccentHover";
 
             case MapLinkOperationalState.Forwarding:
-                return "NetLoom.Brush.Success";
-
             case MapLinkOperationalState.Normal:
+                return null;
+
             default:
                 return null;
         }

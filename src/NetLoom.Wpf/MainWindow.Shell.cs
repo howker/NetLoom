@@ -1503,6 +1503,15 @@ namespace NetLoom.Wpf
                     TextBlock.ForegroundProperty,
                     OperatorStatusBrushKey(
                         monitoringStatus));
+
+            Adr083MapMonitoringNoticeText.Text =
+                UiText.Get(
+                    "ShellMapMonitoringStoppedNotice");
+            Adr083MapMonitoringNotice.Visibility =
+                snapshot.State ==
+                    MonitoringControlState.Stopped
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
 

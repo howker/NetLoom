@@ -136,7 +136,7 @@ namespace NetLoom.Wpf
             {
                 case OperatorStatusSemantic.Normal:
                 case OperatorStatusSemantic.Active:
-                    return "NetLoom.Brush.Success";
+                    return "NetLoom.Brush.TextSecondary";
                 case OperatorStatusSemantic.Warning:
                     return "NetLoom.Brush.Warning";
                 case OperatorStatusSemantic.Critical:

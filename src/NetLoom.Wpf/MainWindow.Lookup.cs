@@ -202,6 +202,8 @@ public partial class MainWindow : Window
                     "LookupResultCount",
                     rows.Length,
                     result.NormalizedQuery);
+
+        RefreshAdr083GlobalSearchResults();
     }
 
     private void OnLookupSelectionChanged(

@@ -63,7 +63,8 @@
                              Height="32"
                              Padding="30,4,54,4"
                              VerticalContentAlignment="Center"
-                             TextChanged="OnShellGlobalSearchTextChanged" />
+                             TextChanged="OnShellGlobalSearchTextChanged"
+                             PreviewKeyDown="OnShellGlobalSearchPreviewKeyDown" />
                     <Path Width="14"
                           Height="14"
                           Margin="10,0,0,0"
@@ -101,8 +102,26 @@
                                            Style="{StaticResource NetLoom.Style.MutedText}" />
                                 <ListBox x:Name="ShellGlobalSearchResultsList"
                                          Margin="0,8,0,0"
-                                         DisplayMemberPath="Summary"
-                                         SelectionChanged="OnShellGlobalSearchSelectionChanged" />
+                                         PreviewKeyDown="OnShellGlobalSearchPreviewKeyDown"
+                                         PreviewMouseLeftButtonUp="OnShellGlobalSearchResultMouseLeftButtonUp">
+                                    <ListBox.GroupStyle>
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}"
+                                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                                               Margin="0,8,0,4" />
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </ListBox.GroupStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Summary}"
+                                                       TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                             </StackPanel>
                         </Border>
                     </Popup>
@@ -1247,6 +1266,7 @@
                   Background="{DynamicResource NetLoom.Brush.Canvas}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -1341,8 +1361,20 @@
                     </Grid>
                 </Border>
 
+                <Border x:Name="Adr083MapMonitoringNotice"
+                        Grid.Row="1"
+                        Padding="12,6"
+                        Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                        BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                        BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="Adr083MapMonitoringNoticeText"
+                               Style="{StaticResource NetLoom.Style.MutedText}"
+                               TextWrapping="Wrap" />
+                </Border>
+
                 <ScrollViewer x:Name="MapScrollViewer"
-                              Grid.Row="1"
+                              Grid.Row="2"
                               Style="{StaticResource NetLoom.Style.MapScrollViewer}"
                               Background="{DynamicResource NetLoom.Brush.Canvas}"
                               HorizontalScrollBarVisibility="Auto"

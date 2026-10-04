@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using NetLoom.Wpf.Localization;
 
@@ -140,34 +143,428 @@ namespace NetLoom.Wpf
                 return;
             }
 
-            LookupQueryTextBox.Text =
-                query;
-
-            await QueueLookupAsync();
-
-            ShellGlobalSearchResultsList.ItemsSource =
-                LookupResultsList.ItemsSource;
-            ShellGlobalSearchStatusText.Text =
-                LookupStatusText.Text;
+            RefreshAdr083GlobalSearchResults();
             ShellGlobalSearchPopup.IsOpen =
                 true;
-        }
 
-        private void OnShellGlobalSearchSelectionChanged(
-            object sender,
-            SelectionChangedEventArgs e)
-        {
-            if (ShellGlobalSearchResultsList.SelectedItem == null)
+            if (!Adr083ShouldUseLegacyLookup(
+                    query))
             {
                 return;
             }
 
-            LookupResultsList.SelectedItem =
-                ShellGlobalSearchResultsList.SelectedItem;
+            LookupQueryTextBox.Text =
+                query;
 
-            OnLookupSelectionChanged(
-                LookupResultsList,
-                e);
+            await QueueLookupAsync();
+        }
+
+        private static bool Adr083ShouldUseLegacyLookup(
+            string query)
+        {
+            IPAddress address;
+
+            if (IPAddress.TryParse(
+                    query,
+                    out address))
+            {
+                return true;
+            }
+
+            var compact =
+                new string(
+                    query
+                        .Where(
+                            character =>
+                                character != ':' &&
+                                character != '-' &&
+                                character != '.' &&
+                                !char.IsWhiteSpace(character))
+                        .ToArray());
+
+            return compact.Length == 12 &&
+                compact.All(
+                    Uri.IsHexDigit);
+        }
+
+        private void RefreshAdr083GlobalSearchResults()
+        {
+            if (ShellGlobalSearchTextBox == null ||
+                ShellGlobalSearchResultsList == null)
+            {
+                return;
+            }
+
+            var query =
+                ShellGlobalSearchTextBox.Text == null
+                    ? string.Empty
+                    : ShellGlobalSearchTextBox.Text.Trim();
+
+            if (query.Length == 0)
+            {
+                ShellGlobalSearchResultsList.ItemsSource =
+                    null;
+                return;
+            }
+
+            var rows =
+                BuildAdr083GlobalSearchRows(
+                    query);
+
+            var view =
+                CollectionViewSource.GetDefaultView(
+                    rows);
+
+            view.GroupDescriptions.Clear();
+            view.GroupDescriptions.Add(
+                new PropertyGroupDescription(
+                    "GroupName"));
+
+            ShellGlobalSearchResultsList.ItemsSource =
+                view;
+
+            ShellGlobalSearchStatusText.Text =
+                rows.Length == 0
+                    ? UiText.Format(
+                        "ShellGlobalSearchNoResults",
+                        query)
+                    : UiText.Format(
+                        "ShellGlobalSearchResultCount",
+                        rows.Length);
+        }
+
+        private Adr083GlobalSearchRow[]
+            BuildAdr083GlobalSearchRows(
+                string query)
+        {
+            var rows =
+                new List<Adr083GlobalSearchRow>();
+            var keys =
+                new HashSet<string>(
+                    StringComparer.OrdinalIgnoreCase);
+
+            if (_lastDiagnosticSnapshot != null)
+            {
+                foreach (var device in
+                    _lastDiagnosticSnapshot.Devices)
+                {
+                    var deviceName =
+                        string.IsNullOrWhiteSpace(
+                            device.DisplayName)
+                            ? device.DeviceId.ToString("D")
+                            : device.DisplayName;
+                    var address =
+                        device.ManagementAddress ??
+                        string.Empty;
+
+                    if (Adr083SearchContains(
+                            deviceName,
+                            query) ||
+                        Adr083SearchContains(
+                            address,
+                            query))
+                    {
+                        AddAdr083GlobalSearchRow(
+                            rows,
+                            keys,
+                            new Adr083GlobalSearchRow(
+                                UiText.Get(
+                                    "ShellGlobalSearchGroupDevices"),
+                                string.IsNullOrWhiteSpace(address)
+                                    ? deviceName
+                                    : deviceName +
+                                      " · " +
+                                      address,
+                                device.DeviceId,
+                                null,
+                                null));
+                    }
+
+                    foreach (var item in
+                        device.Interfaces)
+                    {
+                        if (Adr083SearchContains(
+                                item.MacAddress,
+                                query))
+                        {
+                            AddAdr083GlobalSearchRow(
+                                rows,
+                                keys,
+                                new Adr083GlobalSearchRow(
+                                    UiText.Get(
+                                        "ShellGlobalSearchGroupMacAddresses"),
+                                    deviceName +
+                                        " · " +
+                                        item.MacAddress,
+                                    device.DeviceId,
+                                    item.InterfaceId,
+                                    null));
+                        }
+
+                        if (Adr083SearchContains(
+                                item.DisplayName,
+                                query) ||
+                            Adr083SearchContains(
+                                item.IfName,
+                                query) ||
+                            Adr083SearchContains(
+                                item.IfAlias,
+                                query) ||
+                            Adr083SearchContains(
+                                item.IfDescription,
+                                query))
+                        {
+                            var interfaceName =
+                                !string.IsNullOrWhiteSpace(
+                                    item.DisplayName)
+                                    ? item.DisplayName
+                                    : !string.IsNullOrWhiteSpace(
+                                        item.IfName)
+                                        ? item.IfName
+                                        : item.InterfaceId.ToString("D");
+
+                            AddAdr083GlobalSearchRow(
+                                rows,
+                                keys,
+                                new Adr083GlobalSearchRow(
+                                    UiText.Get(
+                                        "ShellGlobalSearchGroupPorts"),
+                                    deviceName +
+                                        " · " +
+                                        interfaceName,
+                                    device.DeviceId,
+                                    item.InterfaceId,
+                                    null));
+                        }
+                    }
+                }
+            }
+
+            if (_lastMapSnapshot != null)
+            {
+                foreach (var node in
+                    _lastMapSnapshot.Nodes)
+                {
+                    if (!node.DeviceId.HasValue)
+                    {
+                        continue;
+                    }
+
+                    var name =
+                        DisplayNodeLabel(
+                            node);
+
+                    if (!Adr083SearchContains(
+                            name,
+                            query))
+                    {
+                        continue;
+                    }
+
+                    AddAdr083GlobalSearchRow(
+                        rows,
+                        keys,
+                        new Adr083GlobalSearchRow(
+                            UiText.Get(
+                                "ShellGlobalSearchGroupDevices"),
+                            name,
+                            node.DeviceId.Value,
+                            null,
+                            null));
+                }
+            }
+
+            if (Adr083ShouldUseLegacyLookup(query) &&
+                string.Equals(
+                    LookupQueryTextBox.Text == null
+                        ? string.Empty
+                        : LookupQueryTextBox.Text.Trim(),
+                    query,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var lookupRow in
+                    LookupResultsList.Items
+                        .OfType<LookupCandidateRow>())
+                {
+                    var candidate =
+                        lookupRow.Candidate;
+                    var groupName =
+                        Adr083LooksLikeMacAddress(query)
+                            ? UiText.Get(
+                                "ShellGlobalSearchGroupMacAddresses")
+                            : UiText.Get(
+                                "ShellGlobalSearchGroupDevices");
+
+                    AddAdr083GlobalSearchRow(
+                        rows,
+                        keys,
+                        new Adr083GlobalSearchRow(
+                            groupName,
+                            lookupRow.Summary,
+                            candidate.DeviceId,
+                            candidate.InterfaceId,
+                            lookupRow));
+                }
+            }
+
+            return rows
+                .Take(30)
+                .ToArray();
+        }
+
+        private static bool Adr083LooksLikeMacAddress(
+            string query)
+        {
+            var compact =
+                new string(
+                    (query ?? string.Empty)
+                        .Where(
+                            character =>
+                                character != ':' &&
+                                character != '-' &&
+                                character != '.' &&
+                                !char.IsWhiteSpace(character))
+                        .ToArray());
+
+            return compact.Length == 12 &&
+                compact.All(
+                    Uri.IsHexDigit);
+        }
+
+        private static bool Adr083SearchContains(
+            string value,
+            string query)
+        {
+            return !string.IsNullOrWhiteSpace(value) &&
+                value.IndexOf(
+                    query,
+                    StringComparison.CurrentCultureIgnoreCase) >= 0;
+        }
+
+        private static void AddAdr083GlobalSearchRow(
+            ICollection<Adr083GlobalSearchRow> rows,
+            ISet<string> keys,
+            Adr083GlobalSearchRow row)
+        {
+            var key =
+                row.GroupName +
+                "\u001f" +
+                (row.DeviceId.HasValue
+                    ? row.DeviceId.Value.ToString("D")
+                    : string.Empty) +
+                "\u001f" +
+                (row.InterfaceId.HasValue
+                    ? row.InterfaceId.Value.ToString("D")
+                    : string.Empty) +
+                "\u001f" +
+                (!row.DeviceId.HasValue &&
+                 !row.InterfaceId.HasValue
+                    ? row.Summary
+                    : string.Empty);
+
+            if (keys.Add(key))
+            {
+                rows.Add(row);
+            }
+        }
+
+        private void OnShellGlobalSearchPreviewKeyDown(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                ShellGlobalSearchPopup.IsOpen =
+                    false;
+                ShellGlobalSearchTextBox.Focus();
+                e.Handled =
+                    true;
+                return;
+            }
+
+            if (e.Key == Key.Down &&
+                ReferenceEquals(
+                    sender,
+                    ShellGlobalSearchTextBox) &&
+                ShellGlobalSearchResultsList.Items.Count > 0)
+            {
+                if (ShellGlobalSearchResultsList.SelectedIndex < 0)
+                {
+                    ShellGlobalSearchResultsList.SelectedIndex =
+                        0;
+                }
+
+                ShellGlobalSearchResultsList.Focus();
+                e.Handled =
+                    true;
+                return;
+            }
+
+            if (e.Key == Key.Enter)
+            {
+                if (ShellGlobalSearchResultsList.SelectedIndex < 0 &&
+                    ShellGlobalSearchResultsList.Items.Count > 0)
+                {
+                    ShellGlobalSearchResultsList.SelectedIndex =
+                        0;
+                }
+
+                ActivateAdr083GlobalSearchSelection();
+                e.Handled =
+                    true;
+            }
+        }
+
+        private void OnShellGlobalSearchResultMouseLeftButtonUp(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            ActivateAdr083GlobalSearchSelection();
+        }
+
+        private void ActivateAdr083GlobalSearchSelection()
+        {
+            var row =
+                ShellGlobalSearchResultsList.SelectedItem
+                as Adr083GlobalSearchRow;
+
+            if (row == null)
+            {
+                return;
+            }
+
+            if (row.LookupRow != null)
+            {
+                LookupDetailsText.Text =
+                    row.LookupRow.Details;
+            }
+
+            if (!row.DeviceId.HasValue)
+            {
+                ShellGlobalSearchPopup.IsOpen =
+                    false;
+                return;
+            }
+
+            StopStartupTopologyFit();
+
+            _highlightedDeviceId =
+                row.DeviceId.Value;
+            _selectedDeviceId =
+                row.DeviceId.Value;
+            _selectedInterfaceId =
+                row.InterfaceId;
+            _selectedPhysicalLinkId =
+                null;
+            _selectedLocationId =
+                null;
+
+            ShowShellSection(
+                ShellSection.Map);
+            RedrawCurrentMap();
+            ShowSelectedDiagnostic();
+            UpdateSelectedLayoutControl();
+            BringHighlightedDeviceIntoView();
 
             ShellGlobalSearchPopup.IsOpen =
                 false;
@@ -181,6 +578,7 @@ namespace NetLoom.Wpf
             if (!string.IsNullOrWhiteSpace(
                     ShellGlobalSearchTextBox.Text))
             {
+                RefreshAdr083GlobalSearchResults();
                 ShellGlobalSearchPopup.IsOpen =
                     true;
             }
@@ -482,6 +880,33 @@ namespace NetLoom.Wpf
                     _adr083InspectorPreferredWidth);
             ShellInspectorSplitter.Visibility =
                 Visibility.Visible;
+        }
+
+        private sealed class Adr083GlobalSearchRow
+        {
+            public Adr083GlobalSearchRow(
+                string groupName,
+                string summary,
+                Guid? deviceId,
+                Guid? interfaceId,
+                LookupCandidateRow lookupRow)
+            {
+                GroupName = groupName;
+                Summary = summary;
+                DeviceId = deviceId;
+                InterfaceId = interfaceId;
+                LookupRow = lookupRow;
+            }
+
+            public string GroupName { get; }
+
+            public string Summary { get; }
+
+            public Guid? DeviceId { get; }
+
+            public Guid? InterfaceId { get; }
+
+            public LookupCandidateRow LookupRow { get; }
         }
     }
 }
