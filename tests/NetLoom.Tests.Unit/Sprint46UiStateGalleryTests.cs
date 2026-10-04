@@ -1,4 +1,4 @@
-using Path = System.Windows.Shapes.Path;
+﻿using Path = System.Windows.Shapes.Path;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,6 +23,8 @@ using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
+using NetLoom.Wpf.Localization;
+
 using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Tests.Unit
@@ -226,6 +228,10 @@ namespace NetLoom.Tests.Unit
                         outputDirectory,
                         findings);
 
+                    RenderProfileResolutionScenarios(
+                        outputDirectory,
+                        findings);
+
                     RenderPopupScenario(
                         outputDirectory,
                         findings);
@@ -268,7 +274,7 @@ namespace NetLoom.Tests.Unit
                             "Rendered from production WPF controls; gallery defines no product styles.",
                             "Each shell PNG contains minimum-width 1100 px and normal-width 1400 px side by side.",
                             "Themes: Light and Dark.",
-                            "Covered shell surfaces: empty state; device names (one word, IP-only, long/unbroken, Й/Ё); selected device inspector; stale Critical link; Location inspector; Equipment; Monitoring error; Alerts/event strip; edit-mode controls; Manual topology editor; Location editor; SNMP profile settings.",
+                            "Covered shell surfaces: empty state; device names (one word, IP-only, long/unbroken, Й/Ё); selected device inspector; stale Critical link; Location inspector; Equipment; Monitoring error; Alerts/event strip; edit-mode controls; Manual topology editor; Location editor; SNMP profile settings; access-profile resolution states (0 profiles, 1 auto-selected, 2+ unresolved for Monitoring and Discovery).",
                             "Covered component states from production resource dictionaries: normal, hover, keyboard focus, disabled, selected/checked/expanded for Button, secondary Button, ToggleButton, ListBoxItem, TabItem, ComboBox, CheckBox, Expander and TextBox; count badge 0/1/many/99+; status/severity labels.",
                             "Separate-HWND identity + WPF visual-root raster proof: production ComboBox popup, ContextMenu (normal and disabled item), submenu and ToolTip are located through their live production popup HwndSource and rasterized from that source's live WPF RootVisual in both themes; the test rejects owner-window substitution, mostly transparent captures and visually flat/black captures.",
                             "Text axes represented: empty, one word, ordinary, multiline, unbroken 60+ characters, Й/Ё. Width axis: minimum and normal shell widths side by side. Themes: Light and Dark.",
@@ -479,6 +485,292 @@ namespace NetLoom.Tests.Unit
                         (dark ? "dark" : "light") +
                         ".png"));
             }
+        }
+
+        private static void RenderProfileResolutionScenarios(
+            string outputDirectory,
+            IList<string> findings)
+        {
+            var singleProfile =
+                new AccessProfile(
+                    Guid.Parse(
+                        "46464646-9810-9810-9810-464646464646"),
+                    "Единственный профиль",
+                    true,
+                    SnmpVersion.V2C,
+                    null);
+
+            var firstProfile =
+                new AccessProfile(
+                    Guid.Parse(
+                        "46464646-9820-9820-9820-464646464646"),
+                    "Профиль A",
+                    true,
+                    SnmpVersion.V2C,
+                    null);
+
+            var secondProfile =
+                new AccessProfile(
+                    Guid.Parse(
+                        "46464646-9821-9821-9821-464646464646"),
+                    "Профиль B",
+                    true,
+                    SnmpVersion.V1,
+                    null);
+
+            RenderProfileResolutionScenario(
+                outputDirectory,
+                "08a-profile-zero",
+                new AccessProfile[0],
+                () => EmptySnapshot(),
+                window =>
+                {
+                    Assert.AreEqual(
+                        Visibility.Collapsed,
+                        ((ComboBox)window.FindName(
+                            "DiscoveryProfileComboBox"))
+                        .Visibility);
+
+                    Assert.AreEqual(
+                        Visibility.Visible,
+                        ((Button)window.FindName(
+                            "ShellProfileAddButton"))
+                        .Visibility);
+                },
+                findings);
+
+            RenderProfileResolutionScenario(
+                outputDirectory,
+                "08b-profile-single-auto-selected",
+                new[]
+                {
+                    singleProfile
+                },
+                () => EmptySnapshot(),
+                window =>
+                {
+                    var profiles =
+                        (ComboBox)window.FindName(
+                            "DiscoveryProfileComboBox");
+
+                    Assert.AreEqual(
+                        Visibility.Visible,
+                        profiles.Visibility);
+
+                    Assert.AreEqual(
+                        0,
+                        profiles.SelectedIndex,
+                        "The §9 single-profile state must render the automatically resolved selection.");
+
+                    Assert.AreEqual(
+                        Visibility.Collapsed,
+                        ((Button)window.FindName(
+                            "ShellProfileAddButton"))
+                        .Visibility);
+                },
+                findings);
+
+            var monitoringDeviceId =
+                Guid.Parse(
+                    "46464646-9830-9830-9830-464646464646");
+
+            RenderProfileResolutionScenario(
+                outputDirectory,
+                "08c-profile-unresolved-monitoring",
+                new[]
+                {
+                    firstProfile,
+                    secondProfile
+                },
+                () => SingleDeviceSnapshot(
+                    monitoringDeviceId,
+                    "SW-PROFILE-STATE",
+                    "192.0.2.214"),
+                window =>
+                {
+                    WaitForCondition(
+                        () =>
+                            DeviceBorder(
+                                window,
+                                monitoringDeviceId) !=
+                            null);
+
+                    SelectDevice(
+                        window,
+                        monitoringDeviceId);
+
+                    Click(
+                        (Button)window.FindName(
+                            "ShellMonitoringButton"));
+
+                    PumpDispatcher();
+
+                    AssertUnresolvedProfilePlaceholder(
+                        window);
+
+                    Assert.IsFalse(
+                        ((Button)window.FindName(
+                            "MonitoringStartButton"))
+                        .IsEnabled,
+                        "Monitoring start must be visibly disabled while the global profile is unresolved.");
+
+                    Assert.IsFalse(
+                        ((Button)window.FindName(
+                            "ShellMonitoringStartButton"))
+                        .IsEnabled);
+                },
+                findings);
+
+            RenderProfileResolutionScenario(
+                outputDirectory,
+                "08d-profile-unresolved-discovery",
+                new[]
+                {
+                    firstProfile,
+                    secondProfile
+                },
+                () => EmptySnapshot(),
+                window =>
+                {
+                    Click(
+                        (Button)window.FindName(
+                            "ShellDiscoveryButton"));
+
+                    PumpDispatcher();
+
+                    AssertUnresolvedProfilePlaceholder(
+                        window);
+
+                    Assert.IsFalse(
+                        ((Button)window.FindName(
+                            "DiscoveryStartButton"))
+                        .IsEnabled,
+                        "Discovery start must be visibly disabled while the global profile is unresolved.");
+
+                    Assert.AreEqual(
+                        UiText.Get(
+                            "DiscoveryValidationProfileRequired"),
+                        ((TextBlock)window.FindName(
+                            "DiscoveryProfileHintText"))
+                        .Text,
+                        "Discovery must render an operator-visible explanation for the unresolved profile.");
+                },
+                findings);
+        }
+
+        private static void RenderProfileResolutionScenario(
+            string outputDirectory,
+            string scenario,
+            IReadOnlyList<AccessProfile> profiles,
+            Func<TopologyRefreshSnapshot> snapshotFactory,
+            Action<MainWindow> configure,
+            IList<string> findings)
+        {
+            foreach (var dark in new[] { false, true })
+            {
+                var bitmaps =
+                    new List<BitmapSource>();
+
+                foreach (var width in
+                    new[] { NarrowWidth, NormalWidth })
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                snapshotFactory()),
+                            new EmptyLookupReader(),
+                            new GalleryMonitoringControl(),
+                            profiles);
+
+                    try
+                    {
+                        PrepareWindow(
+                            window,
+                            width,
+                            GalleryHeight);
+
+                        if (dark)
+                        {
+                            Click(
+                                (Button)window.FindName(
+                                    "ShellThemeButton"));
+                        }
+
+                        configure?.Invoke(window);
+
+                        PumpDispatcher();
+                        window.UpdateLayout();
+
+                        CollectTextClipping(
+                            window.Content as DependencyObject,
+                            scenario +
+                            "/" +
+                            (dark
+                                ? "dark"
+                                : "light") +
+                            "/" +
+                            width,
+                            findings);
+
+                        bitmaps.Add(
+                            Capture(
+                                window.Content
+                                as FrameworkElement));
+                    }
+                    finally
+                    {
+                        window.Close();
+                        PumpDispatcher();
+                    }
+                }
+
+                SaveSideBySide(
+                    bitmaps[0],
+                    bitmaps[1],
+                    System.IO.Path.Combine(
+                        outputDirectory,
+                        scenario +
+                        "-" +
+                        (dark
+                            ? "dark"
+                            : "light") +
+                        ".png"));
+            }
+        }
+
+        private static void AssertUnresolvedProfilePlaceholder(
+            MainWindow window)
+        {
+            var profiles =
+                (ComboBox)window.FindName(
+                    "DiscoveryProfileComboBox");
+
+            Assert.AreEqual(
+                -1,
+                profiles.SelectedIndex,
+                "The §9 unresolved state must preserve SelectedIndex = -1.");
+
+            profiles.ApplyTemplate();
+            PumpDispatcher();
+
+            var placeholder =
+                profiles.Template.FindName(
+                    "PlaceholderPresenter",
+                    profiles)
+                as TextBlock;
+
+            Assert.IsNotNull(
+                placeholder,
+                "The shared ComboBox style must render the unresolved placeholder.");
+
+            Assert.AreEqual(
+                Visibility.Visible,
+                placeholder.Visibility);
+
+            Assert.AreEqual(
+                UiText.Get(
+                    "ShellProfilePlaceholder"),
+                placeholder.Text);
         }
 
         private static void RenderPopupScenario(
@@ -1350,23 +1642,51 @@ namespace NetLoom.Tests.Unit
                 " popup HwndSource has no FrameworkElement RootVisual.");
 
             PumpDispatcher();
-            Thread.Sleep(75);
-            PumpDispatcher();
 
-            root.UpdateLayout();
+            WaitForCondition(
+                () =>
+                    root.ActualWidth > 2 &&
+                    root.ActualHeight > 2);
 
-            Assert.IsTrue(
-                root.ActualWidth > 2 &&
-                root.ActualHeight > 2,
+            BitmapSource bitmap = null;
+            AssertFailedException lastRasterFailure = null;
+            var rasterDeadline =
+                DateTime.UtcNow +
+                TimeSpan.FromSeconds(2);
+
+            do
+            {
+                PumpDispatcher();
+                root.UpdateLayout();
+
+                bitmap =
+                    Capture(root);
+
+                try
+                {
+                    AssertPopupRaster(
+                        bitmap,
+                        description);
+
+                    return bitmap;
+                }
+                catch (AssertFailedException ex)
+                {
+                    lastRasterFailure = ex;
+                }
+
+                Thread.Sleep(50);
+            }
+            while (DateTime.UtcNow < rasterDeadline);
+
+            if (lastRasterFailure != null)
+            {
+                throw lastRasterFailure;
+            }
+
+            Assert.Fail(
                 description +
-                " popup RootVisual has no drawable area.");
-
-            var bitmap =
-                Capture(root);
-
-            AssertPopupRaster(
-                bitmap,
-                description);
+                " popup raster was not captured.");
 
             return bitmap;
         }
