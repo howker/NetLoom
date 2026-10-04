@@ -289,7 +289,8 @@ namespace NetLoom.Tests.Unit
             string scenario,
             Func<TopologyRefreshSnapshot> snapshotFactory,
             Action<MainWindow> configure,
-            IList<string> findings)
+            IList<string> findings,
+            Func<IMonitoringControl> monitoringControlFactory = null)
         {
             foreach (var dark in new[] { false, true })
             {
@@ -301,7 +302,8 @@ namespace NetLoom.Tests.Unit
                         GalleryHeight,
                         configure,
                         scenario,
-                        findings);
+                        findings,
+                        monitoringControlFactory);
 
                 var normal =
                     RenderWindow(
@@ -311,7 +313,8 @@ namespace NetLoom.Tests.Unit
                         GalleryHeight,
                         configure,
                         scenario,
-                        findings);
+                        findings,
+                        monitoringControlFactory);
 
                 var path =
                     System.IO.Path.Combine(
@@ -335,12 +338,21 @@ namespace NetLoom.Tests.Unit
             int height,
             Action<MainWindow> configure,
             string scenario,
-            IList<string> findings)
+            IList<string> findings,
+            Func<IMonitoringControl> monitoringControlFactory = null)
         {
+            // Для сценариев с заданным состоянием мониторинга (например, ошибка) подставляем
+            // собственный управляющий объект; без профилей — состояние «0 профилей».
             var window =
-                new MainWindow(
-                    new FixedRefreshProvider(snapshot),
-                    new EmptyLookupReader());
+                monitoringControlFactory == null
+                    ? new MainWindow(
+                        new FixedRefreshProvider(snapshot),
+                        new EmptyLookupReader())
+                    : new MainWindow(
+                        new FixedRefreshProvider(snapshot),
+                        new EmptyLookupReader(),
+                        monitoringControlFactory(),
+                        new AccessProfile[0]);
 
             try
             {
@@ -1176,16 +1188,26 @@ namespace NetLoom.Tests.Unit
                         (Button)window.FindName(
                             "ShellMonitoringButton"));
 
-                    var start =
-                        (Button)window.FindName(
-                            "MonitoringStartButton");
+                    PumpDispatcher();
 
-                    if (start.IsEnabled)
+                    var message =
+                        (TextBlock)window.FindName(
+                            "MonitoringMessageText");
+
+                    if (string.IsNullOrWhiteSpace(
+                        message.Text))
                     {
-                        Click(start);
+                        findings.Add(
+                            "16-monitoring-error: сообщение об ошибке мониторинга не отображается (UI_DESIGN_RULES §2, §9).");
                     }
                 },
-                findings);
+                findings,
+                () => new GalleryMonitoringControl(
+                    new MonitoringControlSnapshot(
+                        MonitoringControlState.Faulted,
+                        null,
+                        null,
+                        "SNMP-запрос к 192.0.2.214 не получил ответа за 5 с. Проверьте адрес устройства и SNMP-профиль.")));
 
             RenderShellScenario(
                 outputDirectory,
@@ -2775,12 +2797,26 @@ namespace NetLoom.Tests.Unit
             IMonitoringControl
         {
             private readonly MonitoringControlSnapshot
-                _current =
+                _current;
+
+            public GalleryMonitoringControl()
+                : this(
                     new MonitoringControlSnapshot(
                         MonitoringControlState.Stopped,
                         null,
                         null,
-                        null);
+                        null))
+            {
+            }
+
+            public GalleryMonitoringControl(
+                MonitoringControlSnapshot current)
+            {
+                _current =
+                    current ??
+                    throw new ArgumentNullException(
+                        nameof(current));
+            }
 
             public MonitoringControlSnapshot Current =>
                 _current;

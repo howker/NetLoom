@@ -53,11 +53,11 @@
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
 
+                <!-- Поиск сжимается вместе с окном и не заходит под правую часть шапки. -->
                 <Grid Grid.Column="2"
-                      Width="360"
-                      MinWidth="260"
-                      MaxWidth="420"
-                      HorizontalAlignment="Center"
+                      MinWidth="{DynamicResource NetLoom.Shell.SearchMinWidth}"
+                      MaxWidth="{DynamicResource NetLoom.Shell.SearchMaxWidth}"
+                      HorizontalAlignment="Stretch"
                       VerticalAlignment="Center">
                     <TextBox x:Name="ShellGlobalSearchTextBox"
                              Height="32"
@@ -152,7 +152,8 @@
                                Visibility="Collapsed" />
                     <ComboBox x:Name="DiscoveryProfileComboBox"
                               Width="{DynamicResource NetLoom.Shell.ProfileWidth}"
-                              DisplayMemberPath="DisplayName" />
+                              DisplayMemberPath="DisplayName"
+                              ToolTip="{Binding SelectedItem.DisplayName, RelativeSource={RelativeSource Self}}" />
                     <Button x:Name="ShellProfileAddButton"
                             Visibility="Collapsed"
                             Click="OnShellProfileManageClick" />

@@ -554,12 +554,22 @@ namespace NetLoom.Wpf
                         "MonitoringFaultMessage",
                         snapshot.FaultMessage);
 
+            // Ошибка — критичным цветом; без ошибки возвращаем обычный стиль сообщения.
+            MonitoringMessageText.Style =
+                (Style)FindResource(
+                    string.IsNullOrWhiteSpace(
+                        snapshot.FaultMessage)
+                        ? "NetLoom.Style.StatusEmphasis"
+                        : "NetLoom.Style.StatusError");
+
             UpdateShellMonitoringPresentation(
                 snapshot);
 
             UpdateMonitoringControlAvailability(
                 snapshot);
         }
+
+        private bool _monitoringProfileHintShown;
 
         private void UpdateMonitoringControlAvailability(
             MonitoringControlSnapshot snapshot)
@@ -625,6 +635,38 @@ namespace NetLoom.Wpf
                     ? UiText.Get(
                         "MonitoringValidationProfileRequired")
                     : null;
+
+            // Причина недоступного запуска должна быть видна без наведения (UI_DESIGN_RULES §9):
+            // показываем её в строке сообщения, пока профиль не выбран, и убираем, когда он выбран.
+            if (profileRequiredHint != null)
+            {
+                if (string.IsNullOrWhiteSpace(
+                    MonitoringMessageText.Text))
+                {
+                    MonitoringMessageText.Text =
+                        profileRequiredHint;
+                    // Пояснение — приглушённым текстом, чтобы не выглядело как ссылка.
+                    MonitoringMessageText.Style =
+                        (Style)FindResource(
+                            "NetLoom.Style.MutedText");
+                    _monitoringProfileHintShown = true;
+                }
+            }
+            else if (_monitoringProfileHintShown)
+            {
+                if (MonitoringMessageText.Text ==
+                    UiText.Get(
+                        "MonitoringValidationProfileRequired"))
+                {
+                    MonitoringMessageText.Text =
+                        string.Empty;
+                    MonitoringMessageText.Style =
+                        (Style)FindResource(
+                            "NetLoom.Style.StatusEmphasis");
+                }
+
+                _monitoringProfileHintShown = false;
+            }
 
             MonitoringStartButton.ToolTip =
                 profileRequiredHint;

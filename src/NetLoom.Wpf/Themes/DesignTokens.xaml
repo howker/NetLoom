@@ -70,6 +70,8 @@
     <Thickness x:Key="NetLoom.Thickness.ShellEventPadding">12</Thickness>
     <Thickness x:Key="NetLoom.Thickness.InspectorContentPadding">12</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ComboBoxArrowMargin">0,0,10,0</Thickness>
+    <!-- Место справа под стрелку ComboBox: текст выбранного значения не заходит под неё. -->
+    <Thickness x:Key="NetLoom.Thickness.ComboBoxTextReserve">0,0,24,0</Thickness>
 
     <CornerRadius x:Key="NetLoom.Radius.Control">4</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.Panel">6</CornerRadius>
@@ -96,7 +98,9 @@
     <GridLength x:Key="NetLoom.Shell.RailWidth">56</GridLength>
     <GridLength x:Key="NetLoom.Shell.SidebarWidth">0</GridLength>
     <GridLength x:Key="NetLoom.Shell.InspectorWidth">360</GridLength>
-    <sys:Double x:Key="NetLoom.Shell.ProfileWidth">140</sys:Double>
+    <sys:Double x:Key="NetLoom.Shell.ProfileWidth">220</sys:Double>
+    <sys:Double x:Key="NetLoom.Shell.SearchMinWidth">160</sys:Double>
+    <sys:Double x:Key="NetLoom.Shell.SearchMaxWidth">420</sys:Double>
     <sys:Double x:Key="NetLoom.Alerts.ListWidth">420</sys:Double>
     <GridLength x:Key="NetLoom.Discovery.FormWidth">440</GridLength>
     <sys:Double x:Key="NetLoom.Settings.ContentMaxWidth">720</sys:Double>

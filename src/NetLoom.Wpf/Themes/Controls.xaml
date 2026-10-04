@@ -93,33 +93,42 @@
                                 CornerRadius="{DynamicResource NetLoom.Radius.Control}"
                                 SnapsToDevicePixels="True">
                             <Grid>
-                                <ContentPresenter x:Name="SelectionPresenter"
-                                                  Content="{TemplateBinding SelectionBoxItem}"
-                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                  VerticalAlignment="Center"
-                                                  Margin="{TemplateBinding Padding}"
-                                                  RecognizesAccessKey="True"
-                                                  IsHitTestVisible="False"
-                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
-                                    <ContentPresenter.RenderTransform>
-                                        <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
-                                    </ContentPresenter.RenderTransform>
-                                </ContentPresenter>
-                                <TextBlock x:Name="PlaceholderPresenter"
-                                           Text="{TemplateBinding Tag}"
-                                           Foreground="{DynamicResource NetLoom.Brush.TextSecondary}"
-                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                           VerticalAlignment="Center"
-                                           Margin="{TemplateBinding Padding}"
-                                           TextTrimming="CharacterEllipsis"
-                                           IsHitTestVisible="False"
-                                           Visibility="Collapsed">
-                                    <TextBlock.RenderTransform>
-                                        <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
-                                    </TextBlock.RenderTransform>
-                                </TextBlock>
+                                <!-- Справа резервируется место под стрелку, длинный текст обрезается многоточием. -->
+                                <Grid Margin="{DynamicResource NetLoom.Thickness.ComboBoxTextReserve}">
+                                    <ContentPresenter x:Name="SelectionPresenter"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      RecognizesAccessKey="True"
+                                                      IsHitTestVisible="False"
+                                                      SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                        <ContentPresenter.Resources>
+                                            <Style TargetType="{x:Type TextBlock}">
+                                                <Setter Property="TextTrimming"
+                                                        Value="CharacterEllipsis" />
+                                            </Style>
+                                        </ContentPresenter.Resources>
+                                        <ContentPresenter.RenderTransform>
+                                            <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+                                        </ContentPresenter.RenderTransform>
+                                    </ContentPresenter>
+                                    <TextBlock x:Name="PlaceholderPresenter"
+                                               Text="{TemplateBinding Tag}"
+                                               Foreground="{DynamicResource NetLoom.Brush.TextSecondary}"
+                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                               VerticalAlignment="Center"
+                                               Margin="{TemplateBinding Padding}"
+                                               TextTrimming="CharacterEllipsis"
+                                               IsHitTestVisible="False"
+                                               Visibility="Collapsed">
+                                        <TextBlock.RenderTransform>
+                                            <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+                                        </TextBlock.RenderTransform>
+                                    </TextBlock>
+                                </Grid>
                                 <Path HorizontalAlignment="Right"
                                       VerticalAlignment="Center"
                                       Margin="{DynamicResource NetLoom.Thickness.ComboBoxArrowMargin}"
@@ -650,6 +659,15 @@
                 Value="{DynamicResource NetLoom.FontFamily.Mono}" />
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+    </Style>
+
+    <!-- Ошибка: критичный цвет, не выглядит как ссылка (UI_DESIGN_RULES §5, §6). -->
+    <Style x:Key="NetLoom.Style.StatusError"
+           TargetType="{x:Type TextBlock}">
+        <Setter Property="FontWeight"
+                Value="SemiBold" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource NetLoom.Brush.Critical}" />
     </Style>
 
     <Style x:Key="NetLoom.Style.StatusEmphasis"
