@@ -100,6 +100,8 @@
     <GridLength x:Key="NetLoom.Shell.InspectorWidth">360</GridLength>
     <sys:Double x:Key="NetLoom.Shell.ProfileWidth">220</sys:Double>
     <sys:Double x:Key="NetLoom.Shell.SearchMinWidth">160</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.SearchPlaceholderMargin">32,0,60,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.FilterPlaceholderMargin">12,0,12,0</Thickness>
     <sys:Double x:Key="NetLoom.Shell.SearchMaxWidth">420</sys:Double>
     <sys:Double x:Key="NetLoom.Alerts.ListWidth">420</sys:Double>
     <GridLength x:Key="NetLoom.Discovery.FormWidth">440</GridLength>
@@ -113,6 +115,14 @@
     <Thickness x:Key="NetLoom.Thickness.StatusDot">0,0,10,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.StatusGlyph">0,0,8,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ExpanderContent">12</Thickness>
+    <sys:Double x:Key="NetLoom.Expander.HeaderMinHeight">28</sys:Double>
+    <sys:Double x:Key="NetLoom.Expander.ArrowSize">8</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.ExpanderHeaderPadding">4,0,8,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ExpanderArrowMargin">4,0,8,0</Thickness>
+    <sys:Double x:Key="NetLoom.Control.MinHitSize">24</sys:Double>
+    <sys:Double x:Key="NetLoom.CheckBox.Size">16</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.CheckMark">3,4</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.CheckBoxContent">8,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardBodyInset">14,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.PillPadding">9,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ResultRowPadding">0,6</Thickness>
@@ -141,8 +151,9 @@
     <sys:Double x:Key="NetLoom.Navigation.BadgeMinWidth">18</sys:Double>
     <sys:Double x:Key="NetLoom.Navigation.BadgeHeight">18</sys:Double>
     <sys:Double x:Key="NetLoom.Navigation.BadgeFontSize">11</sys:Double>
-    <Thickness x:Key="NetLoom.Thickness.NavigationButtonPadding">12,10</Thickness>
-    <Thickness x:Key="NetLoom.Thickness.NavigationIcon">0,0,10,0</Thickness>
+    <!-- Рейл — только значки: кнопка 44×44 центрирует значок без внутренних полей, иначе он обрезается. -->
+    <Thickness x:Key="NetLoom.Thickness.NavigationButtonPadding">0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.NavigationIcon">0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.NavigationBadge">8,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.NavigationBadgePaddingSingle">0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.NavigationBadgePaddingMulti">5,0</Thickness>

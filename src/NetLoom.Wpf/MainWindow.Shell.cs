@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.Windows.Automation;
 using Microsoft.Win32;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -170,6 +171,20 @@ namespace NetLoom.Wpf
             SettingsMonitoringMaxRepetitionsLabelText.Text =
                 UiText.Get(
                     "MonitoringMaxRepetitionsLabel");
+
+            // §8: у поля имя для UI Automation совпадает с видимой подписью.
+            AutomationProperties.SetName(
+                SettingsMonitoringIntervalTextBox,
+                SettingsMonitoringIntervalLabelText.Text);
+            AutomationProperties.SetName(
+                SettingsMonitoringTimeoutTextBox,
+                SettingsMonitoringTimeoutLabelText.Text);
+            AutomationProperties.SetName(
+                SettingsMonitoringRetriesTextBox,
+                SettingsMonitoringRetriesLabelText.Text);
+            AutomationProperties.SetName(
+                SettingsMonitoringMaxRepetitionsTextBox,
+                SettingsMonitoringMaxRepetitionsLabelText.Text);
             SettingsMonitoringKindsLabelText.Text =
                 UiText.Get(
                     "MonitoringKindsLabel");

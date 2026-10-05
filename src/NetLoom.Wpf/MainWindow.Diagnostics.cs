@@ -1455,6 +1455,7 @@ public partial class MainWindow : Window
                 Visibility.Collapsed;
             InspectorPrimaryActionButton.Visibility =
                 Visibility.Collapsed;
+            UpdateInspectorShowOnMapAction();
             return;
         }
 
@@ -1701,9 +1702,28 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
+        // Действие инспектора всегда ведёт на карту: из раздела, где карта скрыта,
+        // сначала переключаемся на «Карту», затем показываем объект.
+        if (ShellMapSurface.Visibility != Visibility.Visible)
+        {
+            ShowShellSection(
+                ShellSection.Map);
+        }
+
         if (_inspectorPrimaryAlert == null ||
             _inspectorPrimaryAlert.PhysicalLinkIds.Count == 0)
         {
+            if (_selectedDeviceId.HasValue)
+            {
+                var deviceId =
+                    _selectedDeviceId.Value;
+
+                FocusSelectedMapAtNativeZoom(
+                    () =>
+                        AnimateDiscoveryFocus(
+                            deviceId));
+            }
+
             return;
         }
 

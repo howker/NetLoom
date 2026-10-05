@@ -65,14 +65,40 @@
                              VerticalContentAlignment="Center"
                              TextChanged="OnShellGlobalSearchTextChanged"
                              PreviewKeyDown="OnShellGlobalSearchPreviewKeyDown" />
+                    <!-- Лупа вписывается в 14×14 целиком (Stretch), раньше геометрия выходила за рамку и обрезалась. -->
                     <Path Width="14"
                           Height="14"
                           Margin="10,0,0,0"
                           HorizontalAlignment="Left"
                           VerticalAlignment="Center"
+                          Stretch="Uniform"
                           Stroke="{DynamicResource NetLoom.Brush.TextSecondary}"
                           StrokeThickness="1.5"
-                          Data="M 9,9 C 12.314,9 15,6.314 15,3 C 15,-0.314 12.314,-3 9,-3 C 5.686,-3 3,-0.314 3,3 C 3,6.314 5.686,9 9,9 Z M 13.5,7.5 L 18,12" />
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          IsHitTestVisible="False"
+                          Data="{StaticResource NetLoom.Icon.ShellSearch}" />
+                    <!-- Видимая подсказка, что это поиск и что в нём искать (UI_DESIGN_RULES §3). -->
+                    <TextBlock x:Name="ShellGlobalSearchPlaceholderText"
+                               Margin="{DynamicResource NetLoom.Thickness.SearchPlaceholderMargin}"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False"
+                               TextTrimming="CharacterEllipsis">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}"
+                                   BasedOn="{StaticResource NetLoom.Style.MutedText}">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=ShellGlobalSearchTextBox}"
+                                                 Value="">
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                     <Border HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Margin="0,0,6,0"
@@ -368,6 +394,28 @@
                             <TextBox x:Name="EquipmentFilterTextBox"
                                      Grid.Column="0"
                                      TextChanged="OnEquipmentFilterTextChanged" />
+                            <!-- Подсказка фильтра по макету netloom-v2-2-oborudovanie. -->
+                            <TextBlock x:Name="EquipmentFilterPlaceholderText"
+                                       Grid.Column="0"
+                                       Margin="{DynamicResource NetLoom.Thickness.FilterPlaceholderMargin}"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False"
+                                       TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}"
+                                           BasedOn="{StaticResource NetLoom.Style.MutedText}">
+                                        <Setter Property="Visibility"
+                                                Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=EquipmentFilterTextBox}"
+                                                         Value="">
+                                                <Setter Property="Visibility"
+                                                        Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <Button x:Name="EquipmentFilterAllButton"
                                     Grid.Column="1"
                                     Tag="All"
@@ -447,6 +495,7 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Style="{StaticResource NetLoom.Style.EquipmentRowButton}"
+                                                        AutomationProperties.Name="{Binding Name}"
                                                         HorizontalContentAlignment="Stretch"
                                                         Padding="12,8"
                                                         Margin="0"
@@ -979,12 +1028,14 @@
                                         <TextBlock x:Name="DiscoveryStartAddressLabelText"
                                                    Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                         <TextBox x:Name="DiscoveryStartAddressTextBox"
+                                                 AutomationProperties.LabeledBy="{Binding ElementName=DiscoveryStartAddressLabelText}"
                                                  FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock x:Name="DiscoveryEndAddressLabelText"
                                                    Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                         <TextBox x:Name="DiscoveryEndAddressTextBox"
+                                                 AutomationProperties.LabeledBy="{Binding ElementName=DiscoveryEndAddressLabelText}"
                                                  FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
                                     </StackPanel>
                                 </Grid>
@@ -993,6 +1044,7 @@
                                     <TextBlock x:Name="DiscoverySubnetMaskLabelText"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBox x:Name="DiscoverySubnetMaskTextBox"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=DiscoverySubnetMaskLabelText}"
                                              FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
                                 </StackPanel>
 
@@ -1273,24 +1325,28 @@
                                     <TextBlock x:Name="SettingsMonitoringIntervalLabelText"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBox x:Name="SettingsMonitoringIntervalTextBox"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=SettingsMonitoringIntervalLabelText}"
                                              Text="{Binding Text, ElementName=MonitoringIntervalTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock x:Name="SettingsMonitoringTimeoutLabelText"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBox x:Name="SettingsMonitoringTimeoutTextBox"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=SettingsMonitoringTimeoutLabelText}"
                                              Text="{Binding Text, ElementName=MonitoringTimeoutTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock x:Name="SettingsMonitoringRetriesLabelText"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBox x:Name="SettingsMonitoringRetriesTextBox"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=SettingsMonitoringRetriesLabelText}"
                                              Text="{Binding Text, ElementName=MonitoringRetriesTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="6">
                                     <TextBlock x:Name="SettingsMonitoringMaxRepetitionsLabelText"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBox x:Name="SettingsMonitoringMaxRepetitionsTextBox"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=SettingsMonitoringMaxRepetitionsLabelText}"
                                              Text="{Binding Text, ElementName=MonitoringMaxRepetitionsTextBox, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
@@ -1541,6 +1597,7 @@
                     Margin="0,12,12,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
+                    Padding="{DynamicResource NetLoom.Thickness.None}"
                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
                     Visibility="Collapsed"
                     Panel.ZIndex="40"
@@ -1576,6 +1633,7 @@
                                 Height="28"
                                 HorizontalAlignment="Right"
                                 Margin="0,0,0,6"
+                                Padding="{DynamicResource NetLoom.Thickness.None}"
                                 Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                 Click="OnShellInspectorCollapseClick">‹</Button>
                         <TextBlock x:Name="DiagnosticTitleText"
@@ -1857,6 +1915,7 @@
                                 <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                         Margin="0,0,8,0"
                                         DataContext="{Binding}"
+                                        AutomationProperties.Name="{Binding Title}"
                                         Click="OnShellEventClick">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock x:Name="EventGlyph"

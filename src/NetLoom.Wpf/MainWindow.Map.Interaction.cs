@@ -67,6 +67,7 @@ public partial class MainWindow
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
+        RevealInspectorForExplicitSelection();
 
         if (e.ClickCount >= 2)
         {
@@ -622,6 +623,7 @@ public partial class MainWindow
         UpdateLocationSelectionPresentation();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
+        RevealInspectorForExplicitSelection();
     }
 
     private async void OnMapLocationMouseLeftButtonDown(
@@ -2228,6 +2230,7 @@ public partial class MainWindow
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
+        RevealInspectorForExplicitSelection();
 
         if (IsMapEditMode &&
             e.ClickCount >= 2 &&

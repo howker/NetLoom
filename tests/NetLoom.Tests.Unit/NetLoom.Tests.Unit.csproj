@@ -19,6 +19,8 @@
     <ProjectReference Include="..\..\src\NetLoom.Protocols.Snmp\NetLoom.Protocols.Snmp.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.HostLogging\NetLoom.HostLogging.csproj" />
     <ProjectReference Include="..\..\src\NetLoom.Wpf\NetLoom.Wpf.csproj" />
+    <!-- Живой аудит интерфейса (Sprint46LiveUiAuditTests) открывает окно на копии базы стенда. -->
+    <ProjectReference Include="..\..\src\NetLoom.Persistence.Sqlite\NetLoom.Persistence.Sqlite.csproj" />
   </ItemGroup>
 
 </Project>

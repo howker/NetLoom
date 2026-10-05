@@ -30,9 +30,11 @@
 
     <SolidColorBrush x:Key="NetLoom.Brush.Success" Color="#1F7A5A" />
     <SolidColorBrush x:Key="NetLoom.Brush.SuccessSoft" Color="#E7F5EF" />
-    <SolidColorBrush x:Key="NetLoom.Brush.Warning" Color="#B76C08" />
+    <!-- §6: ≥4.5:1 к белому и к WarningSoft (было #B76C08 — 4.07 и 3.68). -->
+    <SolidColorBrush x:Key="NetLoom.Brush.Warning" Color="#975905" />
     <SolidColorBrush x:Key="NetLoom.Brush.WarningSoft" Color="#FFF2DC" />
-    <SolidColorBrush x:Key="NetLoom.Brush.Critical" Color="#C63D3D" />
+    <!-- §6: ≥4.5:1 к белому и к CriticalSoft (было #C63D3D — 4.35 на CriticalSoft). -->
+    <SolidColorBrush x:Key="NetLoom.Brush.Critical" Color="#B83434" />
     <SolidColorBrush x:Key="NetLoom.Brush.CriticalSoft" Color="#FCE9E9" />
 
     <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#53697E" />

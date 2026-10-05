@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
@@ -54,6 +55,17 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryEndAddressLabel");
             DiscoverySubnetMaskLabelText.Text =
                 UiText.Get("DiscoverySubnetMaskLabel");
+
+            // §8: у поля имя для UI Automation совпадает с видимой подписью.
+            AutomationProperties.SetName(
+                DiscoveryStartAddressTextBox,
+                DiscoveryStartAddressLabelText.Text);
+            AutomationProperties.SetName(
+                DiscoveryEndAddressTextBox,
+                DiscoveryEndAddressLabelText.Text);
+            AutomationProperties.SetName(
+                DiscoverySubnetMaskTextBox,
+                DiscoverySubnetMaskLabelText.Text);
             DiscoveryProfileLabelText.Text =
                 UiText.Get("DiscoveryProfileLabel");
             DiscoverySidebarProfileLabelText.Text =

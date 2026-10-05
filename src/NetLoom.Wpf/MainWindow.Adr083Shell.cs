@@ -54,6 +54,16 @@ namespace NetLoom.Wpf
                 ShellGlobalSearchTextBox,
                 UiText.Get(
                     "ShellGlobalSearchAutomationName"));
+            ShellGlobalSearchPlaceholderText.Text =
+                UiText.Get(
+                    "ShellGlobalSearchPlaceholder");
+            EquipmentFilterPlaceholderText.Text =
+                UiText.Get(
+                    "EquipmentFilterPlaceholder");
+            AutomationProperties.SetName(
+                EquipmentFilterTextBox,
+                UiText.Get(
+                    "EquipmentFilterPlaceholder"));
             AutomationProperties.SetName(
                 DiscoveryProfileComboBox,
                 UiText.Get(
@@ -642,6 +652,51 @@ namespace NetLoom.Wpf
             UpdateAdr083MapToolbarResponsivePresentation();
         }
 
+        // ADR-083 п. 4: инспектор одинаково работает для выбора в любом представлении.
+        // Раздел может открываться со свёрнутым инспектором («Предупреждения», «Обнаружение»),
+        // но явный выбор объекта оператором раскрывает его; скрытый для раздела инспектор не трогаем.
+        private void RevealInspectorForExplicitSelection()
+        {
+            if (_adr083InspectorHiddenForSection ||
+                !_adr083InspectorCollapsed)
+            {
+                return;
+            }
+
+            _adr083InspectorCollapsed =
+                false;
+            UpdateAdr083InspectorLayout();
+            UpdateAdr083MapToolbarResponsivePresentation();
+        }
+
+        // Когда карта не видна (раздел «Оборудование»), у выбранного устройства без активной
+        // проблемы главное действие инспектора — «Показать на карте» (макет netloom-v2-2-oborudovanie).
+        private void UpdateInspectorShowOnMapAction()
+        {
+            if (InspectorPrimaryActionButton == null ||
+                _inspectorPrimaryAlert != null)
+            {
+                return;
+            }
+
+            var show =
+                _selectedDeviceId.HasValue &&
+                _shellSection != ShellSection.Map &&
+                _shellSection != ShellSection.Alerts;
+
+            if (show)
+            {
+                InspectorPrimaryActionButton.Content =
+                    UiText.Get(
+                        "AlertShowOnMapAction");
+            }
+
+            InspectorPrimaryActionButton.Visibility =
+                show
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+        }
+
         private void OnShellInspectorSplitterDragCompleted(
             object sender,
             DragCompletedEventArgs e)
@@ -757,6 +812,7 @@ namespace NetLoom.Wpf
             UpdateAdr083InspectorLayout();
             UpdateAdr083EquipmentResponsiveColumns();
             UpdateAdr083MapToolbarResponsivePresentation();
+            UpdateInspectorShowOnMapAction();
         }
 
         private void UpdateAdr083MapToolbarResponsivePresentation()

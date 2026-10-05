@@ -4535,6 +4535,34 @@ namespace NetLoom.Tests.Unit
                 });
         }
 
+        // Элемент не обрезан, если WPF не наложил на него обрезку раскладки меньше его размера.
+        private static void AssertNotLayoutClipped(
+            FrameworkElement element,
+            string message)
+        {
+            var clip =
+                System.Windows.Controls.Primitives.LayoutInformation
+                    .GetLayoutClip(
+                        element);
+
+            if (clip == null)
+            {
+                return;
+            }
+
+            Assert.IsTrue(
+                clip.Bounds.Width + 0.5 >=
+                    element.RenderSize.Width &&
+                clip.Bounds.Height + 0.5 >=
+                    element.RenderSize.Height,
+                message +
+                " Layout clip " +
+                clip.Bounds +
+                ", element " +
+                element.RenderSize +
+                ".");
+        }
+
         [TestMethod]
         public void
             RailUsesAdr083IconOnlyGeometryAndAccessibleNames()
@@ -4589,6 +4617,47 @@ namespace NetLoom.Tests.Unit
                                             button)),
                                 name +
                                 " must expose an AutomationProperties.Name in the icon-only rail.");
+
+                            // Значок рейла должен помещаться в кнопку целиком (UI_DESIGN_RULES §5, §10).
+                            var icon =
+                                FindVisualDescendant<System.Windows.Shapes.Path>(
+                                    button);
+
+                            Assert.IsNotNull(
+                                icon,
+                                name +
+                                " must render its rail icon.");
+                            AssertNotLayoutClipped(
+                                icon,
+                                name +
+                                " rail icon must not be clipped by the button.");
+                        }
+
+                        foreach (var name in
+                            new[]
+                            {
+                                "ShellInspectorCollapseButton"
+                            })
+                        {
+                            var button =
+                                (Button)window.FindName(
+                                    name);
+
+                            button.ApplyTemplate();
+                            button.UpdateLayout();
+
+                            var glyph =
+                                FindVisualDescendant<TextBlock>(
+                                    button);
+
+                            Assert.IsNotNull(
+                                glyph,
+                                name +
+                                " must render its glyph.");
+                            AssertNotLayoutClipped(
+                                glyph,
+                                name +
+                                " glyph must not be clipped by the button padding.");
                         }
 
                         Assert.AreEqual(

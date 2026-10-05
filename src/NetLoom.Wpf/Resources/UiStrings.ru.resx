@@ -2091,6 +2091,12 @@
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
   </data>
+  <data name="EquipmentFilterPlaceholder" xml:space="preserve">
+    <value>Фильтр: имя, IP, модель…</value>
+  </data>
+  <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
+    <value>Устройство, IP или MAC</value>
+  </data>
   <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
     <value>Глобальный поиск</value>
   </data>

@@ -2091,6 +2091,12 @@ Poll: {2}</value>
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
   </data>
+  <data name="EquipmentFilterPlaceholder" xml:space="preserve">
+    <value>Filter: name, IP, model…</value>
+  </data>
+  <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
+    <value>Device, IP or MAC</value>
+  </data>
   <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
     <value>Global search</value>
   </data>

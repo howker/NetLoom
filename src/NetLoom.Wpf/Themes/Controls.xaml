@@ -438,15 +438,189 @@
     </Style>
 
     <Style TargetType="{x:Type CheckBox}">
+        <!-- §8: текст флажка — часть площади нажатия, высота не меньше 24. -->
+        <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Control.MinHitSize}" />
         <Setter Property="FontFamily" Value="{DynamicResource NetLoom.FontFamily.Ui}" />
         <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Body}" />
         <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+        <!-- G7 (sprint46-mockup-gap): тематический флажок вместо системного белого квадрата (§6);
+             рамка — BorderStrong (≥3:1), отмеченный — заливка акцентом, рамка фокуса (§8). -->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type CheckBox}">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="CheckFocus"
+                                VerticalAlignment="Center"
+                                BorderBrush="Transparent"
+                                BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                                CornerRadius="{DynamicResource NetLoom.Radius.Control}"
+                                Padding="{DynamicResource NetLoom.Thickness.BorderThin}">
+                            <Border x:Name="CheckBoxChrome"
+                                    Width="{DynamicResource NetLoom.CheckBox.Size}"
+                                    Height="{DynamicResource NetLoom.CheckBox.Size}"
+                                    Background="{DynamicResource NetLoom.Brush.Surface}"
+                                    BorderBrush="{DynamicResource NetLoom.Brush.BorderStrong}"
+                                    BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                                    CornerRadius="{DynamicResource NetLoom.Radius.Control}">
+                                <Path x:Name="CheckMark"
+                                      Margin="{DynamicResource NetLoom.Thickness.CheckMark}"
+                                      Stretch="Uniform"
+                                      Stroke="{DynamicResource NetLoom.Brush.OnAccent}"
+                                      StrokeThickness="2"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"
+                                      Data="M 0,4 L 3,7 L 9,0"
+                                      Visibility="Collapsed" />
+                            </Border>
+                        </Border>
+                        <ContentPresenter Grid.Column="1"
+                                          Margin="{DynamicResource NetLoom.Thickness.CheckBoxContent}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked"
+                                 Value="True">
+                            <Setter TargetName="CheckBoxChrome"
+                                    Property="Background"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                            <Setter TargetName="CheckBoxChrome"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                            <Setter TargetName="CheckMark"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter TargetName="CheckBoxChrome"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused"
+                                 Value="True">
+                            <Setter TargetName="CheckFocus"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+                            <Setter TargetName="CheckBoxChrome"
+                                    Property="Background"
+                                    Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+                            <Setter TargetName="CheckBoxChrome"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Border}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
+    <!-- Тематический Expander: стрелка «›/⌄» как в макетах ADR-083 вместо системного белого кружка
+         (§6: ни одного белого системного участка в тёмной теме), заголовок не ниже 28 (§8), рамка фокуса. -->
     <Style TargetType="{x:Type Expander}">
         <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
         <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Expander}">
+                    <DockPanel>
+                        <ToggleButton x:Name="HeaderSite"
+                                      DockPanel.Dock="Top"
+                                      Focusable="True"
+                                      MinHeight="{DynamicResource NetLoom.Expander.HeaderMinHeight}"
+                                      HorizontalContentAlignment="Stretch"
+                                      Foreground="{TemplateBinding Foreground}"
+                                      Background="{TemplateBinding Background}"
+                                      Content="{TemplateBinding Header}"
+                                      ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                    <Border x:Name="HeaderChrome"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderFocus}"
+                                            CornerRadius="{DynamicResource NetLoom.Radius.Control}"
+                                            Padding="{DynamicResource NetLoom.Thickness.ExpanderHeaderPadding}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Path x:Name="HeaderArrow"
+                                                  Width="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                                  Height="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                                  Margin="{DynamicResource NetLoom.Thickness.ExpanderArrowMargin}"
+                                                  VerticalAlignment="Center"
+                                                  Stretch="Uniform"
+                                                  Stroke="{TemplateBinding Foreground}"
+                                                  StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Data="M 0,0 L 4,4 L 0,8"
+                                                  RenderTransformOrigin="0.5,0.5">
+                                                <Path.RenderTransform>
+                                                    <RotateTransform Angle="0" />
+                                                </Path.RenderTransform>
+                                            </Path>
+                                            <ContentPresenter Grid.Column="1"
+                                                              VerticalAlignment="Center"
+                                                              RecognizesAccessKey="True" />
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked"
+                                                 Value="True">
+                                            <Setter TargetName="HeaderArrow"
+                                                    Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <RotateTransform Angle="90" />
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver"
+                                                 Value="True">
+                                            <Setter TargetName="HeaderChrome"
+                                                    Property="Background"
+                                                    Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocused"
+                                                 Value="True">
+                                            <Setter TargetName="HeaderChrome"
+                                                    Property="BorderBrush"
+                                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <ContentPresenter x:Name="ExpandSite"
+                                          Visibility="Collapsed"
+                                          Margin="{TemplateBinding Padding}"
+                                          Focusable="False" />
+                    </DockPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded"
+                                 Value="True">
+                            <Setter TargetName="ExpandSite"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="{x:Type Button}">
@@ -1330,7 +1504,9 @@
         <Setter Property="BorderThickness"
                 Value="{DynamicResource NetLoom.Thickness.None}" />
         <Setter Property="HorizontalContentAlignment"
-                Value="Stretch" />
+                Value="Center" />
+        <Setter Property="VerticalContentAlignment"
+                Value="Center" />
         <Setter Property="Margin"
                 Value="{DynamicResource NetLoom.Thickness.ShellNavigationButtonMargin}" />
         <Setter Property="Padding"
@@ -1520,7 +1696,7 @@
         <Setter Property="BorderThickness" Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
     </Style>
 
-    <Style x:Key="NetLoom.Style.OperatorExpander" TargetType="{x:Type Expander}">
+    <Style x:Key="NetLoom.Style.OperatorExpander" TargetType="{x:Type Expander}" BasedOn="{StaticResource {x:Type Expander}}">
         <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
         <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
     </Style>
@@ -1593,7 +1769,9 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.None}" />
-        <Setter Property="MinHeight" Value="0" />
+        <!-- §8: площадь нажатия ссылки не меньше 24×24, текст центрируется по высоте. -->
+        <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Control.MinHitSize}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontWeight" Value="Normal" />
     </Style>
 
