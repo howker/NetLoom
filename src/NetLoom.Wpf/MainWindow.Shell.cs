@@ -591,6 +591,12 @@ namespace NetLoom.Wpf
                             ? "DiscoveryValidationProfileRequired"
                             : "DiscoveryProfileHintMissing")
                     : UiText.Get("DiscoveryProfileReady");
+            // D2: при выбранном профиле карточка — одна строка, как в макете netloom-v2-5;
+            // пояснение показывается только когда профиль не выбран.
+            DiscoveryProfileHintText.Visibility =
+                selected == null
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
             DiscoveryProfileSummaryText.SetResourceReference(
                 TextBlock.ForegroundProperty,
                 "NetLoom.Brush.TextPrimary");
@@ -646,6 +652,12 @@ namespace NetLoom.Wpf
                         "DiscoveryProfileSettingsEmpty")
                     : UiText.Get(
                         "DiscoveryProfileSettingsHint");
+            // S3: в макете netloom-v2-6 над списком профилей нет поясняющей строки;
+            // пустое состояние по-прежнему видно.
+            ShellProfileSettingsSummaryText.Visibility =
+                rows.Length == 0
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
 
             var selectedRow =
                 preferredId.HasValue

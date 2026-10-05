@@ -1058,7 +1058,7 @@
                                             <TextBlock x:Name="DiscoverySidebarProfileLabelText"
                                                        Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                             <TextBlock x:Name="DiscoveryProfileSummaryText"
-                                                       Style="{StaticResource NetLoom.Style.StatusEmphasis}"
+                                                       Style="{StaticResource NetLoom.Style.CardTitle}"
                                                        Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                                        TextWrapping="Wrap" />
                                             <TextBlock x:Name="DiscoveryProfileHintText"
@@ -1129,14 +1129,26 @@
 
                         <Grid Grid.Column="1"
                               Background="{DynamicResource NetLoom.Brush.Canvas}">
+                            <!-- D4: пустое состояние со значком на приглушённой карточке, как в макете netloom-v2-5. -->
                             <Border x:Name="DiscoveryResultsEmptyCard"
                                     Width="500"
                                     MaxWidth="500"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Style="{StaticResource NetLoom.Style.OperatorCard}">
+                                    Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                    Background="{DynamicResource NetLoom.Brush.SurfaceMuted}">
                                 <StackPanel Margin="24"
                                             HorizontalAlignment="Center">
+                                    <Path Width="{DynamicResource NetLoom.Navigation.IconSize}"
+                                          Height="{DynamicResource NetLoom.Navigation.IconSize}"
+                                          Margin="{DynamicResource NetLoom.Thickness.EmptyStateIconMargin}"
+                                          HorizontalAlignment="Center"
+                                          Stretch="Uniform"
+                                          Stroke="{DynamicResource NetLoom.Brush.TextSecondary}"
+                                          StrokeThickness="1.6"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          Data="{StaticResource NetLoom.Icon.ShellDiscovery}" />
                                     <TextBlock x:Name="DiscoveryEmptyTitleText"
                                                Style="{StaticResource NetLoom.Style.CardTitle}"
                                                TextAlignment="Center" />
@@ -1311,8 +1323,12 @@
                                        Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                        TextWrapping="Wrap" />
 
+                            <!-- S1: профили — плоские карточки без рамки выбора списка, как в макете netloom-v2-6. -->
                             <ListBox x:Name="ShellProfileSettingsList"
                                      Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                     Background="Transparent"
+                                     BorderThickness="{DynamicResource NetLoom.Thickness.None}"
+                                     ItemContainerStyle="{StaticResource NetLoom.Style.PlainListItem}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      SelectionMode="Single"
                                      SelectionChanged="OnShellProfileSettingsSelectionChanged">
@@ -1326,16 +1342,24 @@
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel VerticalAlignment="Center">
+                                                <StackPanel VerticalAlignment="Center"
+                                                            Orientation="Horizontal">
                                                     <TextBlock Text="{Binding DisplayName}"
                                                                FontWeight="SemiBold"
-                                                               TextWrapping="Wrap" />
-                                                    <TextBlock Text="{Binding ActiveText}"
-                                                               Visibility="{Binding ActiveVisibility}"
-                                                               Foreground="{DynamicResource NetLoom.Brush.Accent}"
-                                                               FontWeight="SemiBold"
-                                                               FontSize="{DynamicResource NetLoom.FontSize.Caption}"
-                                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}" />
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding DisplayName}" />
+                                                    <Border Visibility="{Binding ActiveVisibility}"
+                                                            Background="{DynamicResource NetLoom.Brush.AccentSoft}"
+                                                            CornerRadius="{DynamicResource NetLoom.Radius.Pill}"
+                                                            Padding="{DynamicResource NetLoom.Thickness.PillPadding}"
+                                                            Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding ActiveText}"
+                                                                   Foreground="{DynamicResource NetLoom.Brush.AccentText}"
+                                                                   FontWeight="SemiBold"
+                                                                   FontSize="{DynamicResource NetLoom.FontSize.Caption}" />
+                                                    </Border>
                                                 </StackPanel>
                                                 <Button Grid.Column="1"
                                                         Margin="12,0,0,0"

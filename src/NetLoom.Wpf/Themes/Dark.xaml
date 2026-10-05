@@ -26,6 +26,8 @@
     <SolidColorBrush x:Key="NetLoom.Brush.AccentHover" Color="#78ABF7" />
     <SolidColorBrush x:Key="NetLoom.Brush.AccentPressed" Color="#4B86D9" />
     <SolidColorBrush x:Key="NetLoom.Brush.AccentSoft" Color="#203B5F" />
+    <!-- §6: текст акцентом на AccentSoft (чипы) — 5.7:1; Accent на AccentSoft даёт только 4.1:1. -->
+    <SolidColorBrush x:Key="NetLoom.Brush.AccentText" Color="#8DBAF8" />
     <!-- §6: текст на светлом акценте тёмной темы — тёмный (белый на #5F9CF5 давал 2.78:1). -->
     <SolidColorBrush x:Key="NetLoom.Brush.OnAccent" Color="#0E1726" />
 

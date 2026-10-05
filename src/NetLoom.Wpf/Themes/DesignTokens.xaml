@@ -106,6 +106,7 @@
     <Thickness x:Key="NetLoom.Thickness.FilterFieldPadding">30,4,8,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FilterIconMargin">10,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.DropDownArrowMargin">8,0,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.EmptyStateIconMargin">0,0,0,8</Thickness>
     <sys:Double x:Key="NetLoom.Map.ToolbarIconSize">14</sys:Double>
     <sys:Double x:Key="NetLoom.Shell.SearchMaxWidth">420</sys:Double>
     <sys:Double x:Key="NetLoom.Alerts.ListWidth">420</sys:Double>

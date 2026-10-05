@@ -1337,7 +1337,7 @@ Drag the header to move this placement together with its child placements and as
     <value>Select an SNMP version.</value>
   </data>
   <data name="DiscoveryTitle" xml:space="preserve">
-    <value>Network discovery</value>
+    <value>Discovery</value>
   </data>
   <data name="DiscoveryStateLabel" xml:space="preserve">
     <value>State</value>
@@ -1364,7 +1364,7 @@ Drag the header to move this placement together with its child placements and as
     <value>SNMP profile</value>
   </data>
   <data name="DiscoveryProfileAddAction" xml:space="preserve">
-    <value>Add profile...</value>
+    <value>+ Add profile</value>
   </data>
   <data name="DiscoveryProfileDialogTitle" xml:space="preserve">
     <value>Add SNMP profile</value>
@@ -1828,7 +1828,7 @@ Poll: {2}</value>
     <value>Edit</value>
   </data>
   <data name="DiscoveryProfileDeleteAction" xml:space="preserve">
-    <value>Delete</value>
+    <value>Delete profile</value>
   </data>
   <data name="DiscoveryProfileSettingsTitle" xml:space="preserve">
     <value>SNMP profiles</value>

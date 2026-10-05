@@ -1337,7 +1337,7 @@
     <value>Выберите версию SNMP.</value>
   </data>
   <data name="DiscoveryTitle" xml:space="preserve">
-    <value>Обнаружение сети</value>
+    <value>Обнаружение</value>
   </data>
   <data name="DiscoveryStateLabel" xml:space="preserve">
     <value>Состояние</value>
@@ -1364,7 +1364,7 @@
     <value>SNMP-профиль</value>
   </data>
   <data name="DiscoveryProfileAddAction" xml:space="preserve">
-    <value>Добавить профиль...</value>
+    <value>+ Добавить профиль</value>
   </data>
   <data name="DiscoveryProfileDialogTitle" xml:space="preserve">
     <value>Добавить SNMP-профиль</value>
@@ -1828,7 +1828,7 @@
     <value>Изменить</value>
   </data>
   <data name="DiscoveryProfileDeleteAction" xml:space="preserve">
-    <value>Удалить</value>
+    <value>Удалить профиль</value>
   </data>
   <data name="DiscoveryProfileSettingsTitle" xml:space="preserve">
     <value>SNMP-профили</value>

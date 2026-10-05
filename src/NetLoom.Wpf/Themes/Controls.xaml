@@ -716,6 +716,36 @@
                 Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
     </Style>
 
+    <!-- Элемент списка без собственной подсветки выбора: карточка внутри сама показывает состояние;
+         рамка фокуса клавиатуры сохраняется (§8). -->
+    <Style x:Key="NetLoom.Style.PlainListItem" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.None}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                    <Grid>
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                        <Border x:Name="PlainItemFocus"
+                                BorderBrush="Transparent"
+                                BorderThickness="{DynamicResource NetLoom.Thickness.BorderFocus}"
+                                CornerRadius="{DynamicResource NetLoom.Radius.Card}"
+                                IsHitTestVisible="False" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused"
+                                 Value="True">
+                            <Setter TargetName="PlainItemFocus"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="{x:Type ListBoxItem}">
         <Setter Property="Padding"
                 Value="{DynamicResource NetLoom.Thickness.ListItemPadding}" />
