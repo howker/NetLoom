@@ -274,7 +274,7 @@
     <value>MAC/IP lookup</value>
   </data>
   <data name="AlertTitle" xml:space="preserve">
-    <value>Current alerts</value>
+    <value>Alerts</value>
   </data>
   <data name="AlertNone" xml:space="preserve">
     <value>There are no active topology/ring alerts.</value>
@@ -2090,6 +2090,9 @@ Poll: {2}</value>
   </data>
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
+  </data>
+  <data name="InspectorPollAction" xml:space="preserve">
+    <value>Poll</value>
   </data>
   <data name="EquipmentStateGlyphNoData" xml:space="preserve">
     <value>—</value>

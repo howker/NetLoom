@@ -274,7 +274,7 @@
     <value>Поиск MAC/IP</value>
   </data>
   <data name="AlertTitle" xml:space="preserve">
-    <value>Текущие предупреждения</value>
+    <value>Предупреждения</value>
   </data>
   <data name="AlertNone" xml:space="preserve">
     <value>Активных предупреждений топологии/колец нет.</value>
@@ -2090,6 +2090,9 @@
   </data>
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
+  </data>
+  <data name="InspectorPollAction" xml:space="preserve">
+    <value>Опросить</value>
   </data>
   <data name="EquipmentStateGlyphNoData" xml:space="preserve">
     <value>—</value>

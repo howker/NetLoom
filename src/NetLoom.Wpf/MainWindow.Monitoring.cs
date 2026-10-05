@@ -708,6 +708,15 @@ namespace NetLoom.Wpf
                 (canEdit &&
                  hasSelectedDevice);
 
+            // E5: «Опросить» в инспекторе — то же действие, что «Опросить сейчас» на странице мониторинга,
+            // для выбранного устройства; доступность совпадает.
+            InspectorPollButton.IsEnabled =
+                MonitoringPollNowButton.IsEnabled;
+            InspectorPollButton.Visibility =
+                hasSelectedDevice
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
             MonitoringRefreshTopologyButton.IsEnabled =
                 !_lifetimeCancellation
                     .IsCancellationRequested;

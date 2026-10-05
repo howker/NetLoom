@@ -401,7 +401,23 @@
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="EquipmentFilterTextBox"
                                      Grid.Column="0"
+                                     Padding="{DynamicResource NetLoom.Thickness.FilterFieldPadding}"
+                                     VerticalContentAlignment="Center"
                                      TextChanged="OnEquipmentFilterTextChanged" />
+                            <!-- E3: лупа в поле фильтра, как в поиске шапки. -->
+                            <Path Grid.Column="0"
+                                  Width="14"
+                                  Height="14"
+                                  Margin="{DynamicResource NetLoom.Thickness.FilterIconMargin}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Stretch="Uniform"
+                                  Stroke="{DynamicResource NetLoom.Brush.TextSecondary}"
+                                  StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  IsHitTestVisible="False"
+                                  Data="{StaticResource NetLoom.Icon.ShellSearch}" />
                             <!-- Подсказка фильтра по макету netloom-v2-2-oborudovanie. -->
                             <TextBlock x:Name="EquipmentFilterPlaceholderText"
                                        Grid.Column="0"
@@ -953,6 +969,7 @@
                                                         <TextBlock DockPanel.Dock="Right"
                                                                    Text="{Binding TimeText}"
                                                                    Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                   HorizontalAlignment="Right"
                                                                    VerticalAlignment="Center" />
                                                     </DockPanel>
                                                     <TextBlock Text="{Binding Title}"
@@ -979,10 +996,10 @@
                                                                 HorizontalAlignment="Left"
                                                                 Style="{StaticResource NetLoom.Style.LinkButton}"
                                                                 Click="OnAlertShowOnMapClick" />
+                                                        <!-- A2: «› Технические детали» ссылкой без фона, как в макете netloom-v2-4. -->
                                                         <Expander Grid.Column="1"
                                                                   Header="{Binding TechnicalDetailsLabel}"
-                                                                  IsExpanded="{Binding IsTechnicalDetailsExpanded, Mode=TwoWay}"
-                                                                  Style="{StaticResource NetLoom.Style.OperatorExpander}">
+                                                                  IsExpanded="{Binding IsTechnicalDetailsExpanded, Mode=TwoWay}">
                                                             <TextBlock Text="{Binding TechnicalDetails}"
                                                                        Style="{StaticResource NetLoom.Style.MonoText}"
                                                                        TextWrapping="Wrap"
@@ -1510,6 +1527,15 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
+                        <!-- A3 (sprint46-mockup-gap): в «Предупреждениях» над картой только «Показать: всё ⌄»,
+                             полная панель карты остаётся скрытой (ADR-083 п. 3). -->
+                        <Button x:Name="Adr083AlertsMapFocusButton"
+                                Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Visibility="Collapsed"
+                                ContentTemplate="{Binding ContentTemplate, ElementName=MapOperationalFocusButton}"
+                                Click="OnAdr083MapOperationalFocusClick" />
                         <WrapPanel x:Name="Adr083MapPrimaryToolbar"
                                    VerticalAlignment="Center">
                             <Border Style="{StaticResource NetLoom.Style.SegmentedGroup}"
@@ -1523,10 +1549,30 @@
                                             Click="OnMapEditModeClick" />
                                 </StackPanel>
                             </Border>
+                            <!-- M1: «Показать: всё ⌄» — выпадающий выбор, как в макете netloom-v2-1. -->
                             <Button x:Name="MapOperationalFocusButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="0,0,8,0"
-                                    Click="OnAdr083MapOperationalFocusClick" />
+                                    Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                    Click="OnAdr083MapOperationalFocusClick">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding}"
+                                                       VerticalAlignment="Center" />
+                                            <Path Width="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                                  Height="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                                  Margin="{DynamicResource NetLoom.Thickness.DropDownArrowMargin}"
+                                                  VerticalAlignment="Center"
+                                                  Stretch="Uniform"
+                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
+                                                  StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Data="M 0,0 L 4,4 L 8,0" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                            </Button>
                             <Button x:Name="MapExportButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                     Margin="0,0,8,0"
@@ -1579,10 +1625,26 @@
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                     Margin="8,0,0,0"
                                     Click="OnMapZoomInClick" />
+                            <!-- M1: «Показать всё» — значок рамки, как в макете; текст остаётся содержимым кнопки
+                                 (имя для UI Automation) и подсказкой. -->
                             <Button x:Name="MapFitAllButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                     Margin="8,0,0,0"
-                                    Click="OnMapFitAllClick" />
+                                    ToolTip="{Binding Content, RelativeSource={RelativeSource Self}}"
+                                    Click="OnMapFitAllClick">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <Path Width="{DynamicResource NetLoom.Map.ToolbarIconSize}"
+                                              Height="{DynamicResource NetLoom.Map.ToolbarIconSize}"
+                                              Stretch="Uniform"
+                                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
+                                              StrokeThickness="1.6"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              Data="{StaticResource NetLoom.Icon.MapFitAll}" />
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                            </Button>
                         </StackPanel>
 
                         <StackPanel Visibility="Collapsed">
@@ -1645,7 +1707,7 @@
                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
                     Visibility="Collapsed"
                     Panel.ZIndex="40"
-                    Click="OnShellInspectorRevealClick">›</Button>
+                    Click="OnShellInspectorRevealClick">‹</Button>
             <GridSplitter x:Name="ShellInspectorSplitter"
                           Grid.Column="3"
                           Width="5"
@@ -1679,7 +1741,7 @@
                                 Margin="0,0,0,6"
                                 Padding="{DynamicResource NetLoom.Thickness.None}"
                                 Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                Click="OnShellInspectorCollapseClick">‹</Button>
+                                Click="OnShellInspectorCollapseClick">›</Button>
                         <TextBlock x:Name="DiagnosticTitleText"
                                    Style="{StaticResource NetLoom.Style.SectionTitle}"
                                    Visibility="Collapsed" />
@@ -1705,11 +1767,20 @@
                                    Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                    TextWrapping="Wrap"
                                    Visibility="Collapsed" />
-                        <Button x:Name="InspectorPrimaryActionButton"
-                                HorizontalAlignment="Left"
-                                Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
-                                Visibility="Collapsed"
-                                Click="OnInspectorPrimaryActionClick" />
+                        <!-- E5 (sprint46-mockup-gap): главное действие и «Опросить» в одной строке, как в макете netloom-v2-2. -->
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                            <Button x:Name="InspectorPrimaryActionButton"
+                                    HorizontalAlignment="Left"
+                                    Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                    Visibility="Collapsed"
+                                    Click="OnInspectorPrimaryActionClick" />
+                            <Button x:Name="InspectorPollButton"
+                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                    HorizontalAlignment="Left"
+                                    Visibility="Collapsed"
+                                    Click="OnMonitoringPollNowClick" />
+                        </StackPanel>
                         <TextBlock x:Name="DiagnosticElementSubtitleText"
                                    Style="{StaticResource NetLoom.Style.MutedText}"
                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"

@@ -57,6 +57,13 @@ namespace NetLoom.Wpf
             ShellGlobalSearchPlaceholderText.Text =
                 UiText.Get(
                     "ShellGlobalSearchPlaceholder");
+            InspectorPollButton.Content =
+                UiText.Get(
+                    "InspectorPollAction");
+            AutomationProperties.SetName(
+                InspectorPollButton,
+                UiText.Get(
+                    "InspectorPollAction"));
             EquipmentFilterPlaceholderText.Text =
                 UiText.Get(
                     "EquipmentFilterPlaceholder");
@@ -77,6 +84,9 @@ namespace NetLoom.Wpf
                     "MonitoringStopAction");
 
             MapOperationalFocusButton.Content =
+                UiText.Get(
+                    "ShellMapFocusAction");
+            Adr083AlertsMapFocusButton.Content =
                 UiText.Get(
                     "ShellMapFocusAction");
             MapExportButton.Content =
@@ -620,10 +630,16 @@ namespace NetLoom.Wpf
                     item);
             }
 
-            MapOperationalFocusButton.ContextMenu =
+            // Меню открывается от нажатой кнопки: на «Карте» это панель инструментов,
+            // в «Предупреждениях» — отдельная кнопка над картой (A3).
+            var placementTarget =
+                sender as Button ??
+                MapOperationalFocusButton;
+
+            placementTarget.ContextMenu =
                 contextMenu;
             contextMenu.PlacementTarget =
-                MapOperationalFocusButton;
+                placementTarget;
             contextMenu.Placement =
                 PlacementMode.Bottom;
             contextMenu.IsOpen =
@@ -754,6 +770,10 @@ namespace NetLoom.Wpf
                 new Thickness(0.0);
             Adr083MapPrimaryToolbar.Visibility =
                 Visibility.Visible;
+            Adr083AlertsMapFocusButton.Visibility =
+                section == ShellSection.Alerts
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
 
             ShellSectionSurface.Visibility =
                 section == ShellSection.Map
