@@ -99,6 +99,7 @@
     <GridLength x:Key="NetLoom.Shell.SidebarWidth">0</GridLength>
     <GridLength x:Key="NetLoom.Shell.InspectorWidth">360</GridLength>
     <sys:Double x:Key="NetLoom.Shell.ProfileWidth">220</sys:Double>
+    <sys:Double x:Key="NetLoom.Shell.ProfileMinWidth">150</sys:Double>
     <sys:Double x:Key="NetLoom.Shell.SearchMinWidth">160</sys:Double>
     <Thickness x:Key="NetLoom.Thickness.SearchPlaceholderMargin">32,0,60,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FilterPlaceholderMargin">12,0,12,0</Thickness>
@@ -121,6 +122,17 @@
     <Thickness x:Key="NetLoom.Thickness.ExpanderArrowMargin">4,0,8,0</Thickness>
     <sys:Double x:Key="NetLoom.Control.MinHitSize">24</sys:Double>
     <sys:Double x:Key="NetLoom.CheckBox.Size">16</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.SegmentedGroupPadding">2</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.ToolbarGroupGap">0,0,8,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.FieldGapLeft">12,0,0,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.FlatButtonPadding">8,4</Thickness>
+    <sys:Double x:Key="NetLoom.Equipment.SelectionStripeWidth">3</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.TableCellGapRight">0,0,16,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.EventItemGap">0,0,16,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.EventPartGap">0,0,8,0</Thickness>
+    <sys:Double x:Key="NetLoom.Event.BadgeSize">16</sys:Double>
+    <sys:Double x:Key="NetLoom.Event.ScopeMaxWidth">320</sys:Double>
+    <CornerRadius x:Key="NetLoom.Radius.EventBadge">8</CornerRadius>
     <Thickness x:Key="NetLoom.Thickness.CheckMark">3,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CheckBoxContent">8,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardBodyInset">14,0,0,0</Thickness>

@@ -425,6 +425,29 @@ namespace NetLoom.Tests.Unit
                 RaiseClick(equipmentButton);
                 Settle();
 
+                // Переход из «Предупреждений» (раздел шириной 420) не должен оставлять скрытыми
+                // столбцы, для которых на 1920 места достаточно (§5 «скрывать по приоритету при нехватке ширины»).
+                var section =
+                    (FrameworkElement)window.FindName(
+                        "ShellSectionSurface");
+                var categoryHeader =
+                    (FrameworkElement)window.FindName(
+                        "EquipmentCategoryHeaderText");
+
+                if (section != null &&
+                    categoryHeader != null &&
+                    section.ActualWidth >= 1000 &&
+                    categoryHeader.Visibility != Visibility.Visible)
+                {
+                    report.Add(
+                        "РАСКЛАДКА",
+                        "СРЕДНЯЯ",
+                        "Предупреждения → Оборудование 1920",
+                        "столбец «Категория» скрыт при ширине раздела " +
+                        section.ActualWidth.ToString("0", CultureInfo.InvariantCulture) +
+                        " px (§5)");
+                }
+
                 var row =
                     FindVisualDescendants<Button>(
                             (DependencyObject)window.FindName("EquipmentList"))

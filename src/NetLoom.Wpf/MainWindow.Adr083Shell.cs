@@ -726,6 +726,15 @@ namespace NetLoom.Wpf
             UpdateAdr083EquipmentResponsiveColumns();
         }
 
+        // Столбцы таблицы «Оборудование» считаются по фактической ширине раздела после раскладки:
+        // при переходе из «Предупреждений» ширина раздела в момент переключения ещё 420 px.
+        private void OnShellSectionSurfaceSizeChanged(
+            object sender,
+            SizeChangedEventArgs e)
+        {
+            UpdateAdr083EquipmentResponsiveColumns();
+        }
+
         private void OnShellMapSurfaceSizeChanged(
             object sender,
             SizeChangedEventArgs e)

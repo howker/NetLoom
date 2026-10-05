@@ -1195,7 +1195,7 @@ namespace NetLoom.Wpf
                             "OperatorStatusGlyphWarning")
                         : hasNoData
                             ? UiText.Get(
-                                "OperatorStatusGlyphIdle")
+                                "EquipmentStateGlyphNoData")
                             : UiText.Get(
                                 "OperatorStatusGlyphActive");
 
@@ -1210,12 +1210,11 @@ namespace NetLoom.Wpf
                     : diagnostic.SecondaryText,
                 location,
                 connectionCount,
-                diagnostic != null &&
-                diagnostic.LastSeenUtc.HasValue
-                    ? RelativeTimeText(
-                        diagnostic.LastSeenUtc)
-                    : UiText.Get(
-                        "DiagnosticNotAvailable"),
+                // E4: в таблице «Обновлено» — коротко, как в макете («2 мин», «115 дн», «нет»).
+                CompactAgeText(
+                    diagnostic == null
+                        ? null
+                        : diagnostic.LastSeenUtc),
                 problemText,
                 stateGlyph,
                 isCriticalProblem,
@@ -1226,6 +1225,47 @@ namespace NetLoom.Wpf
                 _selectedDeviceId.HasValue &&
                 node.DeviceId.Value ==
                     _selectedDeviceId.Value);
+        }
+
+        private static string CompactAgeText(
+            DateTime? valueUtc)
+        {
+            if (!valueUtc.HasValue)
+            {
+                return UiText.Get(
+                    "EquipmentAgeNever");
+            }
+
+            var age =
+                DateTime.UtcNow -
+                valueUtc.Value;
+
+            if (age < TimeSpan.FromMinutes(1))
+            {
+                return UiText.Get(
+                    "EquipmentAgeNow");
+            }
+
+            if (age < TimeSpan.FromHours(1))
+            {
+                return UiText.Format(
+                    "EquipmentAgeMinutes",
+                    (int)Math.Floor(
+                        age.TotalMinutes));
+            }
+
+            if (age < TimeSpan.FromDays(1))
+            {
+                return UiText.Format(
+                    "EquipmentAgeHours",
+                    (int)Math.Floor(
+                        age.TotalHours));
+            }
+
+            return UiText.Format(
+                "EquipmentAgeDays",
+                (int)Math.Floor(
+                    age.TotalDays));
         }
 
         private void OnEquipmentFilterTextChanged(

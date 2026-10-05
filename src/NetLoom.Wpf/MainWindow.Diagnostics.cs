@@ -1426,7 +1426,7 @@ public partial class MainWindow : Window
         InspectorOperationalStatusText.SetResourceReference(
             TextBlock.ForegroundProperty,
             problemCount == 0
-                ? "NetLoom.Brush.Positive"
+                ? "NetLoom.Brush.TextSecondary" // норма нейтральна (ADR-083 п. 6); ключа Positive в темах нет
                 : "NetLoom.Brush.Warning");
         InspectorOperationalStatusText.Visibility =
             Visibility.Visible;

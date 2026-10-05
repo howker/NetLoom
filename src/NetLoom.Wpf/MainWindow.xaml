@@ -176,10 +176,17 @@
                             VerticalAlignment="Center">
                     <TextBlock x:Name="DiscoveryProfileLabelText"
                                Visibility="Collapsed" />
+                    <!-- G3 (sprint46-mockup-gap): профиль — небольшой чип со скруглением «пилюля», ширина по содержимому
+                         в пределах ProfileMinWidth…ProfileWidth; полное имя — в подсказке. -->
                     <ComboBox x:Name="DiscoveryProfileComboBox"
-                              Width="{DynamicResource NetLoom.Shell.ProfileWidth}"
+                              MinWidth="{DynamicResource NetLoom.Shell.ProfileMinWidth}"
+                              MaxWidth="{DynamicResource NetLoom.Shell.ProfileWidth}"
                               DisplayMemberPath="DisplayName"
-                              ToolTip="{Binding SelectedItem.DisplayName, RelativeSource={RelativeSource Self}}" />
+                              ToolTip="{Binding SelectedItem.DisplayName, RelativeSource={RelativeSource Self}}">
+                        <ComboBox.Resources>
+                            <StaticResource x:Key="NetLoom.Radius.Control" ResourceKey="NetLoom.Radius.Pill" />
+                        </ComboBox.Resources>
+                    </ComboBox>
                     <Button x:Name="ShellProfileAddButton"
                             Visibility="Collapsed"
                             Click="OnShellProfileManageClick" />
@@ -326,6 +333,7 @@
             </Border>
 
             <Border x:Name="ShellSectionSurface"
+                    SizeChanged="OnShellSectionSurfaceSizeChanged"
                     Grid.Column="1"
                     Grid.ColumnSpan="2"
                     Panel.ZIndex="10"
@@ -416,30 +424,28 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <Button x:Name="EquipmentFilterAllButton"
-                                    Grid.Column="1"
-                                    Tag="All"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="12,0,0,0"
-                                    Click="OnEquipmentFilterModeClick" />
-                            <Button x:Name="EquipmentFilterProblemsButton"
-                                    Grid.Column="2"
-                                    Tag="Problems"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="8,0,0,0"
-                                    Click="OnEquipmentFilterModeClick" />
-                            <Button x:Name="EquipmentFilterNoDataButton"
-                                    Grid.Column="3"
-                                    Tag="NoData"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="8,0,0,0"
-                                    Click="OnEquipmentFilterModeClick" />
-                            <Button x:Name="EquipmentFilterManualButton"
-                                    Grid.Column="4"
-                                    Tag="Manual"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="8,0,0,0"
-                                    Click="OnEquipmentFilterModeClick" />
+                            <Border Grid.Column="1"
+                                    Style="{StaticResource NetLoom.Style.SegmentedGroup}"
+                                    Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="EquipmentFilterAllButton"
+                                            Tag="All"
+                                            Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                            Click="OnEquipmentFilterModeClick" />
+                                    <Button x:Name="EquipmentFilterProblemsButton"
+                                            Tag="Problems"
+                                            Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                            Click="OnEquipmentFilterModeClick" />
+                                    <Button x:Name="EquipmentFilterNoDataButton"
+                                            Tag="NoData"
+                                            Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                            Click="OnEquipmentFilterModeClick" />
+                                    <Button x:Name="EquipmentFilterManualButton"
+                                            Tag="Manual"
+                                            Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                            Click="OnEquipmentFilterModeClick" />
+                                </StackPanel>
+                            </Border>
                         </Grid>
 
                         <Border Grid.Row="2"
@@ -482,6 +488,8 @@
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBlock x:Name="EquipmentConnectionsHeaderText"
                                                Grid.Column="6"
+                                               HorizontalAlignment="Right"
+                                               Margin="{DynamicResource NetLoom.Thickness.TableCellGapRight}"
                                                Style="{StaticResource NetLoom.Style.FieldLabel}" />
                                     <TextBlock x:Name="EquipmentUpdatedHeaderText"
                                                Grid.Column="7"
@@ -514,11 +522,18 @@
                                                             <ColumnDefinition Width="0.75*" />
                                                         </Grid.ColumnDefinitions>
 
-                                                        <TextBlock x:Name="EquipmentStateGlyphText"
-                                                                   Grid.Column="0"
-                                                                   Text="{Binding StateGlyph}"
-                                                                   Style="{StaticResource NetLoom.Style.MutedText}"
-                                                                   VerticalAlignment="Center" />
+                                                        <!-- E2: проблема — значком ⚠ / × по грамматике статусов (§2), норма — серая точка, нет данных — «—». -->
+                                                        <Grid Grid.Column="0"
+                                                              VerticalAlignment="Center">
+                                                            <TextBlock x:Name="EquipmentStateGlyphText"
+                                                                       Text="{Binding StateGlyph}"
+                                                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                       VerticalAlignment="Center" />
+                                                            <Path x:Name="EquipmentStateIcon"
+                                                                  Style="{StaticResource NetLoom.Style.MapNodeStatusIcon}"
+                                                                  HorizontalAlignment="Left"
+                                                                  Visibility="Collapsed" />
+                                                        </Grid>
 
                                                         <StackPanel Grid.Column="1"
                                                                     VerticalAlignment="Center">
@@ -560,6 +575,7 @@
                                                         <TextBlock Grid.Column="6"
                                                                    Text="{Binding Connections}"
                                                                    HorizontalAlignment="Right"
+                                                                   Margin="{DynamicResource NetLoom.Thickness.TableCellGapRight}"
                                                                    VerticalAlignment="Center" />
                                                         <TextBlock Grid.Column="7"
                                                                    Text="{Binding Updated}"
@@ -572,6 +588,18 @@
                                                     <DataTrigger Binding="{Binding IsCriticalProblem}"
                                                                  Value="True">
                                                         <Setter TargetName="EquipmentStateGlyphText"
+                                                                Property="Visibility"
+                                                                Value="Collapsed" />
+                                                        <Setter TargetName="EquipmentStateIcon"
+                                                                Property="Visibility"
+                                                                Value="Visible" />
+                                                        <Setter TargetName="EquipmentStateIcon"
+                                                                Property="Data"
+                                                                Value="{StaticResource NetLoom.Icon.StatusCritical}" />
+                                                        <Setter TargetName="EquipmentStateIcon"
+                                                                Property="Stroke"
+                                                                Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                                        <Setter TargetName="EquipmentStateGlyphText"
                                                                 Property="Foreground"
                                                                 Value="{DynamicResource NetLoom.Brush.Critical}" />
                                                         <Setter TargetName="EquipmentProblemText"
@@ -580,6 +608,18 @@
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsWarningProblem}"
                                                                  Value="True">
+                                                        <Setter TargetName="EquipmentStateGlyphText"
+                                                                Property="Visibility"
+                                                                Value="Collapsed" />
+                                                        <Setter TargetName="EquipmentStateIcon"
+                                                                Property="Visibility"
+                                                                Value="Visible" />
+                                                        <Setter TargetName="EquipmentStateIcon"
+                                                                Property="Data"
+                                                                Value="{StaticResource NetLoom.Icon.StatusWarning}" />
+                                                        <Setter TargetName="EquipmentStateIcon"
+                                                                Property="Stroke"
+                                                                Value="{DynamicResource NetLoom.Brush.Warning}" />
                                                         <Setter TargetName="EquipmentStateGlyphText"
                                                                 Property="Foreground"
                                                                 Value="{DynamicResource NetLoom.Brush.Warning}" />
@@ -1400,20 +1440,20 @@
                                 <TextBlock x:Name="SettingsAnimationLabelText"
                                            Style="{StaticResource NetLoom.Style.FieldLabel}"
                                            VerticalAlignment="Center" />
-                                <StackPanel Grid.Column="1"
-                                            Orientation="Horizontal">
-                                    <Button x:Name="SettingsMotionNormalButton"
-                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                            Click="OnSettingsMotionNormalClick" />
-                                    <Button x:Name="SettingsMotionReducedButton"
-                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                            Margin="8,0,0,0"
-                                            Click="OnSettingsMotionReducedClick" />
-                                    <Button x:Name="SettingsMotionOffButton"
-                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                            Margin="8,0,0,0"
-                                            Click="OnSettingsMotionOffClick" />
-                                </StackPanel>
+                                <Border Grid.Column="1"
+                                        Style="{StaticResource NetLoom.Style.SegmentedGroup}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="SettingsMotionNormalButton"
+                                                Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                                Click="OnSettingsMotionNormalClick" />
+                                        <Button x:Name="SettingsMotionReducedButton"
+                                                Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                                Click="OnSettingsMotionReducedClick" />
+                                        <Button x:Name="SettingsMotionOffButton"
+                                                Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                                Click="OnSettingsMotionOffClick" />
+                                    </StackPanel>
+                                </Border>
                             </Grid>
 
                             <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
@@ -1424,16 +1464,17 @@
                                 <TextBlock x:Name="SettingsThemeLabelText"
                                            Style="{StaticResource NetLoom.Style.FieldLabel}"
                                            VerticalAlignment="Center" />
-                                <StackPanel Grid.Column="1"
-                                            Orientation="Horizontal">
-                                    <Button x:Name="SettingsThemeLightButton"
-                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                            Click="OnSettingsThemeLightClick" />
-                                    <Button x:Name="SettingsThemeDarkButton"
-                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                            Margin="8,0,0,0"
-                                            Click="OnSettingsThemeDarkClick" />
-                                </StackPanel>
+                                <Border Grid.Column="1"
+                                        Style="{StaticResource NetLoom.Style.SegmentedGroup}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="SettingsThemeLightButton"
+                                                Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                                Click="OnSettingsThemeLightClick" />
+                                        <Button x:Name="SettingsThemeDarkButton"
+                                                Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                                Click="OnSettingsThemeDarkClick" />
+                                    </StackPanel>
+                                </Border>
                             </Grid>
 
                             <Button x:Name="MapSettingsButton"
@@ -1471,14 +1512,17 @@
 
                         <WrapPanel x:Name="Adr083MapPrimaryToolbar"
                                    VerticalAlignment="Center">
-                            <Button x:Name="MapViewModeButton"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="0,0,8,0"
-                                    Click="OnMapViewModeClick" />
-                            <Button x:Name="MapEditModeButton"
-                                    Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                    Margin="0,0,8,0"
-                                    Click="OnMapEditModeClick" />
+                            <Border Style="{StaticResource NetLoom.Style.SegmentedGroup}"
+                                    Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="MapViewModeButton"
+                                            Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                            Click="OnMapViewModeClick" />
+                                    <Button x:Name="MapEditModeButton"
+                                            Style="{StaticResource NetLoom.Style.SegmentButton}"
+                                            Click="OnMapEditModeClick" />
+                                </StackPanel>
+                            </Border>
                             <Button x:Name="MapOperationalFocusButton"
                                     Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                     Margin="0,0,8,0"
@@ -1912,39 +1956,82 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
-                                        Margin="0,0,8,0"
+                                <!-- G4: строка события по макетам ADR-083 — круглый значок важности, время моноширинным,
+                                     заголовок жирным, участники приглушённо; без рамки, пока нет наведения или фокуса. -->
+                                <Button Style="{StaticResource NetLoom.Style.FlatButton}"
+                                        Margin="{DynamicResource NetLoom.Thickness.EventItemGap}"
                                         DataContext="{Binding}"
                                         AutomationProperties.Name="{Binding Title}"
+                                        ToolTip="{Binding Scope}"
                                         Click="OnShellEventClick">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock x:Name="EventGlyph"
-                                                   Text="●"
-                                                   Margin="0,0,6,0" />
+                                        <Border x:Name="EventBadge"
+                                                Style="{StaticResource NetLoom.Style.EventBadge}"
+                                                Margin="{DynamicResource NetLoom.Thickness.EventPartGap}">
+                                            <TextBlock x:Name="EventGlyph"
+                                                       Text="•"
+                                                       FontWeight="Bold"
+                                                       FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                                       Foreground="{DynamicResource NetLoom.Brush.OnAccent}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
                                         <TextBlock Text="{Binding TimeText}"
+                                                   Style="{StaticResource NetLoom.Style.MonoText}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="{DynamicResource NetLoom.Thickness.EventPartGap}" />
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="EventScopeText"
+                                                   Text="{Binding Scope, StringFormat=' · {0}'}"
                                                    Style="{StaticResource NetLoom.Style.MutedText}"
-                                                   Margin="0,0,6,0" />
-                                        <TextBlock Text="{Binding Title}" />
+                                                   VerticalAlignment="Center"
+                                                   MaxWidth="{DynamicResource NetLoom.Event.ScopeMaxWidth}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding Scope}" />
                                     </StackPanel>
                                 </Button>
                                 <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Scope}"
+                                                 Value="{x:Null}">
+                                        <Setter TargetName="EventScopeText"
+                                                Property="Visibility"
+                                                Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Scope}"
+                                                 Value="">
+                                        <Setter TargetName="EventScopeText"
+                                                Property="Visibility"
+                                                Value="Collapsed" />
+                                    </DataTrigger>
                                     <DataTrigger Binding="{Binding IsCritical}"
                                                  Value="True">
-                                        <Setter TargetName="EventGlyph"
-                                                Property="Foreground"
+                                        <Setter TargetName="EventBadge"
+                                                Property="Background"
                                                 Value="{DynamicResource NetLoom.Brush.Critical}" />
+                                        <Setter TargetName="EventGlyph"
+                                                Property="Text"
+                                                Value="×" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsWarning}"
                                                  Value="True">
-                                        <Setter TargetName="EventGlyph"
-                                                Property="Foreground"
+                                        <Setter TargetName="EventBadge"
+                                                Property="Background"
                                                 Value="{DynamicResource NetLoom.Brush.Warning}" />
+                                        <Setter TargetName="EventGlyph"
+                                                Property="Text"
+                                                Value="!" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsResolved}"
                                                  Value="True">
+                                        <!-- Норма нейтральна (ADR-083 п. 6): закрытое событие без цвета отклонения. -->
+                                        <Setter TargetName="EventBadge"
+                                                Property="Background"
+                                                Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
                                         <Setter TargetName="EventGlyph"
-                                                Property="Foreground"
-                                                Value="{DynamicResource NetLoom.Brush.Positive}" />
+                                                Property="Text"
+                                                Value="✓" />
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
@@ -1958,7 +2045,7 @@
 
                 <Button x:Name="ShellAllEventsButton"
                         Grid.Column="2"
-                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                        Style="{StaticResource NetLoom.Style.LinkButton}"
                         Click="OnShellAllEventsClick" />
             </Grid>
         </Border>

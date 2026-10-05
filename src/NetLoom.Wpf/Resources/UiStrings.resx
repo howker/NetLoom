@@ -2091,8 +2091,23 @@ Poll: {2}</value>
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
   </data>
-  <data name="EquipmentFilterPlaceholder" xml:space="preserve">
-    <value>Filter: name, IP, model…</value>
+  <data name="EquipmentStateGlyphNoData" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="EquipmentAgeNever" xml:space="preserve">
+    <value>never</value>
+  </data>
+  <data name="EquipmentAgeNow" xml:space="preserve">
+    <value>now</value>
+  </data>
+  <data name="EquipmentAgeMinutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="EquipmentAgeHours" xml:space="preserve">
+    <value>{0} h</value>
+  </data>
+  <data name="EquipmentAgeDays" xml:space="preserve">
+    <value>{0} d</value>
   </data>
   <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
     <value>Device, IP or MAC</value>

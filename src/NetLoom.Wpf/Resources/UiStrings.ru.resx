@@ -2091,8 +2091,23 @@
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
   </data>
-  <data name="EquipmentFilterPlaceholder" xml:space="preserve">
-    <value>Фильтр: имя, IP, модель…</value>
+  <data name="EquipmentStateGlyphNoData" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="EquipmentAgeNever" xml:space="preserve">
+    <value>нет</value>
+  </data>
+  <data name="EquipmentAgeNow" xml:space="preserve">
+    <value>сейчас</value>
+  </data>
+  <data name="EquipmentAgeMinutes" xml:space="preserve">
+    <value>{0} мин</value>
+  </data>
+  <data name="EquipmentAgeHours" xml:space="preserve">
+    <value>{0} ч</value>
+  </data>
+  <data name="EquipmentAgeDays" xml:space="preserve">
+    <value>{0} дн</value>
   </data>
   <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
     <value>Устройство, IP или MAC</value>
