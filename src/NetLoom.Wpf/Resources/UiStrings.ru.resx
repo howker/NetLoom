@@ -1352,13 +1352,13 @@
     <value>Диапазон сети (IPv4 CIDR)</value>
   </data>
   <data name="DiscoveryStartAddressLabel" xml:space="preserve">
-    <value>Начальный IP</value>
+    <value>Начальный адрес</value>
   </data>
   <data name="DiscoveryEndAddressLabel" xml:space="preserve">
-    <value>Конечный IP</value>
+    <value>Конечный адрес</value>
   </data>
   <data name="DiscoverySubnetMaskLabel" xml:space="preserve">
-    <value>Маска сети</value>
+    <value>Маска</value>
   </data>
   <data name="DiscoveryProfileLabel" xml:space="preserve">
     <value>SNMP-профиль</value>
@@ -1421,7 +1421,7 @@
     <value>Нет включённых SNMP-профилей.</value>
   </data>
   <data name="DiscoveryProfileDisplay" xml:space="preserve">
-    <value>{0} • SNMP {1}</value>
+    <value>{0} · SNMP {1}</value>
   </data>
   <data name="DiscoveryProgressPending" xml:space="preserve">
     <value>Ещё не запущено</value>
@@ -1442,7 +1442,7 @@
     <value>Нет ответа</value>
   </data>
   <data name="DiscoveryStateIdle" xml:space="preserve">
-    <value>Ожидает запуска</value>
+    <value>Не запускался</value>
   </data>
   <data name="DiscoveryStateStarting" xml:space="preserve">
     <value>Запускается</value>
@@ -2093,6 +2093,9 @@
   </data>
   <data name="DiscoveryLastRunTitle" xml:space="preserve">
     <value>Последний запуск</value>
+  </data>
+  <data name="DiscoveryRangeTitle" xml:space="preserve">
+    <value>Диапазон адресов</value>
   </data>
   <data name="InspectorPollAction" xml:space="preserve">
     <value>Опросить</value>

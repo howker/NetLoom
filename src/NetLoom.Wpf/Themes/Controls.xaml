@@ -1889,7 +1889,9 @@
     </Style>
 
     <Style x:Key="NetLoom.Style.LinkButton" TargetType="{x:Type Button}" BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
-        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.Accent}" />
+        <!-- §6: ссылка — это текст, поэтому токен акцентного текста, а не заливки: на приглушённой карточке
+             (SurfaceMuted) заливочный Accent давал 4.35:1 при норме 4.5:1. -->
+        <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.AccentText}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.None}" />

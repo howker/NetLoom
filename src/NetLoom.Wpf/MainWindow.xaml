@@ -1061,20 +1061,24 @@
                                 <TextBlock x:Name="DiscoveryTitleText"
                                            Style="{StaticResource NetLoom.Style.SectionTitle}" />
 
+                                <!-- D2 (sprint46-mockup-gap): подпись группы над карточкой, в карточке одна строка
+                                     «имя · SNMP v2c» и ссылка «Изменить в настройках» на приглушённом фоне, как в макете netloom-v2-5. -->
+                                <TextBlock x:Name="DiscoverySidebarProfileLabelText"
+                                           Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                           Margin="{DynamicResource NetLoom.Thickness.CardGapTop}" />
                                 <Border x:Name="DiscoveryProfileCard"
                                         Style="{StaticResource NetLoom.Style.OperatorCard}"
-                                        Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
+                                        Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                                        Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock x:Name="DiscoverySidebarProfileLabelText"
-                                                       Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                        <StackPanel Grid.Column="0"
+                                                    VerticalAlignment="Center">
                                             <TextBlock x:Name="DiscoveryProfileSummaryText"
                                                        Style="{StaticResource NetLoom.Style.CardTitle}"
-                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                                        TextWrapping="Wrap" />
                                             <TextBlock x:Name="DiscoveryProfileHintText"
                                                        Style="{StaticResource NetLoom.Style.MutedText}"
@@ -1090,12 +1094,20 @@
                                     </Grid>
                                 </Border>
 
-                                <Grid Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}">
+                                <!-- D3: группа «Диапазон адресов», маска — в ширину первого столбца, как в макете netloom-v2-5. -->
+                                <TextBlock x:Name="DiscoveryRangeTitleText"
+                                           Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                           Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}" />
+                                <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="{DynamicResource NetLoom.Grid.FieldGap}" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <TextBlock x:Name="DiscoveryStartAddressLabelText"
                                                    Style="{StaticResource NetLoom.Style.FieldLabel}" />
@@ -1110,15 +1122,16 @@
                                                  AutomationProperties.LabeledBy="{Binding ElementName=DiscoveryEndAddressLabelText}"
                                                  FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
                                     </StackPanel>
+                                    <StackPanel Grid.Row="1"
+                                                Grid.Column="0"
+                                                Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                        <TextBlock x:Name="DiscoverySubnetMaskLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                        <TextBox x:Name="DiscoverySubnetMaskTextBox"
+                                                 AutomationProperties.LabeledBy="{Binding ElementName=DiscoverySubnetMaskLabelText}"
+                                                 FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
+                                    </StackPanel>
                                 </Grid>
-
-                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
-                                    <TextBlock x:Name="DiscoverySubnetMaskLabelText"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
-                                    <TextBox x:Name="DiscoverySubnetMaskTextBox"
-                                             AutomationProperties.LabeledBy="{Binding ElementName=DiscoverySubnetMaskLabelText}"
-                                             FontFamily="{DynamicResource NetLoom.FontFamily.Mono}" />
-                                </StackPanel>
 
                                 <Grid Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}">
                                     <Button x:Name="DiscoveryStartButton"

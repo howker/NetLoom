@@ -1352,10 +1352,10 @@ Drag the header to move this placement together with its child placements and as
     <value>Network range (IPv4 CIDR)</value>
   </data>
   <data name="DiscoveryStartAddressLabel" xml:space="preserve">
-    <value>Start IP</value>
+    <value>Start address</value>
   </data>
   <data name="DiscoveryEndAddressLabel" xml:space="preserve">
-    <value>End IP</value>
+    <value>End address</value>
   </data>
   <data name="DiscoverySubnetMaskLabel" xml:space="preserve">
     <value>Subnet mask</value>
@@ -1421,7 +1421,7 @@ Drag the header to move this placement together with its child placements and as
     <value>No enabled SNMP profiles are available.</value>
   </data>
   <data name="DiscoveryProfileDisplay" xml:space="preserve">
-    <value>{0} • SNMP {1}</value>
+    <value>{0} · SNMP {1}</value>
   </data>
   <data name="DiscoveryProgressPending" xml:space="preserve">
     <value>Not started</value>
@@ -1442,7 +1442,7 @@ Drag the header to move this placement together with its child placements and as
     <value>no response</value>
   </data>
   <data name="DiscoveryStateIdle" xml:space="preserve">
-    <value>Waiting to start</value>
+    <value>Not run yet</value>
   </data>
   <data name="DiscoveryStateStarting" xml:space="preserve">
     <value>Starting</value>
@@ -2093,6 +2093,9 @@ Poll: {2}</value>
   </data>
   <data name="DiscoveryLastRunTitle" xml:space="preserve">
     <value>Last run</value>
+  </data>
+  <data name="DiscoveryRangeTitle" xml:space="preserve">
+    <value>Address range</value>
   </data>
   <data name="InspectorPollAction" xml:space="preserve">
     <value>Poll</value>

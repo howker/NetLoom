@@ -51,6 +51,8 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryProgressLabel");
             DiscoveryCurrentAddressLabelText.Text =
                 UiText.Get("DiscoveryCurrentAddressLabel");
+            DiscoveryRangeTitleText.Text =
+                UiText.Get("DiscoveryRangeTitle");
             DiscoveryStartAddressLabelText.Text =
                 UiText.Get("DiscoveryStartAddressLabel");
             DiscoveryEndAddressLabelText.Text =
