@@ -85,7 +85,9 @@ $allowedWpfResxLowercaseNames =
         "EvidenceCountOne",
         "EvidenceCountFew",
         "EvidenceCountMany",
-        "EvidenceCountOther"
+        "EvidenceCountOther",
+        "EquipmentAgeNever",
+        "EquipmentAgeNow"
     )
 
 $localizedCsLiteralRegex =

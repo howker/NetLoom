@@ -160,3 +160,21 @@
 1	src/NetLoom.Protocols.Snmp/Lldp/LldpCollector.cs	// его можно повторно обработать новым парсером.
 1	src/NetLoom.Topology/Correlation/MacCorrelationResolver.cs	// а не сосед.
 1	src/NetLoom.Topology/Resolution/TopologyResolver.cs	// не создаёт кандидата физической связи.
+# Reviewed 2026-10-06: Sprint 46 multi-line comment continuation lines, not dropped capitals.
+1	src/NetLoom.Wpf/MainWindow.Adr083Shell.cs	// в «Предупреждениях» — отдельная кнопка над картой (A3).
+1	src/NetLoom.Wpf/MainWindow.Adr083Shell.cs	// но явный выбор объекта оператором раскрывает его; скрытый для раздела инспектор не трогаем.
+1	src/NetLoom.Wpf/MainWindow.Adr083Shell.cs	// проблемы главное действие инспектора — «Показать на карте» (макет netloom-v2-2-oborudovanie).
+1	src/NetLoom.Wpf/MainWindow.Adr083Shell.cs	// при переходе из «Предупреждений» ширина раздела в момент переключения ещё 420 px.
+1	src/NetLoom.Wpf/MainWindow.Diagnostics.cs	// сначала переключаемся на «Карту», затем показываем объект.
+1	src/NetLoom.Wpf/MainWindow.Monitoring.cs	// показываем её в строке сообщения, пока профиль не выбран, и убираем, когда он выбран.
+1	src/NetLoom.Wpf/MainWindow.Monitoring.cs	// для выбранного устройства; доступность совпадает.
+1	src/NetLoom.Wpf/MainWindow.Shell.cs	// пояснение показывается только когда профиль не выбран.
+1	src/NetLoom.Wpf/MainWindow.Shell.cs	// пустое состояние по-прежнему видно.
+1	tests/NetLoom.Tests.Unit/Sprint46LiveUiAuditTests.cs	// и двух ширинах, выполняет типовые сценарии кликов и записывает находки и скриншоты.
+1	tests/NetLoom.Tests.Unit/Sprint46LiveUiAuditTests.cs	// без базы тест помечается как неподтверждённый (Inconclusive), исходная база не изменяется.
+1	tests/NetLoom.Tests.Unit/Sprint46LiveUiAuditTests.cs	// столбцы, для которых на 1920 места достаточно (§5 «скрывать по приоритету при нехватке ширины»).
+1	tests/NetLoom.Tests.Unit/Sprint46LiveUiAuditTests.cs	// полный путь — в подсказке.
+1	tests/NetLoom.Tests.Unit/Sprint46LiveUiAuditTests.cs	// читаемости NetLoom.Map.ReadableZoomMin; полезный вид большого объекта — работа Sprint 49.
+1	tests/NetLoom.Tests.Unit/Sprint46LiveUiAuditTests.cs	// полос прокрутки и полей ввода стандартны и обрезаются самим WPF.
+1	tests/NetLoom.Tests.Unit/Sprint46LiveUiAuditTests.cs	// сводятся в одну строку со списком мест.
+1	tests/NetLoom.Tests.Unit/Sprint46UiStateGalleryTests.cs	// собственный управляющий объект; без профилей — состояние «0 профилей».

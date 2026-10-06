@@ -1,4 +1,4 @@
-# Builds NetLoom, runs the Sprint 46 shell, gallery and live UI audit tests,
+﻿# Builds NetLoom, runs the Sprint 46 shell, gallery and live UI audit tests,
 # and writes the full console output to artifacts\ui-audit-run\run.txt
 # (UTF-8) so the result can be read without copying the terminal.
 # Screenshots and findings stay in artifacts\ui-audit (written by the audit test).
