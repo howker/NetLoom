@@ -684,6 +684,111 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            BreadcrumbNamesOpenSectionWithoutSelectionAndKeepsPlacementPathAcrossSections()
+        {
+            // G2 (sprint46-mockup-gap): без выбора крошки называли «Карта» в любом разделе.
+            RunOnSta(
+                () =>
+                {
+                    var siteId =
+                        Guid.Parse(
+                            "46464646-1100-1100-1100-464646464646");
+
+                    var rackId =
+                        Guid.Parse(
+                            "46464646-2100-2100-2100-464646464646");
+
+                    var deviceId =
+                        Guid.Parse(
+                            "46464646-3100-3100-3100-464646464646");
+
+                    var interfaceId =
+                        Guid.Parse(
+                            "46464646-4100-4100-4100-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                InspectorSnapshot(
+                                    siteId,
+                                    rackId,
+                                    deviceId,
+                                    interfaceId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                DeviceBorder(
+                                    window,
+                                    deviceId) !=
+                                null);
+
+                        var breadcrumb =
+                            (TextBlock)window.FindName(
+                                "ShellBreadcrumbText");
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "ShellMapSection"),
+                            breadcrumb.Text);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellEquipmentButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "ShellEquipmentSection"),
+                            breadcrumb.Text,
+                            "Without a selection the breadcrumb names the open section.");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellSettingsButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "ShellSettingsSection"),
+                            breadcrumb.Text);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellMapButton"));
+                        PumpDispatcher();
+
+                        SelectDevice(
+                            window,
+                            deviceId);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellSettingsButton"));
+                        PumpDispatcher();
+
+                        StringAssert.Contains(
+                            breadcrumb.Text,
+                            "Site A");
+
+                        StringAssert.Contains(
+                            breadcrumb.Text,
+                            "Rack A",
+                            "The selection survives a section switch, so the placement path stays.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             InspectorKeepsMapContextAndSupportsStableInterfaceSelection()
         {
             RunOnSta(

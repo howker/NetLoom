@@ -1077,6 +1077,9 @@ namespace NetLoom.Wpf
 
             UpdateAdr083SectionPresentation(
                 section);
+
+            // G2: без выбранного объекта крошки называют открытый раздел.
+            UpdateShellBreadcrumb();
         }
 
         private void UpdateShellEquipmentPresentation(

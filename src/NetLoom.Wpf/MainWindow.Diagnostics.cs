@@ -157,21 +157,21 @@ public partial class MainWindow : Window
 
     private void UpdateShellBreadcrumb()
     {
-        var root =
-            UiText.Get(
-                "ShellMapSection");
-
         var context =
             SelectedPhysicalContextPath();
 
         // G2 (sprint46-mockup-gap, ADR-083 п. 2): хлебные крошки — путь размещений «АГПЗ › ГПП-1 › Серверная».
-        // Без выбранного объекта — название раздела. Если путь не помещается в MaxWidth,
-        // скрывается начало пути («… › »), полный путь — в подсказке.
+        // Выбор не сбрасывается при смене раздела, поэтому путь виден во всех разделах, как на макетах.
+        // Без выбранного размещённого объекта — название открытого раздела (раньше всегда «Карта»).
+        // Если путь не помещается в MaxWidth, скрывается начало пути («… › »), полный путь — в подсказке.
         if (string.IsNullOrWhiteSpace(
                 context))
         {
-            ShellBreadcrumbText.Text =
-                root;
+            SetShellBreadcrumb(
+                string.Empty,
+                UiText.Get(
+                    ShellSectionTitleKey(
+                        _shellSection)));
             ShellBreadcrumbText.ToolTip =
                 null;
             return;
@@ -206,10 +206,78 @@ public partial class MainWindow : Window
                     segments);
         }
 
-        ShellBreadcrumbText.Text =
-            text;
+        var currentStart =
+            text.LastIndexOf(
+                BreadcrumbSeparator,
+                StringComparison.Ordinal);
+
+        SetShellBreadcrumb(
+            currentStart < 0
+                ? string.Empty
+                : text.Substring(
+                    0,
+                    currentStart +
+                    BreadcrumbSeparator.Length),
+            currentStart < 0
+                ? text
+                : text.Substring(
+                    currentStart +
+                    BreadcrumbSeparator.Length));
         ShellBreadcrumbText.ToolTip =
             full;
+    }
+
+    // Как на макетах ADR-083: начало пути приглушённым цветом, текущее место — основным цветом и полужирным.
+    private void SetShellBreadcrumb(
+        string prefix,
+        string current)
+    {
+        ShellBreadcrumbText.Inlines.Clear();
+
+        if (!string.IsNullOrEmpty(
+                prefix))
+        {
+            ShellBreadcrumbText.Inlines.Add(
+                new System.Windows.Documents.Run(
+                    prefix));
+        }
+
+        var currentRun =
+            new System.Windows.Documents.Run(
+                current)
+            {
+                FontWeight =
+                    FontWeights.SemiBold
+            };
+
+        currentRun.SetResourceReference(
+            System.Windows.Documents.TextElement.ForegroundProperty,
+            "NetLoom.Brush.TextPrimary");
+
+        ShellBreadcrumbText.Inlines.Add(
+            currentRun);
+    }
+
+    private static string ShellSectionTitleKey(
+        ShellSection section)
+    {
+        switch (section)
+        {
+            case ShellSection.Equipment:
+                return "ShellEquipmentSection";
+            case ShellSection.Monitoring:
+                return "ShellMonitoringLabel";
+            case ShellSection.Alerts:
+                return "ShellAlertsSection";
+            case ShellSection.Discovery:
+                return "ShellDiscoverySection";
+            case ShellSection.Search:
+                return "ShellSearchSection";
+            case ShellSection.Settings:
+                return "ShellSettingsSection";
+            default:
+                return "ShellMapSection";
+        }
     }
 
     private const string BreadcrumbSeparator = " › ";
@@ -240,7 +308,8 @@ public partial class MainWindow : Window
                 new Typeface(
                     ShellBreadcrumbText.FontFamily,
                     ShellBreadcrumbText.FontStyle,
-                    ShellBreadcrumbText.FontWeight,
+                    // Мерим полужирным: текущее место полужирное, так оценка не меньше фактической ширины.
+                    FontWeights.SemiBold,
                     ShellBreadcrumbText.FontStretch),
                 ShellBreadcrumbText.FontSize,
                 Brushes.Black,
