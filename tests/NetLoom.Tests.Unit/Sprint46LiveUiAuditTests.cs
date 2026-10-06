@@ -526,6 +526,55 @@ namespace NetLoom.Tests.Unit
                     }
                 }
 
+                // 4б. Хлебные крошки (ADR-083 п. 2): у устройства с размещением в шапке путь «… › …»,
+                // полный путь — в подсказке.
+                RaiseClick(equipmentButton);
+                Settle();
+
+                var placedRow =
+                    FindVisualDescendants<Button>(
+                            (DependencyObject)window.FindName("EquipmentList"))
+                        .FirstOrDefault(
+                            item =>
+                                item.IsVisible &&
+                                item.IsEnabled &&
+                                item.Tag is Guid &&
+                                FindVisualDescendants<TextBlock>(item)
+                                    .Any(
+                                        text =>
+                                            text.Text != null &&
+                                            text.Text.Contains(" / ")));
+
+                var breadcrumb =
+                    (TextBlock)window.FindName(
+                        "ShellBreadcrumbText");
+
+                if (placedRow != null &&
+                    breadcrumb != null)
+                {
+                    RaiseClick(placedRow);
+                    Settle(400);
+
+                    if (breadcrumb.Text == null ||
+                        !breadcrumb.Text.Contains("›") ||
+                        breadcrumb.ToolTip == null)
+                    {
+                        report.Add(
+                            "ЛОГИКА",
+                            "СРЕДНЯЯ",
+                            "Оборудование: устройство с размещением",
+                            "хлебные крошки не показывают путь размещения: «" +
+                            breadcrumb.Text +
+                            "» (ADR-083 п. 2)");
+                    }
+
+                    SaveCapture(
+                        window,
+                        System.IO.Path.Combine(
+                            outputDirectory,
+                            "interaction-4b-breadcrumb.png"));
+                }
+
                 // 5. Глобальный поиск: ввод имени, Enter выбирает устройство и показывает его на карте.
                 var search =
                     (TextBox)window.FindName(

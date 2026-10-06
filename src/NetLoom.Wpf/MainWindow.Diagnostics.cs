@@ -164,13 +164,90 @@ public partial class MainWindow : Window
         var context =
             SelectedPhysicalContextPath();
 
+        // G2 (sprint46-mockup-gap, ADR-083 п. 2): хлебные крошки — путь размещений «АГПЗ › ГПП-1 › Серверная».
+        // Без выбранного объекта — название раздела. Если путь не помещается в MaxWidth,
+        // скрывается начало пути («… › »), полный путь — в подсказке.
+        if (string.IsNullOrWhiteSpace(
+                context))
+        {
+            ShellBreadcrumbText.Text =
+                root;
+            ShellBreadcrumbText.ToolTip =
+                null;
+            return;
+        }
+
+        var segments =
+            context
+                .Split(
+                    new[] { " / " },
+                    StringSplitOptions.RemoveEmptyEntries)
+                .ToList();
+
+        var full =
+            string.Join(
+                BreadcrumbSeparator,
+                segments);
+
+        var text =
+            full;
+
+        while (segments.Count > 1 &&
+               BreadcrumbWidth(
+                   text) >
+               BreadcrumbAvailableWidth())
+        {
+            segments.RemoveAt(0);
+            text =
+                BreadcrumbEllipsis +
+                BreadcrumbSeparator +
+                string.Join(
+                    BreadcrumbSeparator,
+                    segments);
+        }
+
         ShellBreadcrumbText.Text =
-            string.IsNullOrWhiteSpace(
-                context)
-                ? root
-                : root +
-                  " / " +
-                  context;
+            text;
+        ShellBreadcrumbText.ToolTip =
+            full;
+    }
+
+    private const string BreadcrumbSeparator = " › ";
+
+    private const string BreadcrumbEllipsis = "…";
+
+    private double BreadcrumbAvailableWidth()
+    {
+        var maxWidth =
+            ShellBreadcrumbText.MaxWidth;
+
+        return double.IsInfinity(maxWidth) ||
+               double.IsNaN(maxWidth)
+            ? double.MaxValue
+            : maxWidth -
+              ShellBreadcrumbText.Padding.Left -
+              ShellBreadcrumbText.Padding.Right;
+    }
+
+    private double BreadcrumbWidth(
+        string text)
+    {
+        var formatted =
+            new FormattedText(
+                text,
+                CultureInfo.CurrentUICulture,
+                ShellBreadcrumbText.FlowDirection,
+                new Typeface(
+                    ShellBreadcrumbText.FontFamily,
+                    ShellBreadcrumbText.FontStyle,
+                    ShellBreadcrumbText.FontWeight,
+                    ShellBreadcrumbText.FontStretch),
+                ShellBreadcrumbText.FontSize,
+                Brushes.Black,
+                VisualTreeHelper.GetDpi(
+                    ShellBreadcrumbText).PixelsPerDip);
+
+        return formatted.WidthIncludingTrailingWhitespace;
     }
 
     private string SelectedPhysicalContextPath()

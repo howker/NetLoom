@@ -100,6 +100,8 @@
     <GridLength x:Key="NetLoom.Shell.InspectorWidth">360</GridLength>
     <sys:Double x:Key="NetLoom.Shell.ProfileWidth">220</sys:Double>
     <sys:Double x:Key="NetLoom.Shell.ProfileMinWidth">150</sys:Double>
+    <sys:Double x:Key="NetLoom.Shell.BrandMarkSize">16</sys:Double>
+    <sys:Double x:Key="NetLoom.Shell.BrandDotSize">6</sys:Double>
     <sys:Double x:Key="NetLoom.Shell.SearchMinWidth">160</sys:Double>
     <Thickness x:Key="NetLoom.Thickness.SearchPlaceholderMargin">32,0,60,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FilterPlaceholderMargin">34,0,12,0</Thickness>

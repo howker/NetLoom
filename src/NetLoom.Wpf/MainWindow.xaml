@@ -41,9 +41,24 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock x:Name="ShellBrandText"
-                           Style="{StaticResource NetLoom.Style.WindowTitle}"
-                           VerticalAlignment="Center" />
+                <!-- G1 (sprint46-mockup-gap): знак перед названием — кольцо с точкой акцентным цветом. -->
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Grid Width="{DynamicResource NetLoom.Shell.BrandMarkSize}"
+                          Height="{DynamicResource NetLoom.Shell.BrandMarkSize}"
+                          Margin="{DynamicResource NetLoom.Thickness.EventPartGap}"
+                          VerticalAlignment="Center"
+                          IsHitTestVisible="False">
+                        <Ellipse Stroke="{DynamicResource NetLoom.Brush.Accent}"
+                                 StrokeThickness="2" />
+                        <Ellipse Width="{DynamicResource NetLoom.Shell.BrandDotSize}"
+                                 Height="{DynamicResource NetLoom.Shell.BrandDotSize}"
+                                 Fill="{DynamicResource NetLoom.Brush.Accent}" />
+                    </Grid>
+                    <TextBlock x:Name="ShellBrandText"
+                               Style="{StaticResource NetLoom.Style.WindowTitle}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
 
                 <TextBlock x:Name="ShellBreadcrumbText"
                            Grid.Column="1"
@@ -1124,6 +1139,24 @@
                                            Style="{StaticResource NetLoom.Style.MutedText}"
                                            Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                            TextWrapping="Wrap" />
+                                <!-- D3 (sprint46-mockup-gap): «Последний запуск» в форме, как в макете netloom-v2-5;
+                                     состояние берётся из той же строки, что и в панели результатов. -->
+                                <TextBlock x:Name="DiscoveryLastRunTitleText"
+                                           Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                           Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}" />
+                                <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Text, ElementName=DiscoveryStateLabelText}"
+                                               Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Text, ElementName=DiscoveryStateValueText}"
+                                               VerticalAlignment="Center"
+                                               TextWrapping="Wrap" />
+                                </Grid>
                             </StackPanel>
                         </ScrollViewer>
 

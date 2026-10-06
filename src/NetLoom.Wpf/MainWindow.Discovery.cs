@@ -45,6 +45,8 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryTitle");
             DiscoveryStateLabelText.Text =
                 UiText.Get("DiscoveryStateLabel");
+            DiscoveryLastRunTitleText.Text =
+                UiText.Get("DiscoveryLastRunTitle");
             DiscoveryProgressLabelText.Text =
                 UiText.Get("DiscoveryProgressLabel");
             DiscoveryCurrentAddressLabelText.Text =

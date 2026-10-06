@@ -2091,6 +2091,9 @@ Poll: {2}</value>
   <data name="InspectorPortNeighborLine" xml:space="preserve">
     <value>→ {0}</value>
   </data>
+  <data name="DiscoveryLastRunTitle" xml:space="preserve">
+    <value>Last run</value>
+  </data>
   <data name="InspectorPollAction" xml:space="preserve">
     <value>Poll</value>
   </data>
