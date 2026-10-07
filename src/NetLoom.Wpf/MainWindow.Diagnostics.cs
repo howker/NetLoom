@@ -937,6 +937,16 @@ public partial class MainWindow : Window
         var stateFields =
             new List<DiagnosticFieldRow>();
 
+        if (_lastMapSnapshot != null &&
+            _lastMapSnapshot.Nodes.Any(
+                node => node.DeviceId == device.DeviceId && node.IsUnconfirmed))
+        {
+            stateFields.Add(
+                Field(
+                    "DiagnosticFieldConfirmation",
+                    UiText.Get("DeviceUnconfirmedHint")));
+        }
+
         stateFields.Add(
             Field(
                 "DiagnosticFieldManagementAddress",

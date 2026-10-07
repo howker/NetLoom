@@ -2421,4 +2421,13 @@ Poll: {2}</value>
   <data name="DiscoveryRunKnownUnchangedLabel" xml:space="preserve">
     <value>Unchanged</value>
   </data>
+  <data name="DeviceUnconfirmedMark" xml:space="preserve">
+    <value>Unconfirmed</value>
+  </data>
+  <data name="DeviceUnconfirmedHint" xml:space="preserve">
+    <value>Found by discovery and not confirmed yet. Resolve it in the Discovery inbox.</value>
+  </data>
+  <data name="DiagnosticFieldConfirmation" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
 </root>

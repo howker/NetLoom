@@ -608,8 +608,8 @@
                                         <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.CategoryColumnWidth}" />
                                         <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.DescriptionColumnWidth}" />
                                         <ColumnDefinition Width="1.35*" />
-                                        <ColumnDefinition Width="0.55*" />
-                                        <ColumnDefinition Width="0.75*" />
+                                        <ColumnDefinition Width="0.55*" MinWidth="{DynamicResource NetLoom.Equipment.ConnectionsColumnMinWidth}" />
+                                        <ColumnDefinition Width="0.75*" MinWidth="{DynamicResource NetLoom.Equipment.UpdatedColumnMinWidth}" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Name="EquipmentNameHeaderText"
                                                Grid.Column="1"
@@ -659,8 +659,8 @@
                                                             <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.CategoryColumnWidth}" />
                                                             <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.DescriptionColumnWidth}" />
                                                             <ColumnDefinition Width="1.35*" />
-                                                            <ColumnDefinition Width="0.55*" />
-                                                            <ColumnDefinition Width="0.75*" />
+                                                            <ColumnDefinition Width="0.55*" MinWidth="{DynamicResource NetLoom.Equipment.ConnectionsColumnMinWidth}" />
+                                                            <ColumnDefinition Width="0.75*" MinWidth="{DynamicResource NetLoom.Equipment.UpdatedColumnMinWidth}" />
                                                         </Grid.ColumnDefinitions>
 
                                                         <!-- E2: проблема — значком ⚠ / × по грамматике статусов (§2), норма — серая точка, нет данных — «—». -->
@@ -690,6 +690,14 @@
                                                                        Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                                                        TextTrimming="CharacterEllipsis"
                                                                        ToolTip="{Binding ProblemText}" />
+                                                            <TextBlock x:Name="EquipmentUnconfirmedText"
+                                                                       Text="{Binding UnconfirmedText}"
+                                                                       Visibility="{Binding UnconfirmedVisibility}"
+                                                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                       FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       ToolTip="{Binding UnconfirmedHint}" />
                                                         </StackPanel>
 
                                                         <TextBlock Grid.Column="2"

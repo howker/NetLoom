@@ -2421,4 +2421,13 @@
   <data name="DiscoveryRunKnownUnchangedLabel" xml:space="preserve">
     <value>Без изменений</value>
   </data>
+  <data name="DeviceUnconfirmedMark" xml:space="preserve">
+    <value>Не подтверждено</value>
+  </data>
+  <data name="DeviceUnconfirmedHint" xml:space="preserve">
+    <value>Найдено обнаружением и ещё не подтверждено. Решение — во «Входящих» раздела «Обнаружение».</value>
+  </data>
+  <data name="DiagnosticFieldConfirmation" xml:space="preserve">
+    <value>Подтверждение</value>
+  </data>
 </root>

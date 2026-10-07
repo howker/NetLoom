@@ -1031,7 +1031,7 @@ namespace NetLoom.Tests.Unit
             }
         }
 
-        private sealed class RecordingMultiTargetMonitoringControl :
+        internal sealed class RecordingMultiTargetMonitoringControl :
             IMultiTargetMonitoringControl
         {
             private MonitoringControlSnapshot
@@ -1046,6 +1046,11 @@ namespace NetLoom.Tests.Unit
                 _current;
 
             public int SingleStartCount { get; private set; }
+
+            public List<IReadOnlyList<MonitoringTarget>> StartSetCalls { get; } =
+                new List<IReadOnlyList<MonitoringTarget>>();
+
+            public int StopCallCount { get; private set; }
 
             public IReadOnlyList<MonitoringTarget>
                 StartSetTargets { get; private set; }
@@ -1094,6 +1099,7 @@ namespace NetLoom.Tests.Unit
 
                 StartSetTargets =
                     targets.ToArray();
+                StartSetCalls.Add(StartSetTargets);
 
                 StartSetSessionPolicy =
                     policy;
@@ -1116,6 +1122,7 @@ namespace NetLoom.Tests.Unit
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                StopCallCount++;
                 Publish(
                     new MonitoringControlSnapshot(
                         MonitoringControlState.Stopped,

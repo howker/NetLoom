@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.DiscoveryInbox;
+using NetLoom.Application.MonitoringControl;
 using NetLoom.Application.Snmp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
@@ -42,6 +43,9 @@ namespace NetLoom.Wpf
 
         private readonly IDiscoveryRunJournal _discoveryRunJournal;
         private Guid? _activeDiscoveryRunId;
+        private bool _discoveryRunAddedDevices;
+        private bool _discoveryRunInProgress;
+        private Task _discoveryTopologyRefreshTask = Task.CompletedTask;
         private DiscoveryRunRecord _discoveryLatestRun;
         // Часы итога запуска; галерея подставляет свои, чтобы показать правдоподобную длительность.
         internal Func<DateTime> DiscoveryRunClock { get; set; } =
@@ -1515,6 +1519,10 @@ namespace NetLoom.Wpf
 
             try
             {
+                var knownDeviceIds = _lastMapSnapshot?.Nodes
+                    .Where(node => node.DeviceId.HasValue)
+                    .Select(node => node.DeviceId.Value)
+                    .ToArray() ?? new Guid[0];
                 Guid? deviceId;
 
                 if (_activeDiscoveryRunId.HasValue)
@@ -1532,7 +1540,16 @@ namespace NetLoom.Wpf
                         DiscoveryRunClock());
                 }
 
-                await RefreshTopologyAsync();
+                if (deviceId.HasValue && !knownDeviceIds.Contains(deviceId.Value))
+                {
+                    _discoveryRunAddedDevices = true;
+                }
+
+                var refreshTask = RefreshTopologyAsync();
+                _discoveryTopologyRefreshTask = _discoveryTopologyRefreshTask.IsCompleted
+                    ? refreshTask
+                    : Task.WhenAll(_discoveryTopologyRefreshTask, refreshTask);
+                await refreshTask;
 
                 if (deviceId.HasValue)
                 {
@@ -1782,9 +1799,20 @@ namespace NetLoom.Wpf
             RenderDiscoveryRunSummary();
         }
 
-        private void TrackDiscoveryRun(
+        private async void TrackDiscoveryRun(
             DiscoveryControlSnapshot snapshot)
         {
+            if (IsDiscoveryRunActive(snapshot.State))
+            {
+                if (!_discoveryRunInProgress)
+                {
+                    _discoveryRunAddedDevices = false;
+                    _discoveryRunInProgress = true;
+                }
+
+                return;
+            }
+
             if ((snapshot.State == DiscoveryControlState.Completed ||
                  snapshot.State == DiscoveryControlState.Stopped ||
                  snapshot.State == DiscoveryControlState.Faulted) &&
@@ -1795,6 +1823,25 @@ namespace NetLoom.Wpf
                     snapshot,
                     DiscoveryRunClock());
                 _activeDiscoveryRunId = null;
+            }
+
+            var restartMonitoring = _discoveryRunInProgress &&
+                _discoveryRunAddedDevices &&
+                (snapshot.State == DiscoveryControlState.Completed ||
+                 snapshot.State == DiscoveryControlState.Stopped) &&
+                _monitoringTargetSetSessionActive &&
+                _monitoringControl.Current.State == MonitoringControlState.Running;
+
+            _discoveryRunInProgress = false;
+            _discoveryRunAddedDevices = false;
+
+            if (restartMonitoring)
+            {
+                // Sprint 48: новые результаты обнаружения опрашиваются сразу — набор целей перезапускается после запуска обнаружения (на ходу Engine набор не меняет).
+                // Дожидаемся обновлений от кандидатов и читаем итоговый набор перед перезапуском.
+                await _discoveryTopologyRefreshTask;
+                await RefreshTopologyAsync();
+                await RestartMonitoringTargetSetAsync();
             }
         }
 

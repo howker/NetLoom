@@ -16,7 +16,8 @@ namespace NetLoom.Contracts.TopologyMap
                 MapMonitoringCapability.Unknown,
             MapNodeCategory category = MapNodeCategory.Unknown,
             Guid? deviceId = null,
-            string managementAddress = null)
+            string managementAddress = null,
+            bool isUnconfirmed = false)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -38,6 +39,7 @@ namespace NetLoom.Contracts.TopologyMap
             X = x;
             Y = y;
             LocationId = locationId;
+            IsUnconfirmed = isUnconfirmed;
             Origin = origin;
             MonitoringCapability = monitoringCapability;
             Category = category;
@@ -73,5 +75,7 @@ namespace NetLoom.Contracts.TopologyMap
         public Guid? DeviceId { get; }
 
         public string ManagementAddress { get; }
+
+        public bool IsUnconfirmed { get; }
     }
 }

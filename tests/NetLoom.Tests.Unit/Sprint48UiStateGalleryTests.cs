@@ -787,6 +787,66 @@ namespace NetLoom.Tests.Unit
                 });
         }
 
+        [TestMethod]
+        public void UnconfirmedDeviceGalleryShowsMarkOnMapAndEquipment()
+        {
+            RunOnSta(() =>
+            {
+                var outputDirectory = Path.Combine(
+                    Path.GetDirectoryName(ResolveOutputDirectory()), "sprint48-unconfirmed");
+                Directory.CreateDirectory(outputDirectory);
+                foreach (var file in Directory.GetFiles(outputDirectory, "*.png"))
+                {
+                    File.Delete(file);
+                }
+
+                var findings = new List<string>();
+                var snapshot = Sprint48DeviceConfirmationFixture.Snapshot();
+                var deviceId = snapshot.MapSnapshot.Nodes.Single(node => node.IsUnconfirmed).DeviceId.Value;
+
+                RenderShellScenario(
+                    outputDirectory,
+                    "35-unconfirmed-device-map",
+                    () => snapshot,
+                    window =>
+                    {
+                        WaitForCondition(() => DeviceBorder(window, deviceId) != null);
+                        SelectDevice(window, deviceId);
+                        PumpDispatcher();
+                        var card = DeviceBorder(window, deviceId);
+                        Assert.IsTrue(VisualDescendants(card).OfType<TextBlock>().Any(
+                            text => text.IsVisible && text.Text == UiText.Get("DeviceUnconfirmedMark")));
+                        var fields = (ItemsControl)window.FindName("DiagnosticFieldsList");
+                        Assert.IsTrue(fields.Items.Cast<object>().Any(item =>
+                            (string)item.GetType().GetProperty("Label").GetValue(item) ==
+                                UiText.Get("DiagnosticFieldConfirmation")));
+                    },
+                    findings);
+
+                RenderShellScenario(
+                    outputDirectory,
+                    "36-unconfirmed-device-equipment",
+                    () => snapshot,
+                    window =>
+                    {
+                        Click((Button)window.FindName("ShellEquipmentButton"));
+                        PumpDispatcher();
+                        var rows = (ItemsControl)window.FindName("EquipmentList");
+                        Assert.AreEqual(4, rows.Items.Count);
+                        Assert.IsTrue(rows.Items.Cast<object>().Any(item =>
+                            (string)item.GetType().GetProperty("UnconfirmedText").GetValue(item) ==
+                                UiText.Get("DeviceUnconfirmedMark")));
+                    },
+                    findings);
+
+                File.WriteAllLines(Path.Combine(outputDirectory, "findings.txt"),
+                    findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray());
+                // Два сценария в двух темах; узкий и обычный варианты рядом.
+                Assert.AreEqual(4, Directory.GetFiles(outputDirectory, "*.png").Length,
+                    "Every unconfirmed device gallery frame must be produced.");
+            });
+        }
+
         private sealed class GalleryDiscoveryControl :
             IDiscoveryControl
         {

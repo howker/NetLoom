@@ -135,6 +135,9 @@
     <sys:Double x:Key="NetLoom.Settings.ContentMaxWidth">720</sys:Double>
     <GridLength x:Key="NetLoom.Equipment.CategoryColumnWidth">1.1*</GridLength>
     <GridLength x:Key="NetLoom.Equipment.DescriptionColumnWidth">1.35*</GridLength>
+    <!-- Sprint 48: заголовки «СВЯЗЕЙ» и «ОБНОВЛЕНО» на ширине окна 1100 рвались посреди слова (§4). -->
+    <sys:Double x:Key="NetLoom.Equipment.ConnectionsColumnMinWidth">64</sys:Double>
+    <sys:Double x:Key="NetLoom.Equipment.UpdatedColumnMinWidth">84</sys:Double>
 
     <Thickness x:Key="NetLoom.Thickness.CardGapTop">0,16,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardSectionGap">0,16,0,0</Thickness>

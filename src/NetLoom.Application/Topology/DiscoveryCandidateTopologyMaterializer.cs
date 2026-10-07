@@ -103,7 +103,8 @@ namespace NetLoom.Application.Topology
                     null,
                     managementAddress,
                     candidate.SysDescription,
-                    candidate.SysObjectId));
+                    candidate.SysObjectId,
+                    isUnconfirmed: true));
 
             return deviceId;
         }
@@ -159,7 +160,8 @@ namespace NetLoom.Application.Topology
                     existing.SystemDescription),
                 FirstNonEmpty(
                     candidate.SysObjectId,
-                    existing.SystemObjectId));
+                    existing.SystemObjectId),
+                existing.IsUnconfirmed);
         }
 
         private static DateTime? Latest(

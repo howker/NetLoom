@@ -23,7 +23,8 @@ namespace NetLoom.Domain.Topology
             string lldpChassisId = null,
             string managementAddress = null,
             string systemDescription = null,
-            string systemObjectId = null)
+            string systemObjectId = null,
+            bool isUnconfirmed = false)
         {
             if (id == Guid.Empty)
             {
@@ -64,6 +65,7 @@ namespace NetLoom.Domain.Topology
             ManagementAddress = Normalize(managementAddress);
             SystemDescription = Normalize(systemDescription);
             SystemObjectId = Normalize(systemObjectId);
+            IsUnconfirmed = isUnconfirmed;
         }
 
         public Guid Id { get; }
@@ -103,6 +105,8 @@ namespace NetLoom.Domain.Topology
         public string SystemDescription { get; }
 
         public string SystemObjectId { get; }
+
+        public bool IsUnconfirmed { get; }
 
         private static string Normalize(string value)
         {

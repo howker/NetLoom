@@ -1244,15 +1244,16 @@ namespace NetLoom.Wpf
                             : UiText.Get(
                                 "OperatorStatusGlyphActive");
 
-            return new ShellEquipmentRow(
+            var description = diagnostic?.SecondaryText;
+
+            // Sprint 48: отметка «Не подтверждено» — строкой под именем: столбец имени виден на любой ширине.
+            var row = new ShellEquipmentRow(
                 node.DeviceId,
                 node.Label,
                 node.ManagementAddress,
                 NodeCategoryIconToolTip(
                     node.Category),
-                diagnostic == null
-                    ? null
-                    : diagnostic.SecondaryText,
+                description,
                 location,
                 connectionCount,
                 // E4: в таблице «Обновлено» — коротко, как в макете («2 мин», «115 дн», «нет»).
@@ -1273,6 +1274,14 @@ namespace NetLoom.Wpf
                 _selectedDeviceId.HasValue &&
                 node.DeviceId.Value ==
                     _selectedDeviceId.Value);
+
+            row.UnconfirmedText =
+                node.IsUnconfirmed
+                    ? UiText.Get(
+                        "DeviceUnconfirmedMark")
+                    : null;
+
+            return row;
         }
 
         private static string CompactAgeText(
@@ -2004,6 +2013,19 @@ namespace NetLoom.Wpf
             public bool HasProblem =>
                 IsCriticalProblem ||
                 IsWarningProblem;
+
+            public string UnconfirmedText { get; set; }
+
+            public string UnconfirmedHint =>
+                string.IsNullOrEmpty(UnconfirmedText)
+                    ? null
+                    : UiText.Get(
+                        "DeviceUnconfirmedHint");
+
+            public Visibility UnconfirmedVisibility =>
+                string.IsNullOrEmpty(UnconfirmedText)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
 
             public Visibility ProblemVisibility =>
                 HasProblem

@@ -157,7 +157,8 @@ namespace NetLoom.Topology.Map
                         MapCategory(
                             device.Category),
                         device.Id,
-                        device.ManagementAddress));
+                        device.ManagementAddress,
+                        device.IsUnconfirmed));
             }
 
             var mapLinks =

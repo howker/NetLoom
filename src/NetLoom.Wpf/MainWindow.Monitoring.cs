@@ -211,62 +211,7 @@ namespace NetLoom.Wpf
 
             if (multiTargetControl != null)
             {
-                IReadOnlyList<MonitoringTarget> targets;
-                MonitoringSessionPolicy policy;
-                string validation;
-
-                if (!TryBuildMonitoringTargetSetRequest(
-                        out targets,
-                        out policy,
-                        out validation))
-                {
-                    MonitoringMessageText.Text =
-                        validation;
-                    return;
-                }
-
-                MonitoringMessageText.Text =
-                    string.Empty;
-                _monitoringActivePolicy =
-                    policy;
-                _monitoringActiveTargetCount =
-                    targets.Count;
-                _monitoringTargetSetSessionActive =
-                    true;
-
-                try
-                {
-                    await multiTargetControl
-                        .StartSetAsync(
-                            targets,
-                            policy,
-                            InitialMonitoringTargetSetPolicy(),
-                            _lifetimeCancellation.Token);
-                }
-                catch (OperationCanceledException)
-                    when (_lifetimeCancellation
-                        .IsCancellationRequested)
-                {
-                }
-                catch (Exception error)
-                {
-                    if (_monitoringControl.Current.State ==
-                            MonitoringControlState.Stopped ||
-                        _monitoringControl.Current.State ==
-                            MonitoringControlState.Faulted)
-                    {
-                        _monitoringTargetSetSessionActive =
-                            false;
-                        _monitoringActiveTargetCount =
-                            0;
-                    }
-
-                    UpdateMonitoringPresentation(
-                        _monitoringControl.Current);
-
-                    ShowMonitoringActionFailure(
-                        error);
-                }
+                await StartMonitoringTargetSetAsync();
 
                 return;
             }
@@ -307,6 +252,92 @@ namespace NetLoom.Wpf
             {
                 ShowMonitoringActionFailure(
                     error);
+            }
+        }
+
+        private async Task StartMonitoringTargetSetAsync()
+        {
+            var multiTargetControl =
+                (IMultiTargetMonitoringControl)_monitoringControl;
+
+            IReadOnlyList<MonitoringTarget> targets;
+            MonitoringSessionPolicy policy;
+            string validation;
+
+            if (!TryBuildMonitoringTargetSetRequest(
+                    out targets,
+                    out policy,
+                    out validation))
+            {
+                MonitoringMessageText.Text =
+                    validation;
+                return;
+            }
+
+            MonitoringMessageText.Text =
+                string.Empty;
+            _monitoringActivePolicy =
+                policy;
+            _monitoringActiveTargetCount =
+                targets.Count;
+            _monitoringTargetSetSessionActive =
+                true;
+
+            try
+            {
+                await multiTargetControl
+                    .StartSetAsync(
+                        targets,
+                        policy,
+                        InitialMonitoringTargetSetPolicy(),
+                        _lifetimeCancellation.Token);
+            }
+            catch (OperationCanceledException)
+                when (_lifetimeCancellation
+                    .IsCancellationRequested)
+            {
+            }
+            catch (Exception error)
+            {
+                if (_monitoringControl.Current.State ==
+                        MonitoringControlState.Stopped ||
+                    _monitoringControl.Current.State ==
+                        MonitoringControlState.Faulted)
+                {
+                    _monitoringTargetSetSessionActive =
+                        false;
+                    _monitoringActiveTargetCount =
+                        0;
+                }
+
+                UpdateMonitoringPresentation(
+                    _monitoringControl.Current);
+
+                ShowMonitoringActionFailure(
+                    error);
+            }
+        }
+
+        private async Task RestartMonitoringTargetSetAsync()
+        {
+            if (!_monitoringTargetSetSessionActive ||
+                _monitoringControl.Current.State != MonitoringControlState.Running)
+            {
+                return;
+            }
+
+            try
+            {
+                await _monitoringControl.StopAsync(_lifetimeCancellation.Token);
+                await StartMonitoringTargetSetAsync();
+            }
+            catch (OperationCanceledException)
+                when (_lifetimeCancellation.IsCancellationRequested)
+            {
+            }
+            catch (Exception error)
+            {
+                ShowMonitoringActionFailure(error);
             }
         }
 

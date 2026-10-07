@@ -10,6 +10,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
 {
     public sealed class SqliteMaterializedTopologyRepository :
         IMaterializedTopologyRepository,
+        IDeviceConfirmationStore,
         IAutomaticInterfaceReferenceReconciler
     {
         private readonly SqliteConnectionFactory _connectionFactory;
@@ -51,7 +52,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         is_hidden, is_archived,
         first_seen_utc, last_seen_utc, last_resolved_utc,
         management_address,
-        sys_description, sys_object_id,
+        sys_description, sys_object_id, is_unconfirmed,
         created_at_utc, updated_at_utc
     )
     VALUES
@@ -63,7 +64,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         @hidden, @archived,
         @firstSeen, @lastSeen, @lastResolved,
         @managementAddress,
-        @sysDescription, @sysObjectId,
+        @sysDescription, @sysObjectId, @unconfirmed,
         @created, @updated
     )
     ON CONFLICT(id) DO UPDATE SET
@@ -124,6 +125,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
                         Add(command, "@managementAddress", device.ManagementAddress);
                         Add(command, "@sysDescription", device.SystemDescription);
                         Add(command, "@sysObjectId", device.SystemObjectId);
+                        Add(command, "@unconfirmed", device.IsUnconfirmed ? 1 : 0);
                         Add(command, "@hidden", device.IsHidden ? 1 : 0);
                         Add(command, "@archived", device.IsArchived ? 1 : 0);
                         AddDate(command, "@firstSeen", device.FirstSeenUtc);
@@ -135,6 +137,30 @@ namespace NetLoom.Persistence.Sqlite.Topology
                         command.ExecuteNonQuery();
                     }
 
+                    });
+            }
+        }
+
+        public void SetUnconfirmed(Guid deviceId, bool isUnconfirmed)
+        {
+            using (var connection = _connectionFactory.OpenConnection())
+            {
+                SqliteImmediateWrite.Execute(
+                    connection,
+                    () =>
+                    {
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = @"
+UPDATE devices
+SET is_unconfirmed = @v, updated_at_utc = @now
+WHERE id = @id;";
+
+                            Add(command, "@v", isUnconfirmed ? 1 : 0);
+                            Add(command, "@now", FormatUtc(DateTime.UtcNow));
+                            Add(command, "@id", deviceId.ToString("D"));
+                            command.ExecuteNonQuery();
+                        }
                     });
             }
         }
@@ -393,7 +419,7 @@ SELECT
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
     management_address,
-    sys_description, sys_object_id
+    sys_description, sys_object_id, is_unconfirmed
 FROM devices
 WHERE id = @id;";
 
@@ -425,7 +451,7 @@ SELECT
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
     management_address,
-    sys_description, sys_object_id
+    sys_description, sys_object_id, is_unconfirmed
 FROM devices
 ORDER BY id;";
 
@@ -1627,7 +1653,8 @@ ORDER BY
                 StringNullable(reader, offset + 9),
                 StringNullable(reader, offset + 15),
                 StringNullable(reader, offset + 16),
-                StringNullable(reader, offset + 17));
+                StringNullable(reader, offset + 17),
+                reader.GetInt32(offset + 18) != 0);
         }
 
         private static DeviceInterface ReadInterface(

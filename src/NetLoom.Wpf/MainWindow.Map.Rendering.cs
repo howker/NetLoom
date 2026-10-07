@@ -2194,10 +2194,19 @@ public partial class MainWindow
                 node);
 
         visual.Secondary.Text =
-            string.Empty;
+            node.IsUnconfirmed
+                ? UiText.Get("DeviceUnconfirmedMark")
+                : string.Empty;
 
         visual.Secondary.Visibility =
-            Visibility.Collapsed;
+            node.IsUnconfirmed
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        visual.Secondary.ToolTip =
+            node.IsUnconfirmed
+                ? UiText.Get("DeviceUnconfirmedHint")
+                : null;
 
         visual.CategoryIcon.Data =
             FindResource(
