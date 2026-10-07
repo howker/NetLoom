@@ -2289,4 +2289,43 @@
   <data name="AlertDevices" xml:space="preserve">
     <value>DeviceId: {0}</value>
   </data>
+  <data name="AlertReasonIcmpAnswers" xml:space="preserve">
+    <value>По ICMP устройство отвечает — проверьте SNMP-профиль и доступ SNMP на устройстве.</value>
+  </data>
+  <data name="AlertReasonIcmpSilent" xml:space="preserve">
+    <value>По ICMP устройство тоже не отвечает — проверьте питание и линию связи.</value>
+  </data>
+  <data name="InspectorAvailabilityAvailable" xml:space="preserve">
+    <value>Доступен · последний опрос: {0}</value>
+  </data>
+  <data name="InspectorAvailabilityPartial" xml:space="preserve">
+    <value>Частично доступен — отвечает на ICMP, SNMP не отвечает</value>
+  </data>
+  <data name="InspectorAvailabilityUnavailable" xml:space="preserve">
+    <value>Недоступен — не отвечает на опрос</value>
+  </data>
+  <data name="DiagnosticFieldIcmp" xml:space="preserve">
+    <value>ICMP</value>
+  </data>
+  <data name="DiagnosticFieldSnmp" xml:space="preserve">
+    <value>SNMP</value>
+  </data>
+  <data name="DiagnosticFieldTcp" xml:space="preserve">
+    <value>TCP-порты</value>
+  </data>
+  <data name="AvailabilityAnswers" xml:space="preserve">
+    <value>Отвечает</value>
+  </data>
+  <data name="AvailabilitySilent" xml:space="preserve">
+    <value>Не отвечает</value>
+  </data>
+  <data name="AvailabilityNotChecked" xml:space="preserve">
+    <value>Не проверялся</value>
+  </data>
+  <data name="AvailabilityTcpOpen" xml:space="preserve">
+    <value>Открыты: {0}</value>
+  </data>
+  <data name="AvailabilityTcpClosed" xml:space="preserve">
+    <value>Закрыты: {0}</value>
+  </data>
 </root>

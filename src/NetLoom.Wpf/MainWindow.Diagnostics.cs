@@ -960,6 +960,11 @@ public partial class MainWindow : Window
                         device.LastSeenUtc)));
         }
 
+        // Sprint 47: ICMP, SNMP и TCP по последнему опросу этого сеанса.
+        stateFields.AddRange(
+            MonitoringAvailabilityFields(
+                device.DeviceId));
+
         var connectedLinks =
             _lastDiagnosticSnapshot.Links
                 .Where(
@@ -1570,6 +1575,14 @@ public partial class MainWindow : Window
                         "InspectorAvailabilityMonitoringStoppedNoData");
             brushKey =
                 "NetLoom.Brush.ShellRailTextMuted";
+        }
+        else if (TryGetSessionAvailabilityState(
+                     device.DeviceId,
+                     out text))
+        {
+            // Состояние по словарю ТЗ §10 из последнего опроса; строка состояния нейтральна (§2).
+            brushKey =
+                "NetLoom.Brush.TextSecondary";
         }
         else if (!device.LastSeenUtc.HasValue)
         {

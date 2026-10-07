@@ -968,7 +968,8 @@ namespace NetLoom.Desktop.Monitoring
                                 _activeTarget.DeviceId,
                                 marker.CompletedUtc ??
                                     DateTime.UtcNow,
-                                marker.AnySucceeded == true);
+                                marker.AnySucceeded == true,
+                                marker.Availability);
                         }
 
                         if (marker.AnySucceeded == true)
@@ -1001,7 +1002,8 @@ namespace NetLoom.Desktop.Monitoring
                                 marker.DeviceId.Value,
                                 marker.CompletedUtc ??
                                     DateTime.UtcNow,
-                                marker.AnySucceeded == true);
+                                marker.AnySucceeded == true,
+                                marker.Availability);
                         }
 
                         if (marker.AnySucceeded == true)

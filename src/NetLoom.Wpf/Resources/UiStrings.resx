@@ -2289,4 +2289,43 @@ Poll: {2}</value>
   <data name="AlertDevices" xml:space="preserve">
     <value>DeviceId: {0}</value>
   </data>
+  <data name="AlertReasonIcmpAnswers" xml:space="preserve">
+    <value>The device answers ICMP — check the SNMP profile and SNMP access on the device.</value>
+  </data>
+  <data name="AlertReasonIcmpSilent" xml:space="preserve">
+    <value>The device does not answer ICMP either — check power and the link.</value>
+  </data>
+  <data name="InspectorAvailabilityAvailable" xml:space="preserve">
+    <value>Available · last poll: {0}</value>
+  </data>
+  <data name="InspectorAvailabilityPartial" xml:space="preserve">
+    <value>Partially available — answers ICMP, SNMP does not answer</value>
+  </data>
+  <data name="InspectorAvailabilityUnavailable" xml:space="preserve">
+    <value>Unavailable — does not answer polling</value>
+  </data>
+  <data name="DiagnosticFieldIcmp" xml:space="preserve">
+    <value>ICMP</value>
+  </data>
+  <data name="DiagnosticFieldSnmp" xml:space="preserve">
+    <value>SNMP</value>
+  </data>
+  <data name="DiagnosticFieldTcp" xml:space="preserve">
+    <value>TCP ports</value>
+  </data>
+  <data name="AvailabilityAnswers" xml:space="preserve">
+    <value>Answers</value>
+  </data>
+  <data name="AvailabilitySilent" xml:space="preserve">
+    <value>Does not answer</value>
+  </data>
+  <data name="AvailabilityNotChecked" xml:space="preserve">
+    <value>Not checked</value>
+  </data>
+  <data name="AvailabilityTcpOpen" xml:space="preserve">
+    <value>Open: {0}</value>
+  </data>
+  <data name="AvailabilityTcpClosed" xml:space="preserve">
+    <value>Closed: {0}</value>
+  </data>
 </root>

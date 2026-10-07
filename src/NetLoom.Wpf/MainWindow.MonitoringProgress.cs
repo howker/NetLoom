@@ -62,6 +62,62 @@ public partial class MainWindow
 
         ApplyMonitoringAlertsIfChanged(
             snapshot);
+
+        RefreshInspectorOnSelectedOutcome(
+            snapshot);
+    }
+
+    // Итог последнего опроса выбранного устройства, уже показанный в инспекторе.
+    private string _selectedDeviceOutcomeKey;
+
+    // Новый опрос выбранного устройства обновляет в инспекторе доступность (ICMP, SNMP, TCP);
+    // Без нового итога инспектор не пересоздаётся (§5).
+    private void RefreshInspectorOnSelectedOutcome(
+        MonitoringControlSnapshot snapshot)
+    {
+        if (!_selectedDeviceId.HasValue ||
+            _lastDiagnosticSnapshot == null)
+        {
+            _selectedDeviceOutcomeKey = null;
+            return;
+        }
+
+        var outcome =
+            snapshot.TargetOutcomes
+                .FirstOrDefault(
+                    item =>
+                        item.DeviceId ==
+                        _selectedDeviceId.Value);
+
+        var key =
+            _selectedDeviceId.Value.ToString("N") +
+            "|" +
+            snapshot.State +
+            "|" +
+            (outcome == null
+                ? "-"
+                : outcome.LastAttemptUtc.Ticks +
+                  "|" +
+                  outcome.LastAttemptSucceeded);
+
+        if (string.Equals(
+                key,
+                _selectedDeviceOutcomeKey,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var firstSeen =
+            _selectedDeviceOutcomeKey == null;
+
+        _selectedDeviceOutcomeKey =
+            key;
+
+        if (!firstSeen)
+        {
+            ShowSelectedDiagnostic();
+        }
     }
 
     private NetLoom.Contracts.Alerts.TopologyAlertSnapshot MergeMonitoringAlerts(
@@ -189,16 +245,166 @@ public partial class MainWindow
                     ? null
                     : device.LastSeenUtc;
 
-        return UiText.Format(
-            "AlertReasonDeviceUnreachable",
-            outcome == null
-                ? NetLoom.Application.Alerts.MonitoringAlertProjection.ConsecutiveFailuresForAlert
-                : outcome.ConsecutiveFailures,
-            lastResponseUtc.HasValue
-                ? RelativeTimeText(
-                    lastResponseUtc)
+        var reason =
+            UiText.Format(
+                "AlertReasonDeviceUnreachable",
+                outcome == null
+                    ? NetLoom.Application.Alerts.MonitoringAlertProjection.ConsecutiveFailuresForAlert
+                    : outcome.ConsecutiveFailures,
+                lastResponseUtc.HasValue
+                    ? RelativeTimeText(
+                        lastResponseUtc)
+                    : UiText.Get(
+                        "AlertLastResponseUnknown"));
+
+        // Подсказка, где искать: устройство живо, но SNMP молчит — или его нет в сети вовсе.
+        var icmp =
+            outcome == null ||
+            outcome.Availability == null
+                ? null
+                : outcome.Availability.IcmpReachable;
+
+        return icmp.HasValue
+            ? reason +
+              " · " +
+              UiText.Get(
+                  icmp.Value
+                      ? "AlertReasonIcmpAnswers"
+                      : "AlertReasonIcmpSilent")
+            : reason;
+    }
+
+    // Sprint 47: «Доступен / Частично доступен / Недоступен» (словарь ТЗ §10) по последнему опросу сеанса.
+    // Только пока мониторинг работает: после остановки действует строка «Мониторинг остановлен».
+    private bool TryGetSessionAvailabilityState(
+        Guid deviceId,
+        out string text)
+    {
+        text = null;
+
+        var state =
+            _monitoringControl.Current.State;
+
+        if (state !=
+                MonitoringControlState.Running &&
+            state !=
+                MonitoringControlState.Polling)
+        {
+            return false;
+        }
+
+        var outcome =
+            MonitoringOutcome(
+                deviceId);
+
+        if (outcome == null ||
+            outcome.LastAttemptSkipped)
+        {
+            return false;
+        }
+
+        var icmp =
+            outcome.Availability == null
+                ? null
+                : outcome.Availability.IcmpReachable;
+
+        text =
+            outcome.LastAttemptSucceeded
+                ? UiText.Format(
+                    "InspectorAvailabilityAvailable",
+                    RelativeTimeText(
+                        outcome.LastAttemptUtc))
+                : icmp == true
+                    ? UiText.Get(
+                        "InspectorAvailabilityPartial")
+                    : UiText.Get(
+                        "InspectorAvailabilityUnavailable");
+
+        return true;
+    }
+
+    private IEnumerable<DiagnosticFieldRow> MonitoringAvailabilityFields(
+        Guid deviceId)
+    {
+        var outcome =
+            MonitoringOutcome(
+                deviceId);
+
+        if (outcome == null ||
+            outcome.LastAttemptSkipped)
+        {
+            yield break;
+        }
+
+        var availability =
+            outcome.Availability;
+
+        yield return new DiagnosticFieldRow(
+            UiText.Get(
+                "DiagnosticFieldIcmp"),
+            availability == null ||
+            !availability.IcmpReachable.HasValue
+                ? UiText.Get(
+                    "AvailabilityNotChecked")
                 : UiText.Get(
-                    "AlertLastResponseUnknown"));
+                    availability.IcmpReachable.Value
+                        ? "AvailabilityAnswers"
+                        : "AvailabilitySilent"));
+
+        yield return new DiagnosticFieldRow(
+            UiText.Get(
+                "DiagnosticFieldSnmp"),
+            UiText.Get(
+                outcome.LastAttemptSucceeded
+                    ? "AvailabilityAnswers"
+                    : "AvailabilitySilent"));
+
+        if (availability == null ||
+            availability.CheckedTcpPorts.Count == 0)
+        {
+            yield return new DiagnosticFieldRow(
+                UiText.Get(
+                    "DiagnosticFieldTcp"),
+                UiText.Get(
+                    "AvailabilityNotChecked"));
+            yield break;
+        }
+
+        var closed =
+            availability.CheckedTcpPorts
+                .Except(
+                    availability.OpenTcpPorts)
+                .ToArray();
+
+        var parts =
+            new List<string>();
+
+        if (availability.OpenTcpPorts.Count > 0)
+        {
+            parts.Add(
+                UiText.Format(
+                    "AvailabilityTcpOpen",
+                    string.Join(
+                        ", ",
+                        availability.OpenTcpPorts)));
+        }
+
+        if (closed.Length > 0)
+        {
+            parts.Add(
+                UiText.Format(
+                    "AvailabilityTcpClosed",
+                    string.Join(
+                        ", ",
+                        closed)));
+        }
+
+        yield return new DiagnosticFieldRow(
+            UiText.Get(
+                "DiagnosticFieldTcp"),
+            string.Join(
+                " · ",
+                parts));
     }
 
     // Цикл, который идёт прямо сейчас: начат, не завершён, мониторинг работает или опрашивает.

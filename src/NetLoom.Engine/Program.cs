@@ -419,6 +419,23 @@ namespace NetLoom.Engine
             }
         }
 
+        // Sprint 47: после SNMP-опроса — ICMP и TCP тем же зондом, что у обнаружения.
+        // Таймаут — таймаут опроса; на результат опроса (AnySucceeded) доступность не влияет.
+        private static readonly MonitoringAvailabilityChecker AvailabilityChecker =
+            new MonitoringAvailabilityChecker(
+                new NetLoom.Protocols.Snmp.Discovery.SystemNetworkDiscoveryProbe());
+
+        private static MonitoringPollResult WithAvailability(
+            MonitoringPollResult result,
+            MonitoringPollRequest request)
+        {
+            return result.WithAvailability(
+                AvailabilityChecker.Check(
+                    request.Address,
+                    request.TimeoutMilliseconds,
+                    CancellationToken.None));
+        }
+
         private static int PollOnce(
             EngineCommandLine options,
             HostLogManager hostLog)
@@ -431,10 +448,15 @@ namespace NetLoom.Engine
                 .WritePollStarted(
                     Console.Out);
 
+            var request =
+                CreateRequest(
+                    options);
+
             var result =
-                runtime.PollOnce(
-                    CreateRequest(
-                        options));
+                WithAvailability(
+                    runtime.PollOnce(
+                        request),
+                    request);
 
             WritePollResult(
                 result,
@@ -540,7 +562,9 @@ namespace NetLoom.Engine
                                             databasePath,
                                             interfaceDegradationPolicy));
 
-                        return runtime.PollOnce(
+                        return WithAvailability(
+                            runtime.PollOnce(
+                                request),
                             request);
                     };
 
@@ -739,7 +763,9 @@ namespace NetLoom.Engine
                                     EngineMachineOutput
                                         .WritePollCompleted(
                                             Console.Out,
-                                            pollResult);
+                                            WithAvailability(
+                                                pollResult,
+                                                request));
                                 }
 
                                 RunObservationRetention(

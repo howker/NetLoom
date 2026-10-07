@@ -134,7 +134,9 @@ namespace NetLoom.Engine
                 " anySucceeded=" +
                 (result.AnySucceeded
                     ? "true"
-                    : "false"));
+                    : "false") +
+                AvailabilityFields(
+                    result.Availability));
         }
 
         public static void WriteScheduleSetStarted(
@@ -243,7 +245,59 @@ namespace NetLoom.Engine
                 " anySucceeded=" +
                 (result.AnySucceeded
                     ? "true"
-                    : "false"));
+                    : "false") +
+                AvailabilityFields(
+                    result.Availability));
+        }
+
+        // Sprint 47: « icmp=yes|no|unknown tcpChecked=22,80,443 tcpOpen=22». Поля в конце строки:
+        // Прежний разбор Desktop их не требует, а без проверки доступности строка не меняется.
+        private static string AvailabilityFields(
+            MonitoringAvailability availability)
+        {
+            if (availability == null)
+            {
+                return string.Empty;
+            }
+
+            return
+                " icmp=" +
+                (availability.IcmpReachable.HasValue
+                    ? availability.IcmpReachable.Value
+                        ? "yes"
+                        : "no"
+                    : "unknown") +
+                " tcpChecked=" +
+                PortList(
+                    availability.CheckedTcpPorts) +
+                " tcpOpen=" +
+                PortList(
+                    availability.OpenTcpPorts);
+        }
+
+        private static string PortList(
+            System.Collections.Generic.IReadOnlyList<int> ports)
+        {
+            if (ports.Count == 0)
+            {
+                return "-";
+            }
+
+            var parts =
+                new string[ports.Count];
+
+            for (var index = 0;
+                 index < ports.Count;
+                 index++)
+            {
+                parts[index] =
+                    ports[index].ToString(
+                        CultureInfo.InvariantCulture);
+            }
+
+            return string.Join(
+                ",",
+                parts);
         }
 
         public static void WriteTargetBackpressureSkipped(

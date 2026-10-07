@@ -54,6 +54,22 @@ namespace NetLoom.Application.Monitoring
 
         public IReadOnlyList<MonitoringPollStepResult> Steps { get; }
 
+        // Sprint 47: ICMP и TCP отдельно от шагов SNMP; null — доступность не проверялась.
+        public MonitoringAvailability Availability { get; private set; }
+
+        public MonitoringPollResult WithAvailability(
+            MonitoringAvailability availability)
+        {
+            return new MonitoringPollResult(
+                Address,
+                StartedUtc,
+                CompletedUtc,
+                Steps)
+            {
+                Availability = availability
+            };
+        }
+
         public bool AnySucceeded
         {
             get

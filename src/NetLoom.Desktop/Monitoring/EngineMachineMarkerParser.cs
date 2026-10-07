@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using NetLoom.Application.Monitoring;
 
 namespace NetLoom.Desktop.Monitoring
 {
@@ -27,8 +28,10 @@ namespace NetLoom.Desktop.Monitoring
             DateTime? completedUtc = null,
             bool? anySucceeded = null,
             Guid? deviceId = null,
-            IPAddress targetAddress = null)
+            IPAddress targetAddress = null,
+            MonitoringAvailability availability = null)
         {
+            Availability = availability;
             Kind = kind;
             CompletedUtc = completedUtc;
             AnySucceeded = anySucceeded;
@@ -45,6 +48,9 @@ namespace NetLoom.Desktop.Monitoring
         public Guid? DeviceId { get; }
 
         public IPAddress TargetAddress { get; }
+
+        // Sprint 47: ICMP и TCP из строки завершения опроса; null — Engine их не сообщил.
+        public MonitoringAvailability Availability { get; }
     }
 
     internal static class EngineMachineMarkerParser
@@ -279,7 +285,115 @@ namespace NetLoom.Desktop.Monitoring
                     completedUtc,
                     anySucceeded,
                     deviceId,
-                    targetAddress);
+                    targetAddress,
+                    ParseAvailability(
+                        values));
+
+            return true;
+        }
+
+        // « icmp=yes|no|unknown tcpChecked=22,80,443 tcpOpen=22»; «-» — пустой список.
+        // Нет полей или они испорчены — доступность неизвестна, строка опроса при этом принимается.
+        private static MonitoringAvailability ParseAvailability(
+            IReadOnlyDictionary<string, string> values)
+        {
+            string icmpText;
+            string checkedText;
+            string openText;
+
+            if (!values.TryGetValue(
+                    "icmp",
+                    out icmpText) ||
+                !values.TryGetValue(
+                    "tcpChecked",
+                    out checkedText) ||
+                !values.TryGetValue(
+                    "tcpOpen",
+                    out openText))
+            {
+                return null;
+            }
+
+            bool? icmp;
+
+            switch (icmpText)
+            {
+                case "yes":
+                    icmp = true;
+                    break;
+
+                case "no":
+                    icmp = false;
+                    break;
+
+                case "unknown":
+                    icmp = null;
+                    break;
+
+                default:
+                    return null;
+            }
+
+            List<int> checkedPorts;
+            List<int> openPorts;
+
+            if (!TryParsePorts(
+                    checkedText,
+                    out checkedPorts) ||
+                !TryParsePorts(
+                    openText,
+                    out openPorts))
+            {
+                return null;
+            }
+
+            try
+            {
+                return new MonitoringAvailability(
+                    icmp,
+                    checkedPorts,
+                    openPorts);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        private static bool TryParsePorts(
+            string text,
+            out List<int> ports)
+        {
+            ports =
+                new List<int>();
+
+            if (string.Equals(
+                    text,
+                    "-",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            foreach (var part in
+                text.Split(','))
+            {
+                int port;
+
+                if (!int.TryParse(
+                        part,
+                        NumberStyles.None,
+                        CultureInfo.InvariantCulture,
+                        out port) ||
+                    port < 1 ||
+                    port > 65535)
+                {
+                    return false;
+                }
+
+                ports.Add(
+                    port);
+            }
 
             return true;
         }

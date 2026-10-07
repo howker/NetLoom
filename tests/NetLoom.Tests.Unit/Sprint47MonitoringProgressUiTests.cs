@@ -372,7 +372,15 @@ namespace NetLoom.Tests.Unit
                                 ((ItemsControl)window.FindName("AlertList")).Items.Count,
                                 "One missed answer is not an alert.");
 
-                            tracker.TargetCompleted(target.DeviceId, t0.AddMinutes(1), false);
+                            // Второй опрос: SNMP молчит, но устройство отвечает на ICMP и держит открытым SSH.
+                            tracker.TargetCompleted(
+                                target.DeviceId,
+                                t0.AddMinutes(1),
+                                false,
+                                new NetLoom.Application.Monitoring.MonitoringAvailability(
+                                    true,
+                                    new[] { 22, 80, 443 },
+                                    new[] { 22 }));
                             monitoring.Publish(MonitoringControlState.Running, tracker);
                             Settle(300);
 
@@ -394,6 +402,10 @@ namespace NetLoom.Tests.Unit
 
                             StringAssert.Contains(card, name, "The card names the device.");
                             StringAssert.Contains(card, "Опросов подряд без ответа: 2", "The card explains why.");
+                            StringAssert.Contains(
+                                card,
+                                "По ICMP устройство отвечает",
+                                "The card says where to look: the device is alive, SNMP is silent.");
 
                             Assert.AreEqual(
                                 "Предупреждения: " + (alertsBefore + 1),
@@ -419,6 +431,23 @@ namespace NetLoom.Tests.Unit
                                 Text(window, "InspectorProblemText"),
                                 "! Предупреждение — Устройство не отвечает",
                                 "The inspector explains the same problem.");
+
+                            // Словарь состояний ТЗ §10: SNMP молчит, ICMP отвечает — «Частично доступен».
+                            StringAssert.StartsWith(
+                                Text(window, "InspectorOperationalStatusText"),
+                                "Частично доступен",
+                                "The state line uses the availability vocabulary.");
+
+                            var fields =
+                                ((ItemsControl)window.FindName("DiagnosticFieldsList")).Items
+                                    .Cast<object>()
+                                    .ToDictionary(
+                                        item => (string)item.GetType().GetProperty("Label").GetValue(item),
+                                        item => (string)item.GetType().GetProperty("Value").GetValue(item));
+
+                            Assert.AreEqual("Отвечает", fields["ICMP"], Describe(fields));
+                            Assert.AreEqual("Не отвечает", fields["SNMP"], Describe(fields));
+                            Assert.AreEqual("Открыты: 22 · Закрыты: 80, 443", fields["TCP-порты"], Describe(fields));
 
                             SaveCapture(
                                 window,

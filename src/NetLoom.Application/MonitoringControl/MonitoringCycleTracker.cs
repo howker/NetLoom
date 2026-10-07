@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetLoom.Application.Monitoring;
 
 namespace NetLoom.Application.MonitoringControl
 {
@@ -104,6 +105,8 @@ namespace NetLoom.Application.MonitoringControl
                     previous.ConsecutiveFailures;
                 state.LastSuccessUtc =
                     previous.LastSuccessUtc;
+                state.Availability =
+                    previous.Availability;
             }
         }
 
@@ -131,7 +134,8 @@ namespace NetLoom.Application.MonitoringControl
                             state.LastOutcome ==
                                 AttemptOutcome.Skipped,
                             state.ConsecutiveFailures,
-                            state.LastSuccessUtc))
+                            state.LastSuccessUtc,
+                            state.Availability))
                 .ToArray();
 
         public bool TargetStarted(
@@ -165,7 +169,8 @@ namespace NetLoom.Application.MonitoringControl
         public bool TargetCompleted(
             Guid deviceId,
             DateTime completedUtc,
-            bool anySucceeded)
+            bool anySucceeded,
+            MonitoringAvailability availability = null)
         {
             RequireUtc(
                 completedUtc,
@@ -187,6 +192,13 @@ namespace NetLoom.Application.MonitoringControl
                     completedUtc);
 
             state.InProgressSinceUtc = null;
+
+            // Опрос без проверки доступности не стирает последнюю известную.
+            if (availability != null)
+            {
+                state.Availability =
+                    availability;
+            }
 
             if (anySucceeded)
             {
@@ -397,6 +409,8 @@ namespace NetLoom.Application.MonitoringControl
             public int ConsecutiveFailures { get; set; }
 
             public DateTime? LastSuccessUtc { get; set; }
+
+            public MonitoringAvailability Availability { get; set; }
         }
     }
 }
