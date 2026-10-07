@@ -1296,6 +1296,61 @@
                                                VerticalAlignment="Center"
                                                TextWrapping="Wrap" />
                                 </Grid>
+                                <StackPanel x:Name="DiscoveryRunSummaryPanel"
+                                            Visibility="Collapsed">
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DiscoveryRunStartedLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="DiscoveryRunStartedValueText"
+                                                   Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DiscoveryRunDurationLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="DiscoveryRunDurationValueText"
+                                                   Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DiscoveryRunCheckedLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="DiscoveryRunCheckedValueText"
+                                                   Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DiscoveryRunFoundLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="DiscoveryRunFoundValueText"
+                                                   Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
 

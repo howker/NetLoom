@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -37,6 +38,18 @@ namespace NetLoom.Wpf
             _discoveryCandidateRows =
                 new List<DiscoveryCandidateRow>();
 
+        private DateTime? _discoveryRunStartedUtc;
+        private DateTime? _discoveryRunFinishedUtc;
+        // Часы итога запуска; галерея подставляет свои, чтобы показать правдоподобную длительность.
+        internal Func<DateTime> DiscoveryRunClock { get; set; } =
+            () => DateTime.UtcNow;
+        private DiscoveryControlState _discoveryRunLastState =
+            DiscoveryControlState.Idle;
+        private readonly HashSet<string> _discoveryRunSnmpAddresses =
+            new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+        private DiscoveryControlSnapshot _discoveryRunLastSnapshot;
+
         private bool _discoveryClosed;
 
         private void InitializeDiscoveryPanel()
@@ -47,6 +60,14 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryStateLabel");
             DiscoveryLastRunTitleText.Text =
                 UiText.Get("DiscoveryLastRunTitle");
+            DiscoveryRunStartedLabelText.Text =
+                UiText.Get("DiscoveryRunStartedLabel");
+            DiscoveryRunDurationLabelText.Text =
+                UiText.Get("DiscoveryRunDurationLabel");
+            DiscoveryRunCheckedLabelText.Text =
+                UiText.Get("DiscoveryRunCheckedLabel");
+            DiscoveryRunFoundLabelText.Text =
+                UiText.Get("DiscoveryRunFoundLabel");
             DiscoveryProgressLabelText.Text =
                 UiText.Get("DiscoveryProgressLabel");
             DiscoveryCurrentAddressLabelText.Text =
@@ -1431,7 +1452,14 @@ namespace NetLoom.Wpf
                     row);
             }
 
+            if (candidate.SnmpResponded)
+            {
+                _discoveryRunSnmpAddresses.Add(
+                    address);
+            }
+
             RefreshDiscoveryCandidateRows();
+            RenderDiscoveryRunSummary();
 
             try
             {
@@ -1559,6 +1587,9 @@ namespace NetLoom.Wpf
                     nameof(snapshot));
             }
 
+            TrackDiscoveryRun(
+                snapshot);
+
             var discoveryStatus =
                 DiscoveryStatusSemantic(
                     snapshot.State);
@@ -1665,6 +1696,104 @@ namespace NetLoom.Wpf
 
             UpdateDiscoveryResultsSurface(
                 snapshot);
+            RenderDiscoveryRunSummary();
+        }
+
+        // Sprint 48: итог запуска обнаружения (проверено, найдено, длительность) — до перезапуска приложения; хранение запусков — пункт «Входящих».
+        private void TrackDiscoveryRun(
+            DiscoveryControlSnapshot snapshot)
+        {
+            if (IsDiscoveryRunActive(snapshot.State) &&
+                !IsDiscoveryRunActive(_discoveryRunLastState))
+            {
+                _discoveryRunStartedUtc =
+                    DiscoveryRunClock();
+                _discoveryRunFinishedUtc =
+                    null;
+                _discoveryRunSnmpAddresses.Clear();
+            }
+
+            if ((snapshot.State == DiscoveryControlState.Completed ||
+                 snapshot.State == DiscoveryControlState.Stopped ||
+                 snapshot.State == DiscoveryControlState.Faulted) &&
+                IsDiscoveryRunActive(_discoveryRunLastState))
+            {
+                _discoveryRunFinishedUtc =
+                    DiscoveryRunClock();
+            }
+
+            _discoveryRunLastSnapshot =
+                snapshot;
+            _discoveryRunLastState =
+                snapshot.State;
+        }
+
+        private static bool IsDiscoveryRunActive(
+            DiscoveryControlState state)
+        {
+            return state == DiscoveryControlState.Starting ||
+                   state == DiscoveryControlState.Running ||
+                   state == DiscoveryControlState.Stopping;
+        }
+
+        private void RenderDiscoveryRunSummary()
+        {
+            if (!_discoveryRunStartedUtc.HasValue ||
+                !_discoveryRunFinishedUtc.HasValue ||
+                _discoveryRunLastSnapshot == null)
+            {
+                DiscoveryRunSummaryPanel.Visibility =
+                    Visibility.Collapsed;
+                return;
+            }
+
+            DiscoveryRunSummaryPanel.Visibility =
+                Visibility.Visible;
+            DiscoveryRunStartedValueText.Text =
+                _discoveryRunStartedUtc.Value
+                    .ToLocalTime()
+                    .ToString("G", CultureInfo.CurrentCulture);
+            DiscoveryRunDurationValueText.Text =
+                DiscoveryRunDurationText(
+                    _discoveryRunFinishedUtc.Value -
+                    _discoveryRunStartedUtc.Value);
+            DiscoveryRunCheckedValueText.Text =
+                UiText.FormatCount(
+                    "DiscoveryRunChecked",
+                    _discoveryRunLastSnapshot.TotalAddresses,
+                    _discoveryRunLastSnapshot.ProcessedAddresses);
+            DiscoveryRunFoundValueText.Text =
+                UiText.Format(
+                    "DiscoveryRunFoundValue",
+                    _discoveryRunLastSnapshot.FoundCandidates,
+                    _discoveryRunSnmpAddresses.Count);
+        }
+
+        private static string DiscoveryRunDurationText(
+            TimeSpan duration)
+        {
+            var totalSeconds =
+                (long)Math.Floor(duration.TotalSeconds);
+
+            if (totalSeconds < 60)
+            {
+                return UiText.Format(
+                    "DiscoveryRunDurationSeconds",
+                    totalSeconds);
+            }
+
+            if (totalSeconds < 60 * 60)
+            {
+                return UiText.Format(
+                    "DiscoveryRunDurationMinutes",
+                    totalSeconds / 60,
+                    totalSeconds % 60);
+            }
+
+            return UiText.Format(
+                "DiscoveryRunDurationHours",
+                totalSeconds / (60 * 60),
+                totalSeconds / 60 % 60);
         }
 
         private void RefreshDiscoveryCandidateRows()

@@ -2106,6 +2106,42 @@
   <data name="DiscoveryLastRunTitle" xml:space="preserve">
     <value>Последний запуск</value>
   </data>
+  <data name="DiscoveryRunStartedLabel" xml:space="preserve">
+    <value>Начат</value>
+  </data>
+  <data name="DiscoveryRunDurationLabel" xml:space="preserve">
+    <value>Длительность</value>
+  </data>
+  <data name="DiscoveryRunCheckedLabel" xml:space="preserve">
+    <value>Проверено</value>
+  </data>
+  <data name="DiscoveryRunFoundLabel" xml:space="preserve">
+    <value>Найдено</value>
+  </data>
+  <data name="DiscoveryRunCheckedOne" xml:space="preserve">
+    <value>{1} из {0} адреса</value>
+  </data>
+  <data name="DiscoveryRunCheckedFew" xml:space="preserve">
+    <value>{1} из {0} адресов</value>
+  </data>
+  <data name="DiscoveryRunCheckedMany" xml:space="preserve">
+    <value>{1} из {0} адресов</value>
+  </data>
+  <data name="DiscoveryRunCheckedOther" xml:space="preserve">
+    <value>{1} из {0} адресов</value>
+  </data>
+  <data name="DiscoveryRunFoundValue" xml:space="preserve">
+    <value>{0}, SNMP ответили: {1}</value>
+  </data>
+  <data name="DiscoveryRunDurationSeconds" xml:space="preserve">
+    <value>{0} с</value>
+  </data>
+  <data name="DiscoveryRunDurationMinutes" xml:space="preserve">
+    <value>{0} мин {1} с</value>
+  </data>
+  <data name="DiscoveryRunDurationHours" xml:space="preserve">
+    <value>{0} ч {1} мин</value>
+  </data>
   <data name="DiscoveryRangeTitle" xml:space="preserve">
     <value>Диапазон адресов</value>
   </data>
@@ -2144,6 +2180,9 @@
   </data>
   <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
     <value>Устройство, IP или MAC</value>
+  </data>
+  <data name="ShellGlobalSearchPlaceholderShort" xml:space="preserve">
+    <value>Поиск</value>
   </data>
   <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
     <value>Глобальный поиск</value>

@@ -2132,7 +2132,7 @@ namespace NetLoom.Tests.Unit
                         text.Text) &&
                     NaturalTextWidth(text) >
                         text.ActualWidth + 2.0 &&
-                    text.ToolTip == null)
+                    !HasGalleryTooltip(text))
                 {
                     findings.Add(
                         scenario +
@@ -2162,6 +2162,36 @@ namespace NetLoom.Tests.Unit
                         "\" — UI_DESIGN_RULES §4");
                 }
             }
+        }
+
+        // §4: полное значение может быть в подсказке самого текста или элемента управления, которому он принадлежит
+        // (например, выбор профиля: текст внутри шаблона ComboBox, подсказка — у ComboBox). Ищем вверх до него включительно.
+        private static bool HasGalleryTooltip(
+            FrameworkElement element)
+        {
+            DependencyObject current =
+                element;
+
+            while (current != null)
+            {
+                var framework =
+                    current as FrameworkElement;
+
+                if (framework?.ToolTip != null)
+                {
+                    return true;
+                }
+
+                if (current is Control)
+                {
+                    return false;
+                }
+
+                current =
+                    VisualTreeHelper.GetParent(current);
+            }
+
+            return false;
         }
 
         private static double NaturalTextWidth(
