@@ -768,6 +768,16 @@ public partial class MainWindow
             return MapNodeDegradationState.Critical;
         }
 
+        // Sprint 47: «Устройство не отвечает» — предупреждение на карточке, как в инспекторе и списке.
+        if (_lastAlertSnapshot != null &&
+            _lastAlertSnapshot.Alerts.Any(
+                alert =>
+                    alert.DeviceIds.Contains(
+                        deviceId.Value)))
+        {
+            return MapNodeDegradationState.Degraded;
+        }
+
         if (linkedState ==
                 MapLinkOperationalState.Degraded ||
             linkedState ==

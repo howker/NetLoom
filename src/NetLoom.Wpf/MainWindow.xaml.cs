@@ -868,9 +868,20 @@ public partial class MainWindow : Window
         _lastDiagnosticSnapshot =
             state.Snapshot.DiagnosticSnapshot;
 
+        // Sprint 47: к предупреждениям схемы добавляются «Устройство не отвечает» из текущего опроса.
+        _lastTopologyAlertSnapshot =
+            state.Snapshot.AlertSnapshot;
+
+        var alertSnapshot =
+            MergeMonitoringAlerts(
+                _monitoringControl.Current);
+
+        _lastAlertSnapshot =
+            alertSnapshot;
+
         UpdateLinkOperationalStates(
             state.Snapshot.DiagnosticSnapshot,
-            state.Snapshot.AlertSnapshot);
+            alertSnapshot);
 
         ShowMap(
             state.Snapshot.MapSnapshot);
@@ -881,10 +892,10 @@ public partial class MainWindow : Window
 
         var transition =
             _alertTransitionTracker.Observe(
-                state.Snapshot.AlertSnapshot);
+                alertSnapshot);
 
         ShowAlerts(
-            state.Snapshot.AlertSnapshot,
+            alertSnapshot,
             transition);
     }
 

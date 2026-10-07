@@ -41,6 +41,10 @@ namespace NetLoom.Desktop.Monitoring
         private MonitoringTarget _activeTarget;
         private string _targetSetFilePath;
         private int _activeTargetPolls;
+
+        // Sprint 47: прогресс цикла текущего сеанса. Создаётся при каждом запуске и остаётся после остановки,
+        // Чтобы окно показывало итог последнего цикла.
+        private MonitoringCycleTracker _cycleTracker;
         private bool _stopRequested;
         private bool _snapshotNotificationActive;
         private bool _disposed;
@@ -166,6 +170,10 @@ namespace NetLoom.Desktop.Monitoring
                 _stopRequested = false;
                 _purpose =
                     EngineProcessPurpose.Schedule;
+                _cycleTracker =
+                    new MonitoringCycleTracker(
+                        new[] { target },
+                        _cycleTracker?.Outcomes);
                 _scheduleStarted =
                     NewCompletionSource<bool>();
                 started =
@@ -275,6 +283,12 @@ namespace NetLoom.Desktop.Monitoring
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            // До файла набора: неверный набор не должен оставлять временный файл.
+            new MonitoringCycleTracker(
+                targets ??
+                throw new ArgumentNullException(
+                    nameof(targets)));
+
             var targetSetFilePath =
                 CreateTargetSetFile(
                     targets);
@@ -297,6 +311,10 @@ namespace NetLoom.Desktop.Monitoring
                     _stopRequested = false;
                     _purpose =
                         EngineProcessPurpose.ScheduleSet;
+                    _cycleTracker =
+                        new MonitoringCycleTracker(
+                            targets,
+                            _cycleTracker?.Outcomes);
                     _scheduleStarted =
                         NewCompletionSource<bool>();
                     started =
@@ -526,6 +544,10 @@ namespace NetLoom.Desktop.Monitoring
                 _stopRequested = false;
                 _purpose =
                     EngineProcessPurpose.PollOnce;
+                _cycleTracker =
+                    new MonitoringCycleTracker(
+                        new[] { target },
+                        _cycleTracker?.Outcomes);
 
                 PublishSnapshotLocked(
                     Snapshot(
@@ -899,6 +921,13 @@ namespace NetLoom.Desktop.Monitoring
                         break;
 
                     case EngineMachineMarkerKind.PollStarted:
+                        if (_activeTarget != null)
+                        {
+                            _cycleTracker?.TargetStarted(
+                                _activeTarget.DeviceId,
+                                DateTime.UtcNow);
+                        }
+
                         if (!_stopRequested)
                         {
                             next =
@@ -911,6 +940,13 @@ namespace NetLoom.Desktop.Monitoring
 
                     case EngineMachineMarkerKind.TargetPollStarted:
                         _activeTargetPolls++;
+
+                        if (marker.DeviceId.HasValue)
+                        {
+                            _cycleTracker?.TargetStarted(
+                                marker.DeviceId.Value,
+                                DateTime.UtcNow);
+                        }
 
                         if (!_stopRequested)
                         {
@@ -925,6 +961,15 @@ namespace NetLoom.Desktop.Monitoring
                     case EngineMachineMarkerKind.PollCompleted:
                         var lastSuccessful =
                             _current.LastSuccessfulPollUtc;
+
+                        if (_activeTarget != null)
+                        {
+                            _cycleTracker?.TargetCompleted(
+                                _activeTarget.DeviceId,
+                                marker.CompletedUtc ??
+                                    DateTime.UtcNow,
+                                marker.AnySucceeded == true);
+                        }
 
                         if (marker.AnySucceeded == true)
                         {
@@ -950,6 +995,15 @@ namespace NetLoom.Desktop.Monitoring
                         var targetLastSuccessful =
                             _current.LastSuccessfulPollUtc;
 
+                        if (marker.DeviceId.HasValue)
+                        {
+                            _cycleTracker?.TargetCompleted(
+                                marker.DeviceId.Value,
+                                marker.CompletedUtc ??
+                                    DateTime.UtcNow,
+                                marker.AnySucceeded == true);
+                        }
+
                         if (marker.AnySucceeded == true)
                         {
                             targetLastSuccessful =
@@ -971,6 +1025,24 @@ namespace NetLoom.Desktop.Monitoring
                                     null,
                                     null,
                                     targetLastSuccessful);
+                        }
+                        break;
+
+                    case EngineMachineMarkerKind.TargetPollSkipped:
+                        // Опрос пропущен из-за ограничения одновременных опросов — попытка цикла без ответа.
+                        if (marker.DeviceId.HasValue &&
+                            _cycleTracker != null &&
+                            !_stopRequested)
+                        {
+                            _cycleTracker.TargetSkipped(
+                                marker.DeviceId.Value,
+                                DateTime.UtcNow);
+
+                            next =
+                                Snapshot(
+                                    _current.State,
+                                    _current.ActiveTarget,
+                                    null);
                         }
                         break;
                 }
@@ -1040,12 +1112,19 @@ namespace NetLoom.Desktop.Monitoring
             string faultMessage,
             DateTime? lastSuccessfulPollUtc = null)
         {
-            return new MonitoringControlSnapshot(
-                state,
-                target,
-                lastSuccessfulPollUtc ??
-                    _current?.LastSuccessfulPollUtc,
-                faultMessage);
+            // Счётчик меняется в потоке вывода Engine; снимок читает его под той же блокировкой.
+            lock (_gate)
+            {
+                return new MonitoringControlSnapshot(
+                    state,
+                    target,
+                    lastSuccessfulPollUtc ??
+                        _current?.LastSuccessfulPollUtc,
+                    faultMessage,
+                    _cycleTracker?.Current,
+                    _cycleTracker?.LastCompleted,
+                    _cycleTracker?.Outcomes);
+            }
         }
 
         private void PublishSnapshot(

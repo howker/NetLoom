@@ -2199,4 +2199,94 @@
   <data name="EquipmentManualDescription" xml:space="preserve">
     <value>Ручное</value>
   </data>
+  <data name="ShellMonitoringCycleHeader" xml:space="preserve">
+    <value>Опрос: {0} / {1}</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleRunning" xml:space="preserve">
+    <value>Цикл опроса выполняется</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleWaiting" xml:space="preserve">
+    <value>Цикл опроса завершён, следующий — по расписанию</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStarted" xml:space="preserve">
+    <value>Мониторинг работает, первый цикл ещё не начался</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStopped" xml:space="preserve">
+    <value>Мониторинг остановлен</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStarting" xml:space="preserve">
+    <value>Мониторинг запускается</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStopping" xml:space="preserve">
+    <value>Мониторинг останавливается</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleFaulted" xml:space="preserve">
+    <value>Мониторинг остановлен из-за ошибки</value>
+  </data>
+  <data name="ShellMonitoringDetailsLastCycle" xml:space="preserve">
+    <value>Последний цикл</value>
+  </data>
+  <data name="ShellMonitoringDetailsNoCycles" xml:space="preserve">
+    <value>Циклов опроса в этом сеансе ещё не было. Запустите мониторинг или опросите выбранное устройство.</value>
+  </data>
+  <data name="MonitoringCycleFieldCurrent" xml:space="preserve">
+    <value>Сейчас опрашивается</value>
+  </data>
+  <data name="MonitoringCycleFieldSucceeded" xml:space="preserve">
+    <value>Успешно</value>
+  </data>
+  <data name="MonitoringCycleFieldFailed" xml:space="preserve">
+    <value>С ошибкой</value>
+  </data>
+  <data name="MonitoringCycleFieldSkipped" xml:space="preserve">
+    <value>Пропущено</value>
+  </data>
+  <data name="MonitoringCycleFieldRemaining" xml:space="preserve">
+    <value>Осталось</value>
+  </data>
+  <data name="MonitoringCycleFieldStarted" xml:space="preserve">
+    <value>Начало</value>
+  </data>
+  <data name="MonitoringCycleFieldCompleted" xml:space="preserve">
+    <value>Завершение</value>
+  </data>
+  <data name="MonitoringCycleFieldNotAnswered" xml:space="preserve">
+    <value>Не ответили</value>
+  </data>
+  <data name="MonitoringCycleCurrentDevice" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MonitoringCycleNamesMore" xml:space="preserve">
+    <value>{0} и ещё {1}</value>
+  </data>
+  <data name="MonitoringCycleRunNowAction" xml:space="preserve">
+    <value>Запустить цикл сейчас</value>
+  </data>
+  <data name="MonitoringPollSelectedAction" xml:space="preserve">
+    <value>Опросить выбранное устройство</value>
+  </data>
+  <data name="ShellEventCycleCompletedTitle" xml:space="preserve">
+    <value>Цикл опроса завершён</value>
+  </data>
+  <data name="ShellEventCycleCompletedScope" xml:space="preserve">
+    <value>Успешно: {0} · С ошибкой: {1}</value>
+  </data>
+  <data name="ShellEventCycleCompletedScopeSkipped" xml:space="preserve">
+    <value>Успешно: {0} · С ошибкой: {1} · Пропущено: {2}</value>
+  </data>
+  <data name="AlertKindDeviceUnreachable" xml:space="preserve">
+    <value>Устройство не отвечает</value>
+  </data>
+  <data name="AlertReasonNoPollResponse" xml:space="preserve">
+    <value>Нет ответа на опрос</value>
+  </data>
+  <data name="AlertReasonDeviceUnreachable" xml:space="preserve">
+    <value>Опросов подряд без ответа: {0} · Последний ответ: {1}</value>
+  </data>
+  <data name="AlertLastResponseUnknown" xml:space="preserve">
+    <value>Нет данных</value>
+  </data>
+  <data name="AlertDevices" xml:space="preserve">
+    <value>DeviceId: {0}</value>
+  </data>
 </root>

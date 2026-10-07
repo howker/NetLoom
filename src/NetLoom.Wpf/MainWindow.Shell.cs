@@ -1842,10 +1842,10 @@ namespace NetLoom.Wpf
                 LocalMonitoringTime(
                     snapshot.LastSuccessfulPollUtc);
 
-            ShellMonitoringHeaderText.Text =
-                UiText.Format(
-                    "ShellMonitoringHeader",
-                    stateText);
+            // Sprint 47: идущий цикл показывается как «Опрос: N / всего» с полосой прогресса.
+            UpdateShellMonitoringProgress(
+                snapshot,
+                stateText);
 
             ShellMonitoringRailText.Text =
                 UiText.Format(

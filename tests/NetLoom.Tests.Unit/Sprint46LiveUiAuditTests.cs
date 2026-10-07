@@ -1155,6 +1155,18 @@ namespace NetLoom.Tests.Unit
             string databasePath,
             bool dark)
         {
+            return CreateLiveWindow(
+                databasePath,
+                dark,
+                new StoppedMonitoringControl());
+        }
+
+        // Sprint 47: тот же стенд, но с мониторингом, которым управляет тест.
+        private static MainWindow CreateLiveWindow(
+            string databasePath,
+            bool dark,
+            IMonitoringControl monitoringControl)
+        {
             var connectionFactory =
                 new SqliteConnectionFactory(
                     databasePath);
@@ -1208,7 +1220,7 @@ namespace NetLoom.Tests.Unit
                     locationRepository,
                     topologyRepository),
                 mapLayoutStore,
-                new StoppedMonitoringControl(),
+                monitoringControl,
                 new IdleDiscoveryControl(),
                 profiles,
                 new NoopMaterializer(),

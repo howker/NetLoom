@@ -1783,11 +1783,17 @@ public partial class MainWindow : Window
                         link =>
                             link.PhysicalLinkId.Value));
 
+        // Sprint 47: предупреждение об устройстве и предупреждения его связей — берётся самое серьёзное.
         return _lastAlertSnapshot.Alerts
-            .FirstOrDefault(
+            .Where(
                 alert =>
+                    alert.DeviceIds.Contains(
+                        deviceId) ||
                     alert.PhysicalLinkIds.Any(
-                        linkIds.Contains));
+                        linkIds.Contains))
+            .OrderByDescending(
+                alert => (int)alert.Severity)
+            .FirstOrDefault();
     }
 
     private TopologyAlert InspectorAlertForLocation(
@@ -1833,11 +1839,31 @@ public partial class MainWindow : Window
                         link =>
                             link.PhysicalLinkId.Value));
 
+        var deviceIds =
+            LocationDeviceIds(
+                nodeKeys);
+
         return _lastAlertSnapshot.Alerts
             .FirstOrDefault(
                 alert =>
                     alert.PhysicalLinkIds.Any(
-                        linkIds.Contains));
+                        linkIds.Contains) ||
+                    alert.DeviceIds.Any(
+                        deviceIds.Contains));
+    }
+
+    private HashSet<Guid> LocationDeviceIds(
+        HashSet<string> nodeKeys)
+    {
+        return new HashSet<Guid>(
+            _lastMapSnapshot.Nodes
+                .Where(
+                    node =>
+                        node.DeviceId.HasValue &&
+                        nodeKeys.Contains(
+                            node.Key))
+                .Select(
+                    node => node.DeviceId.Value));
     }
 
     private int CountLocationAlerts(
@@ -1883,10 +1909,16 @@ public partial class MainWindow : Window
                         link =>
                             link.PhysicalLinkId.Value));
 
+        var deviceIds =
+            LocationDeviceIds(
+                nodeKeys);
+
         return _lastAlertSnapshot.Alerts.Count(
             alert =>
                 alert.PhysicalLinkIds.Any(
-                    linkIds.Contains));
+                    linkIds.Contains) ||
+                alert.DeviceIds.Any(
+                    deviceIds.Contains));
     }
 
     private void OnInspectorPrimaryActionClick(

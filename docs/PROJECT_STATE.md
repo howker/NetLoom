@@ -19,7 +19,7 @@ Sprint 46 §9 profile-state gallery (`08a`–`08d`, Light/Dark, narrow and norma
 The committed product sequence is now:
   1. Sprint 45 - full field acceptance/hardening - complete.
   2. Sprint 46 - application shell/navigation and shared operator context - complete (closed 2026-10-07; on-site check outside the Sprint).
-  3. Sprint 47 - visible monitoring progress - next.
+  3. Sprint 47 - visible monitoring progress - active (implementation record in `BACKLOG.md`, awaiting owner acceptance).
   4. Sprint 48 - explainable discovery and inbox.
   5. Sprint 49 - readable large-site map.
   6. Sprint 50 - network redundancy: rings and single points of failure.

@@ -125,6 +125,11 @@
     <Thickness x:Key="NetLoom.Thickness.EmptyStateIconMargin">0,0,0,8</Thickness>
     <sys:Double x:Key="NetLoom.Map.ToolbarIconSize">14</sys:Double>
     <sys:Double x:Key="NetLoom.Shell.SearchMaxWidth">420</sys:Double>
+    <!-- Sprint 47: подробности цикла опроса под состоянием мониторинга и тонкая полоса прогресса. -->
+    <sys:Double x:Key="NetLoom.Shell.MonitoringDetailsWidth">360</sys:Double>
+    <sys:Double x:Key="NetLoom.Shell.CycleProgressHeight">4</sys:Double>
+    <CornerRadius x:Key="NetLoom.Radius.Progress">2</CornerRadius>
+    <Thickness x:Key="NetLoom.Thickness.PopupPadding">16</Thickness>
     <sys:Double x:Key="NetLoom.Alerts.ListWidth">420</sys:Double>
     <GridLength x:Key="NetLoom.Discovery.FormWidth">440</GridLength>
     <sys:Double x:Key="NetLoom.Settings.ContentMaxWidth">720</sys:Double>

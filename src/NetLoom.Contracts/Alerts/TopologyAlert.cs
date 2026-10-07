@@ -15,7 +15,10 @@ namespace NetLoom.Contracts.Alerts
     {
         Unknown = 0,
         ForwardingCycle = 1,
-        RingProtectionDegraded = 2
+        RingProtectionDegraded = 2,
+
+        // Sprint 47 (Г3 полевой проверки Sprint 46): опрашиваемое устройство перестало отвечать.
+        DeviceUnreachable = 3
     }
 
     public enum TopologyAlertReason
@@ -23,7 +26,8 @@ namespace NetLoom.Contracts.Alerts
         Unknown = 0,
         ConfirmedForwardingCycle = 1,
         DisabledRingLink = 2,
-        MultipleBlockingRingLinks = 3
+        MultipleBlockingRingLinks = 3,
+        NoPollResponse = 4
     }
 
     public sealed class TopologyAlert
@@ -36,6 +40,29 @@ namespace NetLoom.Contracts.Alerts
             IEnumerable<string> relatedRegionKeys,
             IEnumerable<Guid> physicalLinkIds,
             IEnumerable<TopologyAlertReason> reasons)
+            : this(
+                alertKey,
+                kind,
+                severity,
+                instanceId,
+                relatedRegionKeys,
+                physicalLinkIds,
+                reasons,
+                Enumerable.Empty<Guid>())
+        {
+        }
+
+        // Предупреждение может касаться устройства, а не связи (DeviceUnreachable): тогда связей нет,
+        // А устройство названо в deviceIds.
+        public TopologyAlert(
+            string alertKey,
+            TopologyAlertKind kind,
+            TopologyAlertSeverity severity,
+            string instanceId,
+            IEnumerable<string> relatedRegionKeys,
+            IEnumerable<Guid> physicalLinkIds,
+            IEnumerable<TopologyAlertReason> reasons,
+            IEnumerable<Guid> deviceIds)
         {
             if (string.IsNullOrWhiteSpace(
                 alertKey))
@@ -87,6 +114,12 @@ namespace NetLoom.Contracts.Alerts
                     nameof(reasons));
             }
 
+            if (deviceIds == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(deviceIds));
+            }
+
             AlertKey = alertKey.Trim();
             Kind = kind;
             Severity = severity;
@@ -103,8 +136,13 @@ namespace NetLoom.Contracts.Alerts
             Reasons =
                 NormalizeReasons(
                     reasons);
+            DeviceIds =
+                NormalizeIds(
+                    deviceIds,
+                    "Device ids cannot be empty.");
 
-            if (PhysicalLinkIds.Count == 0)
+            if (PhysicalLinkIds.Count == 0 &&
+                Kind != TopologyAlertKind.DeviceUnreachable)
             {
                 throw new ArgumentException(
                     "Alert must reference at least one physical link.",
@@ -138,6 +176,9 @@ namespace NetLoom.Contracts.Alerts
         public IReadOnlyList<TopologyAlertReason>
             Reasons { get; }
 
+        public IReadOnlyList<Guid>
+            DeviceIds { get; }
+
         private void ValidateKindSeverity()
         {
             if (Kind ==
@@ -164,6 +205,16 @@ namespace NetLoom.Contracts.Alerts
             {
                 throw new ArgumentException(
                     "Degraded-ring alert must reference exactly one region.");
+            }
+
+            if (Kind ==
+                    TopologyAlertKind.DeviceUnreachable &&
+                (Severity !=
+                     TopologyAlertSeverity.Warning ||
+                 DeviceIds.Count != 1))
+            {
+                throw new ArgumentException(
+                    "Unreachable-device alert must be a Warning about exactly one device.");
             }
         }
 
@@ -198,6 +249,15 @@ namespace NetLoom.Contracts.Alerts
         private static Guid[] NormalizePhysicalLinkIds(
             IEnumerable<Guid> values)
         {
+            return NormalizeIds(
+                values,
+                "Physical link ids cannot be empty.");
+        }
+
+        private static Guid[] NormalizeIds(
+            IEnumerable<Guid> values,
+            string emptyMessage)
+        {
             var result =
                 values
                     .Distinct()
@@ -208,7 +268,7 @@ namespace NetLoom.Contracts.Alerts
                 id => id == Guid.Empty))
             {
                 throw new ArgumentException(
-                    "Physical link ids cannot be empty.");
+                    emptyMessage);
             }
 
             return result;

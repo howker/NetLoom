@@ -30,7 +30,7 @@ using NetLoom.Wpf.Shell;
 namespace NetLoom.Tests.Unit
 {
     [TestClass]
-    public sealed class Sprint46UiStateGalleryTests
+    public sealed partial class Sprint46UiStateGalleryTests
     {
         private const int NarrowWidth = 1100;
         private const int NormalWidth = 1400;

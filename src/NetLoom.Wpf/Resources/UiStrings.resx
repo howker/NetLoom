@@ -2199,4 +2199,94 @@ Poll: {2}</value>
   <data name="EquipmentManualDescription" xml:space="preserve">
     <value>Manual</value>
   </data>
+  <data name="ShellMonitoringCycleHeader" xml:space="preserve">
+    <value>Polling: {0} / {1}</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleRunning" xml:space="preserve">
+    <value>Polling cycle in progress</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleWaiting" xml:space="preserve">
+    <value>Polling cycle finished, next one on schedule</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStarted" xml:space="preserve">
+    <value>Monitoring is running, the first cycle has not started yet</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStopped" xml:space="preserve">
+    <value>Monitoring is stopped</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStarting" xml:space="preserve">
+    <value>Monitoring is starting</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleStopping" xml:space="preserve">
+    <value>Monitoring is stopping</value>
+  </data>
+  <data name="ShellMonitoringDetailsTitleFaulted" xml:space="preserve">
+    <value>Monitoring stopped because of an error</value>
+  </data>
+  <data name="ShellMonitoringDetailsLastCycle" xml:space="preserve">
+    <value>Last cycle</value>
+  </data>
+  <data name="ShellMonitoringDetailsNoCycles" xml:space="preserve">
+    <value>No polling cycles in this session yet. Start monitoring or poll the selected device.</value>
+  </data>
+  <data name="MonitoringCycleFieldCurrent" xml:space="preserve">
+    <value>Polling now</value>
+  </data>
+  <data name="MonitoringCycleFieldSucceeded" xml:space="preserve">
+    <value>Succeeded</value>
+  </data>
+  <data name="MonitoringCycleFieldFailed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="MonitoringCycleFieldSkipped" xml:space="preserve">
+    <value>Skipped</value>
+  </data>
+  <data name="MonitoringCycleFieldRemaining" xml:space="preserve">
+    <value>Remaining</value>
+  </data>
+  <data name="MonitoringCycleFieldStarted" xml:space="preserve">
+    <value>Started</value>
+  </data>
+  <data name="MonitoringCycleFieldCompleted" xml:space="preserve">
+    <value>Finished</value>
+  </data>
+  <data name="MonitoringCycleFieldNotAnswered" xml:space="preserve">
+    <value>Did not answer</value>
+  </data>
+  <data name="MonitoringCycleCurrentDevice" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MonitoringCycleNamesMore" xml:space="preserve">
+    <value>{0} and {1} more</value>
+  </data>
+  <data name="MonitoringCycleRunNowAction" xml:space="preserve">
+    <value>Start cycle now</value>
+  </data>
+  <data name="MonitoringPollSelectedAction" xml:space="preserve">
+    <value>Poll selected device</value>
+  </data>
+  <data name="ShellEventCycleCompletedTitle" xml:space="preserve">
+    <value>Polling cycle finished</value>
+  </data>
+  <data name="ShellEventCycleCompletedScope" xml:space="preserve">
+    <value>Succeeded: {0} · Failed: {1}</value>
+  </data>
+  <data name="ShellEventCycleCompletedScopeSkipped" xml:space="preserve">
+    <value>Succeeded: {0} · Failed: {1} · Skipped: {2}</value>
+  </data>
+  <data name="AlertKindDeviceUnreachable" xml:space="preserve">
+    <value>Device not responding</value>
+  </data>
+  <data name="AlertReasonNoPollResponse" xml:space="preserve">
+    <value>No response to polling</value>
+  </data>
+  <data name="AlertReasonDeviceUnreachable" xml:space="preserve">
+    <value>Polls in a row without response: {0} · Last response: {1}</value>
+  </data>
+  <data name="AlertLastResponseUnknown" xml:space="preserve">
+    <value>No data</value>
+  </data>
+  <data name="AlertDevices" xml:space="preserve">
+    <value>DeviceId: {0}</value>
+  </data>
 </root>

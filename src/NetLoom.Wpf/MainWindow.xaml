@@ -173,9 +173,117 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="16,0,8,0">
-                    <TextBlock x:Name="ShellMonitoringHeaderText" shell:LiveRegion.IsPolite="True"
-                               Style="{StaticResource NetLoom.Style.MutedText}"
-                               VerticalAlignment="Center" />
+                    <!-- Sprint 47: состояние мониторинга открывает подробности цикла опроса; во время цикла —
+                         «Опрос: N / всего» и тонкая нейтральная полоса под текстом. Новых постоянных элементов нет. -->
+                    <Button x:Name="ShellMonitoringDetailsButton"
+                            Style="{StaticResource NetLoom.Style.FlatButton}"
+                            VerticalAlignment="Center"
+                            Click="OnShellMonitoringDetailsClick">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="ShellMonitoringHeaderText" shell:LiveRegion.IsPolite="True"
+                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                           Typography.NumeralAlignment="Tabular"
+                                           VerticalAlignment="Center" />
+                                <Path Width="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                      Height="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                      Margin="{DynamicResource NetLoom.Thickness.DropDownArrowMargin}"
+                                      VerticalAlignment="Center"
+                                      Stretch="Uniform"
+                                      Stroke="{DynamicResource NetLoom.Brush.TextSecondary}"
+                                      StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      IsHitTestVisible="False"
+                                      Data="M 0,0 L 4,4 L 8,0" />
+                            </StackPanel>
+                            <ProgressBar x:Name="ShellMonitoringProgressBar"
+                                         Style="{StaticResource NetLoom.Style.CycleProgressBar}"
+                                         Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                         Visibility="Collapsed" />
+                        </StackPanel>
+                    </Button>
+                    <Popup x:Name="ShellMonitoringDetailsPopup"
+                           Placement="Bottom"
+                           PlacementTarget="{Binding ElementName=ShellMonitoringDetailsButton}"
+                           StaysOpen="False"
+                           AllowsTransparency="True">
+                        <Border x:Name="ShellMonitoringDetailsPanel"
+                                Width="{DynamicResource NetLoom.Shell.MonitoringDetailsWidth}"
+                                Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                Padding="{DynamicResource NetLoom.Thickness.PopupPadding}"
+                                Background="{DynamicResource NetLoom.Brush.Surface}"
+                                BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                                BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                                CornerRadius="{DynamicResource NetLoom.Radius.Card}"
+                                Focusable="True"
+                                FocusVisualStyle="{x:Null}"
+                                KeyboardNavigation.TabNavigation="Cycle"
+                                PreviewKeyDown="OnShellMonitoringDetailsPreviewKeyDown">
+                            <StackPanel>
+                                <TextBlock x:Name="ShellMonitoringDetailsTitleText" shell:LiveRegion.IsPolite="True"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap" />
+                                <ProgressBar x:Name="ShellMonitoringDetailsProgressBar"
+                                             Style="{StaticResource NetLoom.Style.CycleProgressBar}"
+                                             Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                             Visibility="Collapsed" />
+                                <TextBlock x:Name="ShellMonitoringDetailsLastCycleText"
+                                           Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                           Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
+                                           Visibility="Collapsed" />
+                                <!-- Имя и адрес текущего устройства длинные — отдельной строкой во всю ширину, а не в столбце значений. -->
+                                <StackPanel x:Name="ShellMonitoringCurrentPanel"
+                                            Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                            Visibility="Collapsed">
+                                    <TextBlock x:Name="ShellMonitoringCurrentLabelText"
+                                               Style="{StaticResource NetLoom.Style.MutedText}" />
+                                    <TextBlock x:Name="ShellMonitoringCurrentValueText"
+                                               Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBlock x:Name="ShellMonitoringDetailsEmptyText"
+                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                           Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                           TextWrapping="Wrap"
+                                           Visibility="Collapsed" />
+                                <ItemsControl x:Name="ShellMonitoringDetailsFieldsList"
+                                              Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                              Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Label}"
+                                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                                           Margin="{DynamicResource NetLoom.Thickness.TableCellGapRight}" />
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Value}"
+                                                           Typography.NumeralAlignment="Tabular"
+                                                           HorizontalAlignment="Right"
+                                                           TextAlignment="Right"
+                                                           TextWrapping="Wrap" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- Причина отказа действия или ошибка мониторинга видна текстом рядом с кнопкой (§8). -->
+                                <TextBlock x:Name="ShellMonitoringDetailsMessageText"
+                                           Text="{Binding Text, ElementName=MonitoringMessageText}"
+                                           Style="{Binding Style, ElementName=MonitoringMessageText}"
+                                           Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                           TextWrapping="Wrap" />
+                                <Button x:Name="ShellMonitoringCycleActionButton"
+                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                        Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}"
+                                        HorizontalAlignment="Left"
+                                        Click="OnShellMonitoringCycleActionClick" />
+                            </StackPanel>
+                        </Border>
+                    </Popup>
                     <Button x:Name="ShellMonitoringStartButton"
                             Style="{StaticResource NetLoom.Style.SecondaryButton}"
                             Margin="12,0,0,0"
@@ -2110,7 +2218,8 @@
                     <ItemsControl x:Name="ShellEventList" Focusable="False" shell:LiveRegion.IsPolite="True">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" />
+                                <!-- Sprint 47: видны только события, которые помещаются целиком; менее важные отпадают. -->
+                                <shell:FitStackPanel />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>

@@ -72,6 +72,11 @@ public partial class MainWindow
                 return UiText.Get(
                     "AlertKindRingProtectionDegraded");
 
+            case TopologyAlertKind
+                .DeviceUnreachable:
+                return UiText.Get(
+                    "AlertKindDeviceUnreachable");
+
             default:
                 return kind.ToString();
         }
@@ -97,6 +102,11 @@ public partial class MainWindow
                 return UiText.Get(
                     "AlertReasonMultipleBlockingRingLinks");
 
+            case TopologyAlertReason
+                .NoPollResponse:
+                return UiText.Get(
+                    "AlertReasonNoPollResponse");
+
             default:
                 return reason.ToString();
         }
@@ -105,6 +115,35 @@ public partial class MainWindow
     private string BuildAlertScope(
         TopologyAlert alert)
     {
+        // Sprint 47: предупреждение об устройстве называет само устройство и адрес опроса.
+        if (alert.DeviceIds.Count > 0 &&
+            alert.PhysicalLinkIds.Count == 0)
+        {
+            var outcome =
+                MonitoringOutcome(
+                    alert.DeviceIds[0]);
+            var address =
+                outcome == null ||
+                outcome.TargetAddress == null
+                    ? null
+                    : outcome.TargetAddress.ToString();
+            var name =
+                MonitoringDeviceName(
+                    alert.DeviceIds[0],
+                    address);
+
+            return address == null ||
+                   string.Equals(
+                       name,
+                       address,
+                       StringComparison.Ordinal)
+                ? name
+                : UiText.Format(
+                    "MonitoringCycleCurrentDevice",
+                    name,
+                    address);
+        }
+
         var names =
             new List<string>();
 
@@ -221,9 +260,18 @@ public partial class MainWindow
         return result;
     }
 
-    private static string BuildAlertReasonSummary(
+    private string BuildAlertReasonSummary(
         TopologyAlert alert)
     {
+        // Sprint 47: сколько опросов подряд без ответа и когда устройство отвечало последний раз.
+        if (alert.Kind ==
+            TopologyAlertKind.DeviceUnreachable &&
+            alert.DeviceIds.Count > 0)
+        {
+            return DeviceUnreachableReason(
+                alert.DeviceIds[0]);
+        }
+
         return string.Join(
             " · ",
             alert.Reasons
@@ -252,15 +300,31 @@ public partial class MainWindow
                         alert.RelatedRegionKeys)));
         }
 
-        lines.Add(
-            UiText.Format(
-                "AlertLinks",
-                string.Join(
-                    ", ",
-                    alert.PhysicalLinkIds
-                        .Select(
-                            id =>
-                                id.ToString("D")))));
+        if (alert.PhysicalLinkIds.Count > 0)
+        {
+            lines.Add(
+                UiText.Format(
+                    "AlertLinks",
+                    string.Join(
+                        ", ",
+                        alert.PhysicalLinkIds
+                            .Select(
+                                id =>
+                                    id.ToString("D")))));
+        }
+
+        if (alert.DeviceIds.Count > 0)
+        {
+            lines.Add(
+                UiText.Format(
+                    "AlertDevices",
+                    string.Join(
+                        ", ",
+                        alert.DeviceIds
+                            .Select(
+                                id =>
+                                    id.ToString("D")))));
+        }
 
         return string.Join(
             Environment.NewLine,
@@ -293,6 +357,14 @@ public partial class MainWindow
                         reason => reason)
                     .Select(
                         reason => reason.ToString()));
+        var devices =
+            string.Join(
+                ",",
+                alert.DeviceIds
+                    .OrderBy(
+                        id => id)
+                    .Select(
+                        id => id.ToString("D")));
 
         return (alert.InstanceId ?? string.Empty) +
                "|" +
@@ -302,7 +374,9 @@ public partial class MainWindow
                "|" +
                regions +
                "|" +
-               reasons;
+               reasons +
+               "|" +
+               devices;
     }
 
     private AlertRow BuildAlertRow(
@@ -310,7 +384,7 @@ public partial class MainWindow
         DateTime generatedUtc,
         bool isTechnicalDetailsExpanded)
     {
-        return new AlertRow(
+        var row = new AlertRow(
             AlertExpansionKey(
                 alert),
             AlertSeverityText(
@@ -338,6 +412,22 @@ public partial class MainWindow
                 "AlertShowOnMapAction"),
             UiText.Get(
                 "AlertTechnicalDetails"));
+
+        row.DeviceId =
+            AlertDeviceId(
+                alert);
+
+        return row;
+    }
+
+    // Устройство, к которому относится предупреждение без связей (Sprint 47, «Устройство не отвечает»).
+    private static Guid? AlertDeviceId(
+        TopologyAlert alert)
+    {
+        return alert.PhysicalLinkIds.Count == 0 &&
+               alert.DeviceIds.Count > 0
+            ? alert.DeviceIds[0]
+            : (Guid?)null;
     }
 
     private DateTime AlertFirstSeenUtc(
@@ -375,6 +465,8 @@ public partial class MainWindow
                     BuildAlertScope(
                         pair.Value),
                     BuildAlertReasonSummary(
+                        pair.Value),
+                    AlertDeviceId(
                         pair.Value));
 
             _activeAlertEventStateByKey[
@@ -415,6 +507,13 @@ public partial class MainWindow
                 key);
         }
 
+        RenderShellEventList();
+    }
+
+    // Лента: сначала активные критические и предупреждения, затем остальное по свежести.
+    // Sprint 47: сюда же попадает событие завершённого цикла опроса.
+    private void RenderShellEventList()
+    {
         ShellEventList.ItemsSource =
             _shellEventRows
                 .OrderByDescending(
@@ -457,7 +556,10 @@ public partial class MainWindow
                 state.PhysicalLinkIds,
                 state.IsCritical,
                 !state.IsCritical && !isResolved,
-                isResolved));
+                isResolved)
+            {
+                DeviceId = state.DeviceId
+            });
 
         const int maxEventRows = 20;
 
@@ -482,8 +584,37 @@ public partial class MainWindow
                 ? null
                 : button.DataContext as ShellEventRow;
 
+        // Событие цикла опроса ведёт к подробностям мониторинга, а не к предупреждениям.
+        if (row != null &&
+            row.IsMonitoringCycle)
+        {
+            ShowShellMonitoringDetails();
+            return;
+        }
+
         ShowShellSection(
             ShellSection.Alerts);
+
+        // Sprint 47: событие об устройстве ведёт к карточке устройства и выбирает его на карте.
+        if (row != null &&
+            row.DeviceId.HasValue)
+        {
+            _alertAutoSelectPending =
+                false;
+            _selectedAlertKey =
+                CurrentAlertRows()
+                    .Where(
+                        item =>
+                            item.DeviceId ==
+                            row.DeviceId)
+                    .Select(
+                        item => item.ExpansionKey)
+                    .FirstOrDefault();
+
+            SelectAlertDeviceContext(
+                row.DeviceId.Value);
+            return;
+        }
 
         if (row == null ||
             row.PhysicalLinkIds.Length == 0)
@@ -704,10 +835,15 @@ public partial class MainWindow
                         _selectedAlertKey,
                         StringComparison.Ordinal));
 
-        if (selected == null ||
-            !_selectedPhysicalLinkId.HasValue ||
-            !selected.PhysicalLinkIds.Contains(
-                _selectedPhysicalLinkId.Value))
+        var selectedOnMap =
+            selected != null &&
+            (selected.DeviceId.HasValue
+                ? _selectedDeviceId == selected.DeviceId
+                : _selectedPhysicalLinkId.HasValue &&
+                  selected.PhysicalLinkIds.Contains(
+                      _selectedPhysicalLinkId.Value));
+
+        if (!selectedOnMap)
         {
             _selectedAlertKey =
                 null;
@@ -750,7 +886,8 @@ public partial class MainWindow
             CurrentAlertRows()
                 .FirstOrDefault(
                     row =>
-                        row.PhysicalLinkIds.Length > 0);
+                        row.PhysicalLinkIds.Length > 0 ||
+                        row.DeviceId.HasValue);
 
         if (first == null ||
             _lastMapSnapshot == null)
@@ -840,6 +977,28 @@ public partial class MainWindow
         return true;
     }
 
+    // Выбор устройства из карточки или события «Устройство не отвечает».
+    private void SelectAlertDeviceContext(
+        Guid deviceId)
+    {
+        StopStartupTopologyFit();
+
+        _highlightedDeviceId =
+            null;
+        _selectedDeviceId =
+            deviceId;
+        _selectedInterfaceId =
+            null;
+        _selectedPhysicalLinkId =
+            null;
+        _selectedLocationId =
+            null;
+
+        RedrawCurrentMap();
+        ShowSelectedDiagnostic();
+        UpdateSelectedLayoutControl();
+    }
+
     private void ShowAlertRowOnMap(
         AlertRow row,
         bool pulse)
@@ -848,6 +1007,23 @@ public partial class MainWindow
             false;
         _selectedAlertKey =
             row.ExpansionKey;
+
+        if (row.DeviceId.HasValue)
+        {
+            var deviceId =
+                row.DeviceId.Value;
+
+            SelectAlertDeviceContext(
+                deviceId);
+
+            FocusSelectedMapAtNativeZoom(
+                pulse
+                    ? () =>
+                        AnimateDiscoveryFocus(
+                            deviceId)
+                    : (Action)null);
+            return;
+        }
 
         SelectAlertPhysicalContext(
             row.PrimaryPhysicalLinkId);
@@ -923,7 +1099,8 @@ public partial class MainWindow
                 : button.DataContext as AlertRow;
 
         if (row == null ||
-            row.PhysicalLinkIds.Length == 0)
+            (row.PhysicalLinkIds.Length == 0 &&
+             !row.DeviceId.HasValue))
         {
             return;
         }
@@ -1100,8 +1277,10 @@ public partial class MainWindow
             string scope,
             string reason,
             Guid[] physicalLinkIds,
-            bool isCritical)
+            bool isCritical,
+            Guid? deviceId)
         {
+            DeviceId = deviceId;
             AlertKey = alertKey;
             Title = title;
             Scope = scope;
@@ -1124,10 +1303,13 @@ public partial class MainWindow
 
         public bool IsCritical { get; }
 
+        public Guid? DeviceId { get; }
+
         public static AlertEventState FromAlert(
             TopologyAlert alert,
             string scope,
-            string reason)
+            string reason,
+            Guid? deviceId)
         {
             return new AlertEventState(
                 alert.AlertKey,
@@ -1137,7 +1319,8 @@ public partial class MainWindow
                 reason,
                 alert.PhysicalLinkIds.ToArray(),
                 alert.Severity ==
-                    TopologyAlertSeverity.Critical);
+                    TopologyAlertSeverity.Critical,
+                deviceId);
         }
     }
 
@@ -1180,6 +1363,30 @@ public partial class MainWindow
         public bool IsWarning { get; }
 
         public bool IsResolved { get; }
+
+        public bool IsMonitoringCycle { get; private set; }
+
+        public Guid? DeviceId { get; set; }
+
+        // Нейтральное событие (ADR-083 п. 6): без цвета отклонения, ошибки названы словами в участниках.
+        public static ShellEventRow MonitoringCycle(
+            string timeText,
+            string title,
+            string scope)
+        {
+            return new ShellEventRow(
+                null,
+                timeText,
+                title,
+                scope,
+                null,
+                false,
+                false,
+                false)
+            {
+                IsMonitoringCycle = true
+            };
+        }
     }
 
     private sealed class AlertRow :
@@ -1250,6 +1457,9 @@ public partial class MainWindow
         public Guid[] PhysicalLinkIds { get; }
 
         public Guid PrimaryPhysicalLinkId { get; }
+
+        // Sprint 47: предупреждение об устройстве («Устройство не отвечает») — без связей.
+        public Guid? DeviceId { get; set; }
 
         public bool IsCritical { get; }
 
