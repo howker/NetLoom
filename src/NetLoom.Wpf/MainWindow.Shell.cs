@@ -872,6 +872,13 @@ namespace NetLoom.Wpf
             Button button,
             bool selected)
         {
+            // §8: выбранный вариант передаётся программе как состояние, а не только цветом.
+            AutomationSelection.SetSelected(
+                button,
+                selected,
+                UiText.Get(
+                    "AutomationSelectedStatus"));
+
             if (selected)
             {
                 button.SetResourceReference(
@@ -1722,6 +1729,13 @@ namespace NetLoom.Wpf
                 return;
             }
 
+            // §8: выбранный вариант передаётся программе как состояние, а не только цветом.
+            AutomationSelection.SetSelected(
+                button,
+                selected,
+                UiText.Get(
+                    "AutomationSelectedStatus"));
+
             if (selected)
             {
                 button.SetResourceReference(
@@ -1758,6 +1772,13 @@ namespace NetLoom.Wpf
             Button button,
             bool selected)
         {
+            // §8: выбранный вариант передаётся программе как состояние, а не только цветом.
+            AutomationSelection.SetSelected(
+                button,
+                selected,
+                UiText.Get(
+                    "AutomationSelectedStatus"));
+
             if (selected)
             {
                 button.SetResourceReference(

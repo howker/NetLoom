@@ -865,6 +865,16 @@ public partial class MainWindow
         int count,
         string brushKey)
     {
+        // §8: число на значке входит в имя кнопки рейла — диктор слышит то же, что видно.
+        System.Windows.Automation.AutomationProperties.SetName(
+            ShellAlertsButton,
+            count > 0
+                ? UiText.Format(
+                    "ShellAlertsButtonNameWithCount",
+                    count)
+                : UiText.Get(
+                    "ShellAlertsSection"));
+
         if (count <= 0)
         {
             ShellAlertsBadge.Visibility =

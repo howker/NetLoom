@@ -2175,4 +2175,13 @@ Poll: {2}</value>
   <data name="ShellInspectorRevealAction" xml:space="preserve">
     <value>Show properties</value>
   </data>
+  <data name="AutomationSelectedStatus" xml:space="preserve">
+    <value>Selected</value>
+  </data>
+  <data name="ShellInspectorSplitterName" xml:space="preserve">
+    <value>Properties panel width</value>
+  </data>
+  <data name="ShellAlertsButtonNameWithCount" xml:space="preserve">
+    <value>Alerts: {0}</value>
+  </data>
 </root>

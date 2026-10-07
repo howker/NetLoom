@@ -599,7 +599,8 @@ namespace NetLoom.Tests.Unit
                         root,
                         framework);
 
-                if (regionAfter != region)
+                if (regionAfter.Width < 2 ||
+                    regionAfter != region)
                 {
                     // Элемент сдвинулся при получении фокуса (прокрутка) — сравнение недостоверно.
                     continue;
@@ -659,6 +660,12 @@ namespace NetLoom.Tests.Unit
             FrameworkElement root,
             FrameworkElement element)
         {
+            // Строки списков пересоздаются при обновлении данных — отсоединённый элемент не измеряем.
+            if (!element.IsDescendantOf(root))
+            {
+                return new Int32Rect();
+            }
+
             var bounds =
                 element
                     .TransformToAncestor(root)

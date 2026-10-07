@@ -846,8 +846,11 @@
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
     </Style>
 
+    <!-- §8 «Структура»: заголовок представления — уровень 1 (передаётся в сборке net8.0-windows). -->
     <Style x:Key="NetLoom.Style.SectionTitle"
            TargetType="{x:Type TextBlock}">
+        <Setter Property="shell:AutomationHeading.Level"
+                Value="1" />
         <Setter Property="FontSize"
                 Value="{DynamicResource NetLoom.FontSize.SectionTitle}" />
         <Setter Property="FontWeight"
@@ -1838,6 +1841,8 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
         <Setter Property="shell:TextCase.Upper" Value="True" />
+        <!-- §8 «Структура»: подпись группы — заголовок уровня 2. -->
+        <Setter Property="shell:AutomationHeading.Level" Value="2" />
     </Style>
 
     <!-- G5: заголовок столбца таблицы — подпись поля, заглавными и полужирным, как в макете netloom-v2-2. -->

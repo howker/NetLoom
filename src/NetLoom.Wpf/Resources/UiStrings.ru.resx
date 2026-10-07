@@ -2175,4 +2175,13 @@
   <data name="ShellInspectorRevealAction" xml:space="preserve">
     <value>Показать свойства</value>
   </data>
+  <data name="AutomationSelectedStatus" xml:space="preserve">
+    <value>Выбрано</value>
+  </data>
+  <data name="ShellInspectorSplitterName" xml:space="preserve">
+    <value>Ширина панели свойств</value>
+  </data>
+  <data name="ShellAlertsButtonNameWithCount" xml:space="preserve">
+    <value>Предупреждения: {0}</value>
+  </data>
 </root>

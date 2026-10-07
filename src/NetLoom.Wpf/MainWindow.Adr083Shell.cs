@@ -99,6 +99,12 @@ namespace NetLoom.Wpf
                 UiText.Get(
                     "ShellMapEditModeCompact");
 
+            // §8: у разделителя (меняет ширину стрелками) есть имя для UI Automation.
+            AutomationProperties.SetName(
+                ShellInspectorSplitter,
+                UiText.Get(
+                    "ShellInspectorSplitterName"));
+
             AutomationProperties.SetName(
                 ShellInspectorCollapseButton,
                 UiText.Get(

@@ -1,6 +1,7 @@
 ﻿<Window x:Class="NetLoom.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:NetLoom.Wpf.Shell"
         Height="{DynamicResource NetLoom.Shell.WindowHeight}"
         Width="{DynamicResource NetLoom.Shell.WindowWidth}"
         MinHeight="{DynamicResource NetLoom.Shell.WindowMinHeight}"
@@ -172,7 +173,7 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="16,0,8,0">
-                    <TextBlock x:Name="ShellMonitoringHeaderText"
+                    <TextBlock x:Name="ShellMonitoringHeaderText" shell:LiveRegion.IsPolite="True"
                                Style="{StaticResource NetLoom.Style.MutedText}"
                                VerticalAlignment="Center" />
                     <Button x:Name="ShellMonitoringStartButton"
@@ -947,7 +948,7 @@
                                 </Border>
                             </StackPanel>
 
-                            <TextBlock x:Name="AlertStatusText"
+                            <TextBlock x:Name="AlertStatusText" shell:LiveRegion.IsPolite="True"
                                        Visibility="Collapsed"
                                        Style="{StaticResource NetLoom.Style.AlertSummary}"
                                        Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
@@ -1257,7 +1258,7 @@
                                                                 HorizontalAlignment="Right">
                                                         <TextBlock x:Name="DiscoveryStateGlyphText"
                                                                    Style="{StaticResource NetLoom.Style.StatusGlyph}" />
-                                                        <TextBlock x:Name="DiscoveryStateValueText"
+                                                        <TextBlock x:Name="DiscoveryStateValueText" shell:LiveRegion.IsPolite="True"
                                                                    Style="{StaticResource NetLoom.Style.StatusEmphasis}"
                                                                    TextWrapping="Wrap" />
                                                     </StackPanel>
@@ -2106,7 +2107,7 @@
                     <TextBlock x:Name="ShellEventEmptyText"
                                Style="{StaticResource NetLoom.Style.MutedText}"
                                VerticalAlignment="Center" />
-                    <ItemsControl x:Name="ShellEventList" Focusable="False">
+                    <ItemsControl x:Name="ShellEventList" Focusable="False" shell:LiveRegion.IsPolite="True">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <StackPanel Orientation="Horizontal" />
