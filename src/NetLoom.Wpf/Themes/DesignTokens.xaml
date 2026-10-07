@@ -70,7 +70,9 @@
     <Thickness x:Key="NetLoom.Thickness.ShellMapHeaderPadding">12,8</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellMapControlsMargin">0,12,12,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellMapControlsPadding">12</Thickness>
-    <Thickness x:Key="NetLoom.Thickness.ShellEventPadding">12</Thickness>
+    <!-- G8 (sprint46-mockup-gap): лента событий ниже, как в макетах. По бокам поле 12 (§5); сверху и снизу 4,
+         потому что у кнопки события своё поле около 8 — текст остаётся не ближе 12 к краю ленты, площадь нажатия 34 (§8). -->
+    <Thickness x:Key="NetLoom.Thickness.ShellEventPadding">12,4,12,4</Thickness>
     <!-- I1: содержимое вкладок инспектора без рамки, выровнено по краю инспектора; сверху — отступ от группы вкладок. -->
     <Thickness x:Key="NetLoom.Thickness.InspectorContentPadding">0,16,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ComboBoxArrowMargin">0,0,10,0</Thickness>

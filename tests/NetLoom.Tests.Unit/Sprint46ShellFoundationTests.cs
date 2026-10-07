@@ -880,6 +880,101 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            EventStripKeepsTextInsetAndHitAreaWhileStayingCompact()
+        {
+            // G8 (sprint46-mockup-gap): лента событий ниже, но текст события не ближе 12 к краям ленты (§5).
+            // Кнопка события при этом не меньше минимальной площади нажатия (§8).
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6700-6700-6700-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6701-6701-6701-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6702-6702-6702-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        var events =
+                            (ItemsControl)window.FindName(
+                                "ShellEventList");
+
+                        WaitForCondition(
+                            () =>
+                                FindVisualDescendant<Button>(
+                                    events) != null);
+                        PumpDispatcher();
+
+                        var eventButton =
+                            FindVisualDescendant<Button>(
+                                events);
+
+                        var strip =
+                            (FrameworkElement)VisualTreeHelper.GetParent(
+                                (DependencyObject)VisualTreeHelper.GetParent(
+                                    (DependencyObject)window.FindName(
+                                        "ShellEventTitleText")));
+
+                        Assert.IsInstanceOfType(
+                            strip,
+                            typeof(Border),
+                            "The event strip is the bordered panel around the title and the list.");
+
+                        var title =
+                            FindVisualDescendant<TextBlock>(
+                                eventButton);
+                        var titleTop =
+                            title.TransformToAncestor(
+                                    strip)
+                                .Transform(
+                                    new Point(
+                                        0.0,
+                                        0.0))
+                                .Y;
+                        var titleBottom =
+                            strip.ActualHeight -
+                            (titleTop +
+                             title.ActualHeight);
+
+                        Assert.IsTrue(
+                            titleTop >= 12.0 &&
+                            titleBottom >= 12.0,
+                            "Event text must keep at least 12 px from the strip edges (§5): top " +
+                            titleTop +
+                            ", bottom " +
+                            titleBottom);
+
+                        Assert.IsTrue(
+                            eventButton.ActualHeight >=
+                            (double)window.FindResource(
+                                "NetLoom.Control.MinHitSize"),
+                            "Event buttons keep the minimum hit area (§8).");
+
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             BreadcrumbNamesOpenSectionWithoutSelectionAndKeepsPlacementPathAcrossSections()
         {
             // G2 (sprint46-mockup-gap): без выбора крошки называли «Карта» в любом разделе.
