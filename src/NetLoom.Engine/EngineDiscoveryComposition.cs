@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using NetLoom.Application.Discovery;
 using NetLoom.Protocols.Snmp.Discovery;
 using NetLoom.Protocols.Snmp.Inventory;
@@ -56,7 +55,7 @@ namespace NetLoom.Engine
 
             return new DiscoveryRequest(
                 addresses,
-                new IPAddress[0],
+                options.DiscoveryExcludedAddresses,
                 options.DiscoveryTcpPorts,
                 profile,
                 options.DiscoveryIcmpTimeoutMilliseconds,

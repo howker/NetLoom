@@ -10,6 +10,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.Snmp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
@@ -39,20 +40,12 @@ namespace NetLoom.Wpf
             _discoveryCandidateRows =
                 new List<DiscoveryCandidateRow>();
 
-        private DateTime? _discoveryRunStartedUtc;
-        private DateTime? _discoveryRunFinishedUtc;
+        private readonly IDiscoveryRunJournal _discoveryRunJournal;
+        private Guid? _activeDiscoveryRunId;
+        private DiscoveryRunRecord _discoveryLatestRun;
         // Часы итога запуска; галерея подставляет свои, чтобы показать правдоподобную длительность.
         internal Func<DateTime> DiscoveryRunClock { get; set; } =
             () => DateTime.UtcNow;
-        private DiscoveryControlState _discoveryRunLastState =
-            DiscoveryControlState.Idle;
-        private readonly HashSet<string> _discoveryRunSnmpAddresses =
-            new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> _discoveryRunErrorAddresses =
-            new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase);
-        private DiscoveryControlSnapshot _discoveryRunLastSnapshot;
 
         private bool _discoveryClosed;
 
@@ -74,6 +67,8 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryRunFoundLabel");
             DiscoveryRunErrorsLabelText.Text =
                 UiText.Get("DiscoveryRunErrorsLabel");
+            DiscoveryRunKnownUnchangedLabelText.Text =
+                UiText.Get("DiscoveryRunKnownUnchangedLabel");
             DiscoveryProgressLabelText.Text =
                 UiText.Get("DiscoveryProgressLabel");
             DiscoveryCurrentAddressLabelText.Text =
@@ -151,6 +146,15 @@ namespace NetLoom.Wpf
 
             DiscoveryMessageText.Text =
                 string.Empty;
+
+            _discoveryLatestRun =
+                _discoveryRunJournal.CloseInterruptedRuns(DateTime.UtcNow);
+
+            if (_discoveryLatestRun != null &&
+                _discoveryLatestRun.FinishedUtc.HasValue)
+            {
+                RenderDiscoveryRunSummary();
+            }
 
             UpdateDiscoveryPresentation(
                 _discoveryControl.Current);
@@ -1264,6 +1268,15 @@ namespace NetLoom.Wpf
 
             try
             {
+                var selected =
+                    (DiscoveryProfileOption)DiscoveryProfileComboBox.SelectedItem;
+                var start = _discoveryRunJournal.BeginRun(
+                    request,
+                    selected.Profile.Name,
+                    DiscoveryRunClock());
+                _activeDiscoveryRunId = start.RunId;
+                request = request.WithExcludedAddresses(start.ExcludedAddresses);
+
                 await _discoveryControl
                     .StartAsync(
                         request,
@@ -1273,12 +1286,29 @@ namespace NetLoom.Wpf
                 when (_lifetimeCancellation
                     .IsCancellationRequested)
             {
+                FinishFailedDiscoveryStart();
             }
             catch (Exception error)
             {
+                FinishFailedDiscoveryStart();
                 ShowDiscoveryActionFailure(
                     error);
             }
+        }
+
+        private void FinishFailedDiscoveryStart()
+        {
+            if (!_activeDiscoveryRunId.HasValue)
+            {
+                return;
+            }
+
+            _discoveryLatestRun = _discoveryRunJournal.FinishRun(
+                _activeDiscoveryRunId.Value,
+                _discoveryControl.Current,
+                DiscoveryRunClock());
+            _activeDiscoveryRunId = null;
+            UpdateDiscoveryPresentation(_discoveryControl.Current);
         }
 
         private async void OnDiscoveryStopClick(
@@ -1441,7 +1471,7 @@ namespace NetLoom.Wpf
             if (candidate.SnmpError.HasValue)
             {
                 // Sprint 48: причина ошибки у адреса — вид ошибки SNMP, профиль запуска, время.
-                var profileId = _discoveryRunLastSnapshot?.AccessProfileId ??
+                var profileId = candidate.AccessProfileId ??
                     _discoveryControl.Current.AccessProfileId;
                 var profile = _discoveryProfiles.FirstOrDefault(
                     item => item.Id == profileId);
@@ -1480,32 +1510,35 @@ namespace NetLoom.Wpf
                     row);
             }
 
-            if (candidate.SnmpError.HasValue)
-            {
-                _discoveryRunErrorAddresses.Add(address);
-            }
-
-            if (candidate.SnmpResponded)
-            {
-                _discoveryRunSnmpAddresses.Add(
-                    address);
-                _discoveryRunErrorAddresses.Remove(address);
-            }
-
             RefreshDiscoveryCandidateRows();
             RenderDiscoveryRunSummary();
 
             try
             {
-                _discoveryCandidateMaterializer
-                    .Materialize(
+                Guid? deviceId;
+
+                if (_activeDiscoveryRunId.HasValue)
+                {
+                    var result = _discoveryRunJournal.RecordCandidate(
+                        _activeDiscoveryRunId.Value,
                         candidate,
-                        DateTime.UtcNow);
+                        DiscoveryRunClock());
+                    deviceId = result.DeviceId;
+                }
+                else
+                {
+                    deviceId = _discoveryCandidateMaterializer.Materialize(
+                        candidate,
+                        DiscoveryRunClock());
+                }
 
                 await RefreshTopologyAsync();
 
-                FocusDiscoveredDevice(
-                    address);
+                if (deviceId.HasValue)
+                {
+                    FocusDiscoveredDevice(
+                        address);
+                }
             }
             catch (Exception error)
             {
@@ -1624,9 +1657,14 @@ namespace NetLoom.Wpf
             TrackDiscoveryRun(
                 snapshot);
 
+            var lastRunState =
+                snapshot.State == DiscoveryControlState.Idle &&
+                _discoveryLatestRun != null
+                    ? _discoveryLatestRun.State
+                    : snapshot.State;
             var discoveryStatus =
                 DiscoveryStatusSemantic(
-                    snapshot.State);
+                    lastRunState);
 
             ApplyOperatorStatus(
                 DiscoveryStateGlyphText,
@@ -1634,7 +1672,7 @@ namespace NetLoom.Wpf
                 discoveryStatus,
                 UiText.Get(
                     DiscoveryStateResourceKey(
-                        snapshot.State)));
+                        lastRunState)));
 
             DiscoveryProgressValueText.Text =
                 snapshot.TotalAddresses > 0
@@ -1744,34 +1782,20 @@ namespace NetLoom.Wpf
             RenderDiscoveryRunSummary();
         }
 
-        // Sprint 48: итог запуска обнаружения (проверено, найдено, длительность) — до перезапуска приложения; хранение запусков — пункт «Входящих».
         private void TrackDiscoveryRun(
             DiscoveryControlSnapshot snapshot)
         {
-            if (IsDiscoveryRunActive(snapshot.State) &&
-                !IsDiscoveryRunActive(_discoveryRunLastState))
-            {
-                _discoveryRunStartedUtc =
-                    DiscoveryRunClock();
-                _discoveryRunFinishedUtc =
-                    null;
-                _discoveryRunSnmpAddresses.Clear();
-                _discoveryRunErrorAddresses.Clear();
-            }
-
             if ((snapshot.State == DiscoveryControlState.Completed ||
                  snapshot.State == DiscoveryControlState.Stopped ||
                  snapshot.State == DiscoveryControlState.Faulted) &&
-                IsDiscoveryRunActive(_discoveryRunLastState))
+                _activeDiscoveryRunId.HasValue)
             {
-                _discoveryRunFinishedUtc =
-                    DiscoveryRunClock();
+                _discoveryLatestRun = _discoveryRunJournal.FinishRun(
+                    _activeDiscoveryRunId.Value,
+                    snapshot,
+                    DiscoveryRunClock());
+                _activeDiscoveryRunId = null;
             }
-
-            _discoveryRunLastSnapshot =
-                snapshot;
-            _discoveryRunLastState =
-                snapshot.State;
         }
 
         private static bool IsDiscoveryRunActive(
@@ -1784,9 +1808,10 @@ namespace NetLoom.Wpf
 
         private void RenderDiscoveryRunSummary()
         {
-            if (!_discoveryRunStartedUtc.HasValue ||
-                !_discoveryRunFinishedUtc.HasValue ||
-                _discoveryRunLastSnapshot == null)
+            if (_discoveryLatestRun == null ||
+                !_discoveryLatestRun.FinishedUtc.HasValue ||
+                _activeDiscoveryRunId.HasValue ||
+                IsDiscoveryRunActive(_discoveryControl.Current.State))
             {
                 DiscoveryRunSummaryPanel.Visibility =
                     Visibility.Collapsed;
@@ -1796,25 +1821,28 @@ namespace NetLoom.Wpf
             DiscoveryRunSummaryPanel.Visibility =
                 Visibility.Visible;
             DiscoveryRunStartedValueText.Text =
-                _discoveryRunStartedUtc.Value
+                _discoveryLatestRun.StartedUtc
                     .ToLocalTime()
                     .ToString("G", CultureInfo.CurrentCulture);
             DiscoveryRunDurationValueText.Text =
                 DiscoveryRunDurationText(
-                    _discoveryRunFinishedUtc.Value -
-                    _discoveryRunStartedUtc.Value);
+                    _discoveryLatestRun.FinishedUtc.Value -
+                    _discoveryLatestRun.StartedUtc);
             DiscoveryRunCheckedValueText.Text =
                 UiText.FormatCount(
                     "DiscoveryRunChecked",
-                    _discoveryRunLastSnapshot.TotalAddresses,
-                    _discoveryRunLastSnapshot.ProcessedAddresses);
+                    _discoveryLatestRun.TotalAddresses,
+                    _discoveryLatestRun.ProcessedAddresses);
             DiscoveryRunFoundValueText.Text =
                 UiText.Format(
                     "DiscoveryRunFoundValue",
-                    _discoveryRunLastSnapshot.FoundCandidates,
-                    _discoveryRunSnmpAddresses.Count);
+                    _discoveryLatestRun.FoundCandidates,
+                    _discoveryLatestRun.SnmpResponded);
             DiscoveryRunErrorsValueText.Text =
-                _discoveryRunErrorAddresses.Count.ToString(
+                _discoveryLatestRun.ErrorCount.ToString(
+                    CultureInfo.CurrentCulture);
+            DiscoveryRunKnownUnchangedValueText.Text =
+                _discoveryLatestRun.KnownUnchangedCount.ToString(
                     CultureInfo.CurrentCulture);
         }
 
@@ -1871,6 +1899,8 @@ namespace NetLoom.Wpf
 
             var isBeforeFirstRun =
                 _discoveryCandidateRows.Count == 0 &&
+                _discoveryLatestRun == null &&
+                !_activeDiscoveryRunId.HasValue &&
                 snapshot.State ==
                     DiscoveryControlState.Idle &&
                 snapshot.TotalAddresses == 0 &&

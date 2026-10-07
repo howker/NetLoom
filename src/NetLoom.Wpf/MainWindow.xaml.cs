@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using NetLoom.Application.Alerts;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.Export;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Lookup;
@@ -463,6 +464,10 @@ public partial class MainWindow : Window
             discoveryCandidateMaterializer ??
             throw new ArgumentNullException(
                 nameof(discoveryCandidateMaterializer));
+
+        _discoveryRunJournal =
+            discoveryCandidateMaterializer as IDiscoveryRunJournal ??
+            new DiscoveryRunJournal(discoveryCandidateMaterializer);
 
         _nodeWidth =
             GetDoubleResource(

@@ -198,9 +198,21 @@ namespace NetLoom.Application.DiscoveryInbox
                     if (existing != null &&
                         existing.DiscoveryOrigin == DeviceDiscoveryOrigin.Automatic)
                     {
-                        AddChange(changes, "sysName", existing.DiscoveredName, candidate.SysName);
-                        AddChange(changes, "sysDescription", existing.SystemDescription, candidate.SysDescription);
-                        AddChange(changes, "sysObjectId", existing.SystemObjectId, candidate.SysObjectId);
+                        AddChange(
+                            changes,
+                            "sysName",
+                            existing.DiscoveredName,
+                            candidate.SysName);
+                        AddChange(
+                            changes,
+                            "sysDescription",
+                            existing.SystemDescription,
+                            candidate.SysDescription);
+                        AddChange(
+                            changes,
+                            "sysObjectId",
+                            existing.SystemObjectId,
+                            candidate.SysObjectId);
 
                         var oldInterfaceCount = interfaces.Count(
                             item => item.DeviceId == existing.Id && !item.IsHidden);
@@ -214,10 +226,6 @@ namespace NetLoom.Application.DiscoveryInbox
                                 candidate.InterfaceCount.ToString(CultureInfo.InvariantCulture));
                         }
                     }
-
-                    deviceId = _materializer.Materialize(
-                        candidate,
-                        observedUtc);
 
                     if (candidate.SnmpError.HasValue)
                     {
@@ -267,6 +275,13 @@ namespace NetLoom.Application.DiscoveryInbox
                     completeness = partialReason == DiscoveryPartialReason.None
                         ? DiscoveryResultCompleteness.Ready
                         : DiscoveryResultCompleteness.Partial;
+                }
+
+                if (matches.Length <= 1)
+                {
+                    deviceId = _materializer.Materialize(
+                        candidate,
+                        observedUtc);
                 }
 
                 var result = new DiscoveryRunResult(
@@ -405,12 +420,20 @@ namespace NetLoom.Application.DiscoveryInbox
                     return run;
                 }
 
-                var interrupted = WithResults(
-                    run,
-                    DiscoveryControlState.Faulted,
+                var interrupted = new DiscoveryRunRecord(
+                    run.Id,
+                    run.StartedUtc,
                     nowUtc,
+                    DiscoveryControlState.Faulted,
+                    run.AccessProfileId,
+                    run.AccessProfileName,
+                    run.ScopeText,
                     run.TotalAddresses,
                     run.ProcessedAddresses,
+                    run.FoundCandidates,
+                    run.SnmpResponded,
+                    run.ErrorCount,
+                    run.KnownUnchangedCount,
                     "DISCOVERY_INTERRUPTED");
                 _runs.SaveRun(interrupted);
                 _scopes.Remove(run.Id);

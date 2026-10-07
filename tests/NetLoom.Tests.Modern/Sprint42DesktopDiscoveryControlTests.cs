@@ -69,6 +69,10 @@ namespace NetLoom.Tests.Modern
                 },
                 new List<string>(tokens));
 
+            Assert.AreEqual(
+                -1,
+                new List<string>(tokens).IndexOf("--exclude"));
+
             var arguments =
                 EngineDiscoveryCommandBuilder
                     .FormatArguments(
@@ -86,6 +90,43 @@ namespace NetLoom.Tests.Modern
                     StringComparison.OrdinalIgnoreCase));
         }
 
+
+        [TestMethod]
+        public void CommandBuilderPassesExcludedAddressesBeforeControlStdin()
+        {
+            var original = new DiscoveryControlRequest(
+                "10.0.0.0/24",
+                ProfileId,
+                SnmpVersion.V2C);
+            var request = original.WithExcludedAddresses(
+                new[] { "10.0.0.5", "10.0.0.9" });
+            var tokens = new List<string>(
+                EngineDiscoveryCommandBuilder.BuildTokens(request));
+            var excludeIndex = tokens.IndexOf("--exclude");
+
+            Assert.IsTrue(excludeIndex >= 0);
+            Assert.AreEqual("10.0.0.5,10.0.0.9", tokens[excludeIndex + 1]);
+            Assert.AreEqual(excludeIndex + 2, tokens.IndexOf("--control-stdin"));
+            Assert.AreEqual(0, original.ExcludedAddresses.Count);
+            Assert.AreEqual(original.Cidr, request.Cidr);
+            Assert.AreEqual(original.AccessProfileId, request.AccessProfileId);
+        }
+
+        [DataTestMethod]
+        [DataRow("10.0.0.x")]
+        [DataRow("::1")]
+        [DataRow("")]
+        public void DiscoveryRequestRejectsInvalidExcludedAddress(
+            string address)
+        {
+            var request = new DiscoveryControlRequest(
+                "10.0.0.0/24",
+                ProfileId,
+                SnmpVersion.V2C);
+
+            Assert.ThrowsExactly<ArgumentException>(
+                () => request.WithExcludedAddresses(new[] { address }));
+        }
 
         [TestMethod]
         public void CommandBuilderUsesExplicitStartEndAndMaskForOperatorRange()

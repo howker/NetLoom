@@ -272,7 +272,9 @@ ORDER BY address;";
                                     ParseEnum<DiscoveryPartialReason>(reader.GetString(13)),
                                     ParseEnum<DiscoveryResultReason>(reader.GetString(14)),
                                     Text(reader, 15),
-                                    fieldChanges ?? (IReadOnlyList<DiscoveryFieldChange>)new DiscoveryFieldChange[0],
+                                    fieldChanges != null
+                                        ? (IReadOnlyList<DiscoveryFieldChange>)fieldChanges
+                                        : new DiscoveryFieldChange[0],
                                     ParseEnum<DiscoveryResultResolution>(reader.GetString(16)),
                                     ReadNullableUtc(reader, 17)));
                         }

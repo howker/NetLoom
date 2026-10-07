@@ -1,11 +1,13 @@
 using System;
 using System.Diagnostics;
+using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Topology;
 using NetLoom.Desktop.Discovery;
 using NetLoom.Desktop.Monitoring;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
+using NetLoom.Persistence.Sqlite.Discovery;
 using NetLoom.Persistence.Sqlite.Locations;
 using NetLoom.Persistence.Sqlite.Lookup;
 using NetLoom.Persistence.Sqlite.MapLayout;
@@ -134,6 +136,21 @@ namespace NetLoom.Desktop
                     accessProfileRepository
                         .GetEnabled();
 
+                var runRepository =
+                    new SqliteDiscoveryRunRepository(
+                        connectionFactory);
+                var exclusionSource =
+                    new SqliteDiscoveryExclusionSource(
+                        connectionFactory);
+                var discoveryJournal =
+                    new DiscoveryRunJournal(
+                        runRepository,
+                        new MaterializedTopologyDiscoveryReader(
+                            topologyRepository),
+                        new DiscoveryCandidateTopologyMaterializer(
+                            topologyRepository),
+                        exclusionSource);
+
                 var application =
                     new System.Windows.Application();
 
@@ -154,8 +171,7 @@ namespace NetLoom.Desktop
                         monitoringControl,
                         discoveryControl,
                         discoveryProfiles,
-                        new DiscoveryCandidateTopologyMaterializer(
-                            topologyRepository),
+                        discoveryJournal,
                         FileUiShellStateStore
                             .CreateDefault());
 

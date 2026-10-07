@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using NetLoom.Application.Monitoring;
 using NetLoom.Domain.Access;
 
@@ -63,6 +64,9 @@ namespace NetLoom.Engine
         public int DiscoveryInterAddressDelayMilliseconds { get; private set; }
 
         public int DiscoveryMaxAddresses { get; private set; }
+
+        public IReadOnlyList<IPAddress> DiscoveryExcludedAddresses { get; private set; } =
+            new IPAddress[0];
 
         public double? InterfaceErrorRatePerMinuteThreshold
         {
@@ -184,6 +188,7 @@ namespace NetLoom.Engine
                             "tcp-ports",
                             "inter-address-delay-ms",
                             "max-addresses",
+                            "exclude",
                             "control-stdin"
                         });
 
@@ -311,6 +316,8 @@ namespace NetLoom.Engine
                             1,
                             int.MaxValue,
                             "INVALID_TCP_TIMEOUT"),
+                    DiscoveryExcludedAddresses = ParseExcludedAddresses(
+                        Get(discoveryValues, "exclude")),
                     DiscoveryTcpPorts = ParsePorts(
                         Get(discoveryValues, "tcp-ports") ??
                         "22,80,443"),
@@ -671,6 +678,32 @@ namespace NetLoom.Engine
             }
 
             return parsed;
+        }
+
+        private static IReadOnlyList<IPAddress> ParseExcludedAddresses(
+            string value)
+        {
+            if (value == null)
+            {
+                return new IPAddress[0];
+            }
+
+            var result = new List<IPAddress>();
+
+            foreach (var token in value.Split(','))
+            {
+                IPAddress address;
+
+                if (!IPAddress.TryParse(token.Trim(), out address) ||
+                    address.AddressFamily != AddressFamily.InterNetwork)
+                {
+                    throw Invalid("INVALID_DISCOVERY_EXCLUDE");
+                }
+
+                result.Add(address);
+            }
+
+            return result.AsReadOnly();
         }
 
         private static IReadOnlyList<int> ParsePorts(

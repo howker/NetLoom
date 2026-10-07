@@ -2418,4 +2418,7 @@ Poll: {2}</value>
   <data name="AvailabilityTcpClosed" xml:space="preserve">
     <value>Closed: {0}</value>
   </data>
+  <data name="DiscoveryRunKnownUnchangedLabel" xml:space="preserve">
+    <value>Unchanged</value>
+  </data>
 </root>

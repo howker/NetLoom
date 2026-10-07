@@ -67,7 +67,13 @@ namespace NetLoom.Tests.Integration
                     var start = journal.BeginRun(Request(), null, T0);
                     var icmpOnly = journal.RecordCandidate(
                         start.RunId,
-                        Candidate("10.0.0.1", null, false, 0),
+                        Candidate(
+                            "10.0.0.1",
+                            null,
+                            false,
+                            0,
+                            description: null,
+                            objectId: null),
                         T0.AddSeconds(1));
                     var noName = journal.RecordCandidate(
                         start.RunId,

@@ -2418,4 +2418,7 @@
   <data name="AvailabilityTcpClosed" xml:space="preserve">
     <value>Закрыты: {0}</value>
   </data>
+  <data name="DiscoveryRunKnownUnchangedLabel" xml:space="preserve">
+    <value>Без изменений</value>
+  </data>
 </root>

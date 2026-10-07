@@ -138,6 +138,9 @@ namespace NetLoom.Tests.Unit
                                     window.DiscoveryRunClock =
                                         () => runClock;
 
+                                    ((ComboBox)window.FindName("DiscoveryProfileComboBox")).SelectedIndex = 0;
+                                    Click((Button)window.FindName("DiscoveryStartButton"));
+
                                     discoveryControl.PublishState(
                                         DiscoveryControlState.Running,
                                         0,
@@ -360,6 +363,9 @@ namespace NetLoom.Tests.Unit
                                         new DateTime(2026, 10, 7, 9, 12, 5, DateTimeKind.Utc);
                                     window.DiscoveryRunClock =
                                         () => runClock;
+
+                                    ((ComboBox)window.FindName("DiscoveryProfileComboBox")).SelectedIndex = 0;
+                                    Click((Button)window.FindName("DiscoveryStartButton"));
 
                                     discoveryControl.PublishState(
                                         DiscoveryControlState.Running,
