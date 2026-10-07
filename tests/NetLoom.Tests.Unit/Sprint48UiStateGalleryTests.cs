@@ -1005,6 +1005,62 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        [TestMethod]
+        public void ProfileCheckGallery()
+        {
+            RunOnSta(() =>
+            {
+                System.Threading.SynchronizationContext.SetSynchronizationContext(
+                    new System.Windows.Threading.DispatcherSynchronizationContext());
+                var outputDirectory = Path.Combine(Path.GetDirectoryName(ResolveOutputDirectory()), "sprint48-profile-check");
+                Directory.CreateDirectory(outputDirectory);
+                foreach (var file in Directory.GetFiles(outputDirectory, "*.png")) File.Delete(file);
+                var findings = new List<string>();
+                // Оси: успешная проверка с частичной Q-BRIDGE, ошибка аутентификации, обе темы.
+                // Ширина диалога задана токеном; наведение и прочие состояния покрывает общая галерея.
+                foreach (var failed in new[] { false, true })
+                foreach (var dark in new[] { false, true })
+                {
+                    var scenario = failed ? "43-profile-check-auth-failed" : "42-profile-check-ok";
+                    var theme = dark ? "dark" : "light";
+                    var data = new Sprint48DiscoveryInboxFixture();
+                    var window = new MainWindow(new FixedRefreshProvider(EmptySnapshot()), new EmptyLookupReader(),
+                        new GalleryMonitoringControl(), new GalleryDiscoveryControl(), new[] { data.Profile },
+                        new GalleryCandidateMaterializer());
+                    window.DiscoveryProfileCreateRequested += (sender, args) => Assert.Fail("Gallery check must not save.");
+                    window.DiscoveryProfileCheckRequested += (sender, args) =>
+                        args.Result = Task.FromResult(Sprint48ProfileCheckDialogFixture.Report(failed));
+                    try
+                    {
+                        PrepareWindow(window, NormalWidth, GalleryHeight);
+                        if (dark) Click((Button)window.FindName("ShellThemeButton"));
+                        ((TextBox)window.FindName("DiscoveryStartAddressTextBox")).Text = "10.48.228.14";
+                        Sprint48ProfileCheckDialogFixture.Open(window, null, dialog =>
+                        {
+                            Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<PasswordBox>().Single().Password =
+                                Sprint48ProfileCheckDialogFixture.Community;
+                            // Правдоподобное имя нового профиля в кадре.
+                            Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<TextBox>().First().Text = "АГПЗ-v2c";
+                            Click(Sprint48ProfileCheckDialogFixture.Named<Button>(dialog, "DiscoveryProfileCheckButton"));
+                            var rows = Sprint48ProfileCheckDialogFixture.Named<StackPanel>(dialog, "DiscoveryProfileCheckRows");
+                            WaitForCondition(() => rows.Children.Count == 6);
+                            dialog.UpdateLayout();
+                            Assert.IsTrue(Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<TextBlock>()
+                                .All(text => !text.Text.Contains(Sprint48ProfileCheckDialogFixture.Community)));
+                            CollectTextClipping(dialog.Content as DependencyObject, scenario + "/" + theme, findings);
+                            SaveBitmap(Capture(dialog.Content as FrameworkElement),
+                                Path.Combine(outputDirectory, scenario + "-" + theme + ".png"));
+                        });
+                    }
+                    finally { window.Close(); PumpDispatcher(); }
+                }
+                File.WriteAllLines(Path.Combine(outputDirectory, "findings.txt"),
+                    findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray());
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(4, Directory.GetFiles(outputDirectory, "*.png").Length);
+            });
+        }
+
         private sealed class GalleryDiscoveryControl :
             IDiscoveryControl
         {

@@ -31,6 +31,9 @@ namespace NetLoom.Wpf
         private IReadOnlyList<AccessProfile> _discoveryProfiles;
         private Guid? _profileSettingsSelectedId;
 
+        public event EventHandler<DiscoveryProfileCheckRequestedEventArgs>
+            DiscoveryProfileCheckRequested;
+
         public event EventHandler<DiscoveryProfileCreateRequestedEventArgs>
             DiscoveryProfileCreateRequested;
         public event EventHandler<DiscoveryProfileUpdateRequestedEventArgs>
@@ -597,6 +600,27 @@ namespace NetLoom.Wpf
                         Visibility.Collapsed
                 };
 
+            var checkTitle = new TextBlock { Text = UiText.Get("DiscoveryProfileCheckTitle") };
+            var checkAddress = new TextBox
+            {
+                Name = "DiscoveryProfileCheckAddress",
+                Text = DiscoveryStartAddressTextBox.Text ?? string.Empty
+            };
+            var checkAddressHint = new TextBlock { Text = UiText.Get("DiscoveryProfileCheckAddressHint") };
+            var checkError = new TextBlock { TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+            var checkButton = new Button
+            {
+                Name = "DiscoveryProfileCheckButton",
+                Content = UiText.Get("DiscoveryProfileCheckAction"),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            var checkProgress = new TextBlock { TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+            var checkRows = new StackPanel { Name = "DiscoveryProfileCheckRows" };
+            AutomationProperties.SetLabeledBy(checkAddress, checkTitle);
+            AutomationProperties.SetName(checkAddress, checkTitle.Text);
+            LiveRegion.SetIsPolite(checkProgress, true);
+            LiveRegion.SetIsPolite(checkError, true);
+
             var saveButton =
                 new Button
                 {
@@ -652,6 +676,13 @@ namespace NetLoom.Wpf
                 communityHint);
             content.Children.Add(
                 errorText);
+            content.Children.Add(checkTitle);
+            content.Children.Add(checkAddress);
+            content.Children.Add(checkAddressHint);
+            content.Children.Add(checkError);
+            content.Children.Add(checkButton);
+            content.Children.Add(checkProgress);
+            content.Children.Add(checkRows);
             content.Children.Add(
                 actionPanel);
 
@@ -663,7 +694,7 @@ namespace NetLoom.Wpf
                         : UiText.Get(
                             "DiscoveryProfileEditDialogTitle"),
                     content,
-                    430);
+                    (double)FindResource("NetLoom.Width.DiscoveryProfileDialog"));
 
             content.Margin =
                 (Thickness)dialog.FindResource(
@@ -704,6 +735,84 @@ namespace NetLoom.Wpf
             saveButton.Margin =
                 (Thickness)dialog.FindResource(
                     "NetLoom.Thickness.InlineGap");
+
+            checkTitle.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.FieldLabel");
+            checkTitle.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.SectionGapTop");
+            checkAddress.SetResourceReference(Control.FontFamilyProperty, "NetLoom.FontFamily.Mono");
+            checkAddressHint.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            checkAddressHint.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapXsTop");
+            checkError.SetResourceReference(TextBlock.ForegroundProperty, "NetLoom.Brush.Critical");
+            checkError.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            checkButton.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.SecondaryButton");
+            checkButton.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            checkProgress.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            checkProgress.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            var dialogClosed = false;
+            dialog.Closed += (sender, args) => dialogClosed = true;
+            System.Windows.Input.KeyboardNavigation.SetTabNavigation(dialog,
+                System.Windows.Input.KeyboardNavigationMode.Cycle);
+            dialog.Loaded += (sender, args) => nameTextBox.Focus();
+
+            checkButton.Click += async (sender, args) =>
+            {
+                System.Net.IPAddress address;
+                if (!System.Net.IPAddress.TryParse((checkAddress.Text ?? string.Empty).Trim(), out address)
+                    || address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork
+                    || (checkAddress.Text ?? string.Empty).Trim().Split('.').Length != 4)
+                {
+                    checkRows.Children.Clear();
+                    checkProgress.Visibility = Visibility.Collapsed;
+                    checkError.Text = UiText.Get("DiscoveryProfileCheckAddressInvalid");
+                    checkError.Visibility = Visibility.Visible;
+                    checkAddress.Focus();
+                    return;
+                }
+                var selectedVersion = versionComboBox.SelectedItem as DiscoverySnmpVersionOption;
+                var handler = DiscoveryProfileCheckRequested;
+                if (handler == null || selectedVersion == null)
+                {
+                    checkError.Text = UiText.Get("DiscoveryProfileCheckUnavailable");
+                    checkError.Visibility = Visibility.Visible;
+                    return;
+                }
+                var community = communityPasswordBox.Password ?? string.Empty;
+                if (creating && community.Length == 0)
+                {
+                    checkError.Text = UiText.Get("DiscoveryProfileValidationCommunity");
+                    checkError.Visibility = Visibility.Visible;
+                    communityPasswordBox.Focus();
+                    return;
+                }
+                var bytes = community.Length == 0 ? null : Encoding.UTF8.GetBytes(community);
+                checkError.Visibility = Visibility.Collapsed;
+                checkRows.Children.Clear();
+                checkButton.IsEnabled = false;
+                checkProgress.Text = UiText.Get("DiscoveryProfileChecking");
+                checkProgress.Visibility = Visibility.Visible;
+                try
+                {
+                    var request = new DiscoveryProfileCheckRequestedEventArgs(address, selectedVersion.Version,
+                        bytes, creating ? (Guid?)null : editingProfile.Id);
+                    handler(this, request);
+                    if (request.Result == null) throw new InvalidOperationException();
+                    var report = await request.Result;
+                    if (dialogClosed) return;
+                    foreach (var item in report.Items) checkRows.Children.Add(CreateProfileCheckRow(item));
+                    checkProgress.Text = UiText.Get("DiscoveryProfileCheckCompleted");
+                }
+                catch
+                {
+                    if (dialogClosed) return;
+                    checkProgress.Visibility = Visibility.Collapsed;
+                    checkError.Text = UiText.Get("DiscoveryProfileCheckUnavailable");
+                    checkError.Visibility = Visibility.Visible;
+                }
+                finally
+                {
+                    if (bytes != null) Array.Clear(bytes, 0, bytes.Length);
+                    if (!dialogClosed) checkButton.IsEnabled = true;
+                }
+            };
 
             Action<string> showError =
                 message =>
@@ -893,6 +1002,74 @@ namespace NetLoom.Wpf
                 };
 
             dialog.ShowDialog();
+        }
+
+        private FrameworkElement CreateProfileCheckRow(SnmpProfileCheckItem item)
+        {
+            var neutralAbsent = item.Status == SnmpProfileCheckStatus.Absent
+                && (item.Kind == SnmpProfileCheckKind.BridgeMib || item.Kind == SnmpProfileCheckKind.QBridgeMib);
+            var semantic = item.Status == SnmpProfileCheckStatus.Failed ? OperatorStatusSemantic.Critical
+                : item.Status == SnmpProfileCheckStatus.Partial || item.Status == SnmpProfileCheckStatus.Absent && !neutralAbsent
+                    ? OperatorStatusSemantic.Warning : OperatorStatusSemantic.Normal;
+            var row = new Grid { DataContext = item };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            var glyph = new TextBlock
+            {
+                Text = item.Status == SnmpProfileCheckStatus.NotChecked || neutralAbsent
+                    ? UiText.Get("OperatorStatusGlyphNotChecked")
+                    : semantic == OperatorStatusSemantic.Warning ? UiText.Get("OperatorStatusGlyphProfileWarning")
+                    : semantic == OperatorStatusSemantic.Critical ? UiText.Get("OperatorStatusGlyphProfileFailed")
+                    : OperatorStatusGlyph(semantic),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            glyph.SetResourceReference(TextBlock.ForegroundProperty, OperatorStatusBrushKey(semantic));
+            glyph.SetResourceReference(FrameworkElement.MinWidthProperty, "NetLoom.Status.GlyphMinWidth");
+            glyph.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.StatusGlyph");
+            var label = new TextBlock
+            {
+                Text = UiText.Get("DiscoveryProfileCheck" + item.Kind),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var detail = new TextBlock
+            {
+                Text = ProfileCheckDetail(item),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap
+            };
+            detail.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.FieldGapLeft");
+            detail.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            System.Windows.Documents.Typography.SetNumeralAlignment(detail, FontNumeralAlignment.Tabular);
+            Grid.SetColumn(label, 1);
+            Grid.SetColumn(detail, 2);
+            row.Children.Add(glyph);
+            row.Children.Add(label);
+            row.Children.Add(detail);
+            return row;
+        }
+
+        private static string ProfileCheckDetail(SnmpProfileCheckItem item)
+        {
+            if (item.Status == SnmpProfileCheckStatus.NotChecked) return UiText.Get("DiscoveryProfileCheckNotChecked");
+            if (item.Status == SnmpProfileCheckStatus.Failed)
+            {
+                if (!item.Failure.HasValue) return UiText.Get("DiscoveryProfileCheckNoResponse");
+                var key = item.Failure == SnmpTransportFailure.UnsupportedCredentials ? "Unsupported"
+                    : item.Failure.Value.ToString();
+                return UiText.Get("DiscoveryErrorSnmp" + key);
+            }
+            if (item.Status == SnmpProfileCheckStatus.Partial) return UiText.Get("DiscoveryProfileCheckPartial");
+            if (item.Status == SnmpProfileCheckStatus.Absent) return UiText.Get("DiscoveryProfileCheckAbsent");
+            if (item.Kind == SnmpProfileCheckKind.Availability && item.Milliseconds.HasValue)
+                return UiText.Format("DiscoveryProfileCheckMilliseconds", item.Milliseconds.Value);
+            if (item.Kind == SnmpProfileCheckKind.IfMib && item.Count.HasValue)
+                return UiText.FormatCount("DiscoveryProfileCheckInterfaces", item.Count.Value);
+            if (item.Kind == SnmpProfileCheckKind.LldpMib && item.Count.HasValue)
+                return UiText.FormatCount("DiscoveryProfileCheckNeighbors", item.Count.Value);
+            return string.Empty;
         }
 
         private bool ShowProfileDeleteConfirmation(
@@ -2170,6 +2347,24 @@ namespace NetLoom.Wpf
                     throw new ArgumentOutOfRangeException(
                         nameof(version));
             }
+        }
+
+        public sealed class DiscoveryProfileCheckRequestedEventArgs : EventArgs
+        {
+            public DiscoveryProfileCheckRequestedEventArgs(System.Net.IPAddress address, SnmpVersion snmpVersion,
+                byte[] communityUtf8, Guid? profileId)
+            {
+                Address = address ?? throw new ArgumentNullException(nameof(address));
+                SnmpVersion = snmpVersion;
+                CommunityUtf8 = communityUtf8;
+                ProfileId = profileId;
+            }
+
+            public System.Net.IPAddress Address { get; }
+            public SnmpVersion SnmpVersion { get; }
+            public byte[] CommunityUtf8 { get; }
+            public Guid? ProfileId { get; }
+            public Task<SnmpProfileCheckReport> Result { get; set; }
         }
 
         public sealed class DiscoveryProfileCreateRequestedEventArgs :

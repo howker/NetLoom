@@ -140,6 +140,10 @@
              Link="Engine\EngineSmtpConfiguration.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\SmtpInterfaceDegradationDeliveryAdapter.cs"
              Link="Engine\SmtpInterfaceDegradationDeliveryAdapter.cs" />
+    <Compile Include="..\..\src\NetLoom.Desktop\Discovery\DesktopEngineProfileCheck.cs"
+             Link="Desktop\Discovery\DesktopEngineProfileCheck.cs" />
+    <Compile Include="..\..\src\NetLoom.Desktop\Discovery\EngineProfileCheckMarkerParser.cs"
+             Link="Desktop\Discovery\EngineProfileCheckMarkerParser.cs" />
   </ItemGroup>
 
 </Project>

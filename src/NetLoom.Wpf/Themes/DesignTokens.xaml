@@ -8,6 +8,7 @@
 
     <sys:Double x:Key="NetLoom.Width.DiscoveryInboxAddress">112</sys:Double>
     <sys:Double x:Key="NetLoom.Width.DiscoveryPlacementDialog">560</sys:Double>
+    <sys:Double x:Key="NetLoom.Width.DiscoveryProfileDialog">560</sys:Double>
     <sys:Double x:Key="NetLoom.Height.DiscoveryPlacementList">240</sys:Double>
     <Thickness x:Key="NetLoom.Thickness.DiscoveryInboxAction">0,0,12,12</Thickness>
     <Thickness x:Key="NetLoom.Thickness.DiscoveryInboxSelection">0,0,12,0</Thickness>

@@ -3,6 +3,10 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Threading;
+using NetLoom.Application.Discovery;
+using NetLoom.Application.Snmp;
+using NetLoom.Protocols.Snmp.Discovery;
+using NetLoom.Protocols.Snmp.Transport;
 using NetLoom.Application.Monitoring;
 using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations;
@@ -137,6 +141,11 @@ namespace NetLoom.Engine
                     hostLog);
             }
 
+            if (options.Command == "check-profile")
+            {
+                return RunProfileCheck(options);
+            }
+
             if (options.Command ==
                 "discover")
             {
@@ -148,6 +157,45 @@ namespace NetLoom.Engine
             return PollOnce(
                 options,
                 hostLog);
+        }
+
+        private static int RunProfileCheck(EngineCommandLine options)
+        {
+            SnmpProfileCheckReport report;
+            try
+            {
+                var request = new SnmpProfileCheckRequest(options.Address, options.Port, options.Version,
+                    EngineSnmpCredentialFactory.Create(options.Version), options.TimeoutMilliseconds,
+                    options.RetryCount, options.MaxRepetitions, options.DiscoveryIcmpTimeoutMilliseconds);
+                report = new SnmpProfileChecker(new SharpSnmpTransport(), new SystemNetworkDiscoveryProbe())
+                    .Check(request, CancellationToken.None);
+            }
+            catch
+            {
+                // Не передаём исключения с учётными данными в общий журнал HOST_FATAL.
+                var failed = new System.Collections.Generic.List<SnmpProfileCheckItem>();
+                foreach (SnmpProfileCheckKind kind in Enum.GetValues(typeof(SnmpProfileCheckKind)))
+                    failed.Add(new SnmpProfileCheckItem(kind, SnmpProfileCheckStatus.Failed,
+                        failure: SnmpTransportFailure.Protocol));
+                report = new SnmpProfileCheckReport(failed);
+            }
+
+            var kinds = new[] { "availability", "system", "if-mib", "lldp-mib", "bridge-mib", "q-bridge-mib" };
+            var statuses = new[] { "ok", "partial", "absent", "failed", "not-checked" };
+            foreach (var item in report.Items)
+            {
+                var failure = item.Failure.HasValue
+                    ? item.Failure == SnmpTransportFailure.UnsupportedCredentials ? "unsupported"
+                        : item.Failure.Value.ToString().ToLowerInvariant()
+                    : "none";
+                Console.WriteLine("NETLOOM_PROFILE_CHECK item=" + kinds[(int)item.Kind]
+                    + " status=" + statuses[(int)item.Status]
+                    + " count=" + (item.Count.HasValue ? item.Count.Value.ToString(CultureInfo.InvariantCulture) : "none")
+                    + " ms=" + (item.Milliseconds.HasValue ? item.Milliseconds.Value.ToString(CultureInfo.InvariantCulture) : "none")
+                    + " failure=" + failure);
+            }
+            Console.WriteLine("NETLOOM_PROFILE_CHECK state=completed");
+            return 0;
         }
 
         private static int RunSmtpReadiness()

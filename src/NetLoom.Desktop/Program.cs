@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Topology;
@@ -180,6 +182,12 @@ namespace NetLoom.Desktop
 
                 mainWindow.DiscoveryInboxActions = inboxActions;
 
+                mainWindow.DiscoveryProfileCheckRequested +=
+                    (sender, request) =>
+                    {
+                        request.Result = CheckProfileAsync(engineExecutablePath, processEnvironmentProvider, request);
+                    };
+
                 mainWindow.DiscoveryProfileCreateRequested +=
                     (sender, request) =>
                     {
@@ -274,6 +282,17 @@ namespace NetLoom.Desktop
                 {
                     hostLog.Dispose();
                 }
+            }
+        }
+
+        private static async Task<SnmpProfileCheckReport>
+            CheckProfileAsync(string engineExecutablePath, IDiscoveryProcessEnvironmentProvider environmentProvider,
+                MainWindow.DiscoveryProfileCheckRequestedEventArgs request)
+        {
+            using (var checker = new DesktopEngineProfileCheck(engineExecutablePath, environmentProvider))
+            {
+                return await checker.CheckAsync(request.Address, request.SnmpVersion,
+                    request.CommunityUtf8, request.ProfileId).ConfigureAwait(false);
             }
         }
     }

@@ -2658,4 +2658,91 @@ Poll: {2}</value>
   <data name="DiscoveryInboxPlacementClose" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="DiscoveryProfileCheckTitle" xml:space="preserve">
+    <value>Check on a device</value>
+  </data>
+  <data name="DiscoveryProfileCheckAddressHint" xml:space="preserve">
+    <value>Address example: 192.0.2.1</value>
+  </data>
+  <data name="DiscoveryProfileCheckAddressInvalid" xml:space="preserve">
+    <value>Enter an IPv4 address, for example 192.0.2.1</value>
+  </data>
+  <data name="DiscoveryProfileCheckAction" xml:space="preserve">
+    <value>Check profile</value>
+  </data>
+  <data name="DiscoveryProfileChecking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="DiscoveryProfileCheckCompleted" xml:space="preserve">
+    <value>Check completed</value>
+  </data>
+  <data name="DiscoveryProfileCheckUnavailable" xml:space="preserve">
+    <value>Could not check the profile. Try again</value>
+  </data>
+  <data name="DiscoveryProfileCheckAvailability" xml:space="preserve">
+    <value>Availability</value>
+  </data>
+  <data name="DiscoveryProfileCheckSystem" xml:space="preserve">
+    <value>sysName, sysObjectID</value>
+  </data>
+  <data name="DiscoveryProfileCheckIfMib" xml:space="preserve">
+    <value>IF-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckLldpMib" xml:space="preserve">
+    <value>LLDP-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckBridgeMib" xml:space="preserve">
+    <value>BRIDGE-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckQBridgeMib" xml:space="preserve">
+    <value>Q-BRIDGE-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckPartial" xml:space="preserve">
+    <value>Partial</value>
+  </data>
+  <data name="DiscoveryProfileCheckAbsent" xml:space="preserve">
+    <value>Absent in agent</value>
+  </data>
+  <data name="DiscoveryProfileCheckNotChecked" xml:space="preserve">
+    <value>Not checked</value>
+  </data>
+  <data name="DiscoveryProfileCheckNoResponse" xml:space="preserve">
+    <value>No response</value>
+  </data>
+  <data name="DiscoveryProfileCheckMilliseconds" xml:space="preserve">
+    <value>{0} ms</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesOne" xml:space="preserve">
+    <value>{0} interface</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesFew" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesMany" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesOther" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsOne" xml:space="preserve">
+    <value>{0} neighbor</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsFew" xml:space="preserve">
+    <value>{0} neighbors</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsMany" xml:space="preserve">
+    <value>{0} neighbors</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsOther" xml:space="preserve">
+    <value>{0} neighbors</value>
+  </data>
+  <data name="OperatorStatusGlyphNotChecked" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="OperatorStatusGlyphProfileWarning" xml:space="preserve">
+    <value>⚠</value>
+  </data>
+  <data name="OperatorStatusGlyphProfileFailed" xml:space="preserve">
+    <value>✕</value>
+  </data>
 </root>

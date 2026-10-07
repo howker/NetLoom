@@ -166,6 +166,31 @@ namespace NetLoom.Engine
                 };
             }
 
+            if (command == "check-profile")
+            {
+                var checkValues = ParseOptions(args.Skip(1).ToArray(), new[]
+                {
+                    "address", "port", "version", "timeout-ms", "retries", "max-repetitions", "icmp-timeout-ms"
+                });
+                IPAddress checkAddress;
+                if (!IPAddress.TryParse(Required(checkValues, "address"), out checkAddress)
+                    || checkAddress.AddressFamily != AddressFamily.InterNetwork)
+                    throw Invalid("INVALID_ADDRESS");
+                var checkVersion = ParseEnum<SnmpVersion>(Get(checkValues, "version") ?? "V2C", "INVALID_SNMP_VERSION");
+                if (!Enum.IsDefined(typeof(SnmpVersion), checkVersion)) throw Invalid("INVALID_SNMP_VERSION");
+                return new EngineCommandLine
+                {
+                    Command = command,
+                    Address = checkAddress,
+                    Port = ParseInt(Get(checkValues, "port"), 161, 1, 65535, "INVALID_PORT"),
+                    Version = checkVersion,
+                    TimeoutMilliseconds = ParseInt(Get(checkValues, "timeout-ms"), 750, 1, int.MaxValue, "INVALID_TIMEOUT"),
+                    RetryCount = ParseInt(Get(checkValues, "retries"), 0, 0, int.MaxValue, "INVALID_RETRY_COUNT"),
+                    MaxRepetitions = ParseInt(Get(checkValues, "max-repetitions"), 10, 1, int.MaxValue, "INVALID_MAX_REPETITIONS"),
+                    DiscoveryIcmpTimeoutMilliseconds = ParseInt(Get(checkValues, "icmp-timeout-ms"), 500, 1, int.MaxValue, "INVALID_ICMP_TIMEOUT")
+                };
+            }
+
             if (command == "discover")
             {
                 var discoveryValues =
