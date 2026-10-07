@@ -287,6 +287,20 @@ ORDER BY address;";
             return results.AsReadOnly();
         }
 
+        public void DeleteResult(Guid runId, string address)
+        {
+            using (var connection = _connectionFactory.OpenConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+DELETE FROM discovery_run_results
+WHERE run_id = @runId AND address = @address;";
+                Add(command, "@runId", runId.ToString("D"));
+                Add(command, "@address", address);
+                command.ExecuteNonQuery();
+            }
+        }
+
         public void PruneRuns(
             int keepLatest)
         {

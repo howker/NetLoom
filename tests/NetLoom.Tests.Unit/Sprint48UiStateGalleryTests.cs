@@ -12,11 +12,13 @@ using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.Snmp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.Discovery;
 
 namespace NetLoom.Tests.Unit
 {
@@ -462,15 +464,14 @@ namespace NetLoom.Tests.Unit
                                             errorsText.Text + "».");
                                     }
 
-                                    var rows = ((ListBox)window.FindName("DiscoveryCandidatesList"))
-                                        .Items.Cast<object>().ToArray();
+                                    var rows = ((ItemsControl)window.FindName("DiscoveryInboxGroupsList"))
+                                        .Items.Cast<DiscoveryInboxGroup>().SelectMany(group => group.Rows).ToArray();
 
                                     for (var i = 0; i < failures.Length; i++)
                                     {
                                         var address = "10.48.228." + (10 + i);
                                         var row = rows.Single(candidate =>
-                                            (string)candidate.GetType().GetProperty("Address")
-                                                .GetValue(candidate) == address);
+                                            candidate.Address == address);
                                         var errorKey = failures[i] == SnmpTransportFailure.Authentication
                                             ? "DiscoveryErrorSnmpAuthentication"
                                             : failures[i] == SnmpTransportFailure.Timeout
@@ -482,8 +483,7 @@ namespace NetLoom.Tests.Unit
                                             UiText.Get(errorKey),
                                             profile.Name,
                                             runClock.ToLocalTime().ToString("t", CultureInfo.CurrentCulture));
-                                        var actualSummary = (string)row.GetType().GetProperty("Summary")
-                                            .GetValue(row);
+                                        var actualSummary = row.Reason;
 
                                         if (actualSummary != expectedSummary)
                                         {
@@ -844,6 +844,71 @@ namespace NetLoom.Tests.Unit
                 // Два сценария в двух темах; узкий и обычный варианты рядом.
                 Assert.AreEqual(4, Directory.GetFiles(outputDirectory, "*.png").Length,
                     "Every unconfirmed device gallery frame must be produced.");
+            });
+        }
+
+        [TestMethod]
+        public void DiscoveryInboxGalleryCoversEveryGroup()
+        {
+            RunOnSta(() =>
+            {
+                var outputDirectory = Path.Combine(Path.GetDirectoryName(ResolveOutputDirectory()), "sprint48-inbox");
+                Directory.CreateDirectory(outputDirectory);
+                foreach (var file in Directory.GetFiles(outputDirectory, "*.png")) File.Delete(file);
+                var findings = new List<string>();
+                // Оси: все группы и причины, полнота, число строк, прокрутка, ширины и темы.
+                // Наведение и выделение не меняют содержание строк; здесь отдельно не рисуются.
+                foreach (var scenario in new[] { "37-inbox-all-groups", "38-inbox-scrolled-errors" })
+                foreach (var dark in new[] { false, true })
+                {
+                    var theme = dark ? "dark" : "light";
+                    var bitmaps = new List<BitmapSource>();
+                    foreach (var width in new[] { NarrowWidth, NormalWidth })
+                    {
+                        var data = new Sprint48DiscoveryInboxFixture();
+                        var journal = new DiscoveryRunJournal(data.Repository(), new EmptyDiscoveryTopologyReader(),
+                            new GalleryCandidateMaterializer(), new EmptyDiscoveryExclusionSource());
+                        var window = new MainWindow(new FixedRefreshProvider(EmptySnapshot()),
+                            new EmptyLookupReader(), new GalleryMonitoringControl(),
+                            new GalleryDiscoveryControl(), new[] { data.Profile }, journal);
+                        window.DiscoveryRunClock = () => data.Now;
+                        try
+                        {
+                            PrepareWindow(window, width, GalleryHeight);
+                            if (dark) Click((Button)window.FindName("ShellThemeButton"));
+                            Click((Button)window.FindName("ShellDiscoveryButton"));
+                            ((TextBox)window.FindName("DiscoveryStartAddressTextBox")).Text = "10.48.228.1";
+                            ((TextBox)window.FindName("DiscoveryEndAddressTextBox")).Text = "10.48.228.254";
+                            PumpDispatcher();
+                            window.UpdateLayout();
+                            if (scenario == "38-inbox-scrolled-errors")
+                            {
+                                ((ScrollViewer)window.FindName("DiscoveryResultsPanel")).ScrollToEnd();
+                                PumpDispatcher();
+                                window.UpdateLayout();
+                            }
+                            var frame = scenario + "/" + theme + "/" + width;
+                            var groups = ((ItemsControl)window.FindName("DiscoveryInboxGroupsList"))
+                                .Items.Cast<DiscoveryInboxGroup>().Select(group => group.Group).ToArray();
+                            if (!groups.SequenceEqual(Sprint48DiscoveryInboxFixture.Order))
+                                findings.Add(frame + ": во входящих нет шести групп в нужном порядке (§9).");
+                            CollectionAssert.AreEqual(Sprint48DiscoveryInboxFixture.Order, groups, frame);
+                            CollectTextClipping(window.Content as DependencyObject, frame, findings);
+                            bitmaps.Add(Capture(window.Content as FrameworkElement));
+                        }
+                        finally
+                        {
+                            window.Close();
+                            PumpDispatcher();
+                        }
+                    }
+                    SaveSideBySide(bitmaps[0], bitmaps[1],
+                        Path.Combine(outputDirectory, scenario + "-" + theme + ".png"));
+                }
+                File.WriteAllLines(Path.Combine(outputDirectory, "findings.txt"),
+                    findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray());
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(4, Directory.GetFiles(outputDirectory, "*.png").Length);
             });
         }
 

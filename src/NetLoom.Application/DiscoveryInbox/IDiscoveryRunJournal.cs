@@ -11,6 +11,10 @@ namespace NetLoom.Application.DiscoveryInbox
             string accessProfileName,
             DateTime startedUtc);
 
+        DiscoveryRunStart BeginRetry(Guid runId, string address, DateTime startedUtc);
+
+        DiscoveryRunRecord GetRun(Guid runId);
+
         DiscoveryRunResult RecordCandidate(
             Guid runId,
             DiscoveryCandidateSnapshot candidate,

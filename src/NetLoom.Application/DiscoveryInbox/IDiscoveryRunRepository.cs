@@ -15,6 +15,8 @@ namespace NetLoom.Application.DiscoveryInbox
 
         IReadOnlyList<DiscoveryRunResult> GetResults(Guid runId);
 
+        void DeleteResult(Guid runId, string address);
+
         void PruneRuns(int keepLatest);
     }
 }

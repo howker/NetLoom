@@ -1481,7 +1481,7 @@
     <value>SNMP: параметры профиля не поддерживаются</value>
   </data>
   <data name="DiscoveryCandidateErrorSummary" xml:space="preserve">
-    <value>{0} · {1} · профиль {2} · {3}</value>
+    <value>{1} · профиль {2} · {3}</value>
   </data>
   <data name="DiscoveryRunErrorsLabel" xml:space="preserve">
     <value>Ошибок</value>
@@ -2429,5 +2429,146 @@
   </data>
   <data name="DiagnosticFieldConfirmation" xml:space="preserve">
     <value>Подтверждение</value>
+  </data>
+  <data name="DiscoveryInboxTitle" xml:space="preserve">
+    <value>Входящие · запуск {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryNew" xml:space="preserve">
+    <value>Новые {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryChanged" xml:space="preserve">
+    <value>Изменились {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryAmbiguous" xml:space="preserve">
+    <value>Неоднозначные {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryMissing" xml:space="preserve">
+    <value>Пропали {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryExcluded" xml:space="preserve">
+    <value>Исключены {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryError" xml:space="preserve">
+    <value>Ошибки {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryUnchanged" xml:space="preserve">
+    <value>Без изменений {0}</value>
+  </data>
+  <data name="DiscoveryInboxGroupNew" xml:space="preserve">
+    <value>Новые</value>
+  </data>
+  <data name="DiscoveryInboxGroupChanged" xml:space="preserve">
+    <value>Изменились</value>
+  </data>
+  <data name="DiscoveryInboxGroupAmbiguous" xml:space="preserve">
+    <value>Неоднозначные</value>
+  </data>
+  <data name="DiscoveryInboxGroupMissing" xml:space="preserve">
+    <value>Пропали</value>
+  </data>
+  <data name="DiscoveryInboxGroupExcluded" xml:space="preserve">
+    <value>Исключены</value>
+  </data>
+  <data name="DiscoveryInboxGroupError" xml:space="preserve">
+    <value>Ошибки</value>
+  </data>
+  <data name="DiscoveryInboxGroupHeader" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="DiscoveryInboxRetry" xml:space="preserve">
+    <value>Проверить снова</value>
+  </data>
+  <data name="DiscoveryInboxRetryAutomationName" xml:space="preserve">
+    <value>Проверить снова {0}</value>
+  </data>
+  <data name="DiscoveryInboxReady" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="DiscoveryInboxPartialSnmp" xml:space="preserve">
+    <value>Частично: нет ответа SNMP</value>
+  </data>
+  <data name="DiscoveryInboxPartialName" xml:space="preserve">
+    <value>Частично: нет sysName</value>
+  </data>
+  <data name="DiscoveryInboxPartialInterfaces" xml:space="preserve">
+    <value>Частично: IF-MIB без интерфейсов</value>
+  </data>
+  <data name="DiscoveryInboxChanged" xml:space="preserve">
+    <value>Изменилось: {0}</value>
+  </data>
+  <data name="DiscoveryInboxTextChange" xml:space="preserve">
+    <value>{0}: «{1}» → «{2}»</value>
+  </data>
+  <data name="DiscoveryInboxNumberChange" xml:space="preserve">
+    <value>{0}: {1} → {2}</value>
+  </data>
+  <data name="DiscoveryInboxFieldName" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="DiscoveryInboxFieldDescription" xml:space="preserve">
+    <value>Описание</value>
+  </data>
+  <data name="DiscoveryInboxFieldObjectId" xml:space="preserve">
+    <value>sysObjectID</value>
+  </data>
+  <data name="DiscoveryInboxFieldInterfaces" xml:space="preserve">
+    <value>Интерфейсов</value>
+  </data>
+  <data name="DiscoveryInboxDuplicateAddress" xml:space="preserve">
+    <value>Адрес принадлежит нескольким устройствам: {0}. Данные не применены.</value>
+  </data>
+  <data name="DiscoveryInboxMatchingName" xml:space="preserve">
+    <value>Имя совпадает с {0}: возможно, устройство сменило адрес.</value>
+  </data>
+  <data name="DiscoveryInboxMissingLastSeen" xml:space="preserve">
+    <value>Известное устройство не найдено в этом запуске · последний раз отвечало {0}</value>
+  </data>
+  <data name="DiscoveryInboxMissingNoData" xml:space="preserve">
+    <value>Известное устройство не найдено в этом запуске · данных опроса нет</value>
+  </data>
+  <data name="DiscoveryInboxProfileExclusion" xml:space="preserve">
+    <value>Правило профиля «{0}»: исключить {1}</value>
+  </data>
+  <data name="DiscoveryInboxIgnored" xml:space="preserve">
+    <value>Игнорировано оператором {0}</value>
+  </data>
+  <data name="DiscoveryInboxIcmp" xml:space="preserve">
+    <value>ICMP</value>
+  </data>
+  <data name="DiscoveryInboxTcp" xml:space="preserve">
+    <value>TCP {0}</value>
+  </data>
+  <data name="DiscoveryInboxSnmp" xml:space="preserve">
+    <value>SNMP</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesOne" xml:space="preserve">
+    <value>{0} интерфейс</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesFew" xml:space="preserve">
+    <value>{0} интерфейса</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesMany" xml:space="preserve">
+    <value>{0} интерфейсов</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesOther" xml:space="preserve">
+    <value>{0} интерфейсов</value>
+  </data>
+  <data name="DiscoveryInboxSeparator" xml:space="preserve">
+    <value> · </value>
+  </data>
+  <data name="DiscoveryInboxListSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="DiscoveryInboxChangeSeparator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="DiscoveryInboxEllipsis" xml:space="preserve">
+    <value>…</value>
+  </data>
+  <data name="DiscoveryProgressSectionTitle" xml:space="preserve">
+    <value>Ход запуска</value>
+  </data>
+  <data name="DiscoveryInboxEmpty" xml:space="preserve">
+    <value>В этом запуске ничего не найдено.</value>
   </data>
 </root>

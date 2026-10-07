@@ -216,6 +216,8 @@ namespace NetLoom.Tests.Unit
                             () =>
                                 provider.ReadCount >= 1);
 
+                        StartDiscoveryRunThroughTheWindow(window, "192.0.2.1", "192.0.2.254");
+
                         control.EmitCandidate(
                             new DiscoveryCandidateSnapshot(
                                 IPAddress.Parse(
@@ -245,13 +247,9 @@ namespace NetLoom.Tests.Unit
                                 .Address
                                 .ToString());
 
-                        var list =
-                            (ListBox)window.FindName(
-                                "DiscoveryCandidatesList");
-
                         Assert.AreEqual(
                             1,
-                            list.Items.Count,
+                            InboxRows(window).Length,
                             "A found candidate must be surfaced to the operator immediately.");
                     }
                     finally

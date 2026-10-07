@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -134,8 +135,7 @@ namespace NetLoom.Tests.Unit
                             0,
                             SnmpTransportFailure.Authentication));
 
-                        var list = (ListBox)window.FindName("DiscoveryCandidatesList");
-                        WaitForCondition(() => list.Items.Count == 1);
+                        WaitForCondition(() => InboxRows(window).Length == 1);
                         var expectedSummary = UiText.Format(
                             "DiscoveryCandidateErrorSummary",
                             UiText.Get("DiscoveryUnnamedCandidate"),
@@ -149,8 +149,7 @@ namespace NetLoom.Tests.Unit
 
                         Assert.AreEqual(
                             expectedSummary,
-                            list.Items[0].GetType().GetProperty("Summary")
-                                .GetValue(list.Items[0]));
+                            InboxRows(window).Single().Reason);
                         Assert.AreEqual(
                             "1",
                             ((TextBlock)window.FindName("DiscoveryRunErrorsValueText")).Text);
@@ -253,9 +252,7 @@ namespace NetLoom.Tests.Unit
 
                         WaitForCondition(
                             () =>
-                                ((ListBox)window.FindName(
-                                    "DiscoveryCandidatesList"))
-                                .Items.Count == 2);
+                                InboxRows(window).Length == 2);
 
                         control.PublishState(
                             DiscoveryControlState.Running,

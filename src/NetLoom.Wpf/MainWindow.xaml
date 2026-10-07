@@ -1497,29 +1497,93 @@
                                                 </Grid>
                                             </Border>
 
-                                            <ListBox x:Name="DiscoveryCandidatesList"
-                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                                     Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                                <ListBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Grid Margin="{DynamicResource NetLoom.Thickness.ResultRowPadding}">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="Auto" />
-                                                                <ColumnDefinition Width="*" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock Text="{Binding Address}"
-                                                                       Style="{StaticResource NetLoom.Style.MonoText}" />
-                                                            <TextBlock Grid.Column="1"
-                                                                       Text="{Binding Summary}"
-                                                                       Style="{StaticResource NetLoom.Style.MutedText}"
-                                                                       Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                                       TextWrapping="Wrap" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ListBox.ItemTemplate>
-                                            </ListBox>
+
                                         </StackPanel>
                                     </Expander>
+                                    <StackPanel x:Name="DiscoveryInboxPanel"
+                                                Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                        <TextBlock x:Name="DiscoveryInboxTitleText"
+                                                   Style="{StaticResource NetLoom.Style.GroupTitle}" />
+                                        <TextBlock x:Name="DiscoveryInboxSummaryText"
+                                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock x:Name="DiscoveryInboxEmptyText"
+                                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                   TextWrapping="Wrap" />
+                                        <ItemsControl x:Name="DiscoveryInboxGroupsList">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Expander Style="{StaticResource NetLoom.Style.OperatorExpander}"
+                                                              Margin="{DynamicResource NetLoom.Thickness.GroupGap}"
+                                                              IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
+                                                        <Expander.Header>
+                                                            <TextBlock Text="{Binding Header}"
+                                                                       Style="{StaticResource NetLoom.Style.SidebarSectionLabel}" />
+                                                        </Expander.Header>
+                                                        <ItemsControl ItemsSource="{Binding Rows}"
+                                                                      Margin="{DynamicResource NetLoom.Thickness.ExpanderContent}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                                                            Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                                            ToolTip="{Binding FullReason}">
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock Text="{Binding Address}"
+                                                                                       Width="{DynamicResource NetLoom.Width.DiscoveryInboxAddress}"
+                                                                                       Style="{StaticResource NetLoom.Style.MonoText}" />
+                                                                            <StackPanel Grid.Column="1"
+                                                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                                                                                <TextBlock Text="{Binding Name}"
+                                                                                           FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                                                <TextBlock Text="{Binding Reason}"
+                                                                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                                           TextWrapping="Wrap" />
+                                                                                <TextBlock Text="{Binding Completeness}" TextWrapping="Wrap">
+                                                                                    <TextBlock.Style>
+                                                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource NetLoom.Style.MutedText}">
+                                                                                            <Style.Triggers>
+                                                                                                <DataTrigger Binding="{Binding Completeness}" Value="">
+                                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                                </DataTrigger>
+                                                                                            </Style.Triggers>
+                                                                                        </Style>
+                                                                                    </TextBlock.Style>
+                                                                                </TextBlock>
+                                                                            </StackPanel>
+                                                                            <Button Grid.Column="2"
+                                                                                    Content="{Binding RetryText}"
+                                                                                    AutomationProperties.Name="{Binding RetryAutomationName}"
+                                                                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                                                                    VerticalAlignment="Top"
+                                                                                    IsEnabled="{Binding DiscoveryInboxCanRetry, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                                                    Click="OnDiscoveryInboxRetryClick">
+                                                                                <Button.Style>
+                                                                                    <Style TargetType="Button" BasedOn="{StaticResource NetLoom.Style.LinkButton}">
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding CanRetry}" Value="False">
+                                                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </Button.Style>
+                                                                            </Button>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </Expander>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </StackPanel>
                             </ScrollViewer>
                         </Grid>

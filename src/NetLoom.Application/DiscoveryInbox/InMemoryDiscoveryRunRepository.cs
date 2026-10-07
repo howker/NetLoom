@@ -98,6 +98,18 @@ namespace NetLoom.Application.DiscoveryInbox
             }
         }
 
+        public void DeleteResult(Guid runId, string address)
+        {
+            lock (_sync)
+            {
+                Dictionary<string, DiscoveryRunResult> results;
+                if (_results.TryGetValue(runId, out results))
+                {
+                    results.Remove(address);
+                }
+            }
+        }
+
         public void PruneRuns(
             int keepLatest)
         {

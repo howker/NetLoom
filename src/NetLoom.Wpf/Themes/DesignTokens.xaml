@@ -6,6 +6,8 @@
     <FontFamily x:Key="NetLoom.FontFamily.Ui">Segoe UI</FontFamily>
     <FontFamily x:Key="NetLoom.FontFamily.Mono">Consolas</FontFamily>
 
+    <sys:Double x:Key="NetLoom.Width.DiscoveryInboxAddress">112</sys:Double>
+
     <sys:Double x:Key="NetLoom.FontSize.Caption">12</sys:Double>
     <sys:Double x:Key="NetLoom.FontSize.Body">13</sys:Double>
     <sys:Double x:Key="NetLoom.FontSize.MapNodeTitle">13</sys:Double>

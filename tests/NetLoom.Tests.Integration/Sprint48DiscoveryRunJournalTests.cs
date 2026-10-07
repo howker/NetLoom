@@ -468,6 +468,136 @@ namespace NetLoom.Tests.Integration
                 });
         }
 
+        [TestMethod]
+        public void RetryReplacesErrorAndKeepsOriginalRunMetadata()
+        {
+            foreach (var expected in new[] { DiscoveryResultGroup.New,
+                DiscoveryResultGroup.Changed, DiscoveryResultGroup.KnownUnchanged })
+            {
+                WithDatabase(factory =>
+                {
+                    var topology = new SqliteMaterializedTopologyRepository(factory);
+                    var request = Request();
+                    var journal = Journal(factory);
+                    var runId = journal.BeginRun(request, "Synthetic profile", T0).RunId;
+                    if (expected == DiscoveryResultGroup.New)
+                    {
+                        // Журнал содержит ошибку адреса, у которого пока нет устройства в базе.
+                        new SqliteDiscoveryRunRepository(factory).SaveResult(new DiscoveryRunResult(
+                            runId, "10.0.0.1", DiscoveryResultGroup.Error, null, T0,
+                            true, new int[0], false, SnmpTransportFailure.Authentication,
+                            null, null, null, 0, DiscoveryResultCompleteness.NotApplicable,
+                            DiscoveryPartialReason.None, DiscoveryResultReason.None, null,
+                            new DiscoveryFieldChange[0], DiscoveryResultResolution.Pending, null));
+                    }
+                    else
+                    {
+                        journal.RecordCandidate(runId,
+                            Candidate("10.0.0.1", null, false, 0, SnmpTransportFailure.Authentication),
+                            T0.AddSeconds(1));
+                    }
+                    var original = journal.FinishRun(runId,
+                        FinalSnapshot(request, DiscoveryControlState.Completed), T0.AddMinutes(2));
+                    Assert.AreEqual(1, original.ErrorCount);
+                    if (expected == DiscoveryResultGroup.KnownUnchanged)
+                    {
+                        var device = topology.GetDevices().Single();
+                        topology.SaveDevice(new TopologyDevice(device.Id, null, null,
+                            DeviceCategory.Unknown, DeviceDiscoveryOrigin.Automatic,
+                            MonitoringCapability.Unknown, null, null, null, false, false,
+                            T0, T0, T0, "switch-1", null, "10.0.0.1",
+                            "Description", "1.3.6.1.4.1.99999"));
+                    }
+
+                    var retry = journal.BeginRetry(runId, "10.0.0.1", T0.AddMinutes(3));
+                    Assert.AreEqual(runId, retry.RunId);
+                    Assert.AreEqual(0, retry.ExcludedAddresses.Count);
+                    var result = journal.RecordCandidate(runId, Candidate("10.0.0.1"), T0.AddMinutes(3));
+                    Assert.AreEqual(expected, result.Group);
+                    var updated = journal.FinishRun(runId,
+                        new DiscoveryControlSnapshot(DiscoveryControlState.Completed,
+                            null, request.AccessProfileId, 1, 1, 1, null, null), T0.AddMinutes(4));
+                    Assert.AreEqual(0, updated.ErrorCount);
+                    Assert.AreEqual(1, updated.FoundCandidates);
+                    Assert.AreEqual(1, updated.SnmpResponded);
+                    Assert.AreEqual(expected == DiscoveryResultGroup.KnownUnchanged ? 1 : 0,
+                        updated.KnownUnchangedCount);
+                    Assert.AreEqual(original.StartedUtc, updated.StartedUtc);
+                    Assert.AreEqual(original.FinishedUtc, updated.FinishedUtc);
+                    Assert.AreEqual(original.State, updated.State);
+                    Assert.AreEqual(original.TotalAddresses, updated.TotalAddresses);
+                    Assert.AreEqual(original.ProcessedAddresses, updated.ProcessedAddresses);
+                    Assert.AreEqual(original.ScopeText, updated.ScopeText);
+                    Assert.AreEqual(1, journal.GetResults(runId).Count);
+                });
+            }
+        }
+
+        [TestMethod]
+        public void RetryWithoutResponseMakesKnownAddressMissing()
+        {
+            WithDatabase(factory =>
+            {
+                var topology = new SqliteMaterializedTopologyRepository(factory);
+                var device = Device("10.0.0.1", "switch-1");
+                topology.SaveDevice(device);
+                var journal = Journal(factory);
+                var request = Request();
+                var runId = journal.BeginRun(request, null, T0).RunId;
+                journal.RecordCandidate(runId, Candidate("10.0.0.1"), T0.AddSeconds(1));
+                var original = journal.FinishRun(runId,
+                    FinalSnapshot(request, DiscoveryControlState.Completed), T0.AddMinutes(1));
+                var lastSeen = topology.GetDevice(device.Id).LastSeenUtc;
+                journal.BeginRetry(runId, "10.0.0.1", T0.AddMinutes(2));
+                var updated = journal.FinishRun(runId,
+                    FinalSnapshot(request, DiscoveryControlState.Completed, 0), T0.AddMinutes(3));
+                var result = journal.GetResults(runId).Single();
+                Assert.AreEqual(DiscoveryResultGroup.Missing, result.Group);
+                Assert.AreEqual(DiscoveryResultReason.NotFoundInRun, result.Reason);
+                Assert.AreEqual(lastSeen?.ToString("o", CultureInfo.InvariantCulture), result.ReasonDetail);
+                Assert.AreEqual(0, updated.FoundCandidates);
+                Assert.AreEqual(0, updated.SnmpResponded);
+                Assert.AreEqual(0, updated.KnownUnchangedCount);
+                Assert.AreEqual(original.FinishedUtc, updated.FinishedUtc);
+                Assert.AreEqual(original.ProcessedAddresses, updated.ProcessedAddresses);
+                Assert.AreEqual(original.TotalAddresses, updated.TotalAddresses);
+                Assert.AreEqual(device.Id, topology.GetDevice(device.Id).Id);
+            });
+        }
+
+        [TestMethod]
+        public void RetryWithoutResponseRemovesUnknownAddressAndItsChanges()
+        {
+            WithDatabase(factory =>
+            {
+                var journal = Journal(factory);
+                var request = Request();
+                var runId = journal.BeginRun(request, null, T0).RunId;
+                var repository = new SqliteDiscoveryRunRepository(factory);
+                repository.SaveResult(new DiscoveryRunResult(runId, "10.0.0.1",
+                    DiscoveryResultGroup.Changed, null, T0, true, new int[0], true, null,
+                    "switch-1", null, null, 0, DiscoveryResultCompleteness.Partial,
+                    DiscoveryPartialReason.NoInterfaces, DiscoveryResultReason.None, null,
+                    new[] { new DiscoveryFieldChange("sysName", "old", "new") },
+                    DiscoveryResultResolution.Pending, null));
+                journal.FinishRun(runId, FinalSnapshot(request, DiscoveryControlState.Completed), T0.AddMinutes(1));
+                journal.BeginRetry(runId, "10.0.0.1", T0.AddMinutes(2));
+                var updated = journal.FinishRun(runId,
+                    FinalSnapshot(request, DiscoveryControlState.Completed, 0), T0.AddMinutes(3));
+                Assert.AreEqual(0, repository.GetResults(runId).Count);
+                Assert.AreEqual(0, updated.FoundCandidates);
+                using (var connection = factory.OpenReadOnlyConnection())
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT COUNT(*) FROM discovery_run_result_changes WHERE run_id = @id;";
+                    command.Parameters.AddWithValue("@id", runId.ToString("D"));
+                    Assert.AreEqual(0L, Convert.ToInt64(command.ExecuteScalar()));
+                }
+                // Отметка повтора снята: тот же адрес можно проверить ещё раз.
+                journal.BeginRetry(runId, "10.0.0.1", T0.AddMinutes(4));
+            });
+        }
+
         private static DiscoveryRunJournal Journal(
             SqliteConnectionFactory factory)
         {

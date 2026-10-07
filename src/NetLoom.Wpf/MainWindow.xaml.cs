@@ -870,6 +870,8 @@ public partial class MainWindow : Window
         _lastMapSnapshot =
             state.Snapshot.MapSnapshot;
 
+        RefreshDiscoveryInbox();
+
         _lastDiagnosticSnapshot =
             state.Snapshot.DiagnosticSnapshot;
 

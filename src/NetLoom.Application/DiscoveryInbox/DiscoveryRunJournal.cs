@@ -21,6 +21,9 @@ namespace NetLoom.Application.DiscoveryInbox
         private readonly Dictionary<Guid, HashSet<string>> _scopes =
             new Dictionary<Guid, HashSet<string>>();
 
+        private readonly Dictionary<Guid, RetryState> _retries =
+            new Dictionary<Guid, RetryState>();
+
         public DiscoveryRunJournal(
             IDiscoveryRunRepository runs,
             IDiscoveryTopologyReader topology,
@@ -155,6 +158,32 @@ namespace NetLoom.Application.DiscoveryInbox
             }
         }
 
+        public DiscoveryRunStart BeginRetry(Guid runId, string address, DateTime startedUtc)
+        {
+            lock (_sync)
+            {
+                RequireRun(runId);
+                RequireUtc(startedUtc, nameof(startedUtc));
+                var addresses = Ipv4RangeExpander.Expand(
+                    address, address, "255.255.255.255", 1);
+                if (_retries.ContainsKey(runId) || _scopes.ContainsKey(runId))
+                {
+                    throw new InvalidOperationException("DISCOVERY_RUN_ACTIVE");
+                }
+
+                _retries.Add(runId, new RetryState(addresses.Single().ToString()));
+                return new DiscoveryRunStart(runId, new string[0]);
+            }
+        }
+
+        public DiscoveryRunRecord GetRun(Guid runId)
+        {
+            lock (_sync)
+            {
+                return _runs.GetRun(runId);
+            }
+        }
+
         public DiscoveryRunResult RecordCandidate(
             Guid runId,
             DiscoveryCandidateSnapshot candidate,
@@ -172,6 +201,11 @@ namespace NetLoom.Application.DiscoveryInbox
 
                 var run = RequireRun(runId);
                 var address = candidate.Address.ToString();
+                RetryState retry;
+                if (_retries.TryGetValue(runId, out retry) && !Same(retry.Address, address))
+                {
+                    throw new InvalidOperationException("DISCOVERY_RETRY_ADDRESS_MISMATCH");
+                }
                 var devices = _topology.GetDevices()
                     .Where(device => !device.IsArchived).ToArray();
                 var interfaces = _topology.GetInterfaces().ToArray();
@@ -307,6 +341,10 @@ namespace NetLoom.Application.DiscoveryInbox
                     null);
 
                 _runs.SaveResult(result);
+                if (retry != null)
+                {
+                    retry.CandidateRecorded = true;
+                }
                 _runs.SaveRun(
                     WithResults(
                         run,
@@ -336,6 +374,33 @@ namespace NetLoom.Application.DiscoveryInbox
                 RequireUtc(finishedUtc, nameof(finishedUtc));
 
                 var run = RequireRun(runId);
+                RetryState retry;
+                if (_retries.TryGetValue(runId, out retry))
+                {
+                    if (!retry.CandidateRecorded)
+                    {
+                        var device = _topology.GetDevices().FirstOrDefault(
+                            item => !item.IsArchived && Same(item.ManagementAddress, retry.Address));
+                        if (device == null)
+                        {
+                            _runs.DeleteResult(runId, retry.Address);
+                        }
+                        else
+                        {
+                            _runs.SaveResult(NonCandidateResult(
+                                runId, retry.Address, DiscoveryResultGroup.Missing,
+                                device.Id, finishedUtc, DiscoveryResultReason.NotFoundInRun,
+                                device.LastSeenUtc?.ToString("o", CultureInfo.InvariantCulture)));
+                        }
+                    }
+
+                    var updated = WithResults(run, run.State, run.FinishedUtc,
+                        run.TotalAddresses, run.ProcessedAddresses, run.FaultMessage);
+                    _runs.SaveRun(updated);
+                    _retries.Remove(runId);
+                    return updated;
+                }
+
                 HashSet<string> scope;
 
                 if (finalSnapshot.State == DiscoveryControlState.Completed &&
@@ -440,6 +505,17 @@ namespace NetLoom.Application.DiscoveryInbox
 
                 return interrupted;
             }
+        }
+
+        private sealed class RetryState
+        {
+            public RetryState(string address)
+            {
+                Address = address;
+            }
+
+            public string Address { get; }
+            public bool CandidateRecorded { get; set; }
         }
 
         private DiscoveryRunRecord RequireRun(
