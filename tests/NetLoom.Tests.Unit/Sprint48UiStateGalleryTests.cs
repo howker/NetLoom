@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -63,13 +64,15 @@ namespace NetLoom.Tests.Unit
                                 DiscoveryControlState.Completed,
                                 254,
                                 37,
-                                31),
+                                31,
+                                new TimeSpan(0, 4, 37)),
                             Tuple.Create(
                                 "31-discovery-run-stopped",
                                 DiscoveryControlState.Stopped,
                                 120,
                                 12,
-                                9)
+                                9,
+                                new TimeSpan(0, 2, 8))
                         };
 
                     foreach (var item in scenarios)
@@ -122,6 +125,11 @@ namespace NetLoom.Tests.Unit
                                         (Button)window.FindName(
                                             "ShellDiscoveryButton"));
 
+                                    var runClock =
+                                        new DateTime(2026, 10, 7, 9, 12, 5, DateTimeKind.Utc);
+                                    window.DiscoveryRunClock =
+                                        () => runClock;
+
                                     discoveryControl.PublishState(
                                         DiscoveryControlState.Running,
                                         0,
@@ -146,6 +154,9 @@ namespace NetLoom.Tests.Unit
                                     }
 
                                     PumpDispatcher();
+
+                                    runClock =
+                                        runClock + item.Item6;
 
                                     discoveryControl.PublishState(
                                         item.Item2,
@@ -173,6 +184,25 @@ namespace NetLoom.Tests.Unit
                                         Visibility.Visible,
                                         panel.Visibility,
                                         frameScenario + ": the last discovery run summary must be visible.");
+
+                                    var expectedDuration =
+                                        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru"
+                                            ? (item.Item2 == DiscoveryControlState.Completed
+                                                ? "4 мин 37 с"
+                                                : "2 мин 8 с")
+                                            : (item.Item2 == DiscoveryControlState.Completed
+                                                ? "4 min 37 s"
+                                                : "2 min 8 s");
+                                    var durationText =
+                                        (TextBlock)window.FindName(
+                                            "DiscoveryRunDurationValueText");
+
+                                    if (durationText.Text != expectedDuration)
+                                    {
+                                        findings.Add(
+                                            frameScenario + ": длительность запуска не совпадает с ожидаемой (§9): «" +
+                                            durationText.Text + "» вместо «" + expectedDuration + "».");
+                                    }
 
                                     CollectTextClipping(
                                         window.Content as DependencyObject,

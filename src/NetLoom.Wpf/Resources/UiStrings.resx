@@ -2181,6 +2181,9 @@ Poll: {2}</value>
   <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
     <value>Device, IP or MAC</value>
   </data>
+  <data name="ShellGlobalSearchPlaceholderShort" xml:space="preserve">
+    <value>Search</value>
+  </data>
   <data name="ShellGlobalSearchAutomationName" xml:space="preserve">
     <value>Global search</value>
   </data>

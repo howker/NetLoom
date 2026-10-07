@@ -40,6 +40,9 @@ namespace NetLoom.Wpf
 
         private DateTime? _discoveryRunStartedUtc;
         private DateTime? _discoveryRunFinishedUtc;
+        // Часы итога запуска; галерея подставляет свои, чтобы показать правдоподобную длительность.
+        internal Func<DateTime> DiscoveryRunClock { get; set; } =
+            () => DateTime.UtcNow;
         private DiscoveryControlState _discoveryRunLastState =
             DiscoveryControlState.Idle;
         private readonly HashSet<string> _discoveryRunSnmpAddresses =
@@ -1704,7 +1707,7 @@ namespace NetLoom.Wpf
                 !IsDiscoveryRunActive(_discoveryRunLastState))
             {
                 _discoveryRunStartedUtc =
-                    DateTime.UtcNow;
+                    DiscoveryRunClock();
                 _discoveryRunFinishedUtc =
                     null;
                 _discoveryRunSnmpAddresses.Clear();
@@ -1716,7 +1719,7 @@ namespace NetLoom.Wpf
                 IsDiscoveryRunActive(_discoveryRunLastState))
             {
                 _discoveryRunFinishedUtc =
-                    DateTime.UtcNow;
+                    DiscoveryRunClock();
             }
 
             _discoveryRunLastSnapshot =

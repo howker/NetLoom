@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Windows;
@@ -8,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using NetLoom.Wpf.Localization;
 
 namespace NetLoom.Wpf
@@ -54,9 +56,9 @@ namespace NetLoom.Wpf
                 ShellGlobalSearchTextBox,
                 UiText.Get(
                     "ShellGlobalSearchAutomationName"));
-            ShellGlobalSearchPlaceholderText.Text =
-                UiText.Get(
-                    "ShellGlobalSearchPlaceholder");
+            UpdateShellSearchPlaceholderText();
+            ShellGlobalSearchPlaceholderText.SizeChanged +=
+                (sender, e) => UpdateShellSearchPlaceholderText();
             InspectorPollButton.Content =
                 UiText.Get(
                     "InspectorPollAction");
@@ -132,6 +134,37 @@ namespace NetLoom.Wpf
                 ShellSection.Map);
             UpdateAdr083InspectorLayout();
             UpdateAdr083MapToolbarResponsivePresentation();
+        }
+
+        // §4: подсказка поиска не обрезается — если полная не помещается в поле, показывается короткая.
+        private void UpdateShellSearchPlaceholderText()
+        {
+            var full =
+                UiText.Get(
+                    "ShellGlobalSearchPlaceholder");
+            var shortText =
+                UiText.Get(
+                    "ShellGlobalSearchPlaceholderShort");
+            var natural =
+                new FormattedText(
+                    full,
+                    CultureInfo.CurrentUICulture,
+                    ShellGlobalSearchPlaceholderText.FlowDirection,
+                    new Typeface(
+                        ShellGlobalSearchPlaceholderText.FontFamily,
+                        ShellGlobalSearchPlaceholderText.FontStyle,
+                        ShellGlobalSearchPlaceholderText.FontWeight,
+                        ShellGlobalSearchPlaceholderText.FontStretch),
+                    ShellGlobalSearchPlaceholderText.FontSize,
+                    Brushes.Black,
+                    VisualTreeHelper.GetDpi(
+                        ShellGlobalSearchPlaceholderText).PixelsPerDip)
+                    .WidthIncludingTrailingWhitespace;
+            var available =
+                ShellGlobalSearchPlaceholderText.ActualWidth;
+
+            ShellGlobalSearchPlaceholderText.Text =
+                available > 0 && natural > available ? shortText : full;
         }
 
         private static void ConfigureAdr083NavigationButton(
