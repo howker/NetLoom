@@ -10,7 +10,8 @@ using NetLoom.Persistence.Sqlite.Database;
 namespace NetLoom.Persistence.Sqlite.Lookup
 {
     public sealed class SqliteMacIpLookupReader :
-        IMacIpLookupReader
+        IMacIpLookupReader,
+        IMacPrefixLookupReader
     {
         private const int MaximumCandidates = 500;
 
@@ -55,6 +56,117 @@ namespace NetLoom.Persistence.Sqlite.Lookup
                         normalized,
                         maxCandidates));
             }
+        }
+
+        // P3: адреса с заданным началом из FDB и ARP (сравнение без разделителей и регистра).
+        // Для каждого найденного адреса — тот же поиск, что и по полному MAC.
+        public MacIpLookupResult FindByMacPrefix(
+            string compactPrefix,
+            int maxCandidates)
+        {
+            if (string.IsNullOrWhiteSpace(compactPrefix) ||
+                compactPrefix.Any(
+                    character => !Uri.IsHexDigit(character)))
+            {
+                throw new ArgumentException(
+                    "A hexadecimal MAC prefix is required.",
+                    nameof(compactPrefix));
+            }
+
+            ValidateLimit(maxCandidates);
+
+            var prefix =
+                compactPrefix.ToUpperInvariant();
+
+            using (var connection =
+                _connectionFactory.OpenConnection())
+            {
+                var macs =
+                    new List<string>();
+
+                using (var command =
+                    connection.CreateCommand())
+                {
+                    command.CommandText = @"
+SELECT mac FROM (
+    SELECT UPPER(REPLACE(REPLACE(REPLACE(mac_address, ':', ''), '-', ''), '.', '')) AS mac
+    FROM fdb_observations
+    UNION
+    SELECT UPPER(REPLACE(REPLACE(REPLACE(physical_address, ':', ''), '-', ''), '.', '')) AS mac
+    FROM arp_observations
+    WHERE physical_address IS NOT NULL
+)
+WHERE LENGTH(mac) = 12
+  AND mac LIKE @prefix || '%'
+ORDER BY mac
+LIMIT @limit;";
+
+                    command.Parameters.AddWithValue(
+                        "@prefix",
+                        prefix);
+                    command.Parameters.AddWithValue(
+                        "@limit",
+                        maxCandidates);
+
+                    using (var reader =
+                        command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            macs.Add(
+                                reader.GetString(0));
+                        }
+                    }
+                }
+
+                var candidates =
+                    new List<MacIpLookupCandidate>();
+
+                foreach (var mac in macs)
+                {
+                    if (candidates.Count >= maxCandidates)
+                    {
+                        break;
+                    }
+
+                    candidates.AddRange(
+                        LoadFdbCandidates(
+                            connection,
+                            AddressTextNormalizer.NormalizeMacColon(
+                                mac),
+                            maxCandidates -
+                            candidates.Count));
+                }
+
+                return new MacIpLookupResult(
+                    MacIpLookupKind.Mac,
+                    FormatPrefix(
+                        prefix),
+                    candidates);
+            }
+        }
+
+        private static string FormatPrefix(
+            string compactPrefix)
+        {
+            var parts =
+                new List<string>();
+
+            for (var index = 0;
+                 index < compactPrefix.Length;
+                 index += 2)
+            {
+                parts.Add(
+                    compactPrefix.Substring(
+                        index,
+                        Math.Min(
+                            2,
+                            compactPrefix.Length - index)));
+            }
+
+            return string.Join(
+                ":",
+                parts);
         }
 
         public MacIpLookupResult FindByIp(

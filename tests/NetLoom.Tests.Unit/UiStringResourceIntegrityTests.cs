@@ -21,7 +21,10 @@ namespace NetLoom.Tests.Unit
                     "EvidenceCountOne",
                     "EvidenceCountFew",
                     "EvidenceCountMany",
-                    "EvidenceCountOther"
+                    "EvidenceCountOther",
+                    // Середина строки результата поиска: «IP · MAC · за портом … · Только что» (P2).
+                    "LookupSummaryBehindPort",
+                    "LookupSummaryOnDevice"
                 };
 
         private static readonly Regex

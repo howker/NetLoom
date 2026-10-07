@@ -50,6 +50,7 @@ namespace NetLoom.Protocols.Snmp.Arp
             }
 
             IReadOnlyList<SnmpVariable> variables;
+            var legacyWalked = false;
 
             try
             {
@@ -64,6 +65,17 @@ namespace NetLoom.Protocols.Snmp.Arp
                     throw;
                 }
 
+                variables =
+                    Walk(request, LegacyEntry);
+                legacyWalked = true;
+            }
+
+            // Устройство без ipNetToPhysicalTable обычно отвечает на обход пустым списком, а не ошибкой протокола.
+            // SNMP v2c просто заканчивает обход за пределами ветки, поэтому читаем ещё и ipNetToMediaTable.
+            // Без этого ARP пуст и поиск по IP не находит оконечные устройства (полевая проверка Sprint 46, P1).
+            if (variables.Count == 0 &&
+                !legacyWalked)
+            {
                 variables =
                     Walk(request, LegacyEntry);
             }

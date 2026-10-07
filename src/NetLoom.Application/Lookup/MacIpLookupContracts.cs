@@ -158,6 +158,14 @@ namespace NetLoom.Application.Lookup
             Candidates { get; }
     }
 
+    // Поиск по началу MAC-адреса (макет netloom-v2-7). Отдельный интерфейс: не каждый читатель его поддерживает.
+    public interface IMacPrefixLookupReader
+    {
+        MacIpLookupResult FindByMacPrefix(
+            string compactPrefix,
+            int maxCandidates);
+    }
+
     public interface IMacIpLookupReader
     {
         MacIpLookupResult FindByMac(

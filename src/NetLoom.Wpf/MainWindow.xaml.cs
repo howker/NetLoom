@@ -132,6 +132,10 @@ public partial class MainWindow : Window
 
     private double _zoom = 1.0;
 
+    // P5 (полевая проверка Sprint 46): логический центр, к которому ещё не выполнена отложенная прокрутка.
+    // Повторное «+»/«−» до неё берёт центр отсюда, а не из устаревшей прокрутки.
+    private Point? _pendingZoomCenter;
+
     private double _pendingPanX;
 
     private double _pendingPanY;

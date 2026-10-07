@@ -294,6 +294,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Context actions: `Poll selected` when stopped; `Start cycle now` when the scheduler is running.
   - The Sprint 46 top-row monitoring state is extended with cycle progress; Sprint 47 does not reintroduce a permanent monitoring section/panel.
   - If separate ICMP / SNMP / TCP availability cannot be presented from data already persisted by Sprint 46, the required new collection/projection belongs here with visible polling results; Sprint 46 must not add a new collection path just to fill Inspector fields.
+  - Unreachable-device alert, moved from Sprint 46 by owner decision on 2026-10-07 (field check `docs/sprint46-field-check.md` Г3): a managed device that stops answering polls raises an alert with the time of the last successful poll; today it is visible only by the age of its data.
 
 - [ ] Sprint 48 — discovery with explainable results and an inbox.
   - Operator outcome: after discovery the operator can tell what is new, changed, ambiguous, missing, excluded or failed, why it happened, and can resolve results in bulk; a profile can be validated before use.
@@ -303,6 +304,10 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - New devices appear on the map immediately as unconfirmed until the operator resolves them in the inbox.
   - Profile validation reports availability and MIB coverage for sysName/sysObjectID, IF-MIB, LLDP-MIB, BRIDGE-MIB and Q-BRIDGE-MIB where applicable.
   - Discovery progress shows only phases that actually exist: ICMP, TCP and SNMP.
+  - Moved from Sprint 46 by owner decision on 2026-10-07 (field check `docs/sprint46-field-check.md`):
+    - Г1 — device category from evidence: LLDP system capabilities (bridge, router) and sysObjectID become a category instead of «Неизвестно» for every device.
+    - Г2 — sysDescr received during discovery is persisted, so model/description appears in Equipment and the Inspector and the Equipment filter finds devices by model.
+    - Г4 — one-sided LLDP (the neighbour reports the link, the device does not) is shown as an explained evidence gap or alert, not as a plain confirmed link.
 
 - [ ] Sprint 49 — readable large-site map.
   - Operator outcome: on 55+ devices the map remains readable without mass overlap, and the operator can see incomplete evidence and manual-versus-observed conflicts.
@@ -325,6 +330,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Use existing protection semantics: Protected / Unprotected / Degraded / Unresolved / NotApplicable. Missing STP evidence is `Unresolved`, never automatically `Unprotected`.
   - Before implementation, verify whether `dot1dStpTopChanges` is actually collected and trustworthy enough for the “last topology change” field.
   - Ring history remains after the topology change journal, not in Sprint 50.
+  - Rings closed through a pair of core switches, moved from Sprint 46 by owner decision on 2026-10-07 (field check `docs/sprint46-field-check.md` Г5): today «Кольцо без резерва» is evaluated only for a simple ring; a ring whose ends land on two different core switches is not analysed.
 
 - [ ] Sprint 51 — polling policies and profile templates.
   - Operator outcome: polling behavior can be assigned per device or placement, including an explicit no-active-polling policy.

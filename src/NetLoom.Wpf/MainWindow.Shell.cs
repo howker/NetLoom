@@ -1211,13 +1211,16 @@ namespace NetLoom.Wpf
                             node.Key,
                             StringComparison.Ordinal));
 
-            var hasNoData =
-                diagnostic == null ||
-                !diagnostic.LastSeenUtc.HasValue;
-
             var isManual =
                 node.Origin ==
                     MapNodeOrigin.Manual;
+
+            // P6 (полевая проверка Sprint 46): у ручного устройства опроса нет по природе —
+            // Оно не попадает в «Нет данных», для него есть фильтр «Ручные».
+            var hasNoData =
+                !isManual &&
+                (diagnostic == null ||
+                 !diagnostic.LastSeenUtc.HasValue);
 
             var problemText =
                 alert == null
@@ -1253,10 +1256,13 @@ namespace NetLoom.Wpf
                 location,
                 connectionCount,
                 // E4: в таблице «Обновлено» — коротко, как в макете («2 мин», «115 дн», «нет»).
-                CompactAgeText(
-                    diagnostic == null
-                        ? null
-                        : diagnostic.LastSeenUtc),
+                isManual
+                    ? UiText.Get(
+                        "DiagnosticValueAbsent")
+                    : CompactAgeText(
+                        diagnostic == null
+                            ? null
+                            : diagnostic.LastSeenUtc),
                 problemText,
                 stateGlyph,
                 isCriticalProblem,
@@ -1920,10 +1926,13 @@ namespace NetLoom.Wpf
                         ? UiText.Get(
                             "DiagnosticNotAvailable")
                         : name;
+                // Макет netloom-v2-2: пустой адрес — «—», ручное устройство — «Ручное» в столбце модели.
                 Address =
                     string.IsNullOrWhiteSpace(address)
                         ? UiText.Get(
-                            "DiagnosticNotAvailable")
+                            isManual
+                                ? "DiagnosticValueAbsent"
+                                : "DiagnosticNotAvailable")
                         : address;
                 Category =
                     string.IsNullOrWhiteSpace(category)
@@ -1933,7 +1942,9 @@ namespace NetLoom.Wpf
                 Description =
                     string.IsNullOrWhiteSpace(description)
                         ? UiText.Get(
-                            "DiagnosticNotAvailable")
+                            isManual
+                                ? "EquipmentManualDescription"
+                                : "DiagnosticValueAbsent")
                         : description;
                 Location =
                     string.IsNullOrWhiteSpace(location)

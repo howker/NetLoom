@@ -215,9 +215,13 @@ namespace NetLoom.Wpf
                                 !char.IsWhiteSpace(character))
                         .ToArray());
 
+            // P3: часть MAC с разделителем тоже ищется по таблицам FDB/ARP (макет netloom-v2-7).
             return compact.Length == 12 &&
-                compact.All(
-                    Uri.IsHexDigit);
+                   compact.All(
+                       Uri.IsHexDigit) ||
+                   NetLoom.Application.Lookup.AddressTextNormalizer
+                       .NormalizeMacPrefixCompact(
+                           query) != null;
         }
 
         private void RefreshAdr083GlobalSearchResults()
@@ -459,9 +463,13 @@ namespace NetLoom.Wpf
                                 !char.IsWhiteSpace(character))
                         .ToArray());
 
+            // P3: часть MAC с разделителем («00:90:e8:38») — тоже поиск по MAC-адресам (макет netloom-v2-7).
             return compact.Length == 12 &&
-                compact.All(
-                    Uri.IsHexDigit);
+                   compact.All(
+                       Uri.IsHexDigit) ||
+                   NetLoom.Application.Lookup.AddressTextNormalizer
+                       .NormalizeMacPrefixCompact(
+                           query) != null;
         }
 
         private static bool Adr083SearchContains(

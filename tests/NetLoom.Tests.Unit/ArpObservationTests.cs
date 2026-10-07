@@ -145,6 +145,40 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
+        public void EmptyModernTableFallsBackToLegacyTable()
+        {
+            // Полевая проверка Sprint 46: устройство без ipNetToPhysicalTable отвечает на обход пустым списком,
+            // А не ошибкой протокола. Без перехода на ipNetToMediaTable ARP пуст и поиск по IP не работает.
+            var transport =
+                new FallbackTransport(
+                    null);
+
+            var collector =
+                new ArpCollector(
+                    transport,
+                    new FakeRawStore(),
+                    new FakeArpStore(),
+                    new ArpObservationParser());
+
+            var result =
+                collector.Collect(Request());
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "1.3.6.1.2.1.4.35.1",
+                    "1.3.6.1.2.1.4.22.1"
+                },
+                transport.RootOids);
+
+            Assert.AreEqual(1, result.Entries.Count);
+
+            Assert.AreEqual(
+                ArpTableKind.IpNetToMedia,
+                result.Entries[0].TableKind);
+        }
+
+        [TestMethod]
         public void TimeoutDoesNotFallBack()
         {
             var transport =
@@ -394,10 +428,11 @@ namespace NetLoom.Tests.Unit
         private sealed class FallbackTransport
             : ISnmpTransport
         {
-            private readonly SnmpTransportFailure _failure;
+            // null — современная таблица не поддерживается и обход возвращает пустой список.
+            private readonly SnmpTransportFailure? _failure;
 
             public FallbackTransport(
-                SnmpTransportFailure failure)
+                SnmpTransportFailure? failure)
             {
                 _failure = failure;
             }
@@ -419,8 +454,13 @@ namespace NetLoom.Tests.Unit
                 if (request.RootOid ==
                     "1.3.6.1.2.1.4.35.1")
                 {
+                    if (!_failure.HasValue)
+                    {
+                        return new SnmpVariable[0];
+                    }
+
                     throw new SnmpTransportException(
-                        _failure,
+                        _failure.Value,
                         "test",
                         null);
                 }

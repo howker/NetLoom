@@ -240,18 +240,37 @@ public partial class MainWindow
                 out logicalCenterX,
                 out logicalCenterY))
         {
-            logicalCenterX =
-                (_zoom <= 0.0)
-                    ? 0.0
-                    : (MapScrollViewer.HorizontalOffset +
-                       (viewportWidth / 2.0)) / _zoom;
+            if (_pendingZoomCenter.HasValue)
+            {
+                logicalCenterX =
+                    _pendingZoomCenter.Value.X;
 
-            logicalCenterY =
-                (_zoom <= 0.0)
-                    ? 0.0
-                    : (MapScrollViewer.VerticalOffset +
-                       (viewportHeight / 2.0)) / _zoom;
+                logicalCenterY =
+                    _pendingZoomCenter.Value.Y;
+            }
+            else
+            {
+                logicalCenterX =
+                    (_zoom <= 0.0)
+                        ? 0.0
+                        : (MapScrollViewer.HorizontalOffset +
+                           (viewportWidth / 2.0)) / _zoom;
+
+                logicalCenterY =
+                    (_zoom <= 0.0)
+                        ? 0.0
+                        : (MapScrollViewer.VerticalOffset +
+                           (viewportHeight / 2.0)) / _zoom;
+            }
         }
+
+        var pendingCenter =
+            new Point(
+                logicalCenterX,
+                logicalCenterY);
+
+        _pendingZoomCenter =
+            pendingCenter;
 
         _zoom = next;
         ApplyZoomTransform();
@@ -275,6 +294,12 @@ public partial class MainWindow
                                 0.0,
                                 (logicalCenterY * _zoom) -
                                 (viewportHeight / 2.0)));
+
+                    // Сбрасываем только свой центр: более позднее нажатие уже поставило новый.
+                    if (_pendingZoomCenter == pendingCenter)
+                    {
+                        _pendingZoomCenter = null;
+                    }
 
                     TrySaveViewportLayout();
                     completed?.Invoke();

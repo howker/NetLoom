@@ -184,7 +184,7 @@
     <value>Passive network device</value>
   </data>
   <data name="LookupCandidateSummary" xml:space="preserve">
-    <value>{0} • {1} • {2}</value>
+    <value>{0} · {1} · {2}</value>
   </data>
   <data name="LookupDetailArpObserved" xml:space="preserve">
     <value>ARP observed: {0:G}</value>
@@ -2183,5 +2183,20 @@ Poll: {2}</value>
   </data>
   <data name="ShellAlertsButtonNameWithCount" xml:space="preserve">
     <value>Alerts: {0}</value>
+  </data>
+  <data name="LookupSummaryBehindPort" xml:space="preserve">
+    <value>behind {0} · {1}</value>
+  </data>
+  <data name="LookupSummaryOnDevice" xml:space="preserve">
+    <value>on {0}, port unknown</value>
+  </data>
+  <data name="LookupSummaryPlaceUnknown" xml:space="preserve">
+    <value>Switch unknown</value>
+  </data>
+  <data name="DiagnosticValueAbsent" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="EquipmentManualDescription" xml:space="preserve">
+    <value>Manual</value>
   </data>
 </root>

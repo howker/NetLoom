@@ -320,22 +320,14 @@ namespace NetLoom.Topology.Map
             var model =
                 device.ModelOverride;
 
+            // P4 (полевая проверка Sprint 46), ADR-083: «Модель или описание» — только сохранённые данные.
+            // Модель и производитель, иначе пусто («—» в интерфейсе). MAC шасси LLDP — идентификатор, а не описание:
+            // Он остаётся в «Технических деталях» и не подставляется в столбец модели.
             if (string.IsNullOrWhiteSpace(vendor))
             {
-                if (!string.IsNullOrWhiteSpace(model))
-                {
-                    return model;
-                }
-
-                return
-                    !string.IsNullOrWhiteSpace(
-                        device.LldpChassisId) &&
-                    !string.Equals(
-                        DisplayName(device),
-                        device.LldpChassisId,
-                        StringComparison.OrdinalIgnoreCase)
-                        ? device.LldpChassisId
-                        : null;
+                return string.IsNullOrWhiteSpace(model)
+                    ? null
+                    : model;
             }
 
             if (string.IsNullOrWhiteSpace(model))

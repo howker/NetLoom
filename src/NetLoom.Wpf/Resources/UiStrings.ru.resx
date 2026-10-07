@@ -184,7 +184,7 @@
     <value>Пассивное сетевое устройство</value>
   </data>
   <data name="LookupCandidateSummary" xml:space="preserve">
-    <value>{0} • {1} • {2}</value>
+    <value>{0} · {1} · {2}</value>
   </data>
   <data name="LookupDetailArpObserved" xml:space="preserve">
     <value>ARP наблюдался: {0:G}</value>
@@ -2183,5 +2183,20 @@
   </data>
   <data name="ShellAlertsButtonNameWithCount" xml:space="preserve">
     <value>Предупреждения: {0}</value>
+  </data>
+  <data name="LookupSummaryBehindPort" xml:space="preserve">
+    <value>за портом {0} · {1}</value>
+  </data>
+  <data name="LookupSummaryOnDevice" xml:space="preserve">
+    <value>на {0}, порт не определён</value>
+  </data>
+  <data name="LookupSummaryPlaceUnknown" xml:space="preserve">
+    <value>Коммутатор не определён</value>
+  </data>
+  <data name="DiagnosticValueAbsent" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="EquipmentManualDescription" xml:space="preserve">
+    <value>Ручное</value>
   </data>
 </root>

@@ -48,6 +48,52 @@ namespace NetLoom.Application.Lookup
                 : null;
         }
 
+        // P3 (полевая проверка Sprint 46), макет netloom-v2-7: поиск по началу MAC-адреса «00:90:e8:38».
+        // Часть адреса — от 4 до 11 шестнадцатеричных знаков с хотя бы одним разделителем (: - .).
+        // Разделитель обязателен, чтобы не путать часть адреса с именем устройства.
+        public static string NormalizeMacPrefixCompact(
+            string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var trimmed =
+                value.Trim();
+
+            if (trimmed.IndexOfAny(new[] { ':', '-', '.' }) < 0)
+            {
+                return null;
+            }
+
+            var builder =
+                new System.Text.StringBuilder();
+
+            foreach (var character in trimmed)
+            {
+                if (character == ':' ||
+                    character == '-' ||
+                    character == '.')
+                {
+                    continue;
+                }
+
+                if (!Uri.IsHexDigit(character))
+                {
+                    return null;
+                }
+
+                builder.Append(
+                    char.ToUpperInvariant(character));
+            }
+
+            return builder.Length >= 4 &&
+                   builder.Length <= 11
+                ? builder.ToString()
+                : null;
+        }
+
         public static string NormalizeMacColon(
             string value)
         {

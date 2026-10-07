@@ -921,10 +921,15 @@ public partial class MainWindow : Window
                 "DiagnosticFieldManagementAddress",
                 device.ManagementAddress));
 
+        // ADR-083: модель или описание — иначе «—».
         stateFields.Add(
             Field(
                 "DiagnosticFieldDescription",
-                device.SecondaryText));
+                string.IsNullOrWhiteSpace(
+                    device.SecondaryText)
+                    ? UiText.Get(
+                        "DiagnosticValueAbsent")
+                    : device.SecondaryText));
 
         var deviceLocationPath =
             LocationPathForDevice(

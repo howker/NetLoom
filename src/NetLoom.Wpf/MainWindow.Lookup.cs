@@ -278,22 +278,62 @@ public partial class MainWindow : Window
         }
     }
 
-    private static string BuildCandidateSummary(
+    // P2 (полевая проверка Sprint 46), макет netloom-v2-7: строка результата отвечает «где это»:
+    // «MAC · за портом SW-B4 · Gi0/7 · 3 минуты назад». Для поиска по IP впереди — сам IP.
+    private string BuildCandidateSummary(
         MacIpLookupCandidate candidate)
     {
-        var interfaceText =
-            candidate.IfIndex.HasValue
-                ? UiText.Format(
-                    "LookupInterfaceShort",
-                    candidate.IfIndex.Value)
-                : UiText.Get(
-                    "LookupInterfaceUnavailable");
+        var device =
+            candidate.DeviceId.HasValue &&
+            _lastDiagnosticSnapshot != null
+                ? _lastDiagnosticSnapshot.Devices
+                    .FirstOrDefault(
+                        item =>
+                            item.DeviceId ==
+                            candidate.DeviceId.Value)
+                : null;
+
+        var port =
+            device != null &&
+            candidate.InterfaceId.HasValue
+                ? device.Interfaces
+                    .FirstOrDefault(
+                        item =>
+                            item.InterfaceId ==
+                            candidate.InterfaceId.Value)
+                : null;
+
+        var place =
+            device == null
+                ? UiText.Get(
+                    "LookupSummaryPlaceUnknown")
+                : port == null
+                    ? UiText.Format(
+                        "LookupSummaryOnDevice",
+                        device.DisplayName)
+                    : UiText.Format(
+                        "LookupSummaryBehindPort",
+                        device.DisplayName,
+                        port.DisplayName);
+
+        var address =
+            string.IsNullOrWhiteSpace(
+                candidate.IpAddress)
+                ? candidate.MacAddress
+                : string.IsNullOrWhiteSpace(
+                    candidate.MacAddress)
+                    ? candidate.IpAddress
+                    : candidate.IpAddress +
+                      " · " +
+                      candidate.MacAddress;
 
         return UiText.Format(
             "LookupCandidateSummary",
-            StatusText(candidate.Status),
-            candidate.MacAddress,
-            interfaceText);
+            address,
+            place,
+            RelativeTimeText(
+                candidate.FdbCapturedUtc ??
+                candidate.ArpCapturedUtc));
     }
 
     private static string BuildCandidateDetails(

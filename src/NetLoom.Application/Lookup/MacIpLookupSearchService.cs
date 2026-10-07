@@ -49,6 +49,22 @@ namespace NetLoom.Application.Lookup
                     maxCandidates);
             }
 
+            var macPrefix =
+                AddressTextNormalizer
+                    .NormalizeMacPrefixCompact(
+                        query);
+
+            var prefixReader =
+                _reader as IMacPrefixLookupReader;
+
+            if (macPrefix != null &&
+                prefixReader != null)
+            {
+                return prefixReader.FindByMacPrefix(
+                    macPrefix,
+                    maxCandidates);
+            }
+
             throw new ArgumentException(
                 "Search query must be a valid IP or MAC address.",
                 nameof(query));
