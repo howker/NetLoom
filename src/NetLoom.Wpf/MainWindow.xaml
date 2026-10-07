@@ -504,27 +504,27 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Name="EquipmentNameHeaderText"
                                                Grid.Column="1"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                               Style="{StaticResource NetLoom.Style.TableHeader}" />
                                     <TextBlock x:Name="EquipmentAddressHeaderText"
                                                Grid.Column="2"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                               Style="{StaticResource NetLoom.Style.TableHeader}" />
                                     <TextBlock x:Name="EquipmentCategoryHeaderText" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                                Grid.Column="3"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                               Style="{StaticResource NetLoom.Style.TableHeader}" />
                                     <TextBlock x:Name="EquipmentDescriptionHeaderText" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
                                                Grid.Column="4"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                               Style="{StaticResource NetLoom.Style.TableHeader}" />
                                     <TextBlock x:Name="EquipmentLocationHeaderText"
                                                Grid.Column="5"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                               Style="{StaticResource NetLoom.Style.TableHeader}" />
                                     <TextBlock x:Name="EquipmentConnectionsHeaderText"
                                                Grid.Column="6"
                                                HorizontalAlignment="Right"
                                                Margin="{DynamicResource NetLoom.Thickness.TableCellGapRight}"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                               Style="{StaticResource NetLoom.Style.TableHeader}" />
                                     <TextBlock x:Name="EquipmentUpdatedHeaderText"
                                                Grid.Column="7"
-                                               Style="{StaticResource NetLoom.Style.FieldLabel}" />
+                                               Style="{StaticResource NetLoom.Style.TableHeader}" />
                                 </Grid>
 
                                 <ScrollViewer Grid.Row="1"
@@ -1816,7 +1816,7 @@
                                    Style="{StaticResource NetLoom.Style.SectionTitle}"
                                    Visibility="Collapsed" />
                         <TextBlock x:Name="InspectorEntityTypeText"
-                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                    Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
                         <TextBlock x:Name="DiagnosticElementTitleText"
                                    Style="{StaticResource NetLoom.Style.SectionTitle}"
@@ -1871,7 +1871,7 @@
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
                                     <TextBlock x:Name="DiagnosticPrimaryTitleText"
-                                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
                                     <ItemsControl x:Name="DiagnosticFieldsList">
                                         <ItemsControl.ItemTemplate>
@@ -1917,7 +1917,7 @@
                                     </ItemsControl>
 
                                     <TextBlock x:Name="DiagnosticSecondaryTitleText"
-                                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
                                     <ItemsControl x:Name="DiagnosticSecondaryList">
                                         <ItemsControl.ItemTemplate>
@@ -2040,7 +2040,7 @@
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
                                     <TextBlock x:Name="DiagnosticTertiaryTitleText"
-                                               Style="{StaticResource NetLoom.Style.SubsectionLabel}"
+                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
                                     <ItemsControl x:Name="DiagnosticTertiaryList">
                                         <ItemsControl.ItemTemplate>

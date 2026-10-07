@@ -684,6 +684,79 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            SectionLabelsAreUppercaseByStyleWhileResourcesKeepSentenceCase()
+        {
+            // G5 (sprint46-mockup-gap), UI_DESIGN_RULES §3: подписи разделов заглавными задаются стилем.
+            // Ресурсы хранят текст в обычном регистре.
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellSettingsButton"));
+                        PumpDispatcher();
+
+                        var resource =
+                            UiText.Get(
+                                "SettingsPollingSectionTitle");
+                        var culture =
+                            System.Globalization.CultureInfo.CurrentUICulture;
+
+                        Assert.AreNotEqual(
+                            resource.ToUpper(
+                                culture),
+                            resource,
+                            "The resource keeps sentence case; uppercase is presentation.");
+
+                        var label =
+                            (TextBlock)window.FindName(
+                                "SettingsPollingTitleText");
+
+                        Assert.AreEqual(
+                            resource.ToUpper(
+                                culture),
+                            label.Text);
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "EquipmentColumnName")
+                                .ToUpper(
+                                    culture),
+                            ((TextBlock)window.FindName(
+                                "EquipmentNameHeaderText"))
+                            .Text,
+                            "Equipment table column headers are uppercase as in the mockup.");
+
+                        // Повторное назначение текста кодом тоже показывается заглавными.
+                        label.Text =
+                            resource;
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            resource.ToUpper(
+                                culture),
+                            label.Text);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             BreadcrumbNamesOpenSectionWithoutSelectionAndKeepsPlacementPathAcrossSections()
         {
             // G2 (sprint46-mockup-gap): без выбора крошки называли «Карта» в любом разделе.
@@ -3332,9 +3405,12 @@ namespace NetLoom.Tests.Unit
                             window,
                             firstId);
 
+                        // G5: заголовок группы инспектора — подпись раздела, заглавными стилем.
                         Assert.AreEqual(
                             UiText.Get(
-                                "DiagnosticStateTitle"),
+                                "DiagnosticStateTitle")
+                                .ToUpper(
+                                    System.Globalization.CultureInfo.CurrentUICulture),
                             ((TextBlock)window.FindName(
                                 "DiagnosticPrimaryTitleText"))
                             .Text);
