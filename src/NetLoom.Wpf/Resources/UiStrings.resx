@@ -2115,8 +2115,20 @@ Poll: {2}</value>
   <data name="EquipmentAgeHours" xml:space="preserve">
     <value>{0} h</value>
   </data>
-  <data name="EquipmentAgeDays" xml:space="preserve">
-    <value>{0} d</value>
+  <data name="EquipmentAgeDaysOne" xml:space="preserve">
+    <value>{0} day</value>
+  </data>
+  <data name="EquipmentAgeDaysFew" xml:space="preserve">
+    <value>{0} days</value>
+  </data>
+  <data name="EquipmentAgeDaysMany" xml:space="preserve">
+    <value>{0} days</value>
+  </data>
+  <data name="EquipmentAgeDaysOther" xml:space="preserve">
+    <value>{0} days</value>
+  </data>
+  <data name="DiagnosticNothingSelectedEquipment" xml:space="preserve">
+    <value>Select a device in the table.</value>
   </data>
   <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
     <value>Device, IP or MAC</value>

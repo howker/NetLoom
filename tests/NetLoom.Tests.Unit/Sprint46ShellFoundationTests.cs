@@ -757,6 +757,129 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            EquipmentAgeSpellsDaysInFullWithRussianPluralForms()
+        {
+            // E7 (sprint46-mockup-gap), UI_DESIGN_RULES §3 «Числа»: сокращения вида «12 дн» запрещены.
+            var previous =
+                System.Threading.Thread.CurrentThread.CurrentUICulture;
+
+            try
+            {
+                System.Threading.Thread.CurrentThread.CurrentUICulture =
+                    new System.Globalization.CultureInfo(
+                        "ru-RU");
+
+                var now =
+                    new DateTime(
+                        2026,
+                        10,
+                        7,
+                        12,
+                        0,
+                        0,
+                        DateTimeKind.Utc);
+
+                var expected =
+                    new[]
+                    {
+                        Tuple.Create(1, "1 день"),
+                        Tuple.Create(2, "2 дня"),
+                        Tuple.Create(5, "5 дней"),
+                        Tuple.Create(11, "11 дней"),
+                        Tuple.Create(18, "18 дней"),
+                        Tuple.Create(21, "21 день"),
+                        Tuple.Create(22, "22 дня")
+                    };
+
+                foreach (var item in expected)
+                {
+                    Assert.AreEqual(
+                        item.Item2,
+                        MainWindow.CompactAgeText(
+                            now.AddDays(
+                                -item.Item1),
+                            now));
+                }
+
+                Assert.AreEqual(
+                    "5 мин",
+                    MainWindow.CompactAgeText(
+                        now.AddMinutes(
+                            -5),
+                        now),
+                    "Minutes keep the standard unit symbol.");
+                Assert.AreEqual(
+                    "3 ч",
+                    MainWindow.CompactAgeText(
+                        now.AddHours(
+                            -3),
+                        now),
+                    "Hours keep the standard unit symbol.");
+            }
+            finally
+            {
+                System.Threading.Thread.CurrentThread.CurrentUICulture =
+                    previous;
+            }
+        }
+
+        [TestMethod]
+        public void
+            EmptyInspectorPromptNamesWhereToSelectInTheOpenSection()
+        {
+            // E6 (sprint46-mockup-gap): на «Оборудовании» устройство выбирают в таблице, а не на карте.
+            RunOnSta(
+                () =>
+                {
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                EmptySnapshot()),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+                        PumpDispatcher();
+
+                        var prompt =
+                            (TextBlock)window.FindName(
+                                "DiagnosticStatusText");
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiagnosticNothingSelected"),
+                            prompt.Text);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellEquipmentButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiagnosticNothingSelectedEquipment"),
+                            prompt.Text);
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellMapButton"));
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiText.Get(
+                                "DiagnosticNothingSelected"),
+                            prompt.Text);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             BreadcrumbNamesOpenSectionWithoutSelectionAndKeepsPlacementPathAcrossSections()
         {
             // G2 (sprint46-mockup-gap): без выбора крошки называли «Карта» в любом разделе.

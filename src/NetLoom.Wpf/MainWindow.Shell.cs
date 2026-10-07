@@ -1083,6 +1083,7 @@ namespace NetLoom.Wpf
 
             // G2: без выбранного объекта крошки называют открытый раздел.
             UpdateShellBreadcrumb();
+            RefreshEmptyInspectorPrompt();
 
             if (section == ShellSection.Alerts &&
                 previousSection != ShellSection.Alerts)
@@ -1264,6 +1265,17 @@ namespace NetLoom.Wpf
         private static string CompactAgeText(
             DateTime? valueUtc)
         {
+            return CompactAgeText(
+                valueUtc,
+                DateTime.UtcNow);
+        }
+
+        // E7 (sprint46-mockup-gap): «мин» и «ч» — стандартные обозначения единиц времени,
+        // Дни — полной формой со склонением: «1 день», «2 дня», «18 дней» (§3 «Числа»: «12 дн» запрещено).
+        internal static string CompactAgeText(
+            DateTime? valueUtc,
+            DateTime nowUtc)
+        {
             if (!valueUtc.HasValue)
             {
                 return UiText.Get(
@@ -1271,7 +1283,7 @@ namespace NetLoom.Wpf
             }
 
             var age =
-                DateTime.UtcNow -
+                nowUtc -
                 valueUtc.Value;
 
             if (age < TimeSpan.FromMinutes(1))
@@ -1296,7 +1308,7 @@ namespace NetLoom.Wpf
                         age.TotalHours));
             }
 
-            return UiText.Format(
+            return UiText.FormatCount(
                 "EquipmentAgeDays",
                 (int)Math.Floor(
                     age.TotalDays));

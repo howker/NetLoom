@@ -2115,8 +2115,20 @@
   <data name="EquipmentAgeHours" xml:space="preserve">
     <value>{0} ч</value>
   </data>
-  <data name="EquipmentAgeDays" xml:space="preserve">
-    <value>{0} дн</value>
+  <data name="EquipmentAgeDaysOne" xml:space="preserve">
+    <value>{0} день</value>
+  </data>
+  <data name="EquipmentAgeDaysFew" xml:space="preserve">
+    <value>{0} дня</value>
+  </data>
+  <data name="EquipmentAgeDaysMany" xml:space="preserve">
+    <value>{0} дней</value>
+  </data>
+  <data name="EquipmentAgeDaysOther" xml:space="preserve">
+    <value>{0} дня</value>
+  </data>
+  <data name="DiagnosticNothingSelectedEquipment" xml:space="preserve">
+    <value>Выберите устройство в таблице.</value>
   </data>
   <data name="ShellGlobalSearchPlaceholder" xml:space="preserve">
     <value>Устройство, IP или MAC</value>

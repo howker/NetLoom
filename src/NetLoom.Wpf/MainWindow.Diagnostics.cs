@@ -774,11 +774,48 @@ public partial class MainWindow : Window
         return true;
     }
 
+    // E6 (sprint46-mockup-gap): подсказка пустого инспектора называет место выбора открытого раздела.
+    // На «Оборудовании» устройство выбирают в таблице, а не на карте (§3 язык).
+    private string _inspectorEmptyStatusKey;
+
+    private string EmptyInspectorPromptKey(
+        string statusKey)
+    {
+        return string.Equals(
+                   statusKey,
+                   "DiagnosticNothingSelected",
+                   StringComparison.Ordinal) &&
+               _shellSection == ShellSection.Equipment
+            ? "DiagnosticNothingSelectedEquipment"
+            : statusKey;
+    }
+
+    private void RefreshEmptyInspectorPrompt()
+    {
+        if (_inspectorEntityId.HasValue ||
+            _inspectorEmptyStatusKey == null ||
+            _selectedDeviceId.HasValue ||
+            _selectedInterfaceId.HasValue ||
+            _selectedPhysicalLinkId.HasValue ||
+            _selectedLocationId.HasValue)
+        {
+            return;
+        }
+
+        DiagnosticStatusText.Text =
+            UiText.Get(
+                EmptyInspectorPromptKey(
+                    _inspectorEmptyStatusKey));
+    }
+
     private void ClearDiagnosticPanel(
         string statusKey)
     {
         UpdateShellBreadcrumb();
         ClearInspectorEntity();
+
+        _inspectorEmptyStatusKey =
+            statusKey;
 
         ConfigureInspectorTabs(
             false,
@@ -791,7 +828,9 @@ public partial class MainWindow : Window
         DiagnosticStatusText.Visibility =
             Visibility.Visible;
         DiagnosticStatusText.Text =
-            UiText.Get(statusKey);
+            UiText.Get(
+                EmptyInspectorPromptKey(
+                    statusKey));
 
         DiagnosticElementTitleText.Text =
             string.Empty;
