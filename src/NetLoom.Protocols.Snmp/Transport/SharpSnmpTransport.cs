@@ -74,9 +74,17 @@ namespace NetLoom.Protocols.Snmp.Transport
                 }
                 catch (SnmpException exception)
                 {
+                    var error = exception as ErrorException;
+                    var failure = error?.Body == null
+                        ? SnmpTransportFailure.Protocol
+                        : SnmpFailureClassifier.ClassifyErrorStatus(
+                            error.Body.Pdu().ErrorStatus.ToInt32());
+
                     throw new SnmpTransportException(
-                        SnmpTransportFailure.Protocol,
-                        "SNMP protocol error.",
+                        failure,
+                        failure == SnmpTransportFailure.Authentication
+                            ? "SNMP authentication failed."
+                            : "SNMP protocol error.",
                         exception);
                 }
             }
@@ -248,9 +256,17 @@ namespace NetLoom.Protocols.Snmp.Transport
 
             if (reply is ReportMessage)
             {
+                var reportVariables = reply.Pdu().Variables;
+                var failure = SnmpFailureClassifier.ClassifyReport(
+                    reportVariables.Count > 0
+                        ? reportVariables[0].Id.ToString()
+                        : null);
+
                 throw new SnmpTransportException(
-                    SnmpTransportFailure.Protocol,
-                    "SNMP v3 agent returned a report message.",
+                    failure,
+                    failure == SnmpTransportFailure.Authentication
+                        ? "SNMP v3 authentication failed."
+                        : "SNMP v3 agent returned a report message.",
                     null);
             }
 
@@ -258,9 +274,14 @@ namespace NetLoom.Protocols.Snmp.Transport
 
             if (pdu.ErrorStatus.ToInt32() != 0)
             {
+                var failure = SnmpFailureClassifier.ClassifyErrorStatus(
+                    pdu.ErrorStatus.ToInt32());
+
                 throw new SnmpTransportException(
-                    SnmpTransportFailure.Protocol,
-                    "SNMP agent returned an error response.",
+                    failure,
+                    failure == SnmpTransportFailure.Authentication
+                        ? "SNMP authentication failed."
+                        : "SNMP agent returned an error response.",
                     null);
             }
 

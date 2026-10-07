@@ -149,6 +149,7 @@ namespace NetLoom.Application.Discovery
             cancellationToken.ThrowIfCancellationRequested();
 
             InventorySnapshot inventory = null;
+            SnmpTransportFailure? snmpFailure = null;
             Guid? accessProfileId = null;
 
             phaseChanged?.Invoke(
@@ -178,15 +179,26 @@ namespace NetLoom.Application.Discovery
                 accessProfileId =
                     profile.AccessProfileId;
             }
-            catch (SnmpTransportException)
+            catch (SnmpTransportException error)
             {
+                snmpFailure = error.Failure;
             }
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Ошибка адреса сообщается без инвентаря SNMP, если выполнено хотя бы одно условие:
+            // Адрес ответил по ICMP или TCP; ошибка отличается от таймаута и неподдерживаемых учётных данных.
+            // Молчащий адрес с таймаутом означает отсутствие устройства, иначе пустая /24 дала бы 254 ошибки.
+            var reportSnmpFailure = inventory == null &&
+                snmpFailure.HasValue &&
+                (icmpReachable || openTcpPorts.Count > 0 ||
+                 (snmpFailure != SnmpTransportFailure.Timeout &&
+                  snmpFailure != SnmpTransportFailure.UnsupportedCredentials));
+
             if (!icmpReachable &&
                 openTcpPorts.Count == 0 &&
-                inventory == null)
+                inventory == null &&
+                !reportSnmpFailure)
             {
                 return null;
             }
@@ -196,7 +208,8 @@ namespace NetLoom.Application.Discovery
                 icmpReachable,
                 openTcpPorts,
                 inventory,
-                accessProfileId);
+                accessProfileId,
+                reportSnmpFailure ? snmpFailure : null);
         }
 
         private static void WaitBeforeNextAddress(

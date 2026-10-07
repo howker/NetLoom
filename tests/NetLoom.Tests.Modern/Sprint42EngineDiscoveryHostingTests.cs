@@ -471,6 +471,24 @@ namespace NetLoom.Tests.Modern
             }
         }
 
+        [TestMethod]
+        public void DiscoveryCandidateOutputIncludesAuthenticationError()
+        {
+            var output = new RecordingWriter();
+
+            EngineMachineOutput.WriteDiscoveryCandidate(
+                output,
+                new DiscoveryCandidate(
+                    IPAddress.Parse("192.0.2.7"),
+                    true,
+                    new int[0],
+                    null,
+                    null,
+                    SnmpTransportFailure.Authentication));
+
+            StringAssert.Contains(output.ToString(), " snmpError=authentication");
+        }
+
         private static DiscoveryRequest CreateRequest(
             Guid profileId,
             IReadOnlyList<IPAddress> addresses)

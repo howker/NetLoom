@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.Snmp;
 using NetLoom.Desktop.Discovery;
 using NetLoom.Desktop.Monitoring;
 using NetLoom.Domain.Access;
@@ -252,6 +253,39 @@ namespace NetLoom.Tests.Modern
                     ProfileId.ToString("D") +
                     " icmp=true snmp=true tcpPorts=22 sysName64=%%% sysDescription64=- sysObjectId64=- sysLocation64=- interfaces=1",
                     out marker));
+        }
+
+        [TestMethod]
+        public void CandidateMarkerParsesAuthenticationErrorAndSupportsOlderEngine()
+        {
+            var line = CandidateMarker(
+                "192.0.2.7", ProfileId, true, false, "none",
+                null, null, null, null, 0);
+            EngineDiscoveryMarker marker;
+
+            Assert.IsTrue(EngineDiscoveryMarkerParser.TryParse(
+                line + " snmpError=authentication", out marker));
+            Assert.AreEqual(SnmpTransportFailure.Authentication, marker.Candidate.SnmpError);
+
+            Assert.IsTrue(EngineDiscoveryMarkerParser.TryParse(line, out marker));
+            Assert.IsNull(marker.Candidate.SnmpError);
+
+            Assert.IsFalse(EngineDiscoveryMarkerParser.TryParse(
+                line + " snmpError=unknown", out marker));
+            Assert.IsFalse(EngineDiscoveryMarkerParser.TryParse(
+                line + " snmpError=", out marker));
+        }
+
+        [TestMethod]
+        public void CandidateMarkerRejectsSnmpResponseWithError()
+        {
+            var line = CandidateMarker(
+                "192.0.2.7", ProfileId, true, true, "none",
+                null, null, null, null, 0);
+            EngineDiscoveryMarker marker;
+
+            Assert.IsFalse(EngineDiscoveryMarkerParser.TryParse(
+                line + " snmpError=timeout", out marker));
         }
 
         [TestMethod]

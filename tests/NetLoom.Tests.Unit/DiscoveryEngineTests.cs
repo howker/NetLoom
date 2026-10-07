@@ -426,6 +426,68 @@ namespace NetLoom.Tests.Unit
                 calls);
         }
 
+        [TestMethod]
+        public void SilentAddressWithSnmpTimeoutIsNotAnError()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(false, new int[0]),
+                new CountingFailingInventoryCollector(SnmpTransportFailure.Timeout));
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(0, results.Count);
+        }
+
+        [TestMethod]
+        public void AddressAnsweringIcmpWithSnmpTimeoutReportsTimeout()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(true, new int[0]),
+                new CountingFailingInventoryCollector(SnmpTransportFailure.Timeout));
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(1, results.Count);
+            Assert.AreEqual(SnmpTransportFailure.Timeout, results[0].SnmpFailure);
+        }
+
+        [TestMethod]
+        public void SilentAddressWithAuthenticationFailureIsReported()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(false, new int[0]),
+                new CountingFailingInventoryCollector(SnmpTransportFailure.Authentication));
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(1, results.Count);
+            Assert.IsFalse(results[0].IcmpReachable);
+            Assert.AreEqual(0, results[0].OpenTcpPorts.Count);
+            Assert.AreEqual(SnmpTransportFailure.Authentication, results[0].SnmpFailure);
+        }
+
+        [TestMethod]
+        public void SuccessfulSnmpHasNoFailure()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(false, new int[0]),
+                new SuccessfulInventoryCollector());
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(1, results.Count);
+            Assert.IsTrue(results[0].SnmpResponded);
+            Assert.IsNull(results[0].SnmpFailure);
+        }
+
         private static DiscoveryRequest CreateRequest(
             Guid profileId,
             IReadOnlyList<IPAddress> addresses,
@@ -587,6 +649,14 @@ namespace NetLoom.Tests.Unit
         private sealed class CountingFailingInventoryCollector
             : IInventoryCollector
         {
+            private readonly SnmpTransportFailure _failure;
+
+            public CountingFailingInventoryCollector(
+                SnmpTransportFailure failure = SnmpTransportFailure.Timeout)
+            {
+                _failure = failure;
+            }
+
             public int CollectionCount { get; private set; }
 
             public InventorySnapshot Collect(
@@ -595,8 +665,8 @@ namespace NetLoom.Tests.Unit
                 CollectionCount++;
 
                 throw new SnmpTransportException(
-                    SnmpTransportFailure.Timeout,
-                    "Timeout",
+                    _failure,
+                    "Synthetic SNMP failure",
                     null);
             }
         }

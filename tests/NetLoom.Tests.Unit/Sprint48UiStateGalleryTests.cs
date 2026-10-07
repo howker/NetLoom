@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.Snmp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
@@ -128,6 +129,10 @@ namespace NetLoom.Tests.Unit
                                         (Button)window.FindName(
                                             "ShellDiscoveryButton"));
 
+                                    // Диапазон в форме согласован с адресами найденных устройств.
+                                    ((TextBox)window.FindName("DiscoveryStartAddressTextBox")).Text = "10.48.228.1";
+                                    ((TextBox)window.FindName("DiscoveryEndAddressTextBox")).Text = "10.48.228.254";
+
                                     var runClock =
                                         new DateTime(2026, 10, 7, 9, 12, 5, DateTimeKind.Utc);
                                     window.DiscoveryRunClock =
@@ -144,7 +149,7 @@ namespace NetLoom.Tests.Unit
                                         discoveryControl.EmitCandidate(
                                             new DiscoveryCandidateSnapshot(
                                                 IPAddress.Parse(
-                                                    "198.51.100." + i),
+                                                    "10.48.228." + (100 + i)),
                                                 profile.Id,
                                                 true,
                                                 i <= item.Item5,
@@ -247,6 +252,300 @@ namespace NetLoom.Tests.Unit
                             outputDirectory,
                             "*.png").Length,
                         "Every Sprint 48 gallery frame must be produced.");
+                });
+        }
+
+        [TestMethod]
+        public void DiscoveryRunErrorsGalleryShowsReasons()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var outputDirectory =
+                        Path.Combine(
+                            Path.GetDirectoryName(
+                                ResolveOutputDirectory()),
+                            "sprint48-errors");
+
+                    Directory.CreateDirectory(
+                        outputDirectory);
+
+                    foreach (var file in
+                        Directory.GetFiles(
+                            outputDirectory,
+                            "*.png"))
+                    {
+                        File.Delete(file);
+                    }
+
+                    var findings =
+                        new List<string>();
+
+                    var profile =
+                        new AccessProfile(
+                            Guid.Parse(
+                                "48484848-0001-0001-0001-484848484848"),
+                            "Площадка А",
+                            true,
+                            SnmpVersion.V2C,
+                            null);
+
+                    var scenarios =
+                        new[]
+                        {
+                            Tuple.Create(
+                                "34-discovery-run-errors",
+                                DiscoveryControlState.Completed,
+                                254,
+                                37,
+                                31,
+                                new TimeSpan(0, 4, 37))
+                        };
+
+                    foreach (var item in scenarios)
+                    {
+                        var scenario =
+                            item.Item1;
+
+                        foreach (var dark in new[] { false, true })
+                        {
+                            var theme =
+                                dark ? "dark" : "light";
+
+                            var bitmaps =
+                                new List<BitmapSource>();
+
+                            foreach (var width in
+                                new[] { NarrowWidth, NormalWidth })
+                            {
+                                var discoveryControl =
+                                    new GalleryDiscoveryControl();
+
+                                var materializer =
+                                    new GalleryCandidateMaterializer();
+
+                                var window =
+                                    new MainWindow(
+                                        new FixedRefreshProvider(
+                                            EmptySnapshot()),
+                                        new EmptyLookupReader(),
+                                        new GalleryMonitoringControl(),
+                                        discoveryControl,
+                                        new[] { profile },
+                                        materializer);
+
+                                try
+                                {
+                                    PrepareWindow(
+                                        window,
+                                        width,
+                                        GalleryHeight);
+
+                                    if (dark)
+                                    {
+                                        Click(
+                                            (Button)window.FindName(
+                                                "ShellThemeButton"));
+                                    }
+
+                                    Click(
+                                        (Button)window.FindName(
+                                            "ShellDiscoveryButton"));
+
+                                    // Диапазон в форме согласован с адресами найденных устройств.
+                                    ((TextBox)window.FindName("DiscoveryStartAddressTextBox")).Text = "10.48.228.1";
+                                    ((TextBox)window.FindName("DiscoveryEndAddressTextBox")).Text = "10.48.228.254";
+
+                                    var runClock =
+                                        new DateTime(2026, 10, 7, 9, 12, 5, DateTimeKind.Utc);
+                                    window.DiscoveryRunClock =
+                                        () => runClock;
+
+                                    discoveryControl.PublishState(
+                                        DiscoveryControlState.Running,
+                                        0,
+                                        254,
+                                        0,
+                                        accessProfileId: profile.Id);
+
+                                    for (var i = 1; i <= item.Item5; i++)
+                                    {
+                                        discoveryControl.EmitCandidate(
+                                            new DiscoveryCandidateSnapshot(
+                                                IPAddress.Parse(
+                                                    "10.48.228." + (100 + i)),
+                                                profile.Id,
+                                                true,
+                                                i <= item.Item5,
+                                                new[] { 22 },
+                                                "sw-" + i,
+                                                "Synthetic device",
+                                                null,
+                                                null,
+                                                8));
+                                    }
+
+                                    PumpDispatcher();
+
+                                    runClock =
+                                        runClock + item.Item6;
+
+                                    var failures = new[]
+                                    {
+                                        SnmpTransportFailure.Authentication,
+                                        SnmpTransportFailure.Authentication,
+                                        SnmpTransportFailure.Authentication,
+                                        SnmpTransportFailure.Timeout,
+                                        SnmpTransportFailure.Timeout,
+                                        SnmpTransportFailure.Protocol
+                                    };
+
+                                    for (var i = 0; i < failures.Length; i++)
+                                    {
+                                        discoveryControl.EmitCandidate(
+                                            new DiscoveryCandidateSnapshot(
+                                                IPAddress.Parse("10.48.228." + (10 + i)),
+                                                null,
+                                                true,
+                                                false,
+                                                new int[0],
+                                                null,
+                                                null,
+                                                null,
+                                                null,
+                                                0,
+                                                failures[i]));
+                                    }
+
+                                    PumpDispatcher();
+
+                                    discoveryControl.PublishState(
+                                        item.Item2,
+                                        item.Item3,
+                                        254,
+                                        item.Item4);
+
+                                    PumpDispatcher();
+                                    window.UpdateLayout();
+
+                                    var frameScenario =
+                                        scenario + "/" + theme + "/" + width;
+
+                                    var panel =
+                                        (StackPanel)window.FindName(
+                                            "DiscoveryRunSummaryPanel");
+
+                                    if (panel.Visibility != Visibility.Visible)
+                                    {
+                                        findings.Add(
+                                            frameScenario + ": блок «Последний запуск» не виден после завершения запуска (§9).");
+                                    }
+
+                                    Assert.AreEqual(
+                                        Visibility.Visible,
+                                        panel.Visibility,
+                                        frameScenario + ": the last discovery run summary must be visible.");
+
+                                    var errorsText =
+                                        (TextBlock)window.FindName("DiscoveryRunErrorsValueText");
+
+                                    if (errorsText.Text != "6")
+                                    {
+                                        findings.Add(
+                                            frameScenario + ": число ошибок не равно 6 (§9): «" +
+                                            errorsText.Text + "».");
+                                    }
+
+                                    var rows = ((ListBox)window.FindName("DiscoveryCandidatesList"))
+                                        .Items.Cast<object>().ToArray();
+
+                                    for (var i = 0; i < failures.Length; i++)
+                                    {
+                                        var address = "10.48.228." + (10 + i);
+                                        var row = rows.Single(candidate =>
+                                            (string)candidate.GetType().GetProperty("Address")
+                                                .GetValue(candidate) == address);
+                                        var errorKey = failures[i] == SnmpTransportFailure.Authentication
+                                            ? "DiscoveryErrorSnmpAuthentication"
+                                            : failures[i] == SnmpTransportFailure.Timeout
+                                                ? "DiscoveryErrorSnmpTimeout"
+                                                : "DiscoveryErrorSnmpProtocol";
+                                        var expectedSummary = UiText.Format(
+                                            "DiscoveryCandidateErrorSummary",
+                                            UiText.Get("DiscoveryUnnamedCandidate"),
+                                            UiText.Get(errorKey),
+                                            profile.Name,
+                                            runClock.ToLocalTime().ToString("t", CultureInfo.CurrentCulture));
+                                        var actualSummary = (string)row.GetType().GetProperty("Summary")
+                                            .GetValue(row);
+
+                                        if (actualSummary != expectedSummary)
+                                        {
+                                            findings.Add(
+                                                frameScenario + ": причина ошибки адреса " + address +
+                                                " не совпадает с ожидаемой (§9): «" + actualSummary + "».");
+                                        }
+                                    }
+
+                                    var expectedDuration =
+                                        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru"
+                                            ? (item.Item2 == DiscoveryControlState.Completed
+                                                ? "4 мин 37 с"
+                                                : "2 мин 8 с")
+                                            : (item.Item2 == DiscoveryControlState.Completed
+                                                ? "4 min 37 s"
+                                                : "2 min 8 s");
+                                    var durationText =
+                                        (TextBlock)window.FindName(
+                                            "DiscoveryRunDurationValueText");
+
+                                    if (durationText.Text != expectedDuration)
+                                    {
+                                        findings.Add(
+                                            frameScenario + ": длительность запуска не совпадает с ожидаемой (§9): «" +
+                                            durationText.Text + "» вместо «" + expectedDuration + "».");
+                                    }
+
+                                    CollectTextClipping(
+                                        window.Content as DependencyObject,
+                                        frameScenario,
+                                        findings);
+
+                                    bitmaps.Add(
+                                        Capture(
+                                            window.Content as FrameworkElement));
+                                }
+                                finally
+                                {
+                                    window.Close();
+                                    PumpDispatcher();
+                                }
+                            }
+
+                            SaveSideBySide(
+                                bitmaps[0],
+                                bitmaps[1],
+                                Path.Combine(
+                                    outputDirectory,
+                                    scenario + "-" + theme + ".png"));
+                        }
+                    }
+
+                    File.WriteAllLines(
+                        Path.Combine(
+                            outputDirectory,
+                            "findings.txt"),
+                        findings.Count == 0
+                            ? new[] { "Находок нет." }
+                            : findings.ToArray());
+
+                    // Один сценарий ошибок в светлой и тёмной темах; узкий и обычный варианты рядом.
+                    Assert.AreEqual(
+                        2,
+                        Directory.GetFiles(
+                            outputDirectory,
+                            "*.png").Length,
+                        "Every discovery error gallery frame must be produced.");
                 });
         }
 
@@ -528,13 +827,14 @@ namespace NetLoom.Tests.Unit
                 IPAddress currentAddress = null,
                 DiscoveryPhase? phase = null,
                 int step = 0,
-                int steps = 0)
+                int steps = 0,
+                Guid? accessProfileId = null)
             {
                 _current =
                     new DiscoveryControlSnapshot(
                         state,
                         null,
-                        null,
+                        accessProfileId,
                         processed,
                         total,
                         found,

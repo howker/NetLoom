@@ -1465,6 +1465,27 @@ Drag the header to move this placement together with its child placements and as
   <data name="DiscoverySnmpUnavailable" xml:space="preserve">
     <value>no response</value>
   </data>
+  <data name="DiscoveryErrorSnmpTimeout" xml:space="preserve">
+    <value>SNMP: no response (timeout)</value>
+  </data>
+  <data name="DiscoveryErrorSnmpAuthentication" xml:space="preserve">
+    <value>SNMP: authentication error</value>
+  </data>
+  <data name="DiscoveryErrorSnmpProtocol" xml:space="preserve">
+    <value>SNMP: protocol error</value>
+  </data>
+  <data name="DiscoveryErrorSnmpSocket" xml:space="preserve">
+    <value>SNMP: network error</value>
+  </data>
+  <data name="DiscoveryErrorSnmpUnsupported" xml:space="preserve">
+    <value>SNMP: profile settings are not supported</value>
+  </data>
+  <data name="DiscoveryCandidateErrorSummary" xml:space="preserve">
+    <value>{0} · {1} · profile {2} · {3}</value>
+  </data>
+  <data name="DiscoveryRunErrorsLabel" xml:space="preserve">
+    <value>Errors</value>
+  </data>
   <data name="DiscoveryStateIdle" xml:space="preserve">
     <value>Not run yet</value>
   </data>

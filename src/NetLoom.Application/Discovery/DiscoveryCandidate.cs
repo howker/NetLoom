@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using NetLoom.Application.Inventory;
+using NetLoom.Application.Snmp;
 
 namespace NetLoom.Application.Discovery
 {
@@ -12,7 +13,8 @@ namespace NetLoom.Application.Discovery
             bool icmpReachable,
             IReadOnlyList<int> openTcpPorts,
             InventorySnapshot inventory,
-            Guid? accessProfileId)
+            Guid? accessProfileId,
+            SnmpTransportFailure? snmpFailure = null)
         {
             Address = address ??
                 throw new ArgumentNullException(nameof(address));
@@ -20,6 +22,14 @@ namespace NetLoom.Application.Discovery
             OpenTcpPorts = openTcpPorts ??
                 throw new ArgumentNullException(nameof(openTcpPorts));
 
+            if (inventory != null && snmpFailure.HasValue)
+            {
+                throw new ArgumentException(
+                    "SNMP inventory cannot have a transport failure.",
+                    nameof(snmpFailure));
+            }
+
+            SnmpFailure = snmpFailure;
             IcmpReachable = icmpReachable;
             Inventory = inventory;
             AccessProfileId = accessProfileId;
@@ -34,6 +44,8 @@ namespace NetLoom.Application.Discovery
         public InventorySnapshot Inventory { get; }
 
         public Guid? AccessProfileId { get; }
+
+        public SnmpTransportFailure? SnmpFailure { get; }
 
         public bool SnmpResponded
         {

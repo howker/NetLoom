@@ -1465,6 +1465,27 @@
   <data name="DiscoverySnmpUnavailable" xml:space="preserve">
     <value>Нет ответа</value>
   </data>
+  <data name="DiscoveryErrorSnmpTimeout" xml:space="preserve">
+    <value>SNMP: нет ответа (таймаут)</value>
+  </data>
+  <data name="DiscoveryErrorSnmpAuthentication" xml:space="preserve">
+    <value>SNMP: ошибка аутентификации</value>
+  </data>
+  <data name="DiscoveryErrorSnmpProtocol" xml:space="preserve">
+    <value>SNMP: ошибка протокола</value>
+  </data>
+  <data name="DiscoveryErrorSnmpSocket" xml:space="preserve">
+    <value>SNMP: сетевая ошибка</value>
+  </data>
+  <data name="DiscoveryErrorSnmpUnsupported" xml:space="preserve">
+    <value>SNMP: параметры профиля не поддерживаются</value>
+  </data>
+  <data name="DiscoveryCandidateErrorSummary" xml:space="preserve">
+    <value>{0} · {1} · профиль {2} · {3}</value>
+  </data>
+  <data name="DiscoveryRunErrorsLabel" xml:space="preserve">
+    <value>Ошибок</value>
+  </data>
   <data name="DiscoveryStateIdle" xml:space="preserve">
     <value>Не запускался</value>
   </data>

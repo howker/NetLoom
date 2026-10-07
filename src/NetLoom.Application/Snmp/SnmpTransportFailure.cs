@@ -5,6 +5,7 @@ namespace NetLoom.Application.Snmp
         Timeout,
         Socket,
         Protocol,
-        UnsupportedCredentials
+        UnsupportedCredentials,
+        Authentication
     }
 }

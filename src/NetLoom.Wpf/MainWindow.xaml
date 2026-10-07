@@ -1350,6 +1350,19 @@
                                                    VerticalAlignment="Center"
                                                    TextWrapping="Wrap" />
                                     </Grid>
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DiscoveryRunErrorsLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="DiscoveryRunErrorsValueText"
+                                                   Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
@@ -1464,6 +1477,7 @@
                                             </Border>
 
                                             <ListBox x:Name="DiscoveryCandidatesList"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                                      Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate>

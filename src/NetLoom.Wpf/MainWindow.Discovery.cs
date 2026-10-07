@@ -10,6 +10,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.Snmp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf.Localization;
@@ -48,6 +49,9 @@ namespace NetLoom.Wpf
         private readonly HashSet<string> _discoveryRunSnmpAddresses =
             new HashSet<string>(
                 StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _discoveryRunErrorAddresses =
+            new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
         private DiscoveryControlSnapshot _discoveryRunLastSnapshot;
 
         private bool _discoveryClosed;
@@ -68,6 +72,8 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryRunCheckedLabel");
             DiscoveryRunFoundLabelText.Text =
                 UiText.Get("DiscoveryRunFoundLabel");
+            DiscoveryRunErrorsLabelText.Text =
+                UiText.Get("DiscoveryRunErrorsLabel");
             DiscoveryProgressLabelText.Text =
                 UiText.Get("DiscoveryProgressLabel");
             DiscoveryCurrentAddressLabelText.Text =
@@ -1427,21 +1433,41 @@ namespace NetLoom.Wpf
                             address,
                             StringComparison.OrdinalIgnoreCase));
 
-            var row =
-                new DiscoveryCandidateRow(
+            var name = string.IsNullOrWhiteSpace(candidate.SysName)
+                ? UiText.Get("DiscoveryUnnamedCandidate")
+                : candidate.SysName;
+            string summary;
+
+            if (candidate.SnmpError.HasValue)
+            {
+                // Sprint 48: причина ошибки у адреса — вид ошибки SNMP, профиль запуска, время.
+                var profileId = _discoveryRunLastSnapshot?.AccessProfileId ??
+                    _discoveryControl.Current.AccessProfileId;
+                var profile = _discoveryProfiles.FirstOrDefault(
+                    item => item.Id == profileId);
+
+                summary = UiText.Format(
+                    "DiscoveryCandidateErrorSummary",
+                    name,
+                    UiText.Get(DiscoverySnmpErrorResourceKey(
+                        candidate.SnmpError.Value)),
+                    profile?.Name ?? UiText.Get("DiagnosticNotAvailable"),
+                    DiscoveryRunClock().ToLocalTime().ToString(
+                        "t", CultureInfo.CurrentCulture));
+            }
+            else
+            {
+                summary = UiText.Format(
+                    "DiscoveryCandidateSummary",
                     address,
-                    UiText.Format(
-                        "DiscoveryCandidateSummary",
-                        address,
-                        string.IsNullOrWhiteSpace(
-                            candidate.SysName)
-                            ? UiText.Get(
-                                "DiscoveryUnnamedCandidate")
-                            : candidate.SysName,
-                        UiText.Get(
-                            candidate.SnmpResponded
-                                ? "DiscoverySnmpResponded"
-                                : "DiscoverySnmpUnavailable")));
+                    name,
+                    UiText.Get(
+                        candidate.SnmpResponded
+                            ? "DiscoverySnmpResponded"
+                            : "DiscoverySnmpUnavailable"));
+            }
+
+            var row = new DiscoveryCandidateRow(address, summary);
 
             if (existingIndex >= 0)
             {
@@ -1454,10 +1480,16 @@ namespace NetLoom.Wpf
                     row);
             }
 
+            if (candidate.SnmpError.HasValue)
+            {
+                _discoveryRunErrorAddresses.Add(address);
+            }
+
             if (candidate.SnmpResponded)
             {
                 _discoveryRunSnmpAddresses.Add(
                     address);
+                _discoveryRunErrorAddresses.Remove(address);
             }
 
             RefreshDiscoveryCandidateRows();
@@ -1724,6 +1756,7 @@ namespace NetLoom.Wpf
                 _discoveryRunFinishedUtc =
                     null;
                 _discoveryRunSnmpAddresses.Clear();
+                _discoveryRunErrorAddresses.Clear();
             }
 
             if ((snapshot.State == DiscoveryControlState.Completed ||
@@ -1780,6 +1813,9 @@ namespace NetLoom.Wpf
                     "DiscoveryRunFoundValue",
                     _discoveryRunLastSnapshot.FoundCandidates,
                     _discoveryRunSnmpAddresses.Count);
+            DiscoveryRunErrorsValueText.Text =
+                _discoveryRunErrorAddresses.Count.ToString(
+                    CultureInfo.CurrentCulture);
         }
 
         private static string DiscoveryRunDurationText(
@@ -1886,6 +1922,26 @@ namespace NetLoom.Wpf
                                     "DiagnosticNotAvailable")
                                 : message);
                     return;
+            }
+        }
+
+        private static string DiscoverySnmpErrorResourceKey(
+            SnmpTransportFailure failure)
+        {
+            switch (failure)
+            {
+                case SnmpTransportFailure.Timeout:
+                    return "DiscoveryErrorSnmpTimeout";
+                case SnmpTransportFailure.Authentication:
+                    return "DiscoveryErrorSnmpAuthentication";
+                case SnmpTransportFailure.Protocol:
+                    return "DiscoveryErrorSnmpProtocol";
+                case SnmpTransportFailure.Socket:
+                    return "DiscoveryErrorSnmpSocket";
+                case SnmpTransportFailure.UnsupportedCredentials:
+                    return "DiscoveryErrorSnmpUnsupported";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(failure));
             }
         }
 

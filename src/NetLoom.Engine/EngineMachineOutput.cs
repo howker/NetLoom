@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.Snmp;
 
 namespace NetLoom.Engine
 {
@@ -496,7 +497,31 @@ namespace NetLoom.Engine
                  inventory.Interfaces == null
                     ? "0"
                     : inventory.Interfaces.Count.ToString(
-                        CultureInfo.InvariantCulture)));
+                        CultureInfo.InvariantCulture)) +
+                " snmpError=" +
+                FormatSnmpFailure(candidate.SnmpFailure));
+        }
+
+        private static string FormatSnmpFailure(
+            SnmpTransportFailure? failure)
+        {
+            switch (failure)
+            {
+                case null:
+                    return "none";
+                case SnmpTransportFailure.Timeout:
+                    return "timeout";
+                case SnmpTransportFailure.Socket:
+                    return "socket";
+                case SnmpTransportFailure.Protocol:
+                    return "protocol";
+                case SnmpTransportFailure.UnsupportedCredentials:
+                    return "unsupported";
+                case SnmpTransportFailure.Authentication:
+                    return "authentication";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(failure));
+            }
         }
 
         public static void WriteDiscoveryCompleted(

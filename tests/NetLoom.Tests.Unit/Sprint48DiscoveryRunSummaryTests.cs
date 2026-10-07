@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Globalization;
 using System.Net;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.Snmp;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
 using NetLoom.Wpf.Localization;
@@ -81,6 +83,78 @@ namespace NetLoom.Tests.Unit
                         Assert.AreEqual(
                             UiText.Get("DiagnosticNotAvailable"),
                             phaseText.Text);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void ErrorCandidateShowsReasonAndCountsInRunSummary()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var provider = new MutableRefreshProvider(EmptySnapshot());
+                    var control = new RecordingDiscoveryControl();
+                    var profile = new AccessProfile(
+                        Guid.NewGuid(), "Площадка А", true, SnmpVersion.V2C, null);
+                    var window = new MainWindow(
+                        provider,
+                        new EmptyLookupReader(),
+                        new NoopMonitoringControl(),
+                        control,
+                        new[] { profile },
+                        new RecordingCandidateMaterializer());
+
+                    try
+                    {
+                        window.Show();
+                        WaitForCondition(() => provider.ReadCount >= 1);
+
+                        var runClock = new DateTime(
+                            2026, 10, 7, 9, 12, 5, DateTimeKind.Utc);
+                        window.DiscoveryRunClock = () => runClock;
+                        control.StartAsync(
+                            new DiscoveryControlRequest(
+                                "10.0.0.0/24", profile.Id, SnmpVersion.V2C),
+                            CancellationToken.None).GetAwaiter().GetResult();
+
+                        control.EmitCandidate(new DiscoveryCandidateSnapshot(
+                            IPAddress.Parse("10.0.0.7"),
+                            null,
+                            true,
+                            false,
+                            new int[0],
+                            null,
+                            null,
+                            null,
+                            null,
+                            0,
+                            SnmpTransportFailure.Authentication));
+
+                        var list = (ListBox)window.FindName("DiscoveryCandidatesList");
+                        WaitForCondition(() => list.Items.Count == 1);
+                        var expectedSummary = UiText.Format(
+                            "DiscoveryCandidateErrorSummary",
+                            UiText.Get("DiscoveryUnnamedCandidate"),
+                            UiText.Get("DiscoveryErrorSnmpAuthentication"),
+                            profile.Name,
+                            runClock.ToLocalTime().ToString("t", CultureInfo.CurrentCulture));
+
+                        runClock = runClock.AddMinutes(1);
+                        control.PublishState(DiscoveryControlState.Completed, 4, 4, 1);
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            expectedSummary,
+                            list.Items[0].GetType().GetProperty("Summary")
+                                .GetValue(list.Items[0]));
+                        Assert.AreEqual(
+                            "1",
+                            ((TextBlock)window.FindName("DiscoveryRunErrorsValueText")).Text);
                     }
                     finally
                     {

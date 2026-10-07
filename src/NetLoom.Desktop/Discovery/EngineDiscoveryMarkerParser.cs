@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.Snmp;
 
 namespace NetLoom.Desktop.Discovery
 {
@@ -348,6 +349,7 @@ namespace NetLoom.Desktop.Discovery
             Guid? accessProfileId;
             bool icmp;
             bool snmp;
+            SnmpTransportFailure? snmpError;
             IReadOnlyList<int> tcpPorts;
             string sysName;
             string sysDescription;
@@ -371,6 +373,8 @@ namespace NetLoom.Desktop.Discovery
                     values,
                     "snmp",
                     out snmp) ||
+                !TrySnmpError(values, out snmpError) ||
+                (snmp && snmpError.HasValue) ||
                 !TryPorts(
                     values,
                     "tcpPorts",
@@ -416,7 +420,8 @@ namespace NetLoom.Desktop.Discovery
                         sysDescription,
                         sysObjectId,
                         sysLocation,
-                        interfaceCount);
+                        interfaceCount,
+                        snmpError);
             }
             catch
             {
@@ -430,6 +435,42 @@ namespace NetLoom.Desktop.Discovery
                     candidate: candidate);
 
             return true;
+        }
+
+        private static bool TrySnmpError(
+            IReadOnlyDictionary<string, string> values,
+            out SnmpTransportFailure? failure)
+        {
+            failure = null;
+            string text;
+
+            if (!values.TryGetValue("snmpError", out text))
+            {
+                return true;
+            }
+
+            switch (text)
+            {
+                case "none":
+                    return true;
+                case "timeout":
+                    failure = SnmpTransportFailure.Timeout;
+                    return true;
+                case "socket":
+                    failure = SnmpTransportFailure.Socket;
+                    return true;
+                case "protocol":
+                    failure = SnmpTransportFailure.Protocol;
+                    return true;
+                case "unsupported":
+                    failure = SnmpTransportFailure.UnsupportedCredentials;
+                    return true;
+                case "authentication":
+                    failure = SnmpTransportFailure.Authentication;
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static Dictionary<string, string> ParseValues(
@@ -449,8 +490,7 @@ namespace NetLoom.Desktop.Discovery
                 var separator =
                     part.IndexOf('=');
 
-                if (separator <= 0 ||
-                    separator == part.Length - 1)
+                if (separator <= 0)
                 {
                     continue;
                 }
