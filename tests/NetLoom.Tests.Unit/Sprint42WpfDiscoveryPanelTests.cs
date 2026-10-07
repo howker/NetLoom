@@ -23,7 +23,7 @@ using NetLoom.Wpf;
 namespace NetLoom.Tests.Unit
 {
     [TestClass]
-    public sealed class Sprint42WpfDiscoveryPanelTests
+    public sealed partial class Sprint42WpfDiscoveryPanelTests
     {
         private static readonly DateTime Now =
             new DateTime(
@@ -703,6 +703,21 @@ namespace NetLoom.Tests.Unit
                     this,
                     new DiscoveryCandidateDiscoveredEventArgs(
                         candidate));
+            }
+
+            public void PublishState(
+                DiscoveryControlState state,
+                int processed,
+                int total,
+                int found)
+            {
+                Publish(
+                    Snapshot(
+                        state,
+                        processed,
+                        total,
+                        found,
+                        null));
             }
 
             private void Publish(
