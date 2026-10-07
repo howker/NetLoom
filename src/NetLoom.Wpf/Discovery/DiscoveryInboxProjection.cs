@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -29,7 +30,7 @@ namespace NetLoom.Wpf.Discovery
         internal static IReadOnlyList<DiscoveryInboxGroup> Build(
             IReadOnlyList<DiscoveryRunResult> results, DiscoveryRunRecord run,
             Func<Guid?, string> profileName, DateTime nowUtc,
-            Func<Guid?, string> deviceName)
+            Func<Guid?, string> deviceName, Func<Guid?, string> placementPath = null)
         {
             if (results == null) throw new ArgumentNullException(nameof(results));
             if (run == null) throw new ArgumentNullException(nameof(run));
@@ -44,7 +45,7 @@ namespace NetLoom.Wpf.Discovery
                 results.Where(result => result.Group == group)
                     .OrderBy(result => AddressNumber(result.Address))
                     .ThenBy(result => result.Address, StringComparer.Ordinal)
-                    .Select(result => Row(result, profile, nowUtc, deviceName)).ToArray()))
+                    .Select(result => Row(result, profile, nowUtc, deviceName, placementPath ?? (id => null))).ToArray()))
                 .Where(group => group.Count > 0).ToArray();
         }
 
@@ -67,7 +68,7 @@ namespace NetLoom.Wpf.Discovery
         }
 
         private static DiscoveryInboxRow Row(DiscoveryRunResult result, string profile,
-            DateTime nowUtc, Func<Guid?, string> deviceName)
+            DateTime nowUtc, Func<Guid?, string> deviceName, Func<Guid?, string> placementPath)
         {
             var name = result.SysName;
             if (string.IsNullOrWhiteSpace(name) && result.DeviceId.HasValue)
@@ -75,7 +76,27 @@ namespace NetLoom.Wpf.Discovery
             if (string.IsNullOrWhiteSpace(name)) name = UiText.Get("DiscoveryUnnamedCandidate");
             var reason = Reason(result, profile, nowUtc, false);
             return new DiscoveryInboxRow(result, name, reason,
-                Reason(result, profile, nowUtc, true), Completeness(result));
+                Reason(result, profile, nowUtc, true), Completeness(result), Resolution(result, placementPath));
+        }
+
+        private static string Resolution(DiscoveryRunResult result, Func<Guid?, string> placementPath)
+        {
+            switch (result.Resolution)
+            {
+                case DiscoveryResultResolution.Accepted:
+                    return UiText.Format("DiscoveryInboxResolutionAccepted",
+                        (result.ResolvedUtc ?? result.ObservedUtc).ToLocalTime().ToString("HH:mm", CultureInfo.CurrentCulture));
+                case DiscoveryResultResolution.Ignored:
+                    return UiText.Format("DiscoveryInboxResolutionIgnored",
+                        (result.ResolvedUtc ?? result.ObservedUtc).ToLocalTime().ToString("d", CultureInfo.CurrentCulture));
+                case DiscoveryResultResolution.Unmanaged:
+                    return UiText.Get("DiscoveryInboxResolutionUnmanaged");
+                case DiscoveryResultResolution.Placed:
+                    return UiText.Format("DiscoveryInboxResolutionPlaced",
+                        placementPath(result.DeviceId) ?? UiText.Get("DiagnosticNotAvailable"));
+                default:
+                    return string.Empty;
+            }
         }
 
         private static string Reason(DiscoveryRunResult result, string profile,
@@ -214,12 +235,35 @@ namespace NetLoom.Wpf.Discovery
         }
     }
 
-    internal sealed class DiscoveryInboxGroup
+    internal sealed class DiscoveryInboxGroup : INotifyPropertyChanged
     {
         internal DiscoveryInboxGroup(DiscoveryResultGroup group, IReadOnlyList<DiscoveryInboxRow> rows)
         {
             Group = group;
             Rows = rows;
+            foreach (var row in rows) row.PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == nameof(DiscoveryInboxRow.IsSelected))
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsAllSelected)));
+            };
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public bool CanSelect => Rows.Any(row => row.CanSelect);
+        public string SelectAllText => UiText.Get("DiscoveryInboxSelectAll");
+        public string SelectAllAutomationName => UiText.Format("DiscoveryInboxSelectAllAutomationName", Title);
+        public bool? IsAllSelected
+        {
+            get
+            {
+                var selectable = Rows.Where(row => row.CanSelect).ToArray();
+                if (selectable.Length == 0 || selectable.All(row => !row.IsSelected)) return false;
+                return selectable.All(row => row.IsSelected) ? (bool?)true : null;
+            }
+            set
+            {
+                foreach (var row in Rows.Where(row => row.CanSelect)) row.IsSelected = value == true;
+            }
         }
 
         public DiscoveryResultGroup Group { get; }
@@ -230,11 +274,13 @@ namespace NetLoom.Wpf.Discovery
         public IReadOnlyList<DiscoveryInboxRow> Rows { get; }
     }
 
-    internal sealed class DiscoveryInboxRow
+    internal sealed class DiscoveryInboxRow : INotifyPropertyChanged
     {
         internal DiscoveryInboxRow(DiscoveryRunResult result, string name,
-            string reason, string fullReason, string completeness)
+            string reason, string fullReason, string completeness, string resolutionText = "")
         {
+            Result = result;
+            ResolutionText = resolutionText;
             RunId = result.RunId;
             Address = result.Address;
             DeviceId = result.DeviceId;
@@ -245,11 +291,35 @@ namespace NetLoom.Wpf.Discovery
             Completeness = completeness;
         }
 
+        private bool _isSelected;
+        internal DiscoveryRunResult Result { get; }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (!CanSelect || _isSelected == value) return;
+                _isSelected = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+            }
+        }
+        public bool CanSelect => Enum.GetValues(typeof(DiscoveryInboxAction)).Cast<DiscoveryInboxAction>()
+            .Any(action => DiscoveryInboxActions.CanApply(action, Result));
+        public string SelectAutomationName => UiText.Format("DiscoveryInboxSelectAutomationName", Address);
+        public string ResolutionText { get; }
+        public bool CanUndoIgnore => DeviceId.HasValue &&
+            (Result.Resolution == DiscoveryResultResolution.Ignored ||
+             (Group == DiscoveryResultGroup.Excluded && Result.Reason == DiscoveryResultReason.OperatorIgnored));
+        public bool HasRowAction => CanRetry || CanUndoIgnore;
+
         internal bool HasSameContent(DiscoveryInboxRow other)
         {
             return RunId == other.RunId && Address == other.Address && Name == other.Name &&
                 Reason == other.Reason && FullReason == other.FullReason &&
-                Completeness == other.Completeness && DeviceId == other.DeviceId && Group == other.Group;
+                Completeness == other.Completeness && DeviceId == other.DeviceId && Group == other.Group &&
+                ResolutionText == other.ResolutionText && Result.Resolution == other.Result.Resolution &&
+                Result.ResolvedUtc == other.Result.ResolvedUtc && CanUndoIgnore == other.CanUndoIgnore;
         }
 
         public Guid RunId { get; }
@@ -260,8 +330,8 @@ namespace NetLoom.Wpf.Discovery
         public string Completeness { get; }
         public Guid? DeviceId { get; }
         public DiscoveryResultGroup Group { get; }
-        public bool CanRetry => Group != DiscoveryResultGroup.Excluded;
-        public string RetryText => UiText.Get("DiscoveryInboxRetry");
-        public string RetryAutomationName => UiText.Format("DiscoveryInboxRetryAutomationName", Address);
+        public bool CanRetry => Group != DiscoveryResultGroup.Excluded && !CanUndoIgnore;
+        public string RetryText => UiText.Get(CanUndoIgnore ? "DiscoveryInboxUndoIgnore" : "DiscoveryInboxRetry");
+        public string RetryAutomationName => UiText.Format(CanUndoIgnore ? "DiscoveryInboxUndoIgnoreAutomationName" : "DiscoveryInboxRetryAutomationName", Address);
     }
 }

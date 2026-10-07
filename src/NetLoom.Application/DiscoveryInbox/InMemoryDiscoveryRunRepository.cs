@@ -98,6 +98,27 @@ namespace NetLoom.Application.DiscoveryInbox
             }
         }
 
+        public void SetResolution(Guid runId, string address,
+            DiscoveryResultResolution resolution, DateTime? resolvedUtc)
+        {
+            if (!Enum.IsDefined(typeof(DiscoveryResultResolution), resolution))
+                throw new ArgumentOutOfRangeException(nameof(resolution));
+            if (resolvedUtc.HasValue && resolvedUtc.Value.Kind != DateTimeKind.Utc)
+                throw new ArgumentException("Timestamp must be UTC.", nameof(resolvedUtc));
+            lock (_sync)
+            {
+                Dictionary<string, DiscoveryRunResult> results;
+                DiscoveryRunResult row;
+                if (!_results.TryGetValue(runId, out results) ||
+                    !results.TryGetValue(address, out row)) return;
+                results[address] = new DiscoveryRunResult(row.RunId, row.Address, row.Group,
+                    row.DeviceId, row.ObservedUtc, row.IcmpReachable, row.OpenTcpPorts,
+                    row.SnmpResponded, row.SnmpError, row.SysName, row.SysDescription,
+                    row.SysObjectId, row.InterfaceCount, row.Completeness, row.PartialReason,
+                    row.Reason, row.ReasonDetail, row.Changes, resolution, resolvedUtc);
+            }
+        }
+
         public void DeleteResult(Guid runId, string address)
         {
             lock (_sync)

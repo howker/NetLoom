@@ -129,17 +129,34 @@ namespace NetLoom.Application.DiscoveryInbox
                     request.AccessProfileId);
                 var excluded = new List<string>();
 
+                var ignoredDevices = _topology.GetDevices()
+                    .Where(device => device.IgnoredUtc.HasValue &&
+                        !string.IsNullOrWhiteSpace(device.ManagementAddress))
+                    .GroupBy(device => device.ManagementAddress, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key,
+                        group => group.OrderBy(device => device.IgnoredUtc).ThenBy(device => device.Id).First(),
+                        StringComparer.OrdinalIgnoreCase);
+
                 foreach (var address in addresses)
                 {
                     var rule = rules.FirstOrDefault(
                         item => item.Matches(address));
 
+                    var addressText = address.ToString();
+                    TopologyDevice ignoredDevice;
                     if (rule == null)
                     {
+                        if (ignoredDevices.TryGetValue(addressText, out ignoredDevice))
+                        {
+                            excluded.Add(addressText);
+                            _runs.SaveResult(NonCandidateResult(runId, addressText,
+                                DiscoveryResultGroup.Excluded, ignoredDevice.Id, startedUtc,
+                                DiscoveryResultReason.OperatorIgnored,
+                                ignoredDevice.IgnoredUtc.Value.ToString("o", CultureInfo.InvariantCulture)));
+                        }
                         continue;
                     }
 
-                    var addressText = address.ToString();
                     excluded.Add(addressText);
                     _runs.SaveResult(
                         NonCandidateResult(

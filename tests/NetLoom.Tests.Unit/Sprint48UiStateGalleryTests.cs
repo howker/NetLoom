@@ -912,6 +912,99 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        [TestMethod]
+        public void DiscoveryInboxBulkActionsGallery()
+        {
+            RunOnSta(() =>
+            {
+                // Обработчик действия делает await; тест нажимает кнопки из своего потока, поэтому ставит контекст диспетчера.
+                System.Threading.SynchronizationContext.SetSynchronizationContext(
+                    new System.Windows.Threading.DispatcherSynchronizationContext());
+                var outputDirectory = Path.Combine(Path.GetDirectoryName(ResolveOutputDirectory()), "sprint48-inbox-actions");
+                Directory.CreateDirectory(outputDirectory);
+                foreach (var file in Directory.GetFiles(outputDirectory, "*.png")) File.Delete(file);
+                var findings = new List<string>();
+                // Оси: массовый выбор, результат принятия, диалог размещения, обе ширины и темы.
+                // Ошибки запуска и наведение покрыты другими кадрами; здесь используются данные кадра 37.
+                foreach (var scenario in new[] { "39-inbox-selection", "40-inbox-after-accept", "41-placement-dialog" })
+                foreach (var dark in new[] { false, true })
+                {
+                    var theme = dark ? "dark" : "light";
+                    var bitmaps = new List<BitmapSource>();
+                    foreach (var width in new[] { NarrowWidth, NormalWidth })
+                    {
+                        var data = new Sprint48DiscoveryInboxFixture();
+                        var repository = Sprint48InboxActionFixture.Repository(data);
+                        var journal = new DiscoveryRunJournal(repository, new EmptyDiscoveryTopologyReader(),
+                            new GalleryCandidateMaterializer(), new EmptyDiscoveryExclusionSource());
+                        var window = new MainWindow(new FixedRefreshProvider(EmptySnapshot()), new EmptyLookupReader(),
+                            new GalleryMonitoringControl(), new GalleryDiscoveryControl(), new[] { data.Profile }, journal);
+                        var now = new DateTime(2026, 10, 7, 9, 21, 0, DateTimeKind.Local).ToUniversalTime();
+                        window.DiscoveryRunClock = () => now;
+                        window.DiscoveryInboxActions = new Sprint48RecordingInboxActions(repository);
+                        Window dialog = null;
+                        try
+                        {
+                            PrepareWindow(window, width, GalleryHeight);
+                            if (dark) Click((Button)window.FindName("ShellThemeButton"));
+                            Click((Button)window.FindName("ShellDiscoveryButton"));
+                            ((TextBox)window.FindName("DiscoveryStartAddressTextBox")).Text = "10.48.228.1";
+                            ((TextBox)window.FindName("DiscoveryEndAddressTextBox")).Text = "10.48.228.254";
+                            PumpDispatcher();
+                            var groups = ((ItemsControl)window.FindName("DiscoveryInboxGroupsList")).Items.Cast<DiscoveryInboxGroup>().ToArray();
+                            var selected = groups.Single(group => group.Group == DiscoveryResultGroup.New).Rows.Take(3)
+                                .Concat(groups.Single(group => group.Group == DiscoveryResultGroup.Changed).Rows.Take(1)).ToArray();
+                            foreach (var row in selected) row.IsSelected = true;
+                            ((Expander)window.FindName("DiscoveryExpander")).IsExpanded = false;
+                            Assert.AreEqual(UiText.Format("DiscoveryInboxSelectedCount", 4),
+                                ((TextBlock)window.FindName("DiscoveryInboxSelectedText")).Text);
+                            var frame = scenario + "/" + theme + "/" + width;
+                            if (scenario == "40-inbox-after-accept")
+                            {
+                                Click((Button)window.FindName("DiscoveryInboxAcceptButton"));
+                                WaitForCondition(() => ((TextBlock)window.FindName("DiscoveryMessageText")).Text ==
+                                    UiText.Format("DiscoveryInboxAppliedAccept", 4));
+                                var rows = ((ItemsControl)window.FindName("DiscoveryInboxGroupsList")).Items
+                                    .Cast<DiscoveryInboxGroup>().SelectMany(group => group.Rows).ToArray();
+                                Assert.IsTrue(rows.Where(row => selected.Any(item => item.Address == row.Address))
+                                    .All(row => row.ResolutionText == UiText.Format("DiscoveryInboxResolutionAccepted", "09:21")));
+                            }
+                            if (scenario == "41-placement-dialog")
+                            {
+                                dialog = window.CreateDiscoveryInboxPlacementDialog(new Sprint48InboxLocations().GetSnapshot());
+                                dialog.Show();
+                                PumpDispatcher();
+                                dialog.UpdateLayout();
+                                var placements = VisualDescendants(dialog.Content as DependencyObject).OfType<ListBox>().Single();
+                                Assert.AreEqual(3, placements.Items.Count);
+                                CollectTextClipping(dialog.Content as DependencyObject, frame, findings);
+                                bitmaps.Add(Capture(dialog.Content as FrameworkElement));
+                            }
+                            else
+                            {
+                                ((ScrollViewer)window.FindName("DiscoveryResultsPanel")).ScrollToTop();
+                                PumpDispatcher();
+                                window.UpdateLayout();
+                                CollectTextClipping(window.Content as DependencyObject, frame, findings);
+                                bitmaps.Add(Capture(window.Content as FrameworkElement));
+                            }
+                        }
+                        finally
+                        {
+                            dialog?.Close();
+                            window.Close();
+                            PumpDispatcher();
+                        }
+                    }
+                    SaveSideBySide(bitmaps[0], bitmaps[1], Path.Combine(outputDirectory, scenario + "-" + theme + ".png"));
+                }
+                File.WriteAllLines(Path.Combine(outputDirectory, "findings.txt"),
+                    findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray());
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(6, Directory.GetFiles(outputDirectory, "*.png").Length);
+            });
+        }
+
         private sealed class GalleryDiscoveryControl :
             IDiscoveryControl
         {

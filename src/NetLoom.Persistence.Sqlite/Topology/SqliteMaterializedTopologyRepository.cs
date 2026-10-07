@@ -11,6 +11,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
     public sealed class SqliteMaterializedTopologyRepository :
         IMaterializedTopologyRepository,
         IDeviceConfirmationStore,
+        IDeviceIgnoreStore,
         IAutomaticInterfaceReferenceReconciler
     {
         private readonly SqliteConnectionFactory _connectionFactory;
@@ -52,7 +53,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         is_hidden, is_archived,
         first_seen_utc, last_seen_utc, last_resolved_utc,
         management_address,
-        sys_description, sys_object_id, is_unconfirmed,
+        sys_description, sys_object_id, is_unconfirmed, ignored_utc,
         created_at_utc, updated_at_utc
     )
     VALUES
@@ -64,7 +65,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         @hidden, @archived,
         @firstSeen, @lastSeen, @lastResolved,
         @managementAddress,
-        @sysDescription, @sysObjectId, @unconfirmed,
+        @sysDescription, @sysObjectId, @unconfirmed, @ignoredUtc,
         @created, @updated
     )
     ON CONFLICT(id) DO UPDATE SET
@@ -126,6 +127,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
                         Add(command, "@sysDescription", device.SystemDescription);
                         Add(command, "@sysObjectId", device.SystemObjectId);
                         Add(command, "@unconfirmed", device.IsUnconfirmed ? 1 : 0);
+                        AddDate(command, "@ignoredUtc", device.IgnoredUtc);
                         Add(command, "@hidden", device.IsHidden ? 1 : 0);
                         Add(command, "@archived", device.IsArchived ? 1 : 0);
                         AddDate(command, "@firstSeen", device.FirstSeenUtc);
@@ -162,6 +164,32 @@ WHERE id = @id;";
                             command.ExecuteNonQuery();
                         }
                     });
+            }
+        }
+
+        public void SetIgnored(Guid deviceId, DateTime? ignoredUtc)
+        {
+            if (deviceId == Guid.Empty)
+                throw new ArgumentException("Device id is required.", nameof(deviceId));
+            if (ignoredUtc.HasValue && ignoredUtc.Value.Kind != DateTimeKind.Utc)
+                throw new ArgumentException("Timestamp must be UTC.", nameof(ignoredUtc));
+
+            using (var connection = _connectionFactory.OpenConnection())
+            {
+                SqliteImmediateWrite.Execute(connection, () =>
+                {
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = @"
+UPDATE devices
+SET ignored_utc = @ignoredUtc, updated_at_utc = @now
+WHERE id = @id;";
+                        AddDate(command, "@ignoredUtc", ignoredUtc);
+                        Add(command, "@now", FormatUtc(DateTime.UtcNow));
+                        Add(command, "@id", deviceId.ToString("D"));
+                        command.ExecuteNonQuery();
+                    }
+                });
             }
         }
 
@@ -419,7 +447,7 @@ SELECT
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
     management_address,
-    sys_description, sys_object_id, is_unconfirmed
+    sys_description, sys_object_id, is_unconfirmed, ignored_utc
 FROM devices
 WHERE id = @id;";
 
@@ -451,7 +479,7 @@ SELECT
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
     management_address,
-    sys_description, sys_object_id, is_unconfirmed
+    sys_description, sys_object_id, is_unconfirmed, ignored_utc
 FROM devices
 ORDER BY id;";
 
@@ -1654,7 +1682,8 @@ ORDER BY
                 StringNullable(reader, offset + 15),
                 StringNullable(reader, offset + 16),
                 StringNullable(reader, offset + 17),
-                reader.GetInt32(offset + 18) != 0);
+                reader.GetInt32(offset + 18) != 0,
+                DateNullable(reader, offset + 19));
         }
 
         private static DeviceInterface ReadInterface(

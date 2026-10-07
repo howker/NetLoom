@@ -53,7 +53,11 @@ namespace NetLoom.Wpf
         public bool DiscoveryInboxCanRetry
         {
             get => (bool)GetValue(DiscoveryInboxCanRetryProperty);
-            private set => SetValue(DiscoveryInboxCanRetryProperty, value);
+            private set
+            {
+                SetValue(DiscoveryInboxCanRetryProperty, value);
+                if (DiscoveryInboxActionsBar != null) UpdateDiscoveryInboxActionsBar();
+            }
         }
 
         private bool _discoveryRunAddedDevices;
@@ -130,6 +134,10 @@ namespace NetLoom.Wpf
             DiscoveryCandidatesLabelText.Text =
                 UiText.Get("DiscoveryProgressSectionTitle");
             DiscoveryInboxEmptyText.Text = UiText.Get("DiscoveryInboxEmpty");
+            DiscoveryInboxAcceptButton.Content = UiText.Get("DiscoveryInboxAccept");
+            DiscoveryInboxIgnoreButton.Content = UiText.Get("DiscoveryInboxIgnore");
+            DiscoveryInboxUnmanagedButton.Content = UiText.Get("DiscoveryInboxMarkUnmanaged");
+            DiscoveryInboxPlacementButton.Content = UiText.Get("DiscoveryInboxAssignPlacement");
 
             DiscoveryStartAddressTextBox.Text =
                 string.Empty;
@@ -1908,6 +1916,7 @@ namespace NetLoom.Wpf
             {
                 DiscoveryInboxGroupsList.ItemsSource = new DiscoveryInboxGroup[0];
                 _discoveryInboxRunId = null;
+                UpdateDiscoveryInboxActionsBar();
                 return;
             }
 
@@ -1915,7 +1924,8 @@ namespace NetLoom.Wpf
                 _discoveryRunJournal.GetResults(run.Id), run,
                 id => _discoveryProfiles.FirstOrDefault(profile => profile.Id == id)?.Name,
                 DiscoveryRunClock(),
-                id => _lastMapSnapshot?.Nodes.FirstOrDefault(node => node.DeviceId == id)?.Label);
+                id => _lastMapSnapshot?.Nodes.FirstOrDefault(node => node.DeviceId == id)?.Label,
+                DiscoveryInboxPlacementPath);
             var previous = DiscoveryInboxGroupsList.Items.Cast<DiscoveryInboxGroup>().ToArray();
             var sameRun = _discoveryInboxRunId == run.Id;
             if (sameRun)
@@ -1930,7 +1940,22 @@ namespace NetLoom.Wpf
                 !previous.Zip(groups, (oldGroup, group) => oldGroup.Group == group.Group &&
                     oldGroup.Count == group.Count && oldGroup.Rows.Zip(group.Rows,
                         (oldRow, row) => oldRow.HasSameContent(row)).All(equal => equal)).All(equal => equal);
-            if (changed) DiscoveryInboxGroupsList.ItemsSource = groups;
+            if (changed)
+            {
+                foreach (var row in previous.SelectMany(group => group.Rows))
+                    row.PropertyChanged -= OnDiscoveryInboxSelectionChanged;
+                if (sameRun)
+                {
+                    var selected = new HashSet<string>(previous.SelectMany(group => group.Rows)
+                        .Where(row => row.IsSelected).Select(row => row.Address));
+                    foreach (var row in groups.SelectMany(group => group.Rows))
+                        row.IsSelected = selected.Contains(row.Address);
+                }
+                DiscoveryInboxGroupsList.ItemsSource = groups;
+                foreach (var row in groups.SelectMany(group => group.Rows))
+                    row.PropertyChanged += OnDiscoveryInboxSelectionChanged;
+            }
+            UpdateDiscoveryInboxActionsBar();
             _discoveryInboxRunId = run.Id;
             DiscoveryInboxTitleText.Text = DiscoveryInboxProjection.BuildTitle(run);
             DiscoveryInboxSummaryText.Text = DiscoveryInboxProjection.BuildSummary(groups, run);
@@ -1944,7 +1969,13 @@ namespace NetLoom.Wpf
         private async void OnDiscoveryInboxRetryClick(object sender, RoutedEventArgs e)
         {
             var row = (sender as Button)?.DataContext as DiscoveryInboxRow;
-            if (row == null || !row.CanRetry || !DiscoveryInboxCanRetry) return;
+            if (row == null || !DiscoveryInboxCanRetry) return;
+            if (row.CanUndoIgnore)
+            {
+                await UndoDiscoveryInboxIgnoreAsync(row);
+                return;
+            }
+            if (!row.CanRetry) return;
             var run = _discoveryRunJournal.GetRun(row.RunId);
             if (run == null) return;
             var selected = DiscoveryProfileComboBox.SelectedItem as DiscoveryProfileOption;

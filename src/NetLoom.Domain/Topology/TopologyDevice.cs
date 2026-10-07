@@ -24,7 +24,8 @@ namespace NetLoom.Domain.Topology
             string managementAddress = null,
             string systemDescription = null,
             string systemObjectId = null,
-            bool isUnconfirmed = false)
+            bool isUnconfirmed = false,
+            DateTime? ignoredUtc = null)
         {
             if (id == Guid.Empty)
             {
@@ -36,6 +37,7 @@ namespace NetLoom.Domain.Topology
             RequireUtc(firstSeenUtc, nameof(firstSeenUtc));
             RequireUtc(lastSeenUtc, nameof(lastSeenUtc));
             RequireUtc(lastResolvedUtc, nameof(lastResolvedUtc));
+            RequireUtc(ignoredUtc, nameof(ignoredUtc));
 
             if (firstSeenUtc.HasValue &&
                 lastSeenUtc.HasValue &&
@@ -66,6 +68,7 @@ namespace NetLoom.Domain.Topology
             SystemDescription = Normalize(systemDescription);
             SystemObjectId = Normalize(systemObjectId);
             IsUnconfirmed = isUnconfirmed;
+            IgnoredUtc = ignoredUtc;
         }
 
         public Guid Id { get; }
@@ -107,6 +110,8 @@ namespace NetLoom.Domain.Topology
         public string SystemObjectId { get; }
 
         public bool IsUnconfirmed { get; }
+
+        public DateTime? IgnoredUtc { get; }
 
         private static string Normalize(string value)
         {

@@ -287,6 +287,28 @@ ORDER BY address;";
             return results.AsReadOnly();
         }
 
+        public void SetResolution(Guid runId, string address,
+            DiscoveryResultResolution resolution, DateTime? resolvedUtc)
+        {
+            if (!Enum.IsDefined(typeof(DiscoveryResultResolution), resolution))
+                throw new ArgumentOutOfRangeException(nameof(resolution));
+            if (resolvedUtc.HasValue && resolvedUtc.Value.Kind != DateTimeKind.Utc)
+                throw new ArgumentException("Timestamp must be UTC.", nameof(resolvedUtc));
+            using (var connection = _connectionFactory.OpenConnection())
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+UPDATE discovery_run_results
+SET resolution = @resolution, resolved_utc = @resolved
+WHERE run_id = @runId AND address = @address;";
+                Add(command, "@runId", runId.ToString("D"));
+                Add(command, "@address", address);
+                Add(command, "@resolution", resolution.ToString());
+                Add(command, "@resolved", UtcText(resolvedUtc));
+                command.ExecuteNonQuery();
+            }
+        }
+
         public void DeleteResult(Guid runId, string address)
         {
             using (var connection = _connectionFactory.OpenConnection())

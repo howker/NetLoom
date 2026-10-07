@@ -2571,4 +2571,91 @@ Poll: {2}</value>
   <data name="DiscoveryInboxEmpty" xml:space="preserve">
     <value>Nothing was found in this run.</value>
   </data>
+  <data name="DiscoveryInboxAccept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="DiscoveryInboxIgnore" xml:space="preserve">
+    <value>Ignore</value>
+  </data>
+  <data name="DiscoveryInboxMarkUnmanaged" xml:space="preserve">
+    <value>Mark as unmanaged</value>
+  </data>
+  <data name="DiscoveryInboxAssignPlacement" xml:space="preserve">
+    <value>Assign placement…</value>
+  </data>
+  <data name="DiscoveryInboxSelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="DiscoveryInboxSelectAllAutomationName" xml:space="preserve">
+    <value>Select all: {0}</value>
+  </data>
+  <data name="DiscoveryInboxSelectAutomationName" xml:space="preserve">
+    <value>Select {0}</value>
+  </data>
+  <data name="DiscoveryInboxSelectedCount" xml:space="preserve">
+    <value>Selected: {0}</value>
+  </data>
+  <data name="DiscoveryInboxResolutionAccepted" xml:space="preserve">
+    <value>Accepted {0}</value>
+  </data>
+  <data name="DiscoveryInboxResolutionIgnored" xml:space="preserve">
+    <value>Ignored since {0}</value>
+  </data>
+  <data name="DiscoveryInboxResolutionUnmanaged" xml:space="preserve">
+    <value>Unmanaged</value>
+  </data>
+  <data name="DiscoveryInboxResolutionPlaced" xml:space="preserve">
+    <value>Placement: {0}</value>
+  </data>
+  <data name="DiscoveryInboxUndoIgnore" xml:space="preserve">
+    <value>Undo ignore</value>
+  </data>
+  <data name="DiscoveryInboxUndoIgnoreAutomationName" xml:space="preserve">
+    <value>Undo ignore {0}</value>
+  </data>
+  <data name="DiscoveryInboxIgnoreUndone" xml:space="preserve">
+    <value>Ignore undone: {0}</value>
+  </data>
+  <data name="DiscoveryInboxPlacementTitle" xml:space="preserve">
+    <value>Assign placement</value>
+  </data>
+  <data name="DiscoveryInboxPlacementLabel" xml:space="preserve">
+    <value>Placement</value>
+  </data>
+  <data name="DiscoveryInboxPlacementConfirm" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="DiscoveryInboxNoPlacements" xml:space="preserve">
+    <value>No placements. Create them on the map in edit mode.</value>
+  </data>
+  <data name="DiscoveryInboxPlacementSeparator" xml:space="preserve">
+    <value> / </value>
+  </data>
+  <data name="DiscoveryInboxAppliedAccept" xml:space="preserve">
+    <value>Accepted: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedAcceptWithSkipped" xml:space="preserve">
+    <value>Accepted: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxAppliedIgnore" xml:space="preserve">
+    <value>Ignored: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedIgnoreWithSkipped" xml:space="preserve">
+    <value>Ignored: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxAppliedMarkUnmanaged" xml:space="preserve">
+    <value>Unmanaged: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedMarkUnmanagedWithSkipped" xml:space="preserve">
+    <value>Unmanaged: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxAppliedAssignPlacement" xml:space="preserve">
+    <value>Placement assigned: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedAssignPlacementWithSkipped" xml:space="preserve">
+    <value>Placement assigned: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxPlacementClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
 </root>

@@ -144,7 +144,7 @@ SELECT
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
     management_address,
-    sys_description, sys_object_id, is_unconfirmed
+    sys_description, sys_object_id, is_unconfirmed, ignored_utc
 FROM devices
 ORDER BY id;";
 
@@ -204,7 +204,8 @@ ORDER BY id;";
                                 StringNullable(
                                     reader,
                                     18),
-                                reader.GetInt32(19) != 0));
+                                reader.GetInt32(19) != 0,
+                                DateNullable(reader, 20)));
                     }
                 }
             }

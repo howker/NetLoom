@@ -151,6 +151,11 @@ namespace NetLoom.Desktop
                             topologyRepository),
                         exclusionSource);
 
+                var locationTopologyService = new LocationTopologyService(
+                    locationRepository, topologyRepository);
+                var inboxActions = new DiscoveryInboxActions(runRepository, topologyRepository,
+                    topologyRepository, topologyRepository, locationTopologyService);
+
                 var application =
                     new System.Windows.Application();
 
@@ -164,9 +169,7 @@ namespace NetLoom.Desktop
                             topologyRepository,
                             new SqliteManualTopologyAuditStore(
                                 connectionFactory)),
-                        new LocationTopologyService(
-                            locationRepository,
-                            topologyRepository),
+                        locationTopologyService,
                         mapLayoutStore,
                         monitoringControl,
                         discoveryControl,
@@ -174,6 +177,8 @@ namespace NetLoom.Desktop
                         discoveryJournal,
                         FileUiShellStateStore
                             .CreateDefault());
+
+                mainWindow.DiscoveryInboxActions = inboxActions;
 
                 mainWindow.DiscoveryProfileCreateRequested +=
                     (sender, request) =>
