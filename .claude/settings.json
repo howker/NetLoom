@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "defaultMode": "auto",
+    "deny": [
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)",
+      "Bash(rm -rf *)",
+      "PowerShell(git reset --hard *)",
+      "PowerShell(git clean *)"
+    ],
+    "ask": [
+      "Bash(git push origin main *)",
+      "Bash(git push)",
+      "Bash(git push origin HEAD *)",
+      "PowerShell(git push origin main *)",
+      "PowerShell(git push)",
+      "PowerShell(git push origin HEAD *)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/tools/Hook-StopTextEncoding.ps1"
+            ],
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}

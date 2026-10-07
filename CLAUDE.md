@@ -30,6 +30,7 @@ NetLoom (НетЛум) — система мониторинга сети: .NET,
 - `docs/design/netloom-v2-*.png` — эталонные макеты ADR-083 (светлая и `-dark`).
 - `docs/sprint46-mockup-gap.md` — акт сверки с макетами: каждое расхождение «открыто / исправлено / перенесено».
 - `docs/PROJECT_STATE.md`, `docs/BACKLOG.md` — состояние и план спринтов.
+- `docs/autopilot/ROLES.md` — роли агентов (архитектор, Codex, `editor`) и правила автономного режима; задание дня — `docs/autopilot/TASK.md`.
 
 ## Как проверять интерфейс
 
