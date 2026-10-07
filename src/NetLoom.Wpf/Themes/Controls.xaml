@@ -1672,16 +1672,18 @@
     </Style>
 
 
+    <!-- I1 (sprint46-mockup-gap): вкладки — одна сегментированная группа, как G6; содержимое без рамки и фона,
+         группы внутри разделены отступом (§5 «группировать отступом, а не линиями»), как в макетах netloom-v2-1/2. -->
     <Style x:Key="NetLoom.Style.InspectorTabs"
            TargetType="{x:Type TabControl}">
         <Setter Property="Background"
-                Value="{DynamicResource NetLoom.Brush.Surface}" />
+                Value="Transparent" />
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
         <Setter Property="BorderBrush"
-                Value="{DynamicResource NetLoom.Brush.Border}" />
+                Value="Transparent" />
         <Setter Property="BorderThickness"
-                Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+                Value="{DynamicResource NetLoom.Thickness.None}" />
         <Setter Property="Padding"
                 Value="{DynamicResource NetLoom.Thickness.InspectorContentPadding}" />
         <Setter Property="ItemsPanel">
@@ -1699,7 +1701,15 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <ItemsPresenter Grid.Row="0" />
+                        <Border Grid.Row="0"
+                                HorizontalAlignment="Left"
+                                Background="{DynamicResource NetLoom.Brush.Surface}"
+                                BorderBrush="{DynamicResource NetLoom.Brush.BorderStrong}"
+                                BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                                CornerRadius="{DynamicResource NetLoom.Radius.Control}"
+                                Padding="{DynamicResource NetLoom.Thickness.SegmentedGroupPadding}">
+                            <ItemsPresenter />
+                        </Border>
                         <Border Grid.Row="1"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
@@ -1718,9 +1728,10 @@
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
         <Setter Property="Background"
-                Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+                Value="Transparent" />
+        <!-- Сегмент без своей рамки; прозрачная рамка той же толщины держит размер, когда выбранный получает акцентную. -->
         <Setter Property="BorderBrush"
-                Value="{DynamicResource NetLoom.Brush.Border}" />
+                Value="Transparent" />
         <Setter Property="BorderThickness"
                 Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
         <Setter Property="Padding"
@@ -1752,9 +1763,6 @@
                             <Setter TargetName="InspectorTabChrome"
                                     Property="Background"
                                     Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
-                            <Setter TargetName="InspectorTabChrome"
-                                    Property="BorderBrush"
-                                    Value="{DynamicResource NetLoom.Brush.BorderStrong}" />
                         </Trigger>
                         <Trigger Property="IsSelected"
                                  Value="True">
@@ -1762,7 +1770,7 @@
                                     Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
                             <Setter TargetName="InspectorTabChrome"
                                     Property="Background"
-                                    Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+                                    Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
                             <Setter TargetName="InspectorTabChrome"
                                     Property="BorderBrush"
                                     Value="{DynamicResource NetLoom.Brush.Accent}" />

@@ -71,7 +71,8 @@
     <Thickness x:Key="NetLoom.Thickness.ShellMapControlsMargin">0,12,12,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellMapControlsPadding">12</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellEventPadding">12</Thickness>
-    <Thickness x:Key="NetLoom.Thickness.InspectorContentPadding">12</Thickness>
+    <!-- I1: содержимое вкладок инспектора без рамки, выровнено по краю инспектора; сверху — отступ от группы вкладок. -->
+    <Thickness x:Key="NetLoom.Thickness.InspectorContentPadding">0,16,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ComboBoxArrowMargin">0,0,10,0</Thickness>
     <!-- Место справа под стрелку ComboBox: текст выбранного значения не заходит под неё. -->
     <Thickness x:Key="NetLoom.Thickness.ComboBoxTextReserve">0,0,24,0</Thickness>

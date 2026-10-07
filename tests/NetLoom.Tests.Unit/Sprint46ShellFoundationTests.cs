@@ -1551,8 +1551,7 @@ namespace NetLoom.Tests.Unit
                                 railSummary,
                                 eventPadding,
                                 mapControls,
-                                expanderContent,
-                                inspectorContent
+                                expanderContent
                             })
                         {
                             Assert.IsTrue(
@@ -1574,6 +1573,13 @@ namespace NetLoom.Tests.Unit
                             inspectorContent,
                             inspector.Padding,
                             "Inspector content padding must come from the shared token.");
+
+                        // I1 (sprint46-mockup-gap): содержимое вкладок инспектора без рамки, как в макетах ADR-083.
+                        // Правило §5 о поле не меньше 12 от рамки к нему больше не относится: рамки нет.
+                        Assert.AreEqual(
+                            new Thickness(0.0),
+                            inspector.BorderThickness,
+                            "Inspector tab content has no frame; groups are separated by spacing (§5).");
                     }
                     finally
                     {
@@ -4897,9 +4903,10 @@ namespace NetLoom.Tests.Unit
                             tabChrome,
                             "Inspector tabs must use the NetLoom semantic template instead of system theme chrome.");
 
+                        // I1: выбранная вкладка — выбранный сегмент группы, как переключатели G6 (AccentSoft).
                         var expectedDarkSelectedTab =
                             (SolidColorBrush)window.FindResource(
-                                "NetLoom.Brush.SurfaceHover");
+                                "NetLoom.Brush.AccentSoft");
 
                         Assert.AreEqual(
                             expectedDarkSelectedTab.Color,
