@@ -79,7 +79,7 @@ namespace NetLoom.Tests.Integration
                             connection,
                             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'interface_degradation_outbox';"));
 
-                    Assert.AreEqual(22L,
+                    Assert.AreEqual(23L,
                         ExecuteScalarInt64(
                             connection,
                             "SELECT COUNT(*) FROM schema_migrations;"));
