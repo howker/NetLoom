@@ -872,6 +872,27 @@ public partial class MainWindow : Window
             "InspectorEntityDevice",
             device.DeviceId);
 
+        // Г2: полный sysDescr и sysObjectID — в «Технических деталях», в столбце модели только первая строка.
+        if (!string.IsNullOrWhiteSpace(
+                device.SystemObjectId))
+        {
+            InspectorEntityIdText.Text +=
+                Environment.NewLine +
+                UiText.Format(
+                    "InspectorSystemObjectId",
+                    device.SystemObjectId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                device.SystemDescription))
+        {
+            InspectorEntityIdText.Text +=
+                Environment.NewLine +
+                UiText.Format(
+                    "InspectorSystemDescription",
+                    device.SystemDescription);
+        }
+
         ConfigureInspectorTabs(
             true,
             true,

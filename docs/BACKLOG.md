@@ -317,6 +317,18 @@ This sequence is authoritative for the next product/UI work. The assistant does 
     - Г1 — device category from evidence: LLDP system capabilities (bridge, router) and sysObjectID become a category instead of «Неизвестно» for every device.
     - Г2 — sysDescr received during discovery is persisted, so model/description appears in Equipment and the Inspector and the Equipment filter finds devices by model.
     - Г4 — one-sided LLDP (the neighbour reports the link, the device does not) is shown as an explained evidence gap or alert, not as a plain confirmed link.
+  - Owner decisions 2026-10-07:
+    - Unconfirmed devices are polled by monitoring right away; the «unconfirmed» mark stays until the operator resolves the row in the inbox.
+    - «Ignore» hides the device from the map and from monitoring; later runs list it under Excluded with the reason «ignored by the operator <date>», and the decision can be undone.
+  - Implementation decisions (from the rules, not owner questions):
+    - Inbox groups follow this backlog (New, Changed, Ambiguous, Missing, Excluded, Error). «Ready / partial» from `sprint46-ui-ux-redesign.md` is a completeness mark with a reason on New and Changed rows; «known, unchanged» is a count in the run summary.
+    - Devices that exist before the migration are confirmed; a manually set category is never overwritten by evidence.
+    - Г4 is explained in the link Inspector as an evidence gap, not raised as an alert: normal state stays neutral.
+  - Implementation record 2026-10-07:
+    - Г2: `Migration022DeviceSystemIdentity` adds `devices.sys_description` and `devices.sys_object_id`. Discovery stores them; an LLDP neighbour's `lldpRemSysDesc` fills them for a known automatic device. A save that does not carry them never erases them (`COALESCE`, like the management address). «Модель / описание» shows the operator's vendor/model, otherwise the first line of sysDescr; the full sysDescr and sysObjectID are in «Технические детали»; the Equipment filter finds the model.
+    - Г1: LLDP capabilities were stored as the SNMP text form, which lost the BITS (0x20 bridge is a space, 0x08 router a control character). They are now stored as hex (`28:00`), and the device's own `lldpLocSysCapEnabled` is collected. New categories `Switch` / `Router`: bridge (with or without router) — switch, router alone — router; only automatic devices get a category from evidence, a manual category is never overwritten; a neighbour report does not change the device's last-poll time.
+    - Existing field databases: categories appear after the next monitoring poll; the model appears from LLDP neighbours during monitoring or after the next discovery run.
+    - Tests: `Sprint48SystemIdentityTests` (Unit), `Sprint48DeviceSystemIdentityTests` (Integration); field check F03 now checks the model filter and categories instead of noting the gap.
 
 - [ ] Sprint 49 — readable large-site map.
   - Operator outcome: on 55+ devices the map remains readable without mass overlap, and the operator can see incomplete evidence and manual-versus-observed conflicts.

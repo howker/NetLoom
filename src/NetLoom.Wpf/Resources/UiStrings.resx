@@ -177,6 +177,12 @@
   <data name="CategoryUnmanagedSwitch" xml:space="preserve">
     <value>Unmanaged switch</value>
   </data>
+  <data name="CategorySwitch" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="CategoryRouter" xml:space="preserve">
+    <value>Router</value>
+  </data>
   <data name="CategoryOpticalConverter" xml:space="preserve">
     <value>Optical converter</value>
   </data>
@@ -1601,6 +1607,12 @@ Poll: {2}</value>
   </data>
   <data name="InspectorEntityId" xml:space="preserve">
     <value>ID: {0}</value>
+  </data>
+  <data name="InspectorSystemObjectId" xml:space="preserve">
+    <value>sysObjectID: {0}</value>
+  </data>
+  <data name="InspectorSystemDescription" xml:space="preserve">
+    <value>sysDescr: {0}</value>
   </data>
   <data name="InspectorFieldIfIndex" xml:space="preserve">
     <value>ifIndex</value>

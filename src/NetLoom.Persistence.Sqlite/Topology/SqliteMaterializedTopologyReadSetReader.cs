@@ -143,7 +143,8 @@ SELECT
     discovered_name, lldp_chassis_id,
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
-    management_address
+    management_address,
+    sys_description, sys_object_id
 FROM devices
 ORDER BY id;";
 
@@ -196,7 +197,13 @@ ORDER BY id;";
                                     10),
                                 StringNullable(
                                     reader,
-                                    16)));
+                                    16),
+                                StringNullable(
+                                    reader,
+                                    17),
+                                StringNullable(
+                                    reader,
+                                    18)));
                     }
                 }
             }

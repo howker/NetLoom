@@ -215,7 +215,12 @@ namespace NetLoom.Topology.Materialization
                     : localSystem.SystemName,
                 localSystem == null
                     ? null
-                    : localSystem.ChassisId);
+                    : localSystem.ChassisId,
+                null,
+                localSystem == null
+                    ? null
+                    : LldpCapabilityCategory.FromEnabled(
+                        localSystem.SystemCapabilitiesEnabled));
 
             PreReconcileNumericLldpLocalPorts(
                 deviceId,
@@ -234,6 +239,79 @@ namespace NetLoom.Topology.Materialization
                     deviceId,
                     observedUtc,
                     candidate);
+            }
+
+            MaterializeNeighborSystemEvidence(
+                deviceId,
+                observation);
+        }
+
+        // Sprint 48 (Г1, Г2): сосед по LLDP сообщает возможности и sysDescr известного устройства.
+        // Это сведения о нём, а не его опрос: время последнего опроса соседа не меняется.
+        private void MaterializeNeighborSystemEvidence(
+            Guid localDeviceId,
+            LldpObservation observation)
+        {
+            foreach (var neighbor in
+                observation.Neighbors)
+            {
+                if (neighbor == null)
+                {
+                    continue;
+                }
+
+                var remote =
+                    ResolveRemoteDevice(
+                        localDeviceId,
+                        neighbor.ChassisId);
+
+                if (remote == null ||
+                    remote.DiscoveryOrigin !=
+                        DeviceDiscoveryOrigin.Automatic)
+                {
+                    continue;
+                }
+
+                var category =
+                    LldpCapabilityCategory.FromEnabled(
+                        neighbor.SystemCapabilitiesEnabled) ??
+                    remote.Category;
+
+                var description =
+                    FirstNonEmpty(
+                        neighbor.SystemDescription,
+                        remote.SystemDescription);
+
+                if (category == remote.Category &&
+                    string.Equals(
+                        description,
+                        remote.SystemDescription,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                _repository.SaveDevice(
+                    new TopologyDevice(
+                        remote.Id,
+                        remote.LocationId,
+                        remote.CustomName,
+                        category,
+                        remote.DiscoveryOrigin,
+                        remote.MonitoringCapability,
+                        remote.VendorOverride,
+                        remote.ModelOverride,
+                        remote.Notes,
+                        remote.IsHidden,
+                        remote.IsArchived,
+                        remote.FirstSeenUtc,
+                        remote.LastSeenUtc,
+                        remote.LastResolvedUtc,
+                        remote.DiscoveredName,
+                        remote.LldpChassisId,
+                        remote.ManagementAddress,
+                        description,
+                        remote.SystemObjectId));
             }
         }
 
@@ -1161,12 +1239,22 @@ namespace NetLoom.Topology.Materialization
             TopologyDevice existing,
             string discoveredName,
             string lldpChassisId,
-            string managementAddress = null)
+            string managementAddress = null,
+            DeviceCategory? evidenceCategory = null)
         {
             var origin =
                 existing == null
                     ? DeviceDiscoveryOrigin.Automatic
                     : existing.DiscoveryOrigin;
+
+            // Категорию по данным получает только автоматическое устройство: ручную не перезаписываем.
+            var category =
+                evidenceCategory.HasValue &&
+                origin == DeviceDiscoveryOrigin.Automatic
+                    ? evidenceCategory.Value
+                    : existing == null
+                        ? DeviceCategory.Unknown
+                        : existing.Category;
 
             _repository.SaveDevice(
                 new TopologyDevice(
@@ -1177,9 +1265,7 @@ namespace NetLoom.Topology.Materialization
                     existing == null
                         ? null
                         : existing.CustomName,
-                    existing == null
-                        ? DeviceCategory.Unknown
-                        : existing.Category,
+                    category,
                     origin,
                     existing == null
                         ? MonitoringCapability.Unknown
@@ -1216,7 +1302,13 @@ namespace NetLoom.Topology.Materialization
                         managementAddress,
                         existing == null
                             ? null
-                            : existing.ManagementAddress)));
+                            : existing.ManagementAddress),
+                    existing == null
+                        ? null
+                        : existing.SystemDescription,
+                    existing == null
+                        ? null
+                        : existing.SystemObjectId));
         }
 
         private static DateTime FirstSeen(

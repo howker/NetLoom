@@ -208,7 +208,9 @@ namespace NetLoom.Application.Locations
                     existing.LastResolvedUtc,
                     existing.DiscoveredName,
                     existing.LldpChassisId,
-                    existing.ManagementAddress));
+                    existing.ManagementAddress,
+                    existing.SystemDescription,
+                    existing.SystemObjectId));
         }
 
 

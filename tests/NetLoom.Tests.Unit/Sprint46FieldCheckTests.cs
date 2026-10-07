@@ -217,7 +217,9 @@ namespace NetLoom.Tests.Unit
                     var checks = new[]
                     {
                         Tuple.Create("kb-sw", network.Devices.Count(item => item.Name.StartsWith("kb-sw", StringComparison.Ordinal)), "по имени"),
-                        Tuple.Create(network.Find("kb-sw-01").Address, 1, "по IP")
+                        Tuple.Create(network.Find("kb-sw-01").Address, 1, "по IP"),
+                        // Г2 (Sprint 48): sysDescr из обнаружения сохраняется — фильтр находит модель.
+                        Tuple.Create("EDS-518", network.Devices.Count(item => item.Managed && item.SysDescr.Contains("EDS-518")), "по модели")
                     };
 
                     foreach (var check in checks)
@@ -237,13 +239,36 @@ namespace NetLoom.Tests.Unit
                         }
                     }
 
-                    // Пробел, а не ошибка: обнаружение не сохраняет sysDescr, поэтому модели в базе нет (перенос в Sprint 48).
-                    filter.Text = "EDS-518";
-                    Settle(300);
-                    report.Note("F03 Фильтр по модели", "«EDS-518» → " + list.Items.Count + " строк: модель из sysDescr не сохраняется (Sprint 48)");
-
                     filter.Text = string.Empty;
                     Settle(300);
+
+                    // Г1 (Sprint 48): категория по возможностям LLDP — коммутатор и маршрутизатор, а не «Неизвестно».
+                    var categories =
+                        list.Items
+                            .Cast<object>()
+                            .ToDictionary(
+                                item => (string)item.GetType().GetProperty("Name").GetValue(item),
+                                item => (string)item.GetType().GetProperty("Category").GetValue(item));
+
+                    foreach (var expected in new[]
+                    {
+                        Tuple.Create("core-sw-01", "Коммутатор"),
+                        Tuple.Create("kb-sw-01", "Коммутатор"),
+                        Tuple.Create("gw-01", "Маршрутизатор")
+                    })
+                    {
+                        string category;
+                        categories.TryGetValue(expected.Item1, out category);
+
+                        if (category == expected.Item2)
+                        {
+                            report.Ok("F03 Категория " + expected.Item1, category);
+                        }
+                        else
+                        {
+                            report.Error("F03 Категория " + expected.Item1, "«" + category + "», ожидалось «" + expected.Item2 + "»");
+                        }
+                    }
                 });
 
                 // F04. Устройство кольца: инспектор, путь размещения, порты, связи, модель.

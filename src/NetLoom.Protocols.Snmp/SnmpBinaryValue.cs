@@ -202,6 +202,24 @@ namespace NetLoom.Protocols.Snmp
             return FormatColonHex(payload);
         }
 
+        // Sprint 48 (Г1): BITS (например, lldpRemSysCapEnabled) — байты «28:00», а не текст.
+        // Текстовое представление теряло биты: 0x20 (bridge) — пробел, 0x08 (router) — управляющий символ.
+        public static string ReadBits(
+            SnmpVariable variable)
+        {
+            byte[] payload;
+
+            if (!TryReadPayload(
+                    variable,
+                    out payload) ||
+                payload.Length == 0)
+            {
+                return null;
+            }
+
+            return FormatColonHex(payload);
+        }
+
         public static string FormatColonHex(
             byte[] bytes)
         {

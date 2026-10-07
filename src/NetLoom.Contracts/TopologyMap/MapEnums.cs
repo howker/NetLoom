@@ -48,6 +48,8 @@ namespace NetLoom.Contracts.TopologyMap
         MediaConverter,
         UnmanagedSwitch,
         OpticalConverter,
-        PassiveNetworkEquipment
+        PassiveNetworkEquipment,
+        Switch,
+        Router
     }
 }

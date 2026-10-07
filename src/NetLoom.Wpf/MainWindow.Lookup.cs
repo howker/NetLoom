@@ -568,6 +568,14 @@ public partial class MainWindow : Window
                 return UiText.Get(
                     "CategoryPassiveNetworkEquipment");
 
+            case MapNodeCategory.Switch:
+                return UiText.Get(
+                    "CategorySwitch");
+
+            case MapNodeCategory.Router:
+                return UiText.Get(
+                    "CategoryRouter");
+
             default:
                 return null;
         }

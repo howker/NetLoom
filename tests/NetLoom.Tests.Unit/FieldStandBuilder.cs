@@ -916,6 +916,8 @@ namespace NetLoom.Tests.Unit
                 Num(t, "1.0.8802.1.1.2.1.3.1.0", 2, "4");
                 Bytes(t, "1.0.8802.1.1.2.1.3.2.0", device.Mac);
                 Str(t, "1.0.8802.1.1.2.1.3.3.0", device.Name);
+                // Собственные возможности (lldpLocSysCapEnabled): мост — 0x20, маршрутизатор — 0x08.
+                Bytes(t, "1.0.8802.1.1.2.1.3.6.0", new byte[] { (byte)(device.IsRouter ? 0x08 : 0x20), 0x00 });
 
                 foreach (var port in device.Ports)
                 {

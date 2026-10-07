@@ -21,7 +21,9 @@ namespace NetLoom.Domain.Topology
             DateTime? lastResolvedUtc,
             string discoveredName = null,
             string lldpChassisId = null,
-            string managementAddress = null)
+            string managementAddress = null,
+            string systemDescription = null,
+            string systemObjectId = null)
         {
             if (id == Guid.Empty)
             {
@@ -60,6 +62,8 @@ namespace NetLoom.Domain.Topology
             DiscoveredName = Normalize(discoveredName);
             LldpChassisId = Normalize(lldpChassisId);
             ManagementAddress = Normalize(managementAddress);
+            SystemDescription = Normalize(systemDescription);
+            SystemObjectId = Normalize(systemObjectId);
         }
 
         public Guid Id { get; }
@@ -95,6 +99,10 @@ namespace NetLoom.Domain.Topology
         public string LldpChassisId { get; }
 
         public string ManagementAddress { get; }
+
+        public string SystemDescription { get; }
+
+        public string SystemObjectId { get; }
 
         private static string Normalize(string value)
         {

@@ -22,6 +22,12 @@ public partial class MainWindow
             case MapNodeCategory.PassiveNetworkEquipment:
                 return "NetLoom.Icon.PassiveNetworkEquipment";
 
+            case MapNodeCategory.Switch:
+                return "NetLoom.Icon.Switch";
+
+            case MapNodeCategory.Router:
+                return "NetLoom.Icon.Router";
+
             default:
                 return "NetLoom.Icon.Unknown";
         }
@@ -55,6 +61,14 @@ public partial class MainWindow
             case MapNodeCategory.PassiveNetworkEquipment:
                 return UiText.Get(
                     "CategoryPassiveNetworkEquipment");
+
+            case MapNodeCategory.Switch:
+                return UiText.Get(
+                    "CategorySwitch");
+
+            case MapNodeCategory.Router:
+                return UiText.Get(
+                    "CategoryRouter");
 
             default:
                 return UiText.Get(

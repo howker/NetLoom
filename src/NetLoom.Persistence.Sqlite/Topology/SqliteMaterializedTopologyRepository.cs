@@ -51,6 +51,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         is_hidden, is_archived,
         first_seen_utc, last_seen_utc, last_resolved_utc,
         management_address,
+        sys_description, sys_object_id,
         created_at_utc, updated_at_utc
     )
     VALUES
@@ -62,6 +63,7 @@ namespace NetLoom.Persistence.Sqlite.Topology
         @hidden, @archived,
         @firstSeen, @lastSeen, @lastResolved,
         @managementAddress,
+        @sysDescription, @sysObjectId,
         @created, @updated
     )
     ON CONFLICT(id) DO UPDATE SET
@@ -79,6 +81,10 @@ namespace NetLoom.Persistence.Sqlite.Topology
             COALESCE(excluded.lldp_chassis_id, devices.lldp_chassis_id),
         management_address =
             COALESCE(excluded.management_address, devices.management_address),
+        sys_description =
+            COALESCE(excluded.sys_description, devices.sys_description),
+        sys_object_id =
+            COALESCE(excluded.sys_object_id, devices.sys_object_id),
         is_hidden = excluded.is_hidden,
         is_archived = excluded.is_archived,
         first_seen_utc =
@@ -116,6 +122,8 @@ namespace NetLoom.Persistence.Sqlite.Topology
                         Add(command, "@discoveredName", device.DiscoveredName);
                         Add(command, "@lldpChassisId", device.LldpChassisId);
                         Add(command, "@managementAddress", device.ManagementAddress);
+                        Add(command, "@sysDescription", device.SystemDescription);
+                        Add(command, "@sysObjectId", device.SystemObjectId);
                         Add(command, "@hidden", device.IsHidden ? 1 : 0);
                         Add(command, "@archived", device.IsArchived ? 1 : 0);
                         AddDate(command, "@firstSeen", device.FirstSeenUtc);
@@ -384,7 +392,8 @@ SELECT
     discovered_name, lldp_chassis_id,
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
-    management_address
+    management_address,
+    sys_description, sys_object_id
 FROM devices
 WHERE id = @id;";
 
@@ -415,7 +424,8 @@ SELECT
     discovered_name, lldp_chassis_id,
     is_hidden, is_archived,
     first_seen_utc, last_seen_utc, last_resolved_utc,
-    management_address
+    management_address,
+    sys_description, sys_object_id
 FROM devices
 ORDER BY id;";
 
@@ -1615,7 +1625,9 @@ ORDER BY
                 DateNullable(reader, offset + 14),
                 StringNullable(reader, offset + 8),
                 StringNullable(reader, offset + 9),
-                StringNullable(reader, offset + 15));
+                StringNullable(reader, offset + 15),
+                StringNullable(reader, offset + 16),
+                StringNullable(reader, offset + 17));
         }
 
         private static DeviceInterface ReadInterface(

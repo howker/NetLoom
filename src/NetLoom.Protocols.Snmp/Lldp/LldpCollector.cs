@@ -15,7 +15,8 @@ namespace NetLoom.Protocols.Snmp.Lldp
         {
             "1.0.8802.1.1.2.1.3.1.0",
             "1.0.8802.1.1.2.1.3.2.0",
-            "1.0.8802.1.1.2.1.3.3.0"
+            "1.0.8802.1.1.2.1.3.3.0",
+            "1.0.8802.1.1.2.1.3.6.0"
         };
 
         private const string LocalPortEntry =

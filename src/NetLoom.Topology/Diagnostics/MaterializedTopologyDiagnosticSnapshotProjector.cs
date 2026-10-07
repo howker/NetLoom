@@ -215,7 +215,9 @@ namespace NetLoom.Topology.Diagnostics
                 device.LastSeenUtc,
                 device.LastResolvedUtc,
                 diagnostics,
-                device.ManagementAddress);
+                device.ManagementAddress,
+                device.SystemDescription,
+                device.SystemObjectId);
         }
 
         private static InterfaceDiagnostic ProjectInterface(

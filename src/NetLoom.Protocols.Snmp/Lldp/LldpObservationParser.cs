@@ -22,6 +22,9 @@ namespace NetLoom.Protocols.Snmp.Lldp
         private const string LocSysName =
             "1.0.8802.1.1.2.1.3.3.0";
 
+        private const string LocSysCapEnabled =
+            "1.0.8802.1.1.2.1.3.6.0";
+
         private const string LocPortIdSubtype =
             "1.0.8802.1.1.2.1.3.7.1.2";
 
@@ -143,7 +146,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     builders,
                     (builder, value) =>
                         builder.SystemCapabilitiesSupported =
-                            value.DisplayValue);
+                            SnmpBinaryValue.ReadBits(value));
 
                 ApplyRemote(
                     variable,
@@ -151,7 +154,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
                     builders,
                     (builder, value) =>
                         builder.SystemCapabilitiesEnabled =
-                            value.DisplayValue);
+                            SnmpBinaryValue.ReadBits(value));
             }
 
             var neighbors = builders
@@ -185,6 +188,7 @@ namespace NetLoom.Protocols.Snmp.Lldp
             int? chassisIdSubtype = null;
             SnmpVariable chassisIdVariable = null;
             string systemName = null;
+            string capabilitiesEnabled = null;
 
             foreach (var variable in variables)
             {
@@ -215,6 +219,14 @@ namespace NetLoom.Protocols.Snmp.Lldp
                 {
                     systemName = variable.DisplayValue;
                 }
+                else if (string.Equals(
+                    oid,
+                    LocSysCapEnabled,
+                    StringComparison.Ordinal))
+                {
+                    capabilitiesEnabled =
+                        SnmpBinaryValue.ReadBits(variable);
+                }
             }
 
             var chassisId =
@@ -232,7 +244,8 @@ namespace NetLoom.Protocols.Snmp.Lldp
             return new LldpLocalSystem(
                 chassisIdSubtype,
                 chassisId,
-                systemName);
+                systemName,
+                capabilitiesEnabled);
         }
 
         private static Dictionary<int, LldpLocalPort>

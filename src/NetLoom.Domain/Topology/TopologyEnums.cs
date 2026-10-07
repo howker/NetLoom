@@ -19,7 +19,9 @@ namespace NetLoom.Domain.Topology
         MediaConverter,
         UnmanagedSwitch,
         OpticalConverter,
-        PassiveNetworkEquipment
+        PassiveNetworkEquipment,
+        Switch,
+        Router
     }
 
     public enum PhysicalLinkStrength

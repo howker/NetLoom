@@ -326,7 +326,8 @@ namespace NetLoom.Topology.Map
             if (string.IsNullOrWhiteSpace(vendor))
             {
                 return string.IsNullOrWhiteSpace(model)
-                    ? null
+                    ? SystemDescriptionSummary(
+                        device.SystemDescription)
                     : model;
             }
 
@@ -336,6 +337,27 @@ namespace NetLoom.Topology.Map
             }
 
             return vendor + " " + model;
+        }
+
+        // Г2 (полевая проверка Sprint 46): без заданной модели — сохранённый sysDescr, первая непустая строка.
+        // Многострочное описание (например, IOS) в столбце модели не помещается; полное — в «Технических деталях».
+        private static string SystemDescriptionSummary(
+            string systemDescription)
+        {
+            if (string.IsNullOrWhiteSpace(
+                systemDescription))
+            {
+                return null;
+            }
+
+            return systemDescription
+                .Split(
+                    new[] { '\r', '\n' },
+                    StringSplitOptions.RemoveEmptyEntries)
+                .Select(
+                    line => line.Trim())
+                .FirstOrDefault(
+                    line => line.Length > 0);
         }
 
         private static string PortLabel(
@@ -429,6 +451,12 @@ namespace NetLoom.Topology.Map
 
                 case DeviceCategory.PassiveNetworkEquipment:
                     return MapNodeCategory.PassiveNetworkEquipment;
+
+                case DeviceCategory.Switch:
+                    return MapNodeCategory.Switch;
+
+                case DeviceCategory.Router:
+                    return MapNodeCategory.Router;
 
                 default:
                     return MapNodeCategory.Unknown;

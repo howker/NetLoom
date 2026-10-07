@@ -190,7 +190,9 @@ namespace NetLoom.Contracts.Diagnostics
             DateTime? lastSeenUtc,
             DateTime? lastResolvedUtc,
             IEnumerable<InterfaceDiagnostic> interfaces,
-            string managementAddress = null)
+            string managementAddress = null,
+            string systemDescription = null,
+            string systemObjectId = null)
         {
             if (deviceId == Guid.Empty)
             {
@@ -232,6 +234,8 @@ namespace NetLoom.Contracts.Diagnostics
             LastResolvedUtc = lastResolvedUtc;
             Interfaces = interfaceSnapshot;
             ManagementAddress = Normalize(managementAddress);
+            SystemDescription = Normalize(systemDescription);
+            SystemObjectId = Normalize(systemObjectId);
         }
 
         public Guid DeviceId { get; }
@@ -249,6 +253,10 @@ namespace NetLoom.Contracts.Diagnostics
         public IReadOnlyList<InterfaceDiagnostic> Interfaces { get; }
 
         public string ManagementAddress { get; }
+
+        public string SystemDescription { get; }
+
+        public string SystemObjectId { get; }
 
         private static string Normalize(string value)
         {

@@ -101,7 +101,9 @@ namespace NetLoom.Application.Topology
                         candidate.SysName,
                         managementAddress),
                     null,
-                    managementAddress));
+                    managementAddress,
+                    candidate.SysDescription,
+                    candidate.SysObjectId));
 
             return deviceId;
         }
@@ -151,7 +153,13 @@ namespace NetLoom.Application.Topology
                     existing.DiscoveredName,
                     managementAddress),
                 existing.LldpChassisId,
-                managementAddress);
+                managementAddress,
+                FirstNonEmpty(
+                    candidate.SysDescription,
+                    existing.SystemDescription),
+                FirstNonEmpty(
+                    candidate.SysObjectId,
+                    existing.SystemObjectId));
         }
 
         private static DateTime? Latest(
