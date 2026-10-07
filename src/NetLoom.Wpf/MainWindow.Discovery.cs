@@ -72,6 +72,8 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryProgressLabel");
             DiscoveryCurrentAddressLabelText.Text =
                 UiText.Get("DiscoveryCurrentAddressLabel");
+            DiscoveryPhaseLabelText.Text =
+                UiText.Get("DiscoveryPhaseLabel");
             DiscoveryRangeTitleText.Text =
                 UiText.Get("DiscoveryRangeTitle");
             DiscoveryStartAddressLabelText.Text =
@@ -1618,6 +1620,17 @@ namespace NetLoom.Wpf
                         "DiagnosticNotAvailable")
                     : snapshot.CurrentAddress
                         .ToString();
+
+            // Sprint 48: только реально выполняемые фазы обнаружения — ICMP, TCP (если заданы порты), SNMP.
+            DiscoveryPhaseValueText.Text =
+                snapshot.CurrentPhase.HasValue
+                    ? UiText.Format(
+                        "DiscoveryPhaseValue",
+                        snapshot.CurrentPhase.Value.ToString().ToUpperInvariant(),
+                        snapshot.PhaseStep,
+                        snapshot.PhaseCount)
+                    : UiText.Get(
+                        "DiagnosticNotAvailable");
 
             var canStart =
                 snapshot.State ==

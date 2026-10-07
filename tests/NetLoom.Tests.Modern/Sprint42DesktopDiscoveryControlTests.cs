@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Desktop.Discovery;
 using NetLoom.Desktop.Monitoring;
@@ -498,6 +499,130 @@ namespace NetLoom.Tests.Modern
                     control.Current.State);
                 Assert.IsTrue(
                     factory.LastSession.Terminated);
+            }
+        }
+
+        [TestMethod]
+        public void PhaseMarkerIsParsed()
+        {
+            EngineDiscoveryMarker marker;
+
+            Assert.IsTrue(
+                EngineDiscoveryMarkerParser.TryParse(
+                    "NETLOOM_DISCOVERY state=phase processed=117 total=254 found=23 address=192.0.2.118 phase=snmp step=3 steps=3",
+                    out marker));
+
+            Assert.AreEqual(
+                EngineDiscoveryMarkerKind.Phase,
+                marker.Kind);
+            Assert.AreEqual(
+                117,
+                marker.ProcessedAddresses);
+            Assert.AreEqual(
+                254,
+                marker.TotalAddresses);
+            Assert.AreEqual(
+                23,
+                marker.FoundCandidates);
+            Assert.AreEqual(
+                IPAddress.Parse("192.0.2.118"),
+                marker.Address);
+            Assert.AreEqual(
+                DiscoveryPhase.Snmp,
+                marker.Phase);
+            Assert.AreEqual(
+                3,
+                marker.PhaseStep);
+            Assert.AreEqual(
+                3,
+                marker.PhaseCount);
+        }
+
+        [TestMethod]
+        public void PhaseMarkerWithStepOutsideRangeIsRejected()
+        {
+            EngineDiscoveryMarker marker;
+
+            Assert.IsFalse(
+                EngineDiscoveryMarkerParser.TryParse(
+                    "NETLOOM_DISCOVERY state=phase processed=117 total=254 found=23 address=192.0.2.118 phase=snmp step=4 steps=3",
+                    out marker));
+            Assert.IsNull(marker);
+
+            Assert.IsFalse(
+                EngineDiscoveryMarkerParser.TryParse(
+                    "NETLOOM_DISCOVERY state=phase processed=117 total=254 found=23 address=192.0.2.118 phase=lldp step=3 steps=3",
+                    out marker));
+            Assert.IsNull(marker);
+        }
+
+        [TestMethod]
+        public async Task CurrentPhaseIsClearedAfterAddressProgress()
+        {
+            var factory = new FakeEngineProcessFactory();
+
+            using (var control =
+                new DesktopEngineDiscoveryControl(
+                    "NetLoom.Engine.exe",
+                    factory))
+            {
+                var start = control.StartAsync(
+                    DefaultRequest(),
+                    CancellationToken.None);
+                var process = factory.LastSession;
+
+                process.EmitOutput(
+                    StartedMarker(
+                        4));
+
+                await start;
+
+                process.EmitOutput(
+                    "NETLOOM_DISCOVERY state=phase processed=0 total=4 found=0 address=192.0.2.1 phase=tcp step=2 steps=3");
+
+                Assert.AreEqual(
+                    DiscoveryControlState.Running,
+                    control.Current.State);
+                Assert.AreEqual(
+                    DiscoveryPhase.Tcp,
+                    control.Current.CurrentPhase);
+                Assert.AreEqual(
+                    IPAddress.Parse("192.0.2.1"),
+                    control.Current.CurrentAddress);
+                Assert.AreEqual(
+                    0,
+                    control.Current.ProcessedAddresses);
+                Assert.AreEqual(
+                    4,
+                    control.Current.TotalAddresses);
+                Assert.AreEqual(
+                    0,
+                    control.Current.FoundCandidates);
+                Assert.AreEqual(
+                    2,
+                    control.Current.PhaseStep);
+                Assert.AreEqual(
+                    3,
+                    control.Current.PhaseCount);
+
+                process.EmitOutput(
+                    "NETLOOM_DISCOVERY state=progress processed=1 total=4 found=0 address=192.0.2.1 candidate=false");
+
+                Assert.IsNull(control.Current.CurrentPhase);
+                Assert.AreEqual(
+                    0,
+                    control.Current.PhaseStep);
+                Assert.AreEqual(
+                    0,
+                    control.Current.PhaseCount);
+                Assert.AreEqual(
+                    1,
+                    control.Current.ProcessedAddresses);
+
+                process.EmitOutput(
+                    "NETLOOM_DISCOVERY state=completed processed=4 total=4 found=0");
+                process.Complete(
+                    0);
             }
         }
 

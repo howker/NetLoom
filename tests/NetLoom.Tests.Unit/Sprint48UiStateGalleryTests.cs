@@ -10,10 +10,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
+using NetLoom.Wpf.Localization;
 
 namespace NetLoom.Tests.Unit
 {
@@ -249,6 +251,189 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
+        public void DiscoveryRunningGalleryShowsCurrentPhase()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var outputDirectory =
+                        Path.Combine(
+                            Path.GetDirectoryName(
+                                ResolveOutputDirectory()),
+                            "sprint48-phases");
+
+                    Directory.CreateDirectory(
+                        outputDirectory);
+
+                    foreach (var file in
+                        Directory.GetFiles(
+                            outputDirectory,
+                            "*.png"))
+                    {
+                        File.Delete(file);
+                    }
+
+                    var findings = new List<string>();
+                    var profile = new AccessProfile(
+                        Guid.Parse(
+                            "48484848-0001-0001-0001-484848484848"),
+                        "Площадка А",
+                        true,
+                        SnmpVersion.V2C,
+                        null);
+                    var scenario = "33-discovery-running-snmp";
+
+                    foreach (var dark in new[] { false, true })
+                    {
+                        var theme = dark ? "dark" : "light";
+                        var bitmaps = new List<BitmapSource>();
+
+                        foreach (var width in
+                            new[] { NarrowWidth, NormalWidth })
+                        {
+                            var discoveryControl = new GalleryDiscoveryControl();
+                            var window = new MainWindow(
+                                new FixedRefreshProvider(
+                                    EmptySnapshot()),
+                                new EmptyLookupReader(),
+                                new GalleryMonitoringControl(),
+                                discoveryControl,
+                                new[] { profile },
+                                new GalleryCandidateMaterializer());
+
+                            try
+                            {
+                                PrepareWindow(
+                                    window,
+                                    width,
+                                    GalleryHeight);
+
+                                if (dark)
+                                {
+                                    Click(
+                                        (Button)window.FindName(
+                                            "ShellThemeButton"));
+                                }
+
+                                Click(
+                                    (Button)window.FindName(
+                                        "ShellDiscoveryButton"));
+
+                                // Диапазон и найденные адреса согласованы с текущим адресом кадра.
+                                ((TextBox)window.FindName("DiscoveryStartAddressTextBox")).Text = "10.48.228.1";
+                                ((TextBox)window.FindName("DiscoveryEndAddressTextBox")).Text = "10.48.228.254";
+
+                                discoveryControl.PublishState(
+                                    DiscoveryControlState.Running,
+                                    0,
+                                    254,
+                                    0);
+
+                                for (var i = 1; i <= 23; i++)
+                                {
+                                    discoveryControl.EmitCandidate(
+                                        new DiscoveryCandidateSnapshot(
+                                            IPAddress.Parse(
+                                                "10.48.228." + (i * 5)),
+                                            profile.Id,
+                                            true,
+                                            true,
+                                            new[] { 22 },
+                                            "sw-" + i,
+                                            "Synthetic device",
+                                            null,
+                                            null,
+                                            8));
+                                }
+
+                                PumpDispatcher();
+
+                                discoveryControl.PublishState(
+                                    DiscoveryControlState.Running,
+                                    117,
+                                    254,
+                                    23,
+                                    IPAddress.Parse("10.48.228.118"),
+                                    DiscoveryPhase.Snmp,
+                                    3,
+                                    3);
+
+                                PumpDispatcher();
+                                window.UpdateLayout();
+
+                                var frameScenario =
+                                    scenario + "/" + theme + "/" + width;
+                                var phaseText =
+                                    (TextBlock)window.FindName(
+                                        "DiscoveryPhaseValueText");
+                                var expectedPhase =
+                                    UiText.Format(
+                                        "DiscoveryPhaseValue",
+                                        "SNMP",
+                                        3,
+                                        3);
+
+                                if (phaseText.Text != expectedPhase)
+                                {
+                                    findings.Add(
+                                        frameScenario + ": этап обнаружения не совпадает с ожидаемым (§9): «" +
+                                        phaseText.Text + "» вместо «" + expectedPhase + "».");
+                                }
+
+                                var addressText =
+                                    (TextBlock)window.FindName(
+                                        "DiscoveryCurrentAddressValueText");
+
+                                if (addressText.Text != "10.48.228.118")
+                                {
+                                    findings.Add(
+                                        frameScenario + ": текущий адрес не совпадает с ожидаемым (§9): «" +
+                                        addressText.Text + "» вместо «10.48.228.118».");
+                                }
+
+                                CollectTextClipping(
+                                    window.Content as DependencyObject,
+                                    frameScenario,
+                                    findings);
+
+                                bitmaps.Add(
+                                    Capture(
+                                        window.Content as FrameworkElement));
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpDispatcher();
+                            }
+                        }
+
+                        SaveSideBySide(
+                            bitmaps[0],
+                            bitmaps[1],
+                            Path.Combine(
+                                outputDirectory,
+                                scenario + "-" + theme + ".png"));
+                    }
+
+                    File.WriteAllLines(
+                        Path.Combine(
+                            outputDirectory,
+                            "findings.txt"),
+                        findings.Count == 0
+                            ? new[] { "Находок нет." }
+                            : findings.ToArray());
+
+                    // Один сценарий в двух темах; узкий и обычный варианты рядом.
+                    Assert.AreEqual(
+                        2,
+                        Directory.GetFiles(
+                            outputDirectory,
+                            "*.png").Length,
+                        "Every discovery phase gallery frame must be produced.");
+                });
+        }
+
+        [TestMethod]
         public void OneSidedLldpLinkGalleryShowsEvidenceGap()
         {
             RunOnSta(
@@ -339,7 +524,11 @@ namespace NetLoom.Tests.Unit
                 DiscoveryControlState state,
                 int processed,
                 int total,
-                int found)
+                int found,
+                IPAddress currentAddress = null,
+                DiscoveryPhase? phase = null,
+                int step = 0,
+                int steps = 0)
             {
                 _current =
                     new DiscoveryControlSnapshot(
@@ -349,8 +538,11 @@ namespace NetLoom.Tests.Unit
                         processed,
                         total,
                         found,
+                        currentAddress,
                         null,
-                        null);
+                        phase,
+                        step,
+                        steps);
 
                 SnapshotChanged?.Invoke(
                     this,

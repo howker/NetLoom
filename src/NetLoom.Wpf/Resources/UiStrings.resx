@@ -1366,6 +1366,12 @@ Drag the header to move this placement together with its child placements and as
   <data name="DiscoveryCurrentAddressLabel" xml:space="preserve">
     <value>Current address</value>
   </data>
+  <data name="DiscoveryPhaseLabel" xml:space="preserve">
+    <value>Step</value>
+  </data>
+  <data name="DiscoveryPhaseValue" xml:space="preserve">
+    <value>{0} · {1} of {2}</value>
+  </data>
   <data name="DiscoveryCidrLabel" xml:space="preserve">
     <value>Network range (IPv4 CIDR)</value>
   </data>

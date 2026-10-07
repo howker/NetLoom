@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.Monitoring;
@@ -709,15 +710,25 @@ namespace NetLoom.Tests.Unit
                 DiscoveryControlState state,
                 int processed,
                 int total,
-                int found)
+                int found,
+                IPAddress currentAddress = null,
+                DiscoveryPhase? phase = null,
+                int step = 0,
+                int steps = 0)
             {
                 Publish(
-                    Snapshot(
+                    new DiscoveryControlSnapshot(
                         state,
+                        null,
+                        null,
                         processed,
                         total,
                         found,
-                        null));
+                        currentAddress,
+                        null,
+                        phase,
+                        step,
+                        steps));
             }
 
             private void Publish(

@@ -376,6 +376,40 @@ namespace NetLoom.Engine
                     CultureInfo.InvariantCulture));
         }
 
+        public static void WriteDiscoveryPhase(
+            TextWriter writer,
+            DiscoveryPhaseUpdate update,
+            int foundCandidates)
+        {
+            if (update == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(update));
+            }
+
+            WriteLine(
+                writer,
+                "NETLOOM_DISCOVERY state=phase processed=" +
+                (update.AddressIndex - 1).ToString(
+                    CultureInfo.InvariantCulture) +
+                " total=" +
+                update.TotalAddresses.ToString(
+                    CultureInfo.InvariantCulture) +
+                " found=" +
+                foundCandidates.ToString(
+                    CultureInfo.InvariantCulture) +
+                " address=" +
+                update.Address +
+                " phase=" +
+                update.Phase.ToString().ToLowerInvariant() +
+                " step=" +
+                update.Step.ToString(
+                    CultureInfo.InvariantCulture) +
+                " steps=" +
+                update.StepCount.ToString(
+                    CultureInfo.InvariantCulture));
+        }
+
         public static void WriteDiscoveryProgress(
             TextWriter writer,
             DiscoveryProgress progress,

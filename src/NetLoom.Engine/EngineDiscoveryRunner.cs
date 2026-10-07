@@ -47,7 +47,12 @@ namespace NetLoom.Engine
                 foreach (var progress in
                     engine.Discover(
                         request,
-                        cancellationToken))
+                        cancellationToken,
+                        update =>
+                            EngineMachineOutput.WriteDiscoveryPhase(
+                                writer,
+                                update,
+                                foundCandidates)))
                 {
                     processedAddresses =
                         progress.ProcessedAddresses;

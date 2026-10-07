@@ -39,6 +39,17 @@ namespace NetLoom.Application.Discovery
             DiscoveryRequest request,
             CancellationToken cancellationToken)
         {
+            return Discover(
+                request,
+                cancellationToken,
+                null);
+        }
+
+        public IEnumerable<DiscoveryProgress> Discover(
+            DiscoveryRequest request,
+            CancellationToken cancellationToken,
+            Action<DiscoveryPhaseUpdate> phaseChanged)
+        {
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
@@ -73,7 +84,10 @@ namespace NetLoom.Application.Discovery
                 var candidate = Probe(
                     address,
                     request,
-                    cancellationToken);
+                    cancellationToken,
+                    index + 1,
+                    addresses.Length,
+                    phaseChanged);
 
                 yield return new DiscoveryProgress(
                     address,
@@ -86,8 +100,23 @@ namespace NetLoom.Application.Discovery
         private DiscoveryCandidate Probe(
             IPAddress address,
             DiscoveryRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            int addressIndex,
+            int totalAddresses,
+            Action<DiscoveryPhaseUpdate> phaseChanged)
         {
+            var stepCount =
+                request.TcpPorts.Count > 0 ? 3 : 2;
+
+            phaseChanged?.Invoke(
+                new DiscoveryPhaseUpdate(
+                    address,
+                    addressIndex,
+                    totalAddresses,
+                    DiscoveryPhase.Icmp,
+                    1,
+                    stepCount));
+
             var icmpReachable =
                 _networkProbe.IsIcmpReachable(
                     address,
@@ -96,17 +125,40 @@ namespace NetLoom.Application.Discovery
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var openTcpPorts =
-                _networkProbe.FindOpenTcpPorts(
-                    address,
-                    request.TcpPorts,
-                    request.TcpTimeoutMilliseconds,
-                    cancellationToken);
+            IReadOnlyList<int> openTcpPorts = new int[0];
+
+            if (request.TcpPorts.Count > 0)
+            {
+                phaseChanged?.Invoke(
+                    new DiscoveryPhaseUpdate(
+                        address,
+                        addressIndex,
+                        totalAddresses,
+                        DiscoveryPhase.Tcp,
+                        2,
+                        stepCount));
+
+                openTcpPorts =
+                    _networkProbe.FindOpenTcpPorts(
+                        address,
+                        request.TcpPorts,
+                        request.TcpTimeoutMilliseconds,
+                        cancellationToken);
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
 
             InventorySnapshot inventory = null;
             Guid? accessProfileId = null;
+
+            phaseChanged?.Invoke(
+                new DiscoveryPhaseUpdate(
+                    address,
+                    addressIndex,
+                    totalAddresses,
+                    DiscoveryPhase.Snmp,
+                    stepCount,
+                    stepCount));
 
             try
             {

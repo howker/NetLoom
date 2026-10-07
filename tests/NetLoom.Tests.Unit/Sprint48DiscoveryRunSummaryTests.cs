@@ -4,14 +4,91 @@ using System.Net;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf;
+using NetLoom.Wpf.Localization;
 
 namespace NetLoom.Tests.Unit
 {
     public sealed partial class Sprint42WpfDiscoveryPanelTests
     {
+        [TestMethod]
+        public void DiscoveryPanelShowsCurrentPhaseAndClearsItAfterAddress()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var provider = new MutableRefreshProvider(
+                        EmptySnapshot());
+                    var control = new RecordingDiscoveryControl();
+                    var profile = new AccessProfile(
+                        Guid.NewGuid(),
+                        "Discovery",
+                        true,
+                        SnmpVersion.V2C,
+                        null);
+                    var window = new MainWindow(
+                        provider,
+                        new EmptyLookupReader(),
+                        new NoopMonitoringControl(),
+                        control,
+                        new[] { profile },
+                        new RecordingCandidateMaterializer());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () => provider.ReadCount >= 1);
+
+                        var phaseText =
+                            (TextBlock)window.FindName(
+                                "DiscoveryPhaseValueText");
+                        var address = IPAddress.Parse("192.0.2.1");
+
+                        control.PublishState(
+                            DiscoveryControlState.Running,
+                            0,
+                            4,
+                            0,
+                            address,
+                            DiscoveryPhase.Icmp,
+                            1,
+                            2);
+
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiText.Format(
+                                "DiscoveryPhaseValue",
+                                "ICMP",
+                                1,
+                                2),
+                            phaseText.Text);
+
+                        control.PublishState(
+                            DiscoveryControlState.Running,
+                            1,
+                            4,
+                            0,
+                            address);
+
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            UiText.Get("DiagnosticNotAvailable"),
+                            phaseText.Text);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
         [TestMethod]
         public void RunSummaryAppearsAfterTheRunWithCheckedFoundAndSnmpCounts()
         {

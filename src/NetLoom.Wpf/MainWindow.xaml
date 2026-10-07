@@ -1406,6 +1406,7 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
@@ -1447,6 +1448,17 @@
                                                                HorizontalAlignment="Right"
                                                                Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                                                FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="DiscoveryPhaseLabelText"
+                                                               Grid.Row="3"
+                                                               Grid.Column="0"
+                                                               Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                                                    <TextBlock x:Name="DiscoveryPhaseValueText"
+                                                               Grid.Row="3"
+                                                               Grid.Column="1"
+                                                               HorizontalAlignment="Right"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                                                TextWrapping="Wrap" />
                                                 </Grid>
                                             </Border>

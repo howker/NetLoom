@@ -1366,6 +1366,12 @@
   <data name="DiscoveryCurrentAddressLabel" xml:space="preserve">
     <value>Текущий адрес</value>
   </data>
+  <data name="DiscoveryPhaseLabel" xml:space="preserve">
+    <value>Этап</value>
+  </data>
+  <data name="DiscoveryPhaseValue" xml:space="preserve">
+    <value>{0} · {1} из {2}</value>
+  </data>
   <data name="DiscoveryCidrLabel" xml:space="preserve">
     <value>Диапазон сети (IPv4 CIDR)</value>
   </data>

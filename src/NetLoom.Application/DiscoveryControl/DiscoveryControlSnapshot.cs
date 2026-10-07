@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using NetLoom.Application.Discovery;
 
 namespace NetLoom.Application.DiscoveryControl
 {
@@ -13,7 +14,10 @@ namespace NetLoom.Application.DiscoveryControl
             int totalAddresses,
             int foundCandidates,
             IPAddress currentAddress,
-            string faultMessage)
+            string faultMessage,
+            DiscoveryPhase? currentPhase = null,
+            int phaseStep = 0,
+            int phaseCount = 0)
         {
             if (!Enum.IsDefined(
                 typeof(DiscoveryControlState),
@@ -50,6 +54,39 @@ namespace NetLoom.Application.DiscoveryControl
                     nameof(accessProfileId));
             }
 
+            if (!currentPhase.HasValue)
+            {
+                if (phaseStep != 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(phaseStep));
+                }
+
+                if (phaseCount != 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(phaseCount));
+                }
+            }
+            else
+            {
+                if (phaseStep < 1)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(phaseStep));
+                }
+
+                if (phaseCount < phaseStep ||
+                    phaseCount > 3)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(phaseCount));
+                }
+            }
+
+            CurrentPhase = currentPhase;
+            PhaseStep = phaseStep;
+            PhaseCount = phaseCount;
             State = state;
             Cidr = Normalize(cidr);
             AccessProfileId = accessProfileId;
@@ -75,6 +112,12 @@ namespace NetLoom.Application.DiscoveryControl
         public IPAddress CurrentAddress { get; }
 
         public string FaultMessage { get; }
+
+        public DiscoveryPhase? CurrentPhase { get; }
+
+        public int PhaseStep { get; }
+
+        public int PhaseCount { get; }
 
         private static string Normalize(
             string value)
