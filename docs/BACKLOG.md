@@ -315,6 +315,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Preserve manual positions; automatic anti-overlap applies only to new nodes.
   - Keep parallel links separate; highlight both ports when a link is focused; support shortest-path inspection and placement-fit interactions described in the Sprint plan.
   - Selection history remains an optional convenience candidate here if it is not completed earlier. Ctrl+K search and the collapsible inspector are mandatory Sprint 46 shell behavior under ADR-083.
+  - Keyboard path for map objects (UI_DESIGN_RULES §8), moved from Sprint 46 by owner decision on 2026-10-07 (mockup-gap act K4): nodes, links and placement collapse buttons take keyboard focus with the shared focus ring, Enter selects, arrows move between neighbours, layout changes have a keyboard alternative. Today map selection by keyboard goes through Equipment, Ctrl+K and "Показать на карте".
 
 - [ ] Sprint 50 — network redundancy: rings and single points of failure.
   - Operator outcome: selecting a ring or a predicted single point of failure immediately explains the protection state and the topology impact in operator terms.

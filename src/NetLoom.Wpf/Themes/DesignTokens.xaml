@@ -54,6 +54,9 @@
 
     <Thickness x:Key="NetLoom.Thickness.BorderThin">1</Thickness>
     <Thickness x:Key="NetLoom.Thickness.BorderFocus">3</Thickness>
+    <!-- §8: тематическая рамка фокуса вместо системного пунктира — 2 px, снаружи элемента с зазором 1 px. -->
+    <Thickness x:Key="NetLoom.Thickness.FocusRing">2</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.FocusRingOffset">-3</Thickness>
     <!-- A2: выбранная карточка предупреждения — рамка 2; поле карточки меньше на 1, чтобы содержимое не сдвигалось. -->
     <Thickness x:Key="NetLoom.Thickness.CardSelectedBorder">2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardSelectedPadding">19</Thickness>
@@ -66,6 +69,9 @@
     <Thickness x:Key="NetLoom.Thickness.ShellRailInset">6,8</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellRailSummary">12</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellNavigationButtonMargin">0,0,0,6</Thickness>
+    <!-- Рейл 56 с правой границей 1: кнопкам 44 нужно не меньше 44 по ширине, иначе WPF обрезает кнопку
+         вместе с рамкой фокуса снаружи. По горизонтали кнопки центрируются, поле только сверху и снизу. -->
+    <Thickness x:Key="NetLoom.Thickness.ShellRailPadding">0,8,0,8</Thickness>
     <Thickness x:Key="NetLoom.Thickness.NavigationSelectedBorder">3,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellMapHeaderPadding">12,8</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ShellMapControlsMargin">0,12,12,0</Thickness>
@@ -80,6 +86,8 @@
     <Thickness x:Key="NetLoom.Thickness.ComboBoxTextReserve">0,0,24,0</Thickness>
 
     <CornerRadius x:Key="NetLoom.Radius.Control">4</CornerRadius>
+    <!-- Рамка фокуса лежит на 3 px снаружи — радиус больше радиуса элемента на столько же (§7). -->
+    <CornerRadius x:Key="NetLoom.Radius.FocusRing">7</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.Panel">6</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.MapNode">6</CornerRadius>
     <CornerRadius x:Key="NetLoom.Radius.MapNodeStateStripe">5,0,0,5</CornerRadius>

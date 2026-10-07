@@ -41,7 +41,7 @@ namespace NetLoom.Tests.Unit
     // База берётся из NETLOOM_UI_AUDIT_DB или artifacts/realistic-stand/operator-s46-pass3-visual.db;
     // без базы тест помечается как неподтверждённый (Inconclusive), исходная база не изменяется.
     [TestClass]
-    public sealed class Sprint46LiveUiAuditTests
+    public sealed partial class Sprint46LiveUiAuditTests
     {
         private const double LargeTextSize = 24.0;
         private const double LargeBoldTextSize = 18.66;

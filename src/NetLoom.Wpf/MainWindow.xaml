@@ -233,7 +233,7 @@
                     BorderThickness="{DynamicResource NetLoom.Thickness.BorderRight}">
                 <DockPanel LastChildFill="False">
                     <StackPanel DockPanel.Dock="Top"
-                                Margin="6">
+                                Margin="{DynamicResource NetLoom.Thickness.ShellRailPadding}">
                         <Button x:Name="ShellMapButton"
                                 Width="44"
                                 Height="44"
@@ -324,7 +324,7 @@
                     </StackPanel>
 
                     <StackPanel DockPanel.Dock="Bottom"
-                                Margin="6">
+                                Margin="{DynamicResource NetLoom.Thickness.ShellRailPadding}">
                         <Button x:Name="ShellSettingsButton"
                                 Width="44"
                                 Height="44"
@@ -530,7 +530,8 @@
                                 <ScrollViewer Grid.Row="1"
                                               VerticalScrollBarVisibility="Auto"
                                               HorizontalScrollBarVisibility="Disabled">
-                                    <ItemsControl x:Name="EquipmentList">
+                                    <ItemsControl x:Name="EquipmentList"
+                                          Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Style="{StaticResource NetLoom.Style.EquipmentRowButton}"
@@ -953,6 +954,7 @@
                                        TextWrapping="Wrap" />
 
                             <ItemsControl x:Name="AlertList"
+                                          Focusable="False"
                                           Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -2104,7 +2106,7 @@
                     <TextBlock x:Name="ShellEventEmptyText"
                                Style="{StaticResource NetLoom.Style.MutedText}"
                                VerticalAlignment="Center" />
-                    <ItemsControl x:Name="ShellEventList">
+                    <ItemsControl x:Name="ShellEventList" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <StackPanel Orientation="Horizontal" />

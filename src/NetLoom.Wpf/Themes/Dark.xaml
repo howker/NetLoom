@@ -40,4 +40,5 @@
 
     <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#A8BDCF" />
     <SolidColorBrush x:Key="NetLoom.Brush.Selection" Color="#5F9CF5" />
+    <SolidColorBrush x:Key="NetLoom.Brush.FocusRing" Color="#5F9CF5" />
 </ResourceDictionary>

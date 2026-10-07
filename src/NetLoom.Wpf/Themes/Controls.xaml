@@ -12,7 +12,31 @@
                 Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
     </Style>
 
+    <!-- §8: тематическая рамка фокуса вместо системного пунктира Windows. Толщина 2, снаружи элемента,
+         цвет FocusRing не ниже 3:1 ко всем поверхностям обеих тем (включая рейл). Показывается только
+         при работе с клавиатуры — это поведение FocusVisualStyle в WPF. -->
+    <Style x:Key="NetLoom.Style.FocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border Margin="{DynamicResource NetLoom.Thickness.FocusRingOffset}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.FocusRing}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.FocusRing}"
+                            CornerRadius="{DynamicResource NetLoom.Radius.FocusRing}"
+                            SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type GridSplitter}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
+    </Style>
+
     <Style TargetType="{x:Type TextBox}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
         <Setter Property="FontFamily"
                 Value="{DynamicResource NetLoom.FontFamily.Ui}" />
         <Setter Property="FontSize"
@@ -42,6 +66,8 @@
     </Style>
 
     <Style TargetType="{x:Type PasswordBox}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
         <Setter Property="FontFamily"
                 Value="{DynamicResource NetLoom.FontFamily.Ui}" />
         <Setter Property="FontSize"
@@ -63,6 +89,8 @@
     </Style>
 
     <Style TargetType="{x:Type ComboBox}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
         <Setter Property="FontFamily"
                 Value="{DynamicResource NetLoom.FontFamily.Ui}" />
         <Setter Property="FontSize"
@@ -439,6 +467,8 @@
     </Style>
 
     <Style TargetType="{x:Type CheckBox}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
         <!-- §8: текст флажка — часть площади нажатия, высота не меньше 24. -->
         <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Control.MinHitSize}" />
         <Setter Property="FontFamily" Value="{DynamicResource NetLoom.FontFamily.Ui}" />
@@ -501,12 +531,6 @@
                         <Trigger Property="IsMouseOver"
                                  Value="True">
                             <Setter TargetName="CheckBoxChrome"
-                                    Property="BorderBrush"
-                                    Value="{DynamicResource NetLoom.Brush.Accent}" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused"
-                                 Value="True">
-                            <Setter TargetName="CheckFocus"
                                     Property="BorderBrush"
                                     Value="{DynamicResource NetLoom.Brush.Accent}" />
                         </Trigger>
@@ -625,6 +649,8 @@
     </Style>
 
     <Style TargetType="{x:Type Button}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
         <Setter Property="FontFamily"
                 Value="{DynamicResource NetLoom.FontFamily.Ui}" />
         <Setter Property="FontSize"
@@ -1195,6 +1221,8 @@
     <!-- Общий chrome вкладок вместо системного оформления Windows. -->
     <Style x:Key="NetLoom.Style.SurfaceTab"
            TargetType="{x:Type TabItem}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
         <Setter Property="Background"
@@ -1512,6 +1540,8 @@
     <Style x:Key="NetLoom.Style.EquipmentRowButton"
            TargetType="{x:Type Button}"
            BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+        <Setter Property="FocusVisualStyle"
+                Value="{x:Null}" />
         <Setter Property="Background"
                 Value="Transparent" />
         <Setter Property="FontWeight"
@@ -1725,6 +1755,8 @@
 
     <Style x:Key="NetLoom.Style.InspectorTab"
            TargetType="{x:Type TabItem}">
+        <Setter Property="FocusVisualStyle"
+                Value="{StaticResource NetLoom.Style.FocusVisual}" />
         <Setter Property="Foreground"
                 Value="{DynamicResource NetLoom.Brush.TextSecondary}" />
         <Setter Property="Background"

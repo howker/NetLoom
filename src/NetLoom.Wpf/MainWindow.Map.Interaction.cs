@@ -235,17 +235,30 @@ public partial class MainWindow
             return;
         }
 
+        // §8: Esc закрывает всплывающее окно, диалог или редактор; ADR-083: «Режим правки · Esc — выйти».
+        // Esc не переключает разделы и не перехватывается у поиска и выпадающих списков — они закрываются сами.
         if (e.Key == Key.Escape)
         {
-            e.Handled = true;
-
             if (_activeTopologyEditor != null)
             {
+                e.Handled = true;
+
                 await CloseShellTopologyEditorAsync();
+                ShowShellSection(
+                    ShellSection.Map);
+                return;
             }
 
-            ShowShellSection(
-                ShellSection.Map);
+            if (IsMapEditMode &&
+                _shellSection == ShellSection.Map &&
+                !ShellGlobalSearchPopup.IsOpen)
+            {
+                e.Handled = true;
+
+                SetMapInteractionMode(
+                    MapInteractionMode.View);
+            }
+
             return;
         }
 
