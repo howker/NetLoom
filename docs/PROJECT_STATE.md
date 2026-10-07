@@ -8,7 +8,9 @@
 
 Sprint 45 is closed and pushed. Field acceptance exercised discovery, topology materialization, multi-target monitoring, diagnostics and export on the author's real network; the field baseline was 55 devices, 275 interfaces and 10 physical links, including Windows Server 2012 R2 in the actual site state. Closure evidence is in `docs/sprint45-field-acceptance.md`, and the closure baseline is `f475fec`.
 
-Sprint 46 is the active product Sprint and is **not accepted**. ADR-083 Step 2 shell-framework acceptance is complete on product-code checkpoint `738e94c5a8cb917a6be8d74e546ba2d37e602be6` (`Sprint 46: fix responsive equipment headers`). The full seven-view Light/Dark 1920/1366 capture was accepted on `bc0baccd4e3dc206c92d1a9542a5f540a3ac91ad`; the focused Equipment acceptance on `738e94c5` additionally proved the responsive header contract at 1920, 1366 and a real `ShellSectionSurface.ActualWidth` of 808 px. Step 2 is accepted, but Sprint 46 remains open.
+Sprint 46 is closed by owner decision on 2026-10-07 (closure section below). The on-site check on the real field network and Windows Server 2012 R2 is done outside the Sprint when the site is available; its findings go to the Sprint that is active at that time. The paragraphs below record the Sprint 46 history before closure.
+
+Before closure: ADR-083 Step 2 shell-framework acceptance is complete on product-code checkpoint `738e94c5a8cb917a6be8d74e546ba2d37e602be6` (`Sprint 46: fix responsive equipment headers`). The full seven-view Light/Dark 1920/1366 capture was accepted on `bc0baccd4e3dc206c92d1a9542a5f540a3ac91ad`; the focused Equipment acceptance on `738e94c5` additionally proved the responsive header contract at 1920, 1366 and a real `ShellSectionSurface.ActualWidth` of 808 px. Step 2 is accepted, but Sprint 46 remains open.
 
 The next Sprint 46 gate is the accepted access-profile-resolution amendment to ADR-083, implemented before the §9 gallery: preserve the existing `0 profiles` state, auto-select and persist exactly one profile when no valid saved selection exists, keep `2+ profiles` unresolved with `Выберите профиль` and no silent first-profile fallback, and disable monitoring/discovery start with an operator explanation while unresolved. After that behavior is implemented and tested, rebuild and review the `docs/UI_DESIGN_RULES.md` §9 gallery with those states, then establish the shared §§4–§8 style/accessibility system. Sprint 46 closes only after visual acceptance under §10 and the remaining field/restart/export/search/Server 2012 R2 checks.
 
@@ -16,14 +18,25 @@ Sprint 46 §9 profile-state gallery (`08a`–`08d`, Light/Dark, narrow and norma
 
 The committed product sequence is now:
   1. Sprint 45 - full field acceptance/hardening - complete.
-  2. Sprint 46 - application shell/navigation and shared operator context - active, not accepted.
-  3. Sprint 47 - visible monitoring progress - next only after Sprint 46 closure.
+  2. Sprint 46 - application shell/navigation and shared operator context - complete (closed 2026-10-07; on-site check outside the Sprint).
+  3. Sprint 47 - visible monitoring progress - next.
   4. Sprint 48 - explainable discovery and inbox.
   5. Sprint 49 - readable large-site map.
   6. Sprint 50 - network redundancy: rings and single points of failure.
   7. Sprint 51 - polling policies and profile templates.
 
 Optical degradation remains parallel evidence gathering rather than committed product work. MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on the known current-site devices.
+
+## Sprint 46 closure — 2026-10-07
+
+Sprint 46 - new shell and shared operator context - is closed by owner decision.
+  - Completed operator surface: the ADR-083 shell (56 px rail, top row with breadcrumbs, Ctrl+K search, monitoring state with Start/Stop and the access-profile chip, one central view, collapsible inspector, event strip) for Map, Equipment, Alerts, Discovery and Settings in Light and Dark themes; access-profile resolution states (`7eebca1`).
+  - Visual acceptance under `docs/UI_DESIGN_RULES.md` §10: mockup-gap act `docs/sprint46-mockup-gap.md` has no open rows; the live audit (`tools/Run-UiAudit.ps1`, 55 tests) reports no violations, including measured contrast, clipping, hit areas and UI Automation names.
+  - Keyboard-only pass (K1–K5) and UI Automation pass (U1–U5) are automated (`Sprint46KeyboardAuditTests`, `Sprint46AutomationAuditTests`).
+  - Field regression (restart viewport, PNG/CSV export, MAC/IP lookup) was verified by the automated field check on a synthetic 40-device site (`docs/sprint46-field-check.md`); defects P1–P6 found there are fixed in `0fe2338`.
+  - Moved by owner decision: M2, M3, A4 remainder and K4 to Sprint 49; field-check gaps Г3 to Sprint 47, Г1/Г2/Г4 to Sprint 48, Г5 to Sprint 50.
+  - Outside the Sprint: on-site check with the real Engine, system save dialogs, Windows Server 2012 R2 and slow RDP; HeadingLevel confirmation in Inspect (net8.0-windows only).
+  - Known regression baseline: the full unit suite keeps 4 older failures (Sprint 39/41 and localization `EquipmentAgeNever`/`EquipmentAgeNow`) tracked as a separate task; `NetLoom.Tests.Modern` 193/193.
 
 ## Sprint 44 closure — 2026-09-23
 
