@@ -287,7 +287,8 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Remaining product/UI obligations still include the event occurrence-time contract, explainable state/severity grammar, stale wording, evidence-only description/identity presentation, restart viewport, PNG/CSV export, MAC/IP lookup and the real Windows Server 2012 R2 delivery fix before the next field visit.
   - Final acceptance follows `docs/sprint46-ui-ux-redesign.md`, ADR-083 and `docs/UI_DESIGN_RULES.md` §10 on the field database / ~55-device workflow and real Windows Server 2012 R2.
 
-- [ ] Sprint 47 — visible monitoring progress.
+- [x] Sprint 47 — visible monitoring progress.
+  - Accepted and closed by the owner on 2026-10-07; closure record in `docs/PROJECT_STATE.md` («Sprint 47 closure»). Commits `072ea51`, `1ae7cdf`.
   - Operator outcome: one glance shows whether polling is running, the current device, completed/remaining work, errors and whether the cycle finished.
   - States: stopped / starting / running cycle / stopping / error.
   - Show `N / total`, progress bar, current device and address, successful/error/remaining counts, and cycle start/end time.
@@ -296,7 +297,7 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - The Sprint 46 top-row monitoring state is extended with cycle progress; Sprint 47 does not reintroduce a permanent monitoring section/panel.
   - If separate ICMP / SNMP / TCP availability cannot be presented from data already persisted by Sprint 46, the required new collection/projection belongs here with visible polling results; Sprint 46 must not add a new collection path just to fill Inspector fields.
   - Unreachable-device alert, moved from Sprint 46 by owner decision on 2026-10-07 (field check `docs/sprint46-field-check.md` Г3): a managed device that stops answering polls raises an alert with the time of the last successful poll; today it is visible only by the age of its data.
-  - Implementation record 2026-10-07 (awaiting owner acceptance):
+  - Implementation record 2026-10-07:
     - Cycle progress: `MonitoringCycleTracker` (Application) builds the cycle from per-device Engine markers — the multi-target scheduler has no global cycle; cycle k ends when every device of the set has had its k-th attempt (polled or skipped by backpressure). Desktop publishes current cycle, last completed cycle and per-device outcomes in `MonitoringControlSnapshot`.
     - Top row: the existing monitoring state becomes a button — «Опрос: N / всего» with a thin neutral progress bar during a cycle; details on click: current device and address, succeeded / failed / skipped / remaining, start and finish, devices that did not answer; `Запустить цикл сейчас` (POLL_NOW) while the scheduler runs, `Опросить выбранное устройство` when stopped. No new permanent top-row element.
     - Event strip: one «Цикл опроса завершён» event (latest only); the strip now shows only events that fit entirely (`Shell/FitStackPanel`) — the third event used to run under «Все события».

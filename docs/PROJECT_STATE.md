@@ -8,6 +8,8 @@
 
 Sprint 45 is closed and pushed. Field acceptance exercised discovery, topology materialization, multi-target monitoring, diagnostics and export on the author's real network; the field baseline was 55 devices, 275 interfaces and 10 physical links, including Windows Server 2012 R2 in the actual site state. Closure evidence is in `docs/sprint45-field-acceptance.md`, and the closure baseline is `f475fec`.
 
+Sprint 47 is accepted and closed by the owner on 2026-10-07 (closure section below). Sprint 48 is next.
+
 Sprint 46 is closed by owner decision on 2026-10-07 (closure section below). The on-site check on the real field network and Windows Server 2012 R2 is done outside the Sprint when the site is available; its findings go to the Sprint that is active at that time. The paragraphs below record the Sprint 46 history before closure.
 
 Before closure: ADR-083 Step 2 shell-framework acceptance is complete on product-code checkpoint `738e94c5a8cb917a6be8d74e546ba2d37e602be6` (`Sprint 46: fix responsive equipment headers`). The full seven-view Light/Dark 1920/1366 capture was accepted on `bc0baccd4e3dc206c92d1a9542a5f540a3ac91ad`; the focused Equipment acceptance on `738e94c5` additionally proved the responsive header contract at 1920, 1366 and a real `ShellSectionSurface.ActualWidth` of 808 px. Step 2 is accepted, but Sprint 46 remains open.
@@ -19,13 +21,24 @@ Sprint 46 §9 profile-state gallery (`08a`–`08d`, Light/Dark, narrow and norma
 The committed product sequence is now:
   1. Sprint 45 - full field acceptance/hardening - complete.
   2. Sprint 46 - application shell/navigation and shared operator context - complete (closed 2026-10-07; on-site check outside the Sprint).
-  3. Sprint 47 - visible monitoring progress - active (implementation record in `BACKLOG.md`, awaiting owner acceptance).
-  4. Sprint 48 - explainable discovery and inbox.
+  3. Sprint 47 - visible monitoring progress - complete (accepted 2026-10-07).
+  4. Sprint 48 - explainable discovery and inbox - next.
   5. Sprint 49 - readable large-site map.
   6. Sprint 50 - network redundancy: rings and single points of failure.
   7. Sprint 51 - polling policies and profile templates.
 
 Optical degradation remains parallel evidence gathering rather than committed product work. MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on the known current-site devices.
+
+## Sprint 47 closure — 2026-10-07
+
+Sprint 47 - visible monitoring progress - is accepted and closed by the owner.
+  - Completed operator surface: the top-row monitoring state shows «Опрос: N / всего» with a progress bar and opens cycle details (current device and address, succeeded / failed / skipped / remaining, start and finish, devices that did not answer, «Запустить цикл сейчас» / «Опросить выбранное устройство»); one «Цикл опроса завершён» event in the strip, which now shows only events that fit entirely.
+  - «Устройство не отвечает» (field-check gap Г3): Warning after 2 consecutive polls without a successful step, one alert source for cards, rail count, events, Equipment, map and Inspector; resolves when the device answers.
+  - ICMP / TCP availability: after every SNMP poll Engine checks ICMP and TCP 22/80/443; the Inspector shows «Доступен» / «Частично доступен» / «Недоступен» with ICMP / SNMP / TCP rows, and the alert says whether the device still answers ICMP.
+  - Commits: `072ea51` (cycle progress, unreachable-device warning), `1ae7cdf` (ICMP / TCP availability).
+  - Regression at closure: `tools/Run-UiAudit.ps1` 58/58 with no violations; Modern 196/196, Integration 113/113, Snapshots 7/7; the full unit suite keeps only the 4 known older failures. A real Engine `poll-once` against loopback printed the availability fields.
+  - Known limits: cycle data, failure streaks and availability are session-only (failed polls are not persisted; an app restart starts clean); the TCP port set is fixed at 22, 80, 443 (per-device policy belongs to Sprint 51); each poll takes longer by the ICMP and TCP checks.
+  - Outside the Sprint: check with the real Engine on the field network, together with the Sprint 46 on-site check.
 
 ## Sprint 46 closure — 2026-10-07
 
