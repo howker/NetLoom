@@ -956,7 +956,8 @@
                                           Margin="{DynamicResource NetLoom.Thickness.CardGapTop}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                        <Border x:Name="AlertCard"
+                                                Style="{StaticResource NetLoom.Style.OperatorCard}"
                                                 Margin="{DynamicResource NetLoom.Thickness.ListRow}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -1025,6 +1026,20 @@
                                             </Grid>
                                         </Border>
                                         <DataTemplate.Triggers>
+                                            <!-- A2 (sprint46-mockup-gap): выбранная карточка — рамка цвета выделения, как в макете netloom-v2-4;
+                                                 цвет важности (полоса, чип) не меняется (§2 «выделение не перекрашивает статус»). -->
+                                            <DataTrigger Binding="{Binding IsSelected}"
+                                                         Value="True">
+                                                <Setter TargetName="AlertCard"
+                                                        Property="BorderBrush"
+                                                        Value="{DynamicResource NetLoom.Brush.Selection}" />
+                                                <Setter TargetName="AlertCard"
+                                                        Property="BorderThickness"
+                                                        Value="{DynamicResource NetLoom.Thickness.CardSelectedBorder}" />
+                                                <Setter TargetName="AlertCard"
+                                                        Property="Padding"
+                                                        Value="{DynamicResource NetLoom.Thickness.CardSelectedPadding}" />
+                                            </DataTrigger>
                                             <DataTrigger Binding="{Binding IsCritical}"
                                                          Value="True">
                                                 <Setter TargetName="AlertSeverityStripe"

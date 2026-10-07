@@ -45,6 +45,7 @@ public partial class MainWindow : Window
     private void ShowSelectedDiagnostic()
     {
         UpdateShellBreadcrumb();
+        SynchronizeAlertCardSelectionWithMap();
 
         if (_selectedLocationId.HasValue)
         {

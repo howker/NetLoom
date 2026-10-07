@@ -54,6 +54,9 @@
 
     <Thickness x:Key="NetLoom.Thickness.BorderThin">1</Thickness>
     <Thickness x:Key="NetLoom.Thickness.BorderFocus">3</Thickness>
+    <!-- A2: выбранная карточка предупреждения — рамка 2; поле карточки меньше на 1, чтобы содержимое не сдвигалось. -->
+    <Thickness x:Key="NetLoom.Thickness.CardSelectedBorder">2</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.CardSelectedPadding">19</Thickness>
     <Thickness x:Key="NetLoom.Thickness.BorderBottom">0,0,0,1</Thickness>
     <Thickness x:Key="NetLoom.Thickness.BorderLeft">1,0,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.BorderRight">0,0,1,0</Thickness>

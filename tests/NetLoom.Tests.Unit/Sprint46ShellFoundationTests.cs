@@ -4003,6 +4003,210 @@ namespace NetLoom.Tests.Unit
 
         [TestMethod]
         public void
+            AlertsSectionSelectsFirstCardOnEntryAndShowOnMapReselectsIt()
+        {
+            // A2/A4 (sprint46-mockup-gap): выбранная карточка — рамка цвета выделения.
+            // Выбрана — первая при входе в раздел или после «Показать на карте»; выбор другого объекта её снимает.
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6500-6500-6500-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6501-6501-6501-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6502-6502-6502-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        var alertList =
+                            (ItemsControl)window.FindName(
+                                "AlertList");
+
+                        WaitForCondition(
+                            () =>
+                                alertList.Items.Count == 1);
+
+                        var selection =
+                            window.FindResource(
+                                "NetLoom.Brush.Selection");
+
+                        Func<Border> card =
+                            () =>
+                            {
+                                var presenter =
+                                    (ContentPresenter)alertList
+                                        .ItemContainerGenerator
+                                        .ContainerFromIndex(
+                                            0);
+
+                                return presenter == null
+                                    ? null
+                                    : (Border)presenter.ContentTemplate.FindName(
+                                        "AlertCard",
+                                        presenter);
+                            };
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellAlertsButton"));
+                        PumpDispatcher();
+                        PumpDispatcher();
+
+                        Assert.AreSame(
+                            selection,
+                            card().BorderBrush,
+                            "Entering Alerts selects the first card.");
+
+                        Assert.IsFalse(
+                            ((FrameworkElement)window.FindName(
+                                "ShellInspectorPanel"))
+                            .IsVisible,
+                            "The automatic selection keeps the Alerts inspector collapsed (ADR-083 п. 4).");
+
+                        SelectDevice(
+                            window,
+                            firstId);
+                        PumpDispatcher();
+
+                        Assert.AreNotSame(
+                            selection,
+                            card().BorderBrush,
+                            "Selecting another object on the map clears the card selection.");
+
+                        Click(
+                            FindVisualDescendantByTag<Button>(
+                                alertList,
+                                physicalLinkId));
+                        PumpDispatcher();
+                        PumpDispatcher();
+
+                        Assert.AreSame(
+                            selection,
+                            card().BorderBrush,
+                            "Show on map selects its card again.");
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
+            AutomaticAlertSelectionDoesNotChangeTheMapWorkingViewport()
+        {
+            // A4: карта у «Карты» и «Предупреждений» общая; автоматический выбор первой карточки
+            // Вписывает её участников, но после выхода из раздела рабочий вид карты прежний.
+            RunOnSta(
+                () =>
+                {
+                    var firstId =
+                        Guid.Parse(
+                            "46464646-6600-6600-6600-464646464646");
+                    var secondId =
+                        Guid.Parse(
+                            "46464646-6601-6601-6601-464646464646");
+                    var physicalLinkId =
+                        Guid.Parse(
+                            "46464646-6602-6602-6602-464646464646");
+
+                    var window =
+                        new MainWindow(
+                            new FixedRefreshProvider(
+                                CriticalLinkSnapshot(
+                                    firstId,
+                                    secondId,
+                                    physicalLinkId)),
+                            new EmptyLookupReader());
+
+                    try
+                    {
+                        window.Show();
+
+                        WaitForCondition(
+                            () =>
+                                ((ItemsControl)window.FindName(
+                                    "AlertList"))
+                                .Items.Count == 1);
+                        PumpDispatcher();
+
+                        Click(
+                            (Button)window.FindName(
+                                "MapZoomOutButton"));
+                        Click(
+                            (Button)window.FindName(
+                                "MapZoomOutButton"));
+                        PumpDispatcher();
+
+                        var zoomText =
+                            (TextBlock)window.FindName(
+                                "MapZoomValueText");
+                        var scroll =
+                            (ScrollViewer)window.FindName(
+                                "MapScrollViewer");
+
+                        var zoomBefore =
+                            zoomText.Text;
+                        var horizontalBefore =
+                            scroll.HorizontalOffset;
+                        var verticalBefore =
+                            scroll.VerticalOffset;
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellAlertsButton"));
+                        PumpDispatcher();
+                        PumpDispatcher();
+
+                        Assert.AreNotEqual(
+                            zoomBefore,
+                            zoomText.Text,
+                            "Entering Alerts fits the first card participants (test precondition).");
+
+                        Click(
+                            (Button)window.FindName(
+                                "ShellMapButton"));
+                        PumpDispatcher();
+                        PumpDispatcher();
+
+                        Assert.AreEqual(
+                            zoomBefore,
+                            zoomText.Text,
+                            "Leaving Alerts restores the map zoom changed by the automatic selection.");
+                        Assert.AreEqual(
+                            horizontalBefore,
+                            scroll.HorizontalOffset,
+                            0.5);
+                        Assert.AreEqual(
+                            verticalBefore,
+                            scroll.VerticalOffset,
+                            0.5);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                });
+        }
+
+        [TestMethod]
+        public void
             AlertShowOnMapFitsEveryDeviceInForwardingCycle()
         {
             RunOnSta(

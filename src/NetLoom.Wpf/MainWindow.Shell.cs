@@ -1014,6 +1014,9 @@ namespace NetLoom.Wpf
                 _ = CloseShellTopologyEditorAsync();
             }
 
+            var previousSection =
+                _shellSection;
+
             _shellSection =
                 section;
 
@@ -1080,6 +1083,22 @@ namespace NetLoom.Wpf
 
             // G2: без выбранного объекта крошки называют открытый раздел.
             UpdateShellBreadcrumb();
+
+            if (section == ShellSection.Alerts &&
+                previousSection != ShellSection.Alerts)
+            {
+                OnAlertsSectionEntered();
+            }
+            else if (section != ShellSection.Alerts)
+            {
+                _alertAutoSelectPending =
+                    false;
+
+                if (previousSection == ShellSection.Alerts)
+                {
+                    RestoreMapViewportAfterAlerts();
+                }
+            }
         }
 
         private void UpdateShellEquipmentPresentation(

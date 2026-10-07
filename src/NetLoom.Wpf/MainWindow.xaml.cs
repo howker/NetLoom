@@ -776,7 +776,11 @@ public partial class MainWindow : Window
         MapScrollViewer.SizeChanged -=
             OnStartupMapViewportSizeChanged;
 
-        TrySaveViewportLayout();
+        // A4: вид, сменённый автоматическим выбором карточки предупреждения, не сохраняется как рабочий.
+        if (!RestoreMapViewportAfterAlerts())
+        {
+            TrySaveViewportLayout();
+        }
         _refreshTimer.Stop();
 
         _topologyRefreshCoordinator.Close();

@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using NetLoom.Application.Alerts;
+using NetLoom.Application.MapLayout;
 using NetLoom.Contracts.Alerts;
 using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.MapInteraction;
@@ -31,6 +34,21 @@ public partial class MainWindow
             new List<ShellEventRow>();
 
     private TopologyAlertSnapshot _lastAlertSnapshot;
+
+    // A2 (sprint46-mockup-gap): карточка выбрана после «Показать на карте» или при входе в раздел.
+    // Решение владельца 2026-10-06. Ключ выбранной карточки переживает обновление списка.
+    private string _selectedAlertKey;
+
+    // A4: при входе в «Предупреждения» без выбранной карточки выбирается первая.
+    // Карта показывает её участников; если список ещё пуст, выбор ждёт первых данных.
+    private bool _alertAutoSelectPending;
+
+    // Карта у «Карты» и «Предупреждений» общая, а вписывание сохраняет вид в базу (восстановление после перезапуска).
+    // Автоматический выбор не должен менять рабочий вид карты: прежний вид запоминаем и возвращаем при выходе.
+    // Явное «Показать на карте» — намерение оператора, после него вид не возвращается.
+    private bool _mapViewportHeldForAlerts;
+
+    private MapViewportLayout _mapViewportBeforeAlerts;
 
     private static string AlertSeverityText(
         TopologyAlertSeverity severity)
@@ -473,6 +491,19 @@ public partial class MainWindow
             return;
         }
 
+        // A2: событие ведёт к своей карточке; автоматический выбор первой здесь не нужен.
+        _alertAutoSelectPending =
+            false;
+        _selectedAlertKey =
+            CurrentAlertRows()
+                .Where(
+                    item =>
+                        item.PhysicalLinkIds.Contains(
+                            row.PhysicalLinkIds[0]))
+                .Select(
+                    item => item.ExpansionKey)
+                .FirstOrDefault();
+
         SelectAlertPhysicalContext(
             row.PhysicalLinkIds[0]);
     }
@@ -547,6 +578,9 @@ public partial class MainWindow
         AlertList.ItemsSource =
             rows;
 
+        ApplyAlertCardSelection(
+            rows);
+
         var criticalCount =
             snapshot.Alerts.Count(
                 alert =>
@@ -604,6 +638,227 @@ public partial class MainWindow
 
         UpdateShellEquipmentPresentation(
             _lastMapSnapshot);
+
+        if (_alertAutoSelectPending)
+        {
+            // При первом обновлении окно может быть ещё не размечено — вписываем после раскладки.
+            Dispatcher.BeginInvoke(
+                DispatcherPriority.Loaded,
+                new Action(
+                    TryAutoSelectFirstAlert));
+        }
+    }
+
+    private AlertRow[] CurrentAlertRows()
+    {
+        return AlertList.Items
+            .OfType<AlertRow>()
+            .ToArray();
+    }
+
+    private void ApplyAlertCardSelection(
+        IEnumerable<AlertRow> rows)
+    {
+        var list =
+            rows.ToArray();
+
+        if (_selectedAlertKey != null &&
+            !list.Any(
+                row =>
+                    string.Equals(
+                        row.ExpansionKey,
+                        _selectedAlertKey,
+                        StringComparison.Ordinal)))
+        {
+            _selectedAlertKey =
+                null;
+        }
+
+        foreach (var row in list)
+        {
+            row.IsSelected =
+                _selectedAlertKey != null &&
+                string.Equals(
+                    row.ExpansionKey,
+                    _selectedAlertKey,
+                    StringComparison.Ordinal);
+        }
+    }
+
+    // Выбор карточки держится, пока выбрана одна из её связей; выбор другого объекта на карте его снимает.
+    private void SynchronizeAlertCardSelectionWithMap()
+    {
+        if (_selectedAlertKey == null)
+        {
+            return;
+        }
+
+        var rows =
+            CurrentAlertRows();
+
+        var selected =
+            rows.FirstOrDefault(
+                row =>
+                    string.Equals(
+                        row.ExpansionKey,
+                        _selectedAlertKey,
+                        StringComparison.Ordinal));
+
+        if (selected == null ||
+            !_selectedPhysicalLinkId.HasValue ||
+            !selected.PhysicalLinkIds.Contains(
+                _selectedPhysicalLinkId.Value))
+        {
+            _selectedAlertKey =
+                null;
+        }
+
+        ApplyAlertCardSelection(
+            rows);
+    }
+
+    private void OnAlertsSectionEntered()
+    {
+        if (_selectedAlertKey != null &&
+            CurrentAlertRows()
+                .Any(
+                    row =>
+                        row.IsSelected))
+        {
+            return;
+        }
+
+        _alertAutoSelectPending =
+            true;
+
+        // Карта раздела становится видимой в этом же проходе; участников вписываем после раскладки.
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(
+                TryAutoSelectFirstAlert));
+    }
+
+    private void TryAutoSelectFirstAlert()
+    {
+        if (!_alertAutoSelectPending ||
+            _shellSection != ShellSection.Alerts)
+        {
+            return;
+        }
+
+        var first =
+            CurrentAlertRows()
+                .FirstOrDefault(
+                    row =>
+                        row.PhysicalLinkIds.Length > 0);
+
+        if (first == null ||
+            _lastMapSnapshot == null)
+        {
+            return;
+        }
+
+        if (!_mapViewportHeldForAlerts)
+        {
+            _mapViewportBeforeAlerts =
+                CurrentMapViewport();
+            _mapViewportHeldForAlerts =
+                true;
+        }
+
+        // Автоматический выбор без пульсации: выразительная анимация — только по действию оператора (§7).
+        ShowAlertRowOnMap(
+            first,
+            false);
+    }
+
+    private MapViewportLayout CurrentMapViewport()
+    {
+        return new MapViewportLayout(
+            _zoom,
+            MapVirtualWorkspace
+                .ToLogicalPan(
+                    MapScrollViewer
+                        .HorizontalOffset,
+                    _virtualOriginX,
+                    _zoom),
+            MapVirtualWorkspace
+                .ToLogicalPan(
+                    MapScrollViewer
+                        .VerticalOffset,
+                    _virtualOriginY,
+                    _zoom));
+    }
+
+    // Возвращает вид карты, сменённый автоматическим выбором карточки, и сохраняет его.
+    // Возвращает true, если вид был восстановлен.
+    private bool RestoreMapViewportAfterAlerts()
+    {
+        if (!_mapViewportHeldForAlerts ||
+            _mapViewportBeforeAlerts == null)
+        {
+            _mapViewportHeldForAlerts =
+                false;
+            return false;
+        }
+
+        var viewport =
+            _mapViewportBeforeAlerts;
+
+        _mapViewportHeldForAlerts =
+            false;
+        _mapViewportBeforeAlerts =
+            null;
+
+        _zoom =
+            viewport.Zoom;
+        _pendingPanX =
+            viewport.PanX;
+        _pendingPanY =
+            viewport.PanY;
+
+        ApplyZoomTransform();
+        UpdateZoomText();
+        RestoreViewportOffsets();
+
+        try
+        {
+            _mapLayoutStore.SaveViewport(
+                _mapLayoutId,
+                viewport);
+        }
+        catch (Exception error)
+        {
+            System.Diagnostics.Trace.TraceError(
+                error.ToString());
+
+            MapStatusText.Text =
+                UiText.Get(
+                    "MapLayoutSaveFailed");
+        }
+
+        return true;
+    }
+
+    private void ShowAlertRowOnMap(
+        AlertRow row,
+        bool pulse)
+    {
+        _alertAutoSelectPending =
+            false;
+        _selectedAlertKey =
+            row.ExpansionKey;
+
+        SelectAlertPhysicalContext(
+            row.PrimaryPhysicalLinkId);
+
+        FocusAlertContextToViewport(
+            row.PhysicalLinkIds,
+            pulse
+                ? () =>
+                    PulseAlertContext(
+                        row.PhysicalLinkIds)
+                : (Action)null);
     }
 
     private void ConfigureShellAlertBadge(
@@ -663,14 +918,14 @@ public partial class MainWindow
             return;
         }
 
-        SelectAlertPhysicalContext(
-            row.PrimaryPhysicalLinkId);
+        _mapViewportHeldForAlerts =
+            false;
+        _mapViewportBeforeAlerts =
+            null;
 
-        FocusAlertContextToViewport(
-            row.PhysicalLinkIds,
-            () =>
-                PulseAlertContext(
-                    row.PhysicalLinkIds));
+        ShowAlertRowOnMap(
+            row,
+            true);
     }
 
     private void FocusAlertContextToViewport(
@@ -917,8 +1172,11 @@ public partial class MainWindow
         public bool IsResolved { get; }
     }
 
-    private sealed class AlertRow
+    private sealed class AlertRow :
+        INotifyPropertyChanged
     {
+        private bool _isSelected;
+
         public AlertRow(
             string expansionKey,
             string severityText,
@@ -990,6 +1248,32 @@ public partial class MainWindow
         public string ShowOnMapText { get; }
 
         public string TechnicalDetailsLabel { get; }
+
+        public bool IsSelected
+        {
+            get
+            {
+                return _isSelected;
+            }
+
+            set
+            {
+                if (_isSelected == value)
+                {
+                    return;
+                }
+
+                _isSelected =
+                    value;
+
+                PropertyChanged?.Invoke(
+                    this,
+                    new PropertyChangedEventArgs(
+                        nameof(IsSelected)));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 
     private sealed class EmptyTopologyAlertSnapshotProvider :
