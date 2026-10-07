@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Contracts.Diagnostics;
 using NetLoom.Wpf;
 using NetLoom.Wpf.Export;
 
@@ -319,6 +320,9 @@ namespace NetLoom.Tests.Unit
                     report.Note("F06 Строка таблицы", string.Join(" · ", row));
                 });
 
+                var alertCardTexts = new List<string>();
+                var alertsCaptured = false;
+
                 // F07. Предупреждения по сценариям стенда.
                 Step(report, "F07 Предупреждения", () =>
                 {
@@ -327,13 +331,51 @@ namespace NetLoom.Tests.Unit
                     SaveCapture(window, Path.Combine(output, "F07-alerts.png"));
 
                     var cards = ((ItemsControl)window.FindName("AlertList")).Items.Count;
-                    var texts = VisibleTexts((DependencyObject)window.FindName("AlertList")).ToList();
+                    var alertList = (ItemsControl)window.FindName("AlertList");
+                    var texts = VisibleTexts(alertList).ToList();
+                    alertCardTexts = alertList.Items.Cast<object>()
+                        .Select(item => string.Join(" · ",
+                            new[] { "Title", "Scope", "Reason", "TechnicalDetails" }
+                                .Select(name => (string)item.GetType().GetProperty(name).GetValue(item))))
+                        .ToList();
+                    alertsCaptured = true;
 
                     report.Note("F07 Список", cards + " карточек: " + Shorten(string.Join(" | ", texts), 600));
 
                     Check(report, "F07 Обрыв простого кольца ПС-2", texts.Any(item => item.Contains("Кольцо без резерва")) && texts.Any(item => item.Contains("ps2-sw")), "«Кольцо без резерва» по ПС-2");
                     Check(report, "F07 Штатная блокировка STP не тревожит", !texts.Any(item => item.Contains("ps1-sw")) && !texts.Any(item => item.Contains("Цикл пересылки")), "кольцо ПС-1 и параллельные кабели ядра без предупреждений");
-                    report.Note("F07 Нет вида предупреждения", "недоступное устройство (kb-sw-06) и односторонний LLDP (kb-sw-03 ↔ kb-sw-04) предупреждений не дают: программа умеет только «Цикл пересылки» и «Кольцо без резерва»");
+                });
+
+                // F15. Односторонний LLDP объясняется в основаниях без предупреждения.
+                Step(report, "F15 Односторонний LLDP", () =>
+                {
+                    var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                    var snapshot = (NetworkDiagnosticSnapshot)typeof(MainWindow)
+                        .GetField("_lastDiagnosticSnapshot", flags).GetValue(window);
+                    var link = snapshot.Links.Single(item =>
+                        (item.DeviceAName == "kb-sw-03" && item.DeviceBName == "kb-sw-04") ||
+                        (item.DeviceAName == "kb-sw-04" && item.DeviceBName == "kb-sw-03"));
+
+                    RaiseClick((ButtonBase)window.FindName("ShellMapButton"));
+                    typeof(MainWindow).GetMethod("ShowLinkDiagnostic", flags)
+                        .Invoke(window, new object[] { link });
+                    ((TabControl)window.FindName("InspectorTabControl")).SelectedItem =
+                        window.FindName("InspectorEvidenceTab");
+                    Settle(500);
+                    SaveCapture(window, Path.Combine(output, "F15-one-sided-lldp.png"));
+
+                    var evidence = (ItemsControl)window.FindName("DiagnosticTertiaryList");
+                    var firstText = evidence.Items.Count == 0
+                        ? string.Empty
+                        : (string)evidence.Items[0].GetType().GetProperty("Text").GetValue(evidence.Items[0]);
+                    Check(report, "F15 Пробел в основаниях",
+                        firstText.StartsWith("Пробел в основаниях", StringComparison.Ordinal) ||
+                        firstText.StartsWith("Evidence gap", StringComparison.Ordinal),
+                        "первая строка подтверждающих данных: «" + firstText + "»");
+                    Check(report, "F15 Без предупреждения",
+                        alertsCaptured && !alertCardTexts.Any(text =>
+                            text.Contains("kb-sw-04") && text.Contains("LLDP")),
+                        "в списке F07 нет предупреждения об одностороннем LLDP для kb-sw-04");
                 });
 
                 // F08. Глобальный поиск: имя, IP и MAC оконечного устройства.

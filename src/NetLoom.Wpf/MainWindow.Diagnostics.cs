@@ -1339,8 +1339,8 @@ public partial class MainWindow : Window
             DisplayLocationForDevice(
                 link.DeviceBId);
 
-        DiagnosticFieldsList.ItemsSource =
-            new[]
+        var fields =
+            new List<DiagnosticFieldRow>
             {
                 Section(
                     DisplayDeviceName(
@@ -1376,6 +1376,19 @@ public partial class MainWindow : Window
                     "DiagnosticFieldStrength",
                     LinkStrengthText(
                         link.Strength)),
+            };
+
+        if (link.LldpReporting != DiagnosticLldpReporting.NotApplicable)
+        {
+            fields.Add(
+                Field(
+                    "DiagnosticFieldLldpReporting",
+                    LldpReportingText(link)));
+        }
+
+        fields.AddRange(
+            new[]
+            {
                 Field(
                     "DiagnosticFieldFreshness",
                     CurrentFreshnessText(
@@ -1398,7 +1411,9 @@ public partial class MainWindow : Window
                 Field(
                     "DiagnosticFieldSourceSummary",
                     link.SourceSummary)
-            };
+            });
+
+        DiagnosticFieldsList.ItemsSource = fields;
 
         DiagnosticSecondaryTitleText.Text =
             UiText.Get("DiagnosticImpactTitle");
@@ -1438,7 +1453,22 @@ public partial class MainWindow : Window
         DiagnosticTertiaryTitleText.Text =
             UiText.Get("DiagnosticEvidenceTitle");
 
-        DiagnosticTertiaryList.ItemsSource =
+        var evidenceRows = new List<DiagnosticTextRow>();
+
+        // Sprint 48, Г4: односторонний LLDP — пробел в основаниях, а не предупреждение; строка нейтральна.
+        if (link.LldpReporting == DiagnosticLldpReporting.OnlySideA ||
+            link.LldpReporting == DiagnosticLldpReporting.OnlySideB)
+        {
+            var reportsA = link.LldpReporting == DiagnosticLldpReporting.OnlySideA;
+            evidenceRows.Add(
+                new DiagnosticTextRow(
+                    UiText.Format(
+                        "DiagnosticEvidenceGapOneSidedLldp",
+                        DisplayDeviceName(reportsA ? link.DeviceAName : link.DeviceBName),
+                        DisplayDeviceName(reportsA ? link.DeviceBName : link.DeviceAName))));
+        }
+
+        evidenceRows.AddRange(
             link.Evidence.Count == 0
                 ? new[]
                 {
@@ -1450,7 +1480,29 @@ public partial class MainWindow : Window
                             new DiagnosticTextRow(
                                 BuildEvidenceText(
                                     item)))
-                    .ToArray();
+                    .ToArray());
+
+        DiagnosticTertiaryList.ItemsSource = evidenceRows;
+    }
+
+    private static string LldpReportingText(
+        PhysicalLinkDiagnostic link)
+    {
+        switch (link.LldpReporting)
+        {
+            case DiagnosticLldpReporting.BothSides:
+                return UiText.Get("DiagnosticLldpReportingBoth");
+            case DiagnosticLldpReporting.OnlySideA:
+                return UiText.Format(
+                    "DiagnosticLldpReportingOneSide",
+                    DisplayDeviceName(link.DeviceAName));
+            case DiagnosticLldpReporting.OnlySideB:
+                return UiText.Format(
+                    "DiagnosticLldpReportingOneSide",
+                    DisplayDeviceName(link.DeviceBName));
+            default:
+                return string.Empty;
+        }
     }
 
     private void SetInspectorLinkAvailability(

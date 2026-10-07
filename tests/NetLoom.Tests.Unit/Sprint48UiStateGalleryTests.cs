@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -244,6 +245,55 @@ namespace NetLoom.Tests.Unit
                             outputDirectory,
                             "*.png").Length,
                         "Every Sprint 48 gallery frame must be produced.");
+                });
+        }
+
+        [TestMethod]
+        public void OneSidedLldpLinkGalleryShowsEvidenceGap()
+        {
+            RunOnSta(
+                () =>
+                {
+                    var outputDirectory = Path.Combine(
+                        Path.GetDirectoryName(ResolveOutputDirectory()),
+                        "sprint48-g4");
+                    Directory.CreateDirectory(outputDirectory);
+
+                    foreach (var file in Directory.GetFiles(outputDirectory, "*.png"))
+                    {
+                        File.Delete(file);
+                    }
+
+                    var findings = new List<string>();
+                    var snapshot = Sprint48OneSidedLldpTests.OneSidedSnapshot(
+                        "kb-sw-03", "kb-sw-04");
+                    var linkId = snapshot.DiagnosticSnapshot.Links.Single().PhysicalLinkId;
+
+                    RenderShellScenario(
+                        outputDirectory,
+                        "32-link-one-sided-lldp",
+                        () => snapshot,
+                        window =>
+                        {
+                            WaitForCondition(() => FindLink(window, linkId) != null);
+                            SelectLink(window, linkId);
+                            ((TabControl)window.FindName("InspectorTabControl")).SelectedItem =
+                                window.FindName("InspectorEvidenceTab");
+                            PumpDispatcher();
+                        },
+                        findings);
+
+                    File.WriteAllLines(
+                        Path.Combine(outputDirectory, "findings.txt"),
+                        findings.Count == 0
+                            ? new[] { "Находок нет." }
+                            : findings.ToArray());
+
+                    // Один сценарий в двух темах; узкий и обычный варианты рядом.
+                    Assert.AreEqual(
+                        2,
+                        Directory.GetFiles(outputDirectory, "*.png").Length,
+                        "Every one-sided LLDP gallery frame must be produced.");
                 });
         }
 

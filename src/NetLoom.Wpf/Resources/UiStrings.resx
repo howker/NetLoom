@@ -462,6 +462,18 @@
   <data name="DiagnosticFieldStrength" xml:space="preserve">
     <value>Strength</value>
   </data>
+  <data name="DiagnosticFieldLldpReporting" xml:space="preserve">
+    <value>Reported by</value>
+  </data>
+  <data name="DiagnosticLldpReportingBoth" xml:space="preserve">
+    <value>Both ends (LLDP)</value>
+  </data>
+  <data name="DiagnosticLldpReportingOneSide" xml:space="preserve">
+    <value>Only {0} (LLDP)</value>
+  </data>
+  <data name="DiagnosticEvidenceGapOneSidedLldp" xml:space="preserve">
+    <value>Evidence gap: only {0} reports this link. {1} does not report it: LLDP is disabled or not supported there, or the device is not polled. The link is shown from one side only.</value>
+  </data>
   <data name="DiagnosticFieldFreshness" xml:space="preserve">
     <value>Freshness</value>
   </data>

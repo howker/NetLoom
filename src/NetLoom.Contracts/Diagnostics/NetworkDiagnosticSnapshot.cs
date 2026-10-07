@@ -32,6 +32,15 @@ namespace NetLoom.Contracts.Diagnostics
     }
 
 
+    // Какие концы связи сообщают о ней по LLDP (Sprint 48, Г4).
+    public enum DiagnosticLldpReporting
+    {
+        NotApplicable = 0,
+        BothSides = 1,
+        OnlySideA = 2,
+        OnlySideB = 3
+    }
+
     public enum DiagnosticRawAvailability
     {
         Unknown = 0,
@@ -456,7 +465,8 @@ namespace NetLoom.Contracts.Diagnostics
             bool isBridge,
             int sideADeviceCount,
             int sideBDeviceCount,
-            long separatedDevicePairCount)
+            long separatedDevicePairCount,
+            DiagnosticLldpReporting lldpReporting = DiagnosticLldpReporting.NotApplicable)
         {
             if (physicalLinkId == Guid.Empty)
             {
@@ -549,6 +559,7 @@ namespace NetLoom.Contracts.Diagnostics
             SideADeviceCount = sideADeviceCount;
             SideBDeviceCount = sideBDeviceCount;
             SeparatedDevicePairCount = separatedDevicePairCount;
+            LldpReporting = lldpReporting;
         }
 
         public Guid PhysicalLinkId { get; }
@@ -596,6 +607,8 @@ namespace NetLoom.Contracts.Diagnostics
         public int SideBDeviceCount { get; }
 
         public long SeparatedDevicePairCount { get; }
+
+        public DiagnosticLldpReporting LldpReporting { get; }
 
         private static string Normalize(string value)
         {

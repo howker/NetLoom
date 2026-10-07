@@ -74,6 +74,17 @@ namespace NetLoom.Topology.Diagnostics
                 BuildRawAvailabilityByObservationId(
                     readSet.PhysicalLinkEvidenceExplanations);
 
+            var lldpSidesByLink =
+                readSet.PhysicalLinkEvidence
+                    .Where(item => item.Kind == PhysicalLinkEvidenceKind.Lldp)
+                    .GroupBy(item => item.PhysicalLinkId)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => new HashSet<string>(
+                            group.Select(item => DirectionFrom(item.SlotDiscriminator))
+                                .Where(item => item != null),
+                            StringComparer.Ordinal));
+
             var stpByDevice =
                 BuildStpSnapshots(
                     readSet,
@@ -126,7 +137,8 @@ namespace NetLoom.Topology.Diagnostics
                                 mapNodeByDeviceId,
                                 stpByDevice,
                                 impactByLink,
-                                rawAvailabilityByObservationId))
+                                rawAvailabilityByObservationId,
+                                lldpSidesByLink))
                     .Where(item => item != null)
                     .ToArray();
 
@@ -286,7 +298,8 @@ namespace NetLoom.Topology.Diagnostics
             IReadOnlyDictionary<Guid, MapNode> mapNodeByDeviceId,
             IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice,
             IReadOnlyDictionary<Guid, NetLoom.Contracts.GraphSafety.PhysicalLinkFailureImpact> impactByLink,
-            IReadOnlyDictionary<Guid, DiagnosticRawAvailability> rawAvailabilityByObservationId)
+            IReadOnlyDictionary<Guid, DiagnosticRawAvailability> rawAvailabilityByObservationId,
+            IReadOnlyDictionary<Guid, HashSet<string>> lldpSidesByLink)
         {
             var physicalLinkId =
                 mapLink.PhysicalLinkId.Value;
@@ -304,6 +317,25 @@ namespace NetLoom.Topology.Diagnostics
             impactByLink.TryGetValue(
                 physicalLinkId,
                 out impact);
+
+            var lldpReporting =
+                DiagnosticLldpReporting.NotApplicable;
+            HashSet<string> lldpSides;
+
+            if (link.Strength != PhysicalLinkStrength.Manual &&
+                lldpSidesByLink.TryGetValue(physicalLinkId, out lldpSides))
+            {
+                var reportsA = lldpSides.Contains(link.DeviceAId.ToString("N"));
+                var reportsB = lldpSides.Contains(link.DeviceBId.ToString("N"));
+
+                lldpReporting = reportsA && reportsB
+                    ? DiagnosticLldpReporting.BothSides
+                    : reportsA
+                        ? DiagnosticLldpReporting.OnlySideA
+                        : reportsB
+                            ? DiagnosticLldpReporting.OnlySideB
+                            : DiagnosticLldpReporting.NotApplicable;
+            }
 
             return new PhysicalLinkDiagnostic(
                 link.Id,
@@ -361,7 +393,35 @@ namespace NetLoom.Topology.Diagnostics
                     : 0,
                 impact != null && impact.IsBridge
                     ? impact.SeparatedDevicePairCount
-                    : 0L);
+                    : 0L,
+                lldpReporting);
+        }
+
+        private static string DirectionFrom(
+            string slotDiscriminator)
+        {
+            const string prefix = "device:";
+
+            if (string.IsNullOrWhiteSpace(
+                    slotDiscriminator) ||
+                !slotDiscriminator.StartsWith(
+                    prefix,
+                    StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            var separator =
+                slotDiscriminator.IndexOf('|');
+
+            if (separator <= prefix.Length)
+            {
+                return null;
+            }
+
+            return slotDiscriminator.Substring(
+                prefix.Length,
+                separator - prefix.Length);
         }
 
         private static IReadOnlyDictionary<Guid, DiagnosticRawAvailability>

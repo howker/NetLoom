@@ -462,6 +462,18 @@
   <data name="DiagnosticFieldStrength" xml:space="preserve">
     <value>Достоверность</value>
   </data>
+  <data name="DiagnosticFieldLldpReporting" xml:space="preserve">
+    <value>Сообщают о связи</value>
+  </data>
+  <data name="DiagnosticLldpReportingBoth" xml:space="preserve">
+    <value>Обе стороны (LLDP)</value>
+  </data>
+  <data name="DiagnosticLldpReportingOneSide" xml:space="preserve">
+    <value>Только {0} (LLDP)</value>
+  </data>
+  <data name="DiagnosticEvidenceGapOneSidedLldp" xml:space="preserve">
+    <value>Пробел в основаниях: о связи сообщает только {0}. {1} о ней не сообщает: на нём выключен или не поддерживается LLDP, либо он не опрашивается. Связь показана по данным одной стороны.</value>
+  </data>
   <data name="DiagnosticFieldFreshness" xml:space="preserve">
     <value>Свежесть</value>
   </data>
