@@ -1034,6 +1034,7 @@ public partial class MainWindow
         }
 
         UpdateLinksForCurrentNodePositions();
+        UpdateTopologyQuality();
     }
 
     private void CaptureLocationSubtreeStarts(

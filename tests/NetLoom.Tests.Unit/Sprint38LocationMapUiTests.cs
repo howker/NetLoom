@@ -14,6 +14,7 @@ using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf;
+using NetLoom.Wpf.Localization;
 
 namespace NetLoom.Tests.Unit
 {
@@ -687,7 +688,9 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
-        public void PersistedInvalidChildIsContainedWithoutMovingParentAnchor()
+        // Sprint 49 (M2): сохранённая ручная геометрия неприкосновенна — рамка вложенного размещения вне родителя
+        // Не перемещается и не пересохраняется молча, а показывается оператору в строке качества данных.
+        public void PersistedInvalidChildStaysWhereSavedAndIsReportedWithoutMovingParentAnchor()
         {
             RunOnSta(
                 () =>
@@ -798,10 +801,25 @@ namespace NetLoom.Tests.Unit
                             0.001,
                             "Adding or repairing a child must not autonomously move the persisted parent vertically.");
 
-                        Assert.IsTrue(
+                        Assert.IsFalse(
                             parentAfter.Contains(
                                 childAfter),
-                            "Persisted geometry must be repaired by containing the child inside ParentLocationId, not by detaching the hierarchy.");
+                            "Persisted geometry must not be repaired silently (Sprint 49, M2).");
+
+                        Assert.IsNull(
+                            store.LastLocation,
+                            "Persisted manual geometry must not be re-saved without an operator action.");
+
+                        var qualityText =
+                            (TextBlock)window.FindName(
+                                "MapQualitySummaryText");
+
+                        Assert.AreEqual(
+                            UiText.Format(
+                                "MapQualitySummary",
+                                1),
+                            qualityText.Text,
+                            "A child frame outside its parent must be reported in the topology quality line.");
 
                         window.ShowMap(
                             hierarchy);
@@ -821,12 +839,12 @@ namespace NetLoom.Tests.Unit
                         Assert.AreEqual(
                             parentAfter,
                             stableParent,
-                            "A repaired parent must not drift on subsequent refreshes.");
+                            "The parent must not drift on subsequent refreshes.");
 
                         Assert.AreEqual(
                             childAfter,
                             stableChild,
-                            "A repaired child must not drift on subsequent refreshes.");
+                            "The child must not drift on subsequent refreshes.");
                     }
                     finally
                     {

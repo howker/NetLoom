@@ -2814,4 +2814,22 @@
   <data name="TopologyConflictSaveFailed" xml:space="preserve">
     <value>Не удалось сохранить решение. Повторите попытку.</value>
   </data>
+  <data name="MapLocationCollapseName" xml:space="preserve">
+    <value>Свернуть размещение «{0}»</value>
+  </data>
+  <data name="MapLocationExpandName" xml:space="preserve">
+    <value>Развернуть размещение «{0}»</value>
+  </data>
+  <data name="MapQualityLocationOverlapSubject" xml:space="preserve">
+    <value>Размещения «{0}» и «{1}» накладываются</value>
+  </data>
+  <data name="MapQualityLocationOutsideParentSubject" xml:space="preserve">
+    <value>Размещение «{0}» выходит за рамку «{1}»</value>
+  </data>
+  <data name="MapQualityLocationOverlapGroup" xml:space="preserve">
+    <value>Наложенные размещения: {0}</value>
+  </data>
+  <data name="MapQualityShowSubjectName" xml:space="preserve">
+    <value>Показать на карте: {0}</value>
+  </data>
 </root>

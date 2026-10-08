@@ -1596,6 +1596,7 @@ public partial class MainWindow
             snapshot.Nodes);
 
         UpdateLocationHierarchyVisibility();
+        UpdateTopologyQuality();
 
         ReconcileLinks(
             snapshot.Links,

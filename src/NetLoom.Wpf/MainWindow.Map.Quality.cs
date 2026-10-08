@@ -17,11 +17,22 @@ namespace NetLoom.Wpf
         {
             _topologyConflicts = TopologyConflictProjection.Build(_lastDiagnosticSnapshot,
                 TopologyConflictAcknowledgements?.List());
-            var nextReport = TopologyQualityProjection.Build(_lastDiagnosticSnapshot, _lastMapSnapshot, _topologyConflicts);
+            var frames = _locationVisualsById.Values.Where(visual => visual.LocationId != Guid.Empty)
+                .Select(visual => new LocationOverlapFrame(visual.LocationId, visual.ParentLocationId,
+                    visual.Title.Text, ExpandedLocationBounds(visual))).ToArray();
+            // Оператору показываются только наложения сохранённой (ручной) геометрии;
+            // Несохранённые рамки раскладывает карта, и их наложение — не пробел данных.
+            var overlaps = LocationOverlapProjection.Build(frames)
+                .Where(overlap => _persistedLocationLayouts.ContainsKey(overlap.First.Id) ||
+                    (!overlap.ChildOutsideParent && _persistedLocationLayouts.ContainsKey(overlap.Second.Id)))
+                .ToArray();
+            var nextReport = TopologyQualityProjection.Build(_lastDiagnosticSnapshot, _lastMapSnapshot,
+                _topologyConflicts, overlaps);
             var unchanged = _topologyQualityReport.Count == nextReport.Count &&
                 _topologyQualityReport.Gaps.Zip(nextReport.Gaps, (previous, next) =>
                     previous.Kind == next.Kind && previous.PhysicalLinkId == next.PhysicalLinkId &&
-                    previous.DeviceId == next.DeviceId && previous.Subject == next.Subject &&
+                    previous.DeviceId == next.DeviceId && previous.LocationId == next.LocationId &&
+                    previous.OtherLocationId == next.OtherLocationId && previous.Subject == next.Subject &&
                     previous.Detail == next.Detail).All(equal => equal);
             _topologyQualityReport = nextReport;
             var summary = UiText.Format("MapQualitySummary", _topologyQualityReport.Count);
@@ -57,6 +68,7 @@ namespace NetLoom.Wpf
                 case TopologyQualityGapKind.InferredLink: return "MapQualityInferredGroup";
                 case TopologyQualityGapKind.OneSidedLldp: return "MapQualityOneSidedGroup";
                 case TopologyQualityGapKind.ManualObservedConflict: return "TopologyConflictQualityGroup";
+                case TopologyQualityGapKind.LocationOverlap: return "MapQualityLocationOverlapGroup";
                 default: return "MapQualitySyntheticGroup";
             }
         }
@@ -68,7 +80,16 @@ namespace NetLoom.Wpf
             if (gap == null) return;
 
             // Используем тот же выбор и вписывание объектов, что у действия «Показать на карте».
-            if (gap.PhysicalLinkId.HasValue)
+            if (gap.LocationId.HasValue && gap.OtherLocationId.HasValue)
+            {
+                SelectLocation(gap.LocationId.Value);
+                Rect first;
+                Rect second;
+                if (TryGetExpandedLocationBounds(gap.LocationId.Value, out first) &&
+                    TryGetExpandedLocationBounds(gap.OtherLocationId.Value, out second))
+                    TryFitMapBoundsToViewport(new[] { first, second });
+            }
+            else if (gap.PhysicalLinkId.HasValue)
             {
                 SelectAlertPhysicalContext(gap.PhysicalLinkId.Value);
                 FocusAlertContextToViewport(new[] { gap.PhysicalLinkId.Value }, null);
@@ -100,9 +121,11 @@ namespace NetLoom.Wpf
             public TopologyQualityGapRow(TopologyQualityGap gap)
             {
                 Gap = gap;
-                Text = UiText.Format("MapQualityGapDetail", gap.Subject, gap.Detail);
+                Text = string.IsNullOrEmpty(gap.Detail) ? gap.Subject : UiText.Format("MapQualityGapDetail", gap.Subject, gap.Detail);
                 ShowText = UiText.Get("MapQualityShow");
-                ShowName = UiText.Format("MapQualityShowName", gap.Subject, gap.Detail);
+                ShowName = string.IsNullOrEmpty(gap.Detail)
+                    ? UiText.Format("MapQualityShowSubjectName", gap.Subject)
+                    : UiText.Format("MapQualityShowName", gap.Subject, gap.Detail);
             }
             public TopologyQualityGap Gap { get; }
             public string Text { get; }

@@ -134,7 +134,20 @@ public partial class MainWindow
             new HashSet<string>(
                 StringComparer.Ordinal);
 
-        foreach (var node in nodes)
+        var placementStep = GetDoubleResource("NetLoom.Map.NewNodePlacementStep");
+        var snapshotIdentities = new HashSet<string>(nodes.Select(NodeIdentity), StringComparer.Ordinal);
+        var occupied = _nodeVisualsByIdentity.Where(pair => snapshotIdentities.Contains(pair.Key))
+            .Select(pair => NodeBounds(pair.Value)).ToList();
+        foreach (var node in nodes.Where(item => item.DeviceId.HasValue &&
+            _persistedDeviceLayouts.ContainsKey(item.DeviceId.Value)))
+        {
+            var layout = _persistedDeviceLayouts[node.DeviceId.Value];
+            occupied.Add(new Rect(MapVirtualWorkspace.ToCanvasCoordinate(layout.X, _virtualOriginX),
+                MapVirtualWorkspace.ToCanvasCoordinate(layout.Y, _virtualOriginY), _nodeWidth, _nodeHeight));
+        }
+
+        foreach (var node in nodes.OrderByDescending(item => item.DeviceId.HasValue &&
+            _persistedDeviceLayouts.ContainsKey(item.DeviceId.Value)))
         {
             var identity =
                 NodeIdentity(node);
@@ -190,6 +203,16 @@ public partial class MainWindow
                         .ToCanvasCoordinate(
                             top,
                             _virtualOriginY));
+
+                UpdateNodeVisual(visual, node, locations);
+                if (node.DeviceId.HasValue && !_persistedDeviceLayouts.ContainsKey(node.DeviceId.Value))
+                {
+                    var free = MapFreePlacement.FindFreeSpot(NodeBounds(visual), occupied,
+                        placementStep, _linkLabelCollisionMargin);
+                    Canvas.SetLeft(visual.Border, free.X);
+                    Canvas.SetTop(visual.Border, free.Y);
+                }
+                occupied.Add(NodeBounds(visual));
 
                 Panel.SetZIndex(
                     visual.PulseHalo,
@@ -427,250 +450,137 @@ public partial class MainWindow
         IReadOnlyList<MapLocation> locations,
         IReadOnlyList<MapNode> nodes)
     {
-        if (locations == null ||
-            locations.Count == 0)
-        {
-            return;
-        }
-
-        var byId =
-            locations.ToDictionary(
-                item => item.Id);
-
-        // Сначала увеличиваем только размер контейнеров снизу вверх.
-        // Позиция родителя остаётся стабильной.
-        // Иерархия не должна тянуть его к ошибочно сохранённому ребёнку.
-        foreach (var location in
-            locations
-                .OrderByDescending(
-                    item =>
-                        LocationDepth(
-                            item,
-                            byId)))
+        var byId = locations.ToDictionary(item => item.Id);
+        // Только несохранённый родитель растёт вокруг содержимого; ручная геометрия не меняется.
+        foreach (var location in locations.OrderByDescending(item => LocationDepth(item, byId)))
         {
             MapLocationVisual visual;
+            if (_persistedLocationLayouts.ContainsKey(location.Id) ||
+                !_locationVisualsById.TryGetValue(location.Id, out visual)) continue;
+            SeparateAutomaticChildLocations(location.Id, locations, nodes);
+            var contents = locations.Where(item => item.ParentLocationId == location.Id &&
+                    _locationVisualsById.ContainsKey(item.Id))
+                .Select(item => ExpandedLocationBounds(_locationVisualsById[item.Id])).ToList();
+            contents.AddRange(nodes.Where(item => item.LocationId == location.Id &&
+                    _nodeVisualsByIdentity.ContainsKey(NodeIdentity(item)))
+                .Select(item => NodeBounds(_nodeVisualsByIdentity[NodeIdentity(item)])));
+            if (contents.Count == 0) continue;
+            var contentBounds = contents.Aggregate(Rect.Union);
+            var required = new Rect(contentBounds.Left - _locationContentPadding,
+                contentBounds.Top - _locationContentPadding - _locationHeaderHeight,
+                contentBounds.Width + 2 * _locationContentPadding,
+                contentBounds.Height + 2 * _locationContentPadding + _locationHeaderHeight);
+            var expanded = Rect.Union(ExpandedLocationBounds(visual), required);
+            // Соседей этой рамки разведёт проход её родителя (SeparateAutomaticChildLocations).
+            Canvas.SetLeft(visual.Border, expanded.Left);
+            Canvas.SetTop(visual.Border, expanded.Top);
+            visual.ExpandedWidth = Math.Max(_locationMinWidth, expanded.Width);
+            visual.ExpandedHeight = Math.Max(_locationMinHeight, expanded.Height);
+            UpdateLocationVisualState(visual);
+        }
 
-            if (!_locationVisualsById.TryGetValue(
-                    location.Id,
-                    out visual))
+        SeparateAutomaticChildLocations(null, locations, nodes);
+
+        // Затем сверху вниз — внутрь физического родителя, но только то, что можно двигать:
+        // Элемент без сохранённой позиции (новый) или элемент, родителя которого оператор сменил в этом сеансе
+        // (перенос в редакторе — явное действие). Сохранённую ручную геометрию без действия оператора
+        // Не двигаем: выход за родителя показывает строка качества данных (Sprint 49, M2).
+        foreach (var location in locations.OrderBy(item => LocationDepth(item, byId)))
+        {
+            MapLocationVisual visual;
+            if (!_locationVisualsById.TryGetValue(location.Id, out visual)) continue;
+            Guid? shownParent;
+            var reparented = _shownLocationParents.TryGetValue(location.Id, out shownParent) &&
+                shownParent != location.ParentLocationId;
+            if (visual.ParentLocationId.HasValue &&
+                (!_persistedLocationLayouts.ContainsKey(location.Id) || reparented))
             {
-                continue;
+                var left = LocationLeft(visual);
+                var top = LocationTop(visual);
+                var constrained = ConstrainLocationPositionToParent(visual, left, top);
+                if (Math.Abs(constrained.X - left) > 0.001 || Math.Abs(constrained.Y - top) > 0.001)
+                    MoveLocationSubtreeByDelta(location.Id, constrained.X - left, constrained.Y - top);
             }
 
-            var requiredWidth =
-                _locationMinWidth;
-
-            var requiredHeight =
-                _locationMinHeight;
-
-            foreach (var child in
-                locations.Where(
-                    item =>
-                        item.ParentLocationId ==
-                        location.Id))
-            {
-                MapLocationVisual childVisual;
-
-                if (!_locationVisualsById.TryGetValue(
-                        child.Id,
-                        out childVisual))
-                {
-                    continue;
-                }
-
-                requiredWidth =
-                    Math.Max(
-                        requiredWidth,
-                        Math.Max(
-                            _locationMinWidth,
-                            childVisual.ExpandedWidth) +
-                        (2.0 *
-                         _locationContentPadding));
-
-                requiredHeight =
-                    Math.Max(
-                        requiredHeight,
-                        Math.Max(
-                            _locationMinHeight,
-                            childVisual.ExpandedHeight) +
-                        _locationHeaderHeight +
-                        (2.0 *
-                         _locationContentPadding));
-            }
-
-            foreach (var node in
-                nodes.Where(
-                    item =>
-                        item.LocationId ==
-                        location.Id))
+            foreach (var node in nodes.Where(item => item.LocationId == location.Id))
             {
                 MapNodeVisual nodeVisual;
-
-                if (!_nodeVisualsByIdentity.TryGetValue(
-                        NodeIdentity(node),
-                        out nodeVisual))
-                {
-                    continue;
-                }
-
-                requiredWidth =
-                    Math.Max(
-                        requiredWidth,
-                        _nodeWidth +
-                        (2.0 *
-                         _locationContentPadding));
-
-                requiredHeight =
-                    Math.Max(
-                        requiredHeight,
-                        NodeVisualHeight(
-                            nodeVisual) +
-                        _locationHeaderHeight +
-                        (2.0 *
-                         _locationContentPadding));
-            }
-
-            var widthChanged =
-                visual.ExpandedWidth + 0.001 <
-                requiredWidth;
-
-            var heightChanged =
-                visual.ExpandedHeight + 0.001 <
-                requiredHeight;
-
-            if (!widthChanged &&
-                !heightChanged)
-            {
-                continue;
-            }
-
-            visual.ExpandedWidth =
-                Math.Max(
-                    visual.ExpandedWidth,
-                    requiredWidth);
-
-            visual.ExpandedHeight =
-                Math.Max(
-                    visual.ExpandedHeight,
-                    requiredHeight);
-
-            UpdateLocationVisualState(
-                visual);
-
-            if (_persistedLocationLayouts.ContainsKey(
-                    location.Id))
-            {
-                TrySaveLocationLayout(
-                    visual);
+                if (!_nodeVisualsByIdentity.TryGetValue(NodeIdentity(node), out nodeVisual)) continue;
+                var identity = NodeIdentity(node);
+                Guid? shownLocation;
+                var reassigned = _shownNodeLocations.TryGetValue(identity, out shownLocation) &&
+                    shownLocation != node.LocationId;
+                var persisted = node.DeviceId.HasValue && _persistedDeviceLayouts.ContainsKey(node.DeviceId.Value);
+                if (persisted && !reassigned) continue;
+                var left = NodeLeft(nodeVisual);
+                var top = NodeTop(nodeVisual);
+                var constrained = ConstrainNodePositionToLocation(nodeVisual, left, top);
+                if (Math.Abs(constrained.X - left) <= 0.001 && Math.Abs(constrained.Y - top) <= 0.001) continue;
+                Canvas.SetLeft(nodeVisual.Border, constrained.X);
+                Canvas.SetTop(nodeVisual.Border, constrained.Y);
+                if (persisted) TrySaveDeviceLayout(nodeVisual);
             }
         }
 
-        // Затем сверху вниз возвращаем каждый дочерний контейнер и устройство внутрь физического родителя.
-        // При сдвиге Location перемещается всё его поддерево, а не только рамка.
-        foreach (var location in
-            locations
-                .OrderBy(
-                    item =>
-                        LocationDepth(
-                            item,
-                            byId)))
+        _shownLocationParents.Clear();
+        foreach (var location in locations) _shownLocationParents[location.Id] = location.ParentLocationId;
+        _shownNodeLocations.Clear();
+        foreach (var node in nodes) _shownNodeLocations[NodeIdentity(node)] = node.LocationId;
+    }
+
+    // Несохранённые соседние рамки внутри родителя разводятся без наложений (Sprint 49, M2): по порядку
+    // Названий каждая следующая ставится на ближайшее свободное место. Рамку, в поддереве которой есть
+    // Сохранённая ручная геометрия (рамка или узел), не двигаем.
+    private void SeparateAutomaticChildLocations(
+        Guid? parentId,
+        IReadOnlyList<MapLocation> locations,
+        IReadOnlyList<MapNode> nodes)
+    {
+        var placed = new List<Rect>();
+        var children = locations.Where(item => item.ParentLocationId == parentId &&
+                _locationVisualsById.ContainsKey(item.Id))
+            .OrderBy(item => _persistedLocationLayouts.ContainsKey(item.Id) ? 0 : 1)
+            .ThenBy(item => item.Name, StringComparer.CurrentCulture)
+            .ThenBy(item => item.Id)
+            .ToArray();
+        foreach (var child in children)
         {
-            MapLocationVisual visual;
-
-            if (!_locationVisualsById.TryGetValue(
-                    location.Id,
-                    out visual))
+            var bounds = ExpandedLocationBounds(_locationVisualsById[child.Id]);
+            if (!HasPersistedGeometryInSubtree(child.Id, locations, nodes) &&
+                placed.Any(item => !Rect.Intersect(item, bounds).IsEmpty))
             {
-                continue;
+                var free = MapFreePlacement.FindFreeSpot(bounds, placed, GetDoubleResource("NetLoom.Map.NewLocationPlacementStep"),
+                    _linkLabelCollisionMargin);
+                MoveLocationSubtreeByDelta(child.Id, free.X - bounds.Left, free.Y - bounds.Top);
+                bounds = ExpandedLocationBounds(_locationVisualsById[child.Id]);
             }
-
-            if (visual.ParentLocationId.HasValue)
-            {
-                var left =
-                    LocationLeft(
-                        visual);
-
-                var top =
-                    LocationTop(
-                        visual);
-
-                var constrained =
-                    ConstrainLocationPositionToParent(
-                        visual,
-                        left,
-                        top);
-
-                var deltaX =
-                    constrained.X - left;
-
-                var deltaY =
-                    constrained.Y - top;
-
-                if (Math.Abs(deltaX) > 0.001 ||
-                    Math.Abs(deltaY) > 0.001)
-                {
-                    MoveLocationSubtreeByDelta(
-                        location.Id,
-                        deltaX,
-                        deltaY);
-                }
-            }
-
-            foreach (var node in
-                nodes.Where(
-                    item =>
-                        item.LocationId ==
-                        location.Id))
-            {
-                MapNodeVisual nodeVisual;
-
-                if (!_nodeVisualsByIdentity.TryGetValue(
-                        NodeIdentity(node),
-                        out nodeVisual))
-                {
-                    continue;
-                }
-
-                var left =
-                    NodeLeft(
-                        nodeVisual);
-
-                var top =
-                    NodeTop(
-                        nodeVisual);
-
-                var constrained =
-                    ConstrainNodePositionToLocation(
-                        nodeVisual,
-                        left,
-                        top);
-
-                if (Math.Abs(
-                        constrained.X - left) <= 0.001 &&
-                    Math.Abs(
-                        constrained.Y - top) <= 0.001)
-                {
-                    continue;
-                }
-
-                Canvas.SetLeft(
-                    nodeVisual.Border,
-                    constrained.X);
-
-                Canvas.SetTop(
-                    nodeVisual.Border,
-                    constrained.Y);
-
-                if (node.DeviceId.HasValue &&
-                    _persistedDeviceLayouts.ContainsKey(
-                        node.DeviceId.Value))
-                {
-                    TrySaveDeviceLayout(
-                        nodeVisual);
-                }
-            }
+            placed.Add(bounds);
         }
     }
+
+    private bool HasPersistedGeometryInSubtree(
+        Guid locationId,
+        IReadOnlyList<MapLocation> locations,
+        IReadOnlyList<MapNode> nodes)
+    {
+        var subtree = new HashSet<Guid> { locationId };
+        var grown = true;
+        while (grown)
+        {
+            grown = false;
+            foreach (var item in locations)
+                if (item.ParentLocationId.HasValue && subtree.Contains(item.ParentLocationId.Value) &&
+                    subtree.Add(item.Id)) grown = true;
+        }
+        return subtree.Any(id => _persistedLocationLayouts.ContainsKey(id)) ||
+            nodes.Any(node => node.LocationId.HasValue && subtree.Contains(node.LocationId.Value) &&
+                node.DeviceId.HasValue && _persistedDeviceLayouts.ContainsKey(node.DeviceId.Value));
+    }
+
+    // Родитель размещения и размещение устройства, показанные последним снимком этого сеанса.
+    private readonly Dictionary<Guid, Guid?> _shownLocationParents = new Dictionary<Guid, Guid?>();
+    private readonly Dictionary<string, Guid?> _shownNodeLocations =
+        new Dictionary<string, Guid?>(StringComparer.Ordinal);
 
     private void MoveLocationSubtreeByDelta(
         Guid locationId,
@@ -895,217 +805,65 @@ public partial class MainWindow
 
     private MapLocationVisual CreateLocationVisual()
     {
-        var title =
-            new TextBlock
-            {
-                Style =
-                    GetStyleResource(
-                        "NetLoom.Style.MapLocationTitle"),
-                VerticalAlignment =
-                    VerticalAlignment.Center
-            };
-
-        var lockBadge =
-            new TextBlock
-            {
-                Style =
-                    GetStyleResource(
-                        "NetLoom.Style.MapLocationLockBadge"),
-                VerticalAlignment =
-                    VerticalAlignment.Center
-            };
-
-        var collapseButton =
-            new Button
-            {
-                MinWidth = 28.0,
-                MinHeight = 24.0,
-                Padding = new Thickness(
-                    4.0,
-                    0.0,
-                    4.0,
-                    0.0),
-                Focusable = false,
-                VerticalAlignment =
-                    VerticalAlignment.Center
-            };
-
-        collapseButton.Click +=
-            OnMapLocationCollapseClick;
-
-        var headerGrid =
-            new Grid
-            {
-                Height = _locationHeaderHeight,
-                Cursor = Cursors.SizeAll
-            };
-
-        headerGrid.ColumnDefinitions.Add(
-            new ColumnDefinition
-            {
-                Width =
-                    new GridLength(
-                        1.0,
-                        GridUnitType.Star)
-            });
-
-        headerGrid.ColumnDefinitions.Add(
-            new ColumnDefinition
-            {
-                Width = GridLength.Auto
-            });
-
-        headerGrid.ColumnDefinitions.Add(
-            new ColumnDefinition
-            {
-                Width = GridLength.Auto
-            });
-
-        Grid.SetColumn(
-            title,
-            0);
-
-        Grid.SetColumn(
-            lockBadge,
-            1);
-
-        Grid.SetColumn(
-            collapseButton,
-            2);
-
-        headerGrid.Children.Add(
-            title);
-
-        headerGrid.Children.Add(
-            lockBadge);
-
-        headerGrid.Children.Add(
-            collapseButton);
-
-        var header =
-            new Border
-            {
-                Background =
-                    FindResource(
-                        "NetLoom.Brush.SurfaceHover")
-                        as Brush,
-                Padding =
-                    GetThicknessResource(
-                        "NetLoom.Thickness.MapLocationHeader"),
-                Child = headerGrid
-            };
-
-        var description =
-            new TextBlock
-            {
-                Style =
-                    GetStyleResource(
-                        "NetLoom.Style.MapLocationDescription"),
-                Margin =
-                    GetThicknessResource(
-                        "NetLoom.Thickness.MapLocationDescription"),
-                TextWrapping =
-                    TextWrapping.Wrap
-            };
-
-        var resizeThumb =
-            new Thumb
-            {
-                Width =
-                    _locationResizeThumbSize,
-                Height =
-                    _locationResizeThumbSize,
-                HorizontalAlignment =
-                    HorizontalAlignment.Right,
-                VerticalAlignment =
-                    VerticalAlignment.Bottom,
-                Cursor =
-                    Cursors.SizeNWSE,
-                Focusable = false
-            };
-
-        resizeThumb.DragDelta +=
-            OnMapLocationResizeDragDelta;
-
-        resizeThumb.DragCompleted +=
-            OnMapLocationResizeDragCompleted;
-
-        var root =
-            new Grid();
-
-        root.RowDefinitions.Add(
-            new RowDefinition
-            {
-                Height = GridLength.Auto
-            });
-
-        root.RowDefinitions.Add(
-            new RowDefinition
-            {
-                Height =
-                    new GridLength(
-                        1.0,
-                        GridUnitType.Star)
-            });
-
-        Grid.SetRow(
-            header,
-            0);
-
-        Grid.SetRow(
-            description,
-            1);
-
-        Grid.SetRowSpan(
-            resizeThumb,
-            2);
-
-        root.Children.Add(
-            header);
-
-        root.Children.Add(
-            description);
-
-        root.Children.Add(
-            resizeThumb);
-
-        var border =
-            new Border
-            {
-                Style =
-                    GetStyleResource(
-                        "NetLoom.Style.MapLocationContainer"),
-                Child = root,
-                Focusable = false
-            };
-
-        border.ContextMenu =
-            CreateLocationContextMenu(
-                border);
-
-        header.MouseLeftButtonDown +=
-            OnMapLocationMouseLeftButtonDown;
-
-        header.MouseMove +=
-            OnMapLocationMouseMove;
-
-        header.MouseLeftButtonUp +=
-            OnMapLocationMouseLeftButtonUp;
-
-        header.MouseRightButtonDown +=
-            OnMapLocationMouseRightButtonDown;
-
-        border.MouseLeftButtonDown +=
-            OnMapLocationBodyMouseLeftButtonDown;
-
-        return new MapLocationVisual(
-            border,
-            header,
-            title,
-            description,
-            collapseButton,
-            lockBadge,
-            resizeThumb);
+        var title = new TextBlock
+        {
+            Style = GetStyleResource("NetLoom.Style.MapLocationTitle"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var lockBadge = new TextBlock
+        {
+            Style = GetStyleResource("NetLoom.Style.MapLocationLockBadge"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var collapseButton = new Button
+        {
+            Style = GetStyleResource("NetLoom.Style.MapLocationToggle"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        collapseButton.Click += OnMapLocationCollapseClick;
+        var headerGrid = new Grid { Cursor = Cursors.SizeAll };
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(lockBadge, 1);
+        Grid.SetColumn(collapseButton, 2);
+        headerGrid.Children.Add(title);
+        headerGrid.Children.Add(lockBadge);
+        headerGrid.Children.Add(collapseButton);
+        var header = new Border
+        {
+            Style = GetStyleResource("NetLoom.Style.MapLocationTab"),
+            Child = headerGrid
+        };
+        var fill = new Border { Style = GetStyleResource("NetLoom.Style.MapLocationFill") };
+        var frame = new Border
+        {
+            Style = GetStyleResource("NetLoom.Style.MapLocationContainer"),
+            Child = fill
+        };
+        var resizeThumb = new Thumb
+        {
+            Width = _locationResizeThumbSize,
+            Height = _locationResizeThumbSize,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Cursor = Cursors.SizeNWSE,
+            Focusable = false
+        };
+        resizeThumb.DragDelta += OnMapLocationResizeDragDelta;
+        resizeThumb.DragCompleted += OnMapLocationResizeDragCompleted;
+        var root = new Grid();
+        root.Children.Add(frame);
+        root.Children.Add(header);
+        root.Children.Add(resizeThumb);
+        var border = new Border { Child = root, Focusable = false };
+        border.ContextMenu = CreateLocationContextMenu(border);
+        header.MouseLeftButtonDown += OnMapLocationMouseLeftButtonDown;
+        header.MouseMove += OnMapLocationMouseMove;
+        header.MouseLeftButtonUp += OnMapLocationMouseLeftButtonUp;
+        header.MouseRightButtonDown += OnMapLocationMouseRightButtonDown;
+        border.MouseLeftButtonDown += OnMapLocationBodyMouseLeftButtonDown;
+        return new MapLocationVisual(border, frame, header, title, collapseButton, lockBadge, resizeThumb);
     }
 
     private ContextMenu CreateLocationContextMenu(
@@ -1195,15 +953,6 @@ public partial class MainWindow
             !string.IsNullOrWhiteSpace(
                 location.Description);
 
-        visual.Description.Text =
-            hasDescription
-                ? location.Description
-                : string.Empty;
-        visual.Description.Visibility =
-            hasDescription
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
         visual.Border.Tag =
             location.Id;
 
@@ -1228,8 +977,9 @@ public partial class MainWindow
                     location,
                     locations);
 
-        UpdateLocationVisualState(
-            visual);
+        visual.Header.ToolTip = visual.Border.ToolTip;
+        visual.Title.ToolTip = visual.Border.ToolTip;
+        UpdateLocationVisualState(visual);
     }
 
     private bool TryGetExpandedLocationBounds(
@@ -1280,6 +1030,29 @@ public partial class MainWindow
     }
 
     private MapLocationLayout CreateDefaultLocationLayout(
+        MapLocation location, int order, IReadOnlyList<MapNode> nodes, IReadOnlyList<MapLocation> locations)
+    {
+        var desired = CreateDesiredLocationLayout(location, order, nodes, locations);
+        var occupied = new List<Rect>();
+        foreach (var sibling in locations.Where(item => item.Id != location.Id &&
+            item.ParentLocationId == location.ParentLocationId))
+        {
+            Rect bounds;
+            if ((_persistedLocationLayouts.ContainsKey(sibling.Id) ||
+                 (_locationVisualsById.ContainsKey(sibling.Id) && _locationVisualsById[sibling.Id].LocationId == sibling.Id)) &&
+                TryGetExpandedLocationBounds(sibling.Id, out bounds)) occupied.Add(bounds);
+        }
+        var free = MapFreePlacement.FindFreeSpot(new Rect(
+            MapVirtualWorkspace.ToCanvasCoordinate(desired.X, _virtualOriginX),
+            MapVirtualWorkspace.ToCanvasCoordinate(desired.Y, _virtualOriginY), desired.Width, desired.Height),
+            occupied, GetDoubleResource("NetLoom.Map.NewLocationPlacementStep"), _linkLabelCollisionMargin);
+        return new MapLocationLayout(location.Id,
+            MapVirtualWorkspace.ToLogicalCoordinate(free.X, _virtualOriginX),
+            MapVirtualWorkspace.ToLogicalCoordinate(free.Y, _virtualOriginY),
+            desired.Width, desired.Height, false, false);
+    }
+
+    private MapLocationLayout CreateDesiredLocationLayout(
         MapLocation location,
         int order,
         IReadOnlyList<MapNode> nodes,
@@ -1591,20 +1364,10 @@ public partial class MainWindow
                 visual.ExpandedHeight));
     }
 
-    private Rect LocationVisibleBounds(
-        MapLocationVisual visual)
+    private Rect LocationVisibleBounds(MapLocationVisual visual)
     {
-        return new Rect(
-            LocationLeft(
-                visual),
-            LocationTop(
-                visual),
-            Math.Max(
-                _locationMinWidth,
-                visual.Border.Width),
-            Math.Max(
-                _locationHeaderHeight,
-                visual.Border.Height));
+        return new Rect(LocationLeft(visual), LocationTop(visual), visual.Border.Width,
+            visual.IsCollapsed ? _locationHeaderHeight : visual.ExpandedHeight);
     }
 
     private static double LocationLeft(
@@ -1646,11 +1409,6 @@ public partial class MainWindow
                     _locationMinHeight,
                     visual.ExpandedHeight);
 
-        visual.Description.Visibility =
-            visual.IsCollapsed
-                ? Visibility.Collapsed
-                : Visibility.Visible;
-
         visual.ResizeThumb.Visibility =
             IsMapEditMode &&
             !visual.IsCollapsed &&
@@ -1675,13 +1433,27 @@ public partial class MainWindow
                     ? "MapLocationExpand"
                     : "MapLocationCollapse");
 
+        System.Windows.Automation.AutomationProperties.SetName(visual.CollapseButton,
+            UiText.Format(visual.IsCollapsed ? "MapLocationExpandName" : "MapLocationCollapseName", visual.Title.Text));
+
         visual.LockBadge.Text =
             visual.IsLocked
                 ? UiText.Get(
                     "MapLocationLockedBadge")
                 : string.Empty;
 
+        visual.Header.MaxWidth = visual.ExpandedWidth;
+        visual.Frame.Visibility = visual.IsCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        visual.Header.SetResourceReference(Border.CornerRadiusProperty, visual.IsCollapsed
+            ? "NetLoom.Radius.MapLocation" : "NetLoom.Radius.MapLocationTab");
+        visual.Header.SetResourceReference(Border.BorderThicknessProperty, visual.IsCollapsed
+            ? "NetLoom.Thickness.BorderThin" : "NetLoom.Thickness.MapLocationTabBorder");
+
+        visual.Header.Measure(new Size(visual.ExpandedWidth, _locationHeaderHeight));
+        visual.Border.Width = visual.IsCollapsed ? visual.Header.DesiredSize.Width : visual.ExpandedWidth;
+
         UpdateLocationSelectionPresentation();
+        UpdateTopologyQuality();
     }
 
     private void UpdateLocationSelectionPresentation()
@@ -1693,7 +1465,7 @@ public partial class MainWindow
 
         var normalBrush =
             FindResource(
-                "NetLoom.Brush.BorderStrong")
+                "NetLoom.Brush.MapLocationBorder")
                 as Brush;
 
         foreach (var visual in
@@ -1704,15 +1476,14 @@ public partial class MainWindow
                 visual.LocationId ==
                     _selectedLocationId.Value;
 
-            visual.Border.BorderBrush =
+            visual.Frame.BorderBrush =
                 selected
                     ? selectionBrush
                     : normalBrush;
 
-            visual.Border.BorderThickness =
-                selected
-                    ? new Thickness(3.0)
-                    : new Thickness(1.0);
+            visual.Frame.BorderThickness = GetThicknessResource(selected
+                ? "NetLoom.Thickness.BorderFocus" : "NetLoom.Thickness.BorderThin");
+            visual.Header.BorderBrush = selected ? selectionBrush : normalBrush;
         }
     }
 

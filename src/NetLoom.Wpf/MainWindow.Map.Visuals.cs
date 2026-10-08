@@ -35,17 +35,17 @@ public partial class MainWindow
     {
         public MapLocationVisual(
             Border border,
-            FrameworkElement header,
+            Border frame,
+            Border header,
             TextBlock title,
-            TextBlock description,
             Button collapseButton,
             TextBlock lockBadge,
             Thumb resizeThumb)
         {
             Border = border;
+            Frame = frame;
             Header = header;
             Title = title;
-            Description = description;
             CollapseButton = collapseButton;
             LockBadge = lockBadge;
             ResizeThumb = resizeThumb;
@@ -53,11 +53,11 @@ public partial class MainWindow
 
         public Border Border { get; }
 
-        public FrameworkElement Header { get; }
+        public Border Frame { get; }
+
+        public Border Header { get; }
 
         public TextBlock Title { get; }
-
-        public TextBlock Description { get; }
 
         public Button CollapseButton { get; }
 

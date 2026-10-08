@@ -41,4 +41,6 @@
     <SolidColorBrush x:Key="NetLoom.Brush.Link" Color="#A8BDCF" />
     <SolidColorBrush x:Key="NetLoom.Brush.Selection" Color="#5F9CF5" />
     <SolidColorBrush x:Key="NetLoom.Brush.FocusRing" Color="#5F9CF5" />
+    <!-- Граница размещения: не ниже 3:1 к холсту, без изменения рамок остальных поверхностей. -->
+    <SolidColorBrush x:Key="NetLoom.Brush.MapLocationBorder" Color="#6B7E90" />
 </ResourceDictionary>

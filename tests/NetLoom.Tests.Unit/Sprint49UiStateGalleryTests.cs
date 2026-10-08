@@ -366,6 +366,120 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        // Оси: вложенные размещения и наложенные ручные рамки, обе темы и ширины 1100/1440.
+        // Состояния сети берутся из двух настоящих стендов; их исходные базы не меняются.
+        [TestMethod]
+        public void LocationFramesGallery()
+        {
+            var root = FindParallelLinksRepositoryRoot();
+            var sources = new[]
+            {
+                System.IO.Path.Combine(root, "artifacts", "realistic-stand", "field-s46.db"),
+                System.IO.Path.Combine(root, "artifacts", "realistic-stand", "operator-s46-pass3-visual.db")
+            };
+            foreach (var source in sources)
+                if (!File.Exists(source)) Assert.Inconclusive("Location gallery stand is missing: " + source);
+
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-locations");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png")) File.Delete(file);
+                var findings = new List<string>();
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                try
+                {
+                    for (var scenarioIndex = 0; scenarioIndex < sources.Length; scenarioIndex++)
+                    {
+                        var scenario = scenarioIndex == 0 ? "55-location-frames" : "56-location-overlap";
+                        foreach (var dark in new[] { false, true })
+                        {
+                            var theme = dark ? "dark" : "light";
+                            var bitmaps = new List<BitmapSource>();
+                            foreach (var width in new[] { 1100, 1440 })
+                            {
+                                var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                    "netloom-s49-locations-" + Guid.NewGuid().ToString("N") + ".db");
+                                MainWindow window = null;
+                                File.Copy(sources[scenarioIndex], database);
+                                try
+                                {
+                                    window = CreateParallelLinksFieldWindow(database, dark);
+                                    PrepareWindow(window, width, GalleryHeight);
+                                    var currentWindow = window;
+                                    WaitForCondition(() =>
+                                    {
+                                        var currentMap = (MapSnapshot)typeof(MainWindow)
+                                            .GetField("_lastMapSnapshot", flags).GetValue(currentWindow);
+                                        return currentMap != null && currentMap.Locations.Count > 0;
+                                    });
+                                    typeof(MainWindow).GetMethod("StopStartupTopologyFit", flags).Invoke(window, null);
+                                    var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags).GetValue(window);
+                                    var canvas = (Canvas)window.FindName("MapCanvas");
+                                    List<Rect> bounds;
+                                    if (scenarioIndex == 0)
+                                    {
+                                        var site = map.Locations.Single(location => location.Name == "Площадка А");
+                                        typeof(MainWindow).GetMethod("SelectLocation", flags).Invoke(window, new object[] { site.Id });
+                                        var siteBorder = canvas.Children.OfType<Border>()
+                                            .Single(border => Equals(border.Tag, site.Id) && Panel.GetZIndex(border) < 0);
+                                        bounds = new List<Rect>
+                                        {
+                                            new Rect(Canvas.GetLeft(siteBorder), Canvas.GetTop(siteBorder),
+                                                siteBorder.Width, siteBorder.Height)
+                                        };
+                                        Assert.IsTrue(map.Locations.Any(location => location.ParentLocationId == site.Id));
+                                    }
+                                    else
+                                    {
+                                        typeof(MainWindow).GetMethod("UpdateTopologyQuality", flags).Invoke(window, null);
+                                        var report = (TopologyQualityReport)typeof(MainWindow)
+                                            .GetField("_topologyQualityReport", flags).GetValue(window);
+                                        Assert.IsTrue(report.Gaps.Any(gap => gap.Kind == TopologyQualityGapKind.LocationOverlap));
+                                        ((ToggleButton)window.FindName("MapQualityToggle")).IsChecked = true;
+                                        window.UpdateLayout();
+                                        var ids = map.Locations.Where(location => new[] { "1", "2", "3", "4-4" }
+                                            .Contains(location.Name)).Select(location => location.Id).ToArray();
+                                        Assert.IsTrue(ids.Length > 1);
+                                        bounds = canvas.Children.OfType<Border>()
+                                            .Where(border => border.Tag is Guid && ids.Contains((Guid)border.Tag) &&
+                                                Panel.GetZIndex(border) < 0)
+                                            .Select(border => new Rect(Canvas.GetLeft(border), Canvas.GetTop(border),
+                                                border.Width, border.Height)).ToList();
+                                    }
+                                    var fit = typeof(MainWindow).GetMethod("TryFitMapBoundsToViewport", flags, null,
+                                        new[] { typeof(IReadOnlyList<Rect>) }, null);
+                                    Assert.IsTrue((bool)fit.Invoke(window, new object[] { bounds }));
+                                    PumpDispatcher();
+                                    window.UpdateLayout();
+                                    CollectTextClipping(window.Content as DependencyObject,
+                                        scenario + "/" + theme + "/" + width, findings);
+                                    bitmaps.Add(Capture(window.Content as FrameworkElement));
+                                }
+                                finally
+                                {
+                                    if (window != null) window.Close();
+                                    PumpDispatcher();
+                                    DeleteParallelLinksFieldCopy(database);
+                                }
+                            }
+                            SaveSideBySide(bitmaps[0], bitmaps[1],
+                                System.IO.Path.Combine(output, scenario + "-" + theme + ".png"));
+                        }
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(4, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
         // Оси: выбранный кабель пары, ширины 1100/1440, обе темы (§9).
         // Остальные состояния сети берутся из полевого стенда без синтетической замены.
         [TestMethod]

@@ -14,14 +14,17 @@ namespace NetLoom.Wpf.MapInteraction
         InferredLink,
         OneSidedLldp,
         SyntheticInterface,
-        ManualObservedConflict
+        ManualObservedConflict,
+        LocationOverlap
     }
 
     public sealed class TopologyQualityGap
     {
         public TopologyQualityGap(TopologyQualityGapKind kind, Guid? physicalLinkId,
-            Guid? deviceId, string subject, string detail)
+            Guid? deviceId, string subject, string detail, Guid? locationId = null, Guid? otherLocationId = null)
         {
+            LocationId = locationId;
+            OtherLocationId = otherLocationId;
             Kind = kind;
             PhysicalLinkId = physicalLinkId;
             DeviceId = deviceId;
@@ -32,6 +35,8 @@ namespace NetLoom.Wpf.MapInteraction
         public TopologyQualityGapKind Kind { get; }
         public Guid? PhysicalLinkId { get; }
         public Guid? DeviceId { get; }
+        public Guid? LocationId { get; }
+        public Guid? OtherLocationId { get; }
         public string Subject { get; }
         public string Detail { get; }
     }
@@ -55,9 +60,14 @@ namespace NetLoom.Wpf.MapInteraction
     public static class TopologyQualityProjection
     {
         public static TopologyQualityReport Build(NetworkDiagnosticSnapshot diagnostics, MapSnapshot map,
-            IReadOnlyList<TopologyConflict> conflicts = null)
+            IReadOnlyList<TopologyConflict> conflicts = null, IReadOnlyList<LocationOverlap> overlaps = null)
         {
             var gaps = new List<TopologyQualityGap>();
+            foreach (var overlap in overlaps ?? new LocationOverlap[0])
+                gaps.Add(new TopologyQualityGap(TopologyQualityGapKind.LocationOverlap, null, null,
+                    UiText.Format(overlap.ChildOutsideParent ? "MapQualityLocationOutsideParentSubject" :
+                        "MapQualityLocationOverlapSubject", overlap.First.Name, overlap.Second.Name),
+                    string.Empty, overlap.First.Id, overlap.Second.Id));
             if (diagnostics == null || map == null || map.Nodes.Count == 0)
                 return new TopologyQualityReport(gaps);
 
