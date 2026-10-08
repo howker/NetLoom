@@ -154,27 +154,7 @@ public partial class MainWindow
 
     private void UpdateSemanticMapVisibility()
     {
-        var showLinkLabels =
-            _zoom >=
-                _linkLabelMinZoom;
-
-        foreach (var visual in
-                 _linkVisualsByIdentity.Values)
-        {
-            if (visual == null)
-            {
-                continue;
-            }
-
-            visual.Label.Visibility =
-                showLinkLabels &&
-                visual.Line.Visibility ==
-                    Visibility.Visible &&
-                !string.IsNullOrWhiteSpace(
-                    visual.Label.Text)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-        }
+        ApplyLinkFocusPresentation();
     }
 
     private double ClampZoom(
@@ -1488,20 +1468,9 @@ public partial class MainWindow
 
             StopMotion(
                 visual.Label);
-
-            if (visual.LastFreshness.HasValue)
-            {
-                var opacity =
-                    LinkFreshnessOpacity(
-                        visual.LastFreshness.Value);
-
-                visual.Line.Opacity =
-                    opacity;
-
-                visual.Label.Opacity =
-                    opacity;
-            }
         }
+
+        ApplyLinkFocusPresentation();
 
         StopMotion(
             AlertTransitionText);

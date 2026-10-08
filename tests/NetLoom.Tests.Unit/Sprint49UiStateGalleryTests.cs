@@ -33,6 +33,108 @@ namespace NetLoom.Tests.Unit
 {
     public sealed partial class Sprint46UiStateGalleryTests
     {
+        // Один выбранный кабель в плотной части полевого стенда, обе ширины в каждом кадре.
+        [TestMethod]
+        public void LinkFocusGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-link-focus");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png"))
+                    File.Delete(file);
+                var findings = new List<string>();
+                const string scenario = "51-link-focus-selected";
+
+                try
+                {
+                    foreach (var dark in new[] { false, true })
+                    {
+                        var theme = dark ? "dark" : "light";
+                        var bitmaps = new List<BitmapSource>();
+                        foreach (var width in new[] { 1100, 1440 })
+                        {
+                            var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                "netloom-s49-link-focus-" + Guid.NewGuid().ToString("N") + ".db");
+                            MainWindow window = null;
+                            File.Copy(source, database);
+                            try
+                            {
+                                window = CreateParallelLinksFieldWindow(database, dark);
+                                PrepareWindow(window, width, GalleryHeight);
+                                var currentWindow = window;
+                                WaitForCondition(() =>
+                                {
+                                    var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot",
+                                        BindingFlags.Instance | BindingFlags.NonPublic).GetValue(currentWindow);
+                                    return map != null && map.Nodes.Any(node => node.Label == "core-sw-01") &&
+                                        map.Nodes.Any(node => node.Label == "core-sw-02");
+                                });
+                                FocusParallelLinksFieldPair(window, 0);
+                                PumpDispatcher();
+                                window.UpdateLayout();
+
+                                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                                // Кадр показывает выбор без временного наведения реального указателя.
+                                typeof(MainWindow).GetField("_hoveredPhysicalLinkId", flags).SetValue(window, null);
+                                typeof(MainWindow).GetMethod("UpdateSemanticMapVisibility", flags).Invoke(window, null);
+                                window.UpdateLayout();
+                                var selectedId = (Guid?)typeof(MainWindow)
+                                    .GetField("_selectedPhysicalLinkId", flags).GetValue(window);
+                                Assert.IsTrue(selectedId.HasValue);
+                                var canvas = (Canvas)window.FindName("MapCanvas");
+                                var selectedLabel = canvas.Children.OfType<TextBlock>()
+                                    .Single(label => Equals(label.Tag, selectedId.Value));
+                                Assert.IsTrue(selectedLabel.IsVisible);
+                                Assert.AreEqual(FontWeights.SemiBold, selectedLabel.FontWeight);
+                                var dimmed = (double)window.FindResource("NetLoom.Map.LinkFocusDimmedOpacity");
+                                var snapshot = (MapSnapshot)typeof(MainWindow)
+                                    .GetField("_lastMapSnapshot", flags).GetValue(window);
+                                var selectedLink = snapshot.Links.Single(link => link.PhysicalLinkId == selectedId);
+                                var neighbor = snapshot.Links.Single(link => link.PhysicalLinkId.HasValue &&
+                                    link.PhysicalLinkId != selectedId &&
+                                    ((link.SourceNodeKey == selectedLink.SourceNodeKey &&
+                                      link.TargetNodeKey == selectedLink.TargetNodeKey) ||
+                                     (link.SourceNodeKey == selectedLink.TargetNodeKey &&
+                                      link.TargetNodeKey == selectedLink.SourceNodeKey)));
+                                var neighborLine = canvas.Children.OfType<Line>()
+                                    .Single(line => Equals(line.Tag, neighbor.PhysicalLinkId.Value));
+                                Assert.IsTrue(neighborLine.IsVisible);
+                                Assert.IsTrue(neighborLine.Opacity <= dimmed);
+                                Assert.AreEqual(neighborLine.Opacity, canvas.Children.OfType<TextBlock>()
+                                    .Single(label => Equals(label.Tag, neighbor.PhysicalLinkId.Value)).Opacity, 0.0001);
+                                CollectTextClipping(window.Content as DependencyObject,
+                                    scenario + "/" + theme + "/" + width, findings);
+                                bitmaps.Add(Capture(window.Content as FrameworkElement));
+                            }
+                            finally
+                            {
+                                if (window != null) window.Close();
+                                PumpDispatcher();
+                                DeleteParallelLinksFieldCopy(database);
+                            }
+                        }
+                        SaveSideBySide(bitmaps[0], bitmaps[1],
+                            System.IO.Path.Combine(output, scenario + "-" + theme + ".png"));
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(2, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
         // Оси: выбранный кабель пары, ширины 1100/1440, обе темы (§9).
         // Остальные состояния сети берутся из полевого стенда без синтетической замены.
         [TestMethod]

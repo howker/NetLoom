@@ -6379,7 +6379,39 @@ namespace NetLoom.Tests.Unit
                             new InterfaceDiagnostic[0],
                             "192.0.2.163")
                     },
-                    new PhysicalLinkDiagnostic[0]));
+                    // Карта и диагностика строятся из одного набора: у связи карты есть диагностика,
+                    // Иначе выбор связи снимается как «выбранный объект пропал» (Sprint 49).
+                    new[]
+                    {
+                        new PhysicalLinkDiagnostic(
+                            physicalLinkId,
+                            firstId,
+                            secondId,
+                            null,
+                            null,
+                            "Switch critical A",
+                            "Switch critical B",
+                            null,
+                            null,
+                            DiagnosticLinkStrength.Confirmed,
+                            MapFreshness.Fresh,
+                            "Ethernet",
+                            1000000000L,
+                            "LLDP",
+                            Now,
+                            Now,
+                            NetLoom.Contracts.StpTree
+                                .StpTreePortState
+                                .Forwarding,
+                            NetLoom.Contracts.StpTree
+                                .StpTreePortState
+                                .Forwarding,
+                            new DiagnosticEvidenceItem[0],
+                            false,
+                            0,
+                            0,
+                            0L)
+                    }));
         }
 
         private static T FindVisualDescendantByTag<T>(

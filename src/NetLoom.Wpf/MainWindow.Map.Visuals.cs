@@ -148,6 +148,8 @@ public partial class MainWindow
         public TextBlock Label { get; }
 
         public MapFreshness? LastFreshness { get; set; }
+
+        public double? LastPresentationOpacity { get; set; }
     }
 
 }

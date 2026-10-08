@@ -634,6 +634,7 @@ public partial class MainWindow
             locationId;
 
         UpdateLocationSelectionPresentation();
+        ApplyLinkFocusPresentation();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
         RevealInspectorForExplicitSelection();
@@ -2242,6 +2243,7 @@ public partial class MainWindow
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        ApplyLinkFocusPresentation();
         UpdateSelectedLayoutControl();
         RevealInspectorForExplicitSelection();
 
@@ -2287,6 +2289,7 @@ public partial class MainWindow
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        ApplyLinkFocusPresentation();
         UpdateSelectedLayoutControl();
     }
 
@@ -2407,6 +2410,7 @@ public partial class MainWindow
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        ApplyLinkFocusPresentation();
         UpdateSelectedLayoutControl();
     }
 

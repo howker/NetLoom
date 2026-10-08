@@ -487,27 +487,7 @@ public partial class MainWindow
             }
         }
 
-        foreach (var link in
-            _lastMapSnapshot.Links)
-        {
-            MapLinkVisual visual;
-
-            if (_linkVisualsByIdentity.TryGetValue(
-                    LinkIdentity(link),
-                    out visual))
-            {
-                var opacity =
-                    LinkPresentationOpacity(
-                        link.PhysicalLinkId,
-                        link.Freshness);
-
-                visual.Line.Opacity =
-                    opacity;
-
-                visual.Label.Opacity =
-                    opacity;
-            }
-        }
+        ApplyLinkFocusPresentation();
     }
 
     private void ApplyNodeOperationalFocusPresentation(
@@ -567,9 +547,15 @@ public partial class MainWindow
             }
         }
 
+        var linkFocusOpacity = FocusedPhysicalLinkId.HasValue &&
+            physicalLinkId != FocusedPhysicalLinkId
+                ? GetDoubleResource("NetLoom.Map.LinkFocusDimmedOpacity")
+                : 1.0;
+
         return LinkFreshnessOpacity(
                    freshness) *
-               focusOpacity;
+               focusOpacity *
+               linkFocusOpacity;
     }
 
     private void FitOperationalFocusToViewport()

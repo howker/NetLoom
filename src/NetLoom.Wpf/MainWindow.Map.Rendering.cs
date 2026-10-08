@@ -31,6 +31,89 @@ namespace NetLoom.Wpf;
 
 public partial class MainWindow
 {
+    private Guid? _hoveredPhysicalLinkId;
+
+    private Guid? FocusedPhysicalLinkId =>
+        _hoveredPhysicalLinkId ?? _selectedPhysicalLinkId;
+
+    private void ApplyLinkFocusPresentation()
+    {
+        foreach (var visual in _linkVisualsByIdentity.Values)
+        {
+            ApplyLinkFocusPresentation(visual);
+        }
+    }
+
+    private void ApplyLinkFocusPresentation(MapLinkVisual visual)
+    {
+        var physicalLinkId = visual.Line.Tag as Guid?;
+        var focused = FocusedPhysicalLinkId.HasValue &&
+            physicalLinkId == FocusedPhysicalLinkId;
+        var opacity = LinkPresentationOpacity(
+            physicalLinkId, visual.LastFreshness ?? MapFreshness.Fresh);
+
+        // Старый импульс не должен перекрывать новую прозрачность фокуса.
+        if (visual.LastPresentationOpacity.HasValue && visual.LastPresentationOpacity.Value != opacity)
+        {
+            visual.Line.BeginAnimation(UIElement.OpacityProperty, null);
+            visual.Label.BeginAnimation(UIElement.OpacityProperty, null);
+        }
+        visual.Line.Opacity = opacity;
+        visual.Label.Opacity = opacity;
+        visual.LastPresentationOpacity = opacity;
+
+        ApplyLinkOperationalPresentation(visual, physicalLinkId);
+        var selected = physicalLinkId.HasValue && physicalLinkId == _selectedPhysicalLinkId;
+        if (selected)
+        {
+            visual.Line.StrokeThickness = LinkSelectedStrokeThickness(
+                LinkOperationalState(physicalLinkId));
+        }
+        visual.SelectionHalo.Visibility = selected && visual.Line.Visibility == Visibility.Visible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        if (focused)
+        {
+            visual.Label.FontWeight = FontWeights.SemiBold;
+            if (LinkOperationalBrushKey(LinkOperationalState(physicalLinkId)) == null)
+            {
+                visual.Label.SetResourceReference(TextBlock.ForegroundProperty,
+                    "NetLoom.Brush.TextPrimary");
+            }
+        }
+
+        visual.Label.Visibility = visual.Line.Visibility == Visibility.Visible &&
+            (focused || _zoom >= _linkLabelMinZoom) &&
+            !string.IsNullOrWhiteSpace(visual.Label.Text)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+    }
+
+    private void OnMapLinkMouseEnter(object sender, MouseEventArgs e)
+    {
+        var element = sender as FrameworkElement;
+        if (element == null || !(element.Tag is Guid) ||
+            _hoveredPhysicalLinkId == (Guid)element.Tag)
+        {
+            return;
+        }
+        _hoveredPhysicalLinkId = (Guid)element.Tag;
+        ApplyLinkFocusPresentation();
+    }
+
+    private void OnMapLinkMouseLeave(MapLinkVisual visual)
+    {
+        if (!(visual.Line.Tag is Guid) ||
+            _hoveredPhysicalLinkId != (Guid)visual.Line.Tag ||
+            visual.Line.IsMouseOver || visual.Label.IsMouseOver)
+        {
+            return;
+        }
+        _hoveredPhysicalLinkId = null;
+        ApplyLinkFocusPresentation();
+    }
+
     private void ReconcileNodes(
         IReadOnlyList<MapNode> nodes,
         IReadOnlyDictionary<Guid, MapLocation> locations)
@@ -1769,12 +1852,7 @@ public partial class MainWindow
                     visual.Label.DesiredSize.Height));
             }
 
-            visual.Label.Visibility =
-                linkVisible &&
-                _zoom >=
-                    _linkLabelMinZoom
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
+            ApplyLinkFocusPresentation(visual);
 
             if (created)
             {
@@ -1819,6 +1897,14 @@ public partial class MainWindow
                     MapCanvas.Children.Remove(
                         visual.Label));
         }
+
+        if (_hoveredPhysicalLinkId.HasValue &&
+            !_linkVisualsByIdentity.Values.Any(visual =>
+                Equals(visual.Line.Tag, _hoveredPhysicalLinkId.Value)))
+        {
+            _hoveredPhysicalLinkId = null;
+        }
+        ApplyLinkFocusPresentation();
     }
 
     private static string NodeIdentity(
@@ -2409,11 +2495,18 @@ public partial class MainWindow
         label.MouseRightButtonDown +=
             OnMapLinkMouseRightButtonDown;
 
-        return new MapLinkVisual(
+        var visual = new MapLinkVisual(
             selectionHalo,
             selectionHaloGeometry,
             line,
             label);
+
+        line.MouseEnter += OnMapLinkMouseEnter;
+        label.MouseEnter += OnMapLinkMouseEnter;
+        line.MouseLeave += (sender, e) => OnMapLinkMouseLeave(visual);
+        label.MouseLeave += (sender, e) => OnMapLinkMouseLeave(visual);
+
+        return visual;
     }
 
     private void UpdateLinkVisual(
@@ -2443,12 +2536,6 @@ public partial class MainWindow
                 ? null
                 : new DoubleCollection(
                     confidenceDashPattern);
-
-        visual.Line.Opacity =
-            operationalOpacity;
-
-        visual.Label.Opacity =
-            operationalOpacity;
 
         var x1 =
             NodeLeft(source) +
@@ -2512,30 +2599,8 @@ public partial class MainWindow
         visual.Label.Tag =
             link.PhysicalLinkId;
 
-        var isSelected =
-            link.PhysicalLinkId.HasValue &&
-            _selectedPhysicalLinkId.HasValue &&
-            link.PhysicalLinkId.Value ==
-                _selectedPhysicalLinkId.Value;
-
-        ApplyLinkOperationalPresentation(
-            visual,
-            link.PhysicalLinkId);
-
-        visual.SelectionHalo.Visibility =
-            isSelected
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
-        if (isSelected)
-        {
-            visual.Line.StrokeThickness =
-                LinkSelectedStrokeThickness(
-                    linkState);
-
-            visual.Label.FontWeight =
-                FontWeights.Bold;
-        }
+        visual.LastFreshness = link.Freshness;
+        ApplyLinkFocusPresentation(visual);
 
         // Скрытая масштабом подпись должна измеряться до размещения соседнего кабеля.
         if (slot.GroupSize > 1 && visual.Label.Visibility == Visibility.Collapsed)
@@ -2563,9 +2628,6 @@ public partial class MainWindow
                 MapMotionKind.FreshnessChange,
                 operationalOpacity);
         }
-
-        visual.LastFreshness =
-            link.Freshness;
     }
 
     private static double[] LinkConfidenceDashPattern(

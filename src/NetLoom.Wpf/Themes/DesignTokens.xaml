@@ -240,6 +240,7 @@
     <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">5</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloThickness">18</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloOpacity">0.42</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkFocusDimmedOpacity">0.3</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelPlacementStep">24</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelCollisionMargin">8</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ScrollBarThickness">12</sys:Double>
