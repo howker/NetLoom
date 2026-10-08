@@ -34,6 +34,152 @@ namespace NetLoom.Tests.Unit
 {
     public sealed partial class Sprint46UiStateGalleryTests
     {
+        // Ручной кабель противоречит настоящей LLDP-связи на копии полевого стенда.
+        [TestMethod]
+        public void TopologyConflictGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-conflict");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png")) File.Delete(file);
+                var findings = new List<string>();
+                const string scenario = "54-manual-observed-conflict";
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+                try
+                {
+                    foreach (var dark in new[] { false, true })
+                    {
+                        var theme = dark ? "dark" : "light";
+                        var bitmaps = new List<BitmapSource>();
+                        foreach (var width in new[] { 1100, 1440 })
+                        {
+                            var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                "netloom-s49-conflict-gallery-" + Guid.NewGuid().ToString("N") + ".db");
+                            MainWindow window = null;
+                            File.Copy(source, database);
+                            try
+                            {
+                                var pair = AddTopologyConflictToFieldCopy(database);
+                                window = CreateParallelLinksFieldWindow(database, dark);
+                                window.TopologyConflictAcknowledgements = new SqliteTopologyConflictAcknowledgementStore(
+                                    new SqliteConnectionFactory(database));
+                                PrepareWindow(window, width, GalleryHeight);
+                                var currentWindow = window;
+                                WaitForCondition(() =>
+                                {
+                                    var conflicts = (IReadOnlyList<TopologyConflict>)typeof(MainWindow)
+                                        .GetField("_topologyConflicts", flags).GetValue(currentWindow);
+                                    return conflicts.Any(conflict => conflict.ManualLinkId == pair.ManualLinkId &&
+                                        conflict.ObservedLinkId == pair.ObservedLinkId);
+                                });
+                                var conflict = ((IReadOnlyList<TopologyConflict>)typeof(MainWindow)
+                                    .GetField("_topologyConflicts", flags).GetValue(window))
+                                    .Single(item => item.ManualLinkId == pair.ManualLinkId && item.ObservedLinkId == pair.ObservedLinkId);
+                                FocusTopologyConflictFieldContext(window, conflict);
+                                var blocks = (ItemsControl)window.FindName("InspectorTopologyConflicts");
+                                Assert.IsTrue(blocks.IsVisible);
+                                Assert.AreEqual(1, blocks.Items.Count);
+                                var labels = ((Canvas)window.FindName("MapCanvas")).Children.OfType<TextBlock>()
+                                    .Where(label => Equals(label.Tag, pair.ManualLinkId) || Equals(label.Tag, pair.ObservedLinkId)).ToArray();
+                                Assert.AreEqual(2, labels.Length);
+                                Assert.IsTrue(labels.All(label => label.IsVisible &&
+                                    label.Text.StartsWith("⚠ ", StringComparison.Ordinal)));
+                                PumpDispatcher();
+                                window.UpdateLayout();
+                                CollectTextClipping(window.Content as DependencyObject,
+                                    scenario + "/" + theme + "/" + width, findings);
+                                bitmaps.Add(Capture(window.Content as FrameworkElement));
+                            }
+                            finally
+                            {
+                                if (window != null) window.Close();
+                                PumpDispatcher();
+                                DeleteParallelLinksFieldCopy(database);
+                            }
+                        }
+                        SaveSideBySide(bitmaps[0], bitmaps[1],
+                            System.IO.Path.Combine(output, scenario + "-" + theme + ".png"));
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(2, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
+        private static TopologyConflictKey AddTopologyConflictToFieldCopy(string database)
+        {
+            var factory = new SqliteConnectionFactory(database);
+            new DatabaseInitializer(factory).Initialize();
+            var topology = new SqliteMaterializedTopologyRepository(factory);
+            var devices = topology.GetDevices();
+            var core1 = devices.Single(device => (device.CustomName ?? device.DiscoveredName) == "core-sw-01");
+            var core2 = devices.Single(device => (device.CustomName ?? device.DiscoveredName) == "core-sw-02");
+            var gateway = devices.Single(device => (device.CustomName ?? device.DiscoveredName) == "gw-01");
+            var evidence = topology.GetPhysicalLinkEvidence();
+            var observed = topology.GetPhysicalLinks().Where(link => !link.IsHidden && !link.IsArchived &&
+                    link.Strength != NetLoom.Domain.Topology.PhysicalLinkStrength.Manual &&
+                    ((link.DeviceAId == core1.Id && link.DeviceBId == core2.Id) ||
+                     (link.DeviceBId == core1.Id && link.DeviceAId == core2.Id)) &&
+                    link.InterfaceAId.HasValue && link.InterfaceBId.HasValue &&
+                    evidence.Any(item => item.PhysicalLinkId == link.Id &&
+                        item.Kind == NetLoom.Domain.Topology.PhysicalLinkEvidenceKind.Lldp))
+                .OrderBy(link => link.Id).First();
+            var sharedPort = observed.DeviceAId == core1.Id ? observed.InterfaceAId : observed.InterfaceBId;
+            var targetPort = topology.GetInterfaces().Single(port => port.DeviceId == gateway.Id && port.IfIndex == 2);
+            var manual = new ManualTopologyService(topology, new SqliteManualTopologyAuditStore(factory));
+            var manualId = manual.CreateLink(core1.Id, sharedPort, gateway.Id, targetPort.Id,
+                observed.MediaTypeResolved, "Ручная схема: кабель ядра подключён к ether2 шлюза.");
+            return new TopologyConflictKey(manualId, observed.Id);
+        }
+
+        private static void FocusTopologyConflictFieldContext(MainWindow window, TopologyConflict conflict)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var canvas = (Canvas)window.FindName("MapCanvas");
+            var selected = canvas.Children.OfType<Line>().Single(line => Equals(line.Tag, conflict.ManualLinkId));
+            selected.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+            { RoutedEvent = UIElement.MouseLeftButtonDownEvent, Source = selected });
+            PumpDispatcher();
+            window.UpdateLayout();
+            typeof(MainWindow).GetField("_hoveredPhysicalLinkId", flags).SetValue(window, null);
+            typeof(MainWindow).GetMethod("UpdateSemanticMapVisibility", flags).Invoke(window, null);
+            var devices = new[] { conflict.ManualLink.DeviceAId, conflict.ManualLink.DeviceBId,
+                conflict.ObservedLink.DeviceAId, conflict.ObservedLink.DeviceBId }.Distinct().ToArray();
+            var bounds = canvas.Children.OfType<Border>().Where(border => border.Tag is Guid && devices.Contains((Guid)border.Tag))
+                .Select(border => new Rect(Canvas.GetLeft(border), Canvas.GetTop(border),
+                    border.DesiredSize.Width, border.DesiredSize.Height)).ToList();
+            Assert.AreEqual(3, bounds.Count);
+            bounds.AddRange(canvas.Children.OfType<TextBlock>()
+                .Where(label => Equals(label.Tag, conflict.ManualLinkId) || Equals(label.Tag, conflict.ObservedLinkId))
+                .Select(label => new Rect(Canvas.GetLeft(label), Canvas.GetTop(label), label.DesiredSize.Width, label.DesiredSize.Height)));
+            var context = bounds.Aggregate(Rect.Union);
+            context.Inflate((double)window.FindResource("NetLoom.Map.NodeWidth"),
+                (double)window.FindResource("NetLoom.Map.NodeHeight"));
+            bounds.Add(context);
+            var minimumZoom = (double)window.FindResource("NetLoom.Map.ReadableZoomMin");
+            var fit = typeof(MainWindow).GetMethod("TryFitMapBoundsToViewport", flags, null,
+                new[] { typeof(IReadOnlyList<Rect>), typeof(double?) }, null);
+            Assert.IsNotNull(fit);
+            Assert.IsTrue((bool)fit.Invoke(window, new object[] { bounds, minimumZoom }));
+            ((TabControl)window.FindName("InspectorTabControl")).SelectedItem = window.FindName("InspectorOverviewTab");
+            PumpDispatcher();
+            window.UpdateLayout();
+        }
+
         // Оси: свёрнутые и раскрытые причины, обе темы и ширины 1100/1440.
         // Состояния и имена берутся из полевого стенда без подмены данных.
         [TestMethod]

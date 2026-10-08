@@ -2781,4 +2781,37 @@
   <data name="MapQualityShowName" xml:space="preserve">
     <value>Показать на карте: {0} — {1}</value>
   </data>
+  <data name="TopologyConflictLabelPrefix" xml:space="preserve">
+    <value>⚠ </value>
+  </data>
+  <data name="TopologyConflictHeading" xml:space="preserve">
+    <value>Расхождение со схемой</value>
+  </data>
+  <data name="TopologyConflictEndpoints" xml:space="preserve">
+    <value>{0} {1} ↔ {2} {3}</value>
+  </data>
+  <data name="TopologyConflictManual" xml:space="preserve">
+    <value>Ручная: {0}</value>
+  </data>
+  <data name="TopologyConflictObserved" xml:space="preserve">
+    <value>Наблюдается: {0} · {1} · {2}</value>
+  </data>
+  <data name="TopologyConflictOpenEvidence" xml:space="preserve">
+    <value>Открыть основания</value>
+  </data>
+  <data name="TopologyConflictKeepManual" xml:space="preserve">
+    <value>Оставить ручную</value>
+  </data>
+  <data name="TopologyConflictChangeManual" xml:space="preserve">
+    <value>Изменить ручную</value>
+  </data>
+  <data name="TopologyConflictQualityGroup" xml:space="preserve">
+    <value>Расхождения ручной и наблюдаемой схемы: {0}</value>
+  </data>
+  <data name="TopologyConflictQualitySubject" xml:space="preserve">
+    <value>Ручная {0} ↔ {1}, наблюдается {2} ↔ {3}</value>
+  </data>
+  <data name="TopologyConflictSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить решение. Повторите попытку.</value>
+  </data>
 </root>

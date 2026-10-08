@@ -83,8 +83,20 @@ public partial class MainWindow
             }
         }
 
+        var conflict = HasTopologyConflict(physicalLinkId);
+        var prefix = UiText.Get("TopologyConflictLabelPrefix");
+        var label = visual.Label.Text ?? string.Empty;
+        // Один путь для фокусной подписи и расхождения; префикс не накапливается при обновлении.
+        if (label.StartsWith(prefix, StringComparison.Ordinal)) label = label.Substring(prefix.Length);
+        visual.Label.Text = conflict ? prefix + label : label;
+        if (conflict)
+        {
+            visual.Label.SetResourceReference(TextBlock.ForegroundProperty,
+                OperatorStatusBrushKey(OperatorStatusSemantic.Warning));
+        }
+
         visual.Label.Visibility = visual.Line.Visibility == Visibility.Visible &&
-            (focused || _zoom >= _linkLabelMinZoom) &&
+            (conflict || focused || _zoom >= _linkLabelMinZoom) &&
             !string.IsNullOrWhiteSpace(visual.Label.Text)
                 ? Visibility.Visible
                 : Visibility.Collapsed;

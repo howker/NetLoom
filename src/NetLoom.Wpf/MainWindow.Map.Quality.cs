@@ -15,7 +15,9 @@ namespace NetLoom.Wpf
 
         private void UpdateTopologyQuality()
         {
-            var nextReport = TopologyQualityProjection.Build(_lastDiagnosticSnapshot, _lastMapSnapshot);
+            _topologyConflicts = TopologyConflictProjection.Build(_lastDiagnosticSnapshot,
+                TopologyConflictAcknowledgements?.List());
+            var nextReport = TopologyQualityProjection.Build(_lastDiagnosticSnapshot, _lastMapSnapshot, _topologyConflicts);
             var unchanged = _topologyQualityReport.Count == nextReport.Count &&
                 _topologyQualityReport.Gaps.Zip(nextReport.Gaps, (previous, next) =>
                     previous.Kind == next.Kind && previous.PhysicalLinkId == next.PhysicalLinkId &&
@@ -24,6 +26,8 @@ namespace NetLoom.Wpf
             _topologyQualityReport = nextReport;
             var summary = UiText.Format("MapQualitySummary", _topologyQualityReport.Count);
             ApplyOperatorStatus(MapQualityGlyph, MapQualitySummaryText, OperatorStatusSemantic.Unknown, summary);
+            // §6: кисть «неизвестно» (TextDisabled) на приглушённой полосе даёт 2.8:1; значок остаётся нейтральным.
+            MapQualityGlyph.SetResourceReference(TextBlock.ForegroundProperty, "NetLoom.Brush.TextSecondary");
             AutomationProperties.SetName(MapQualityToggle, summary);
             // Текст ссылки сохраняет акцент; нейтральную семантику несёт значок недостаточных данных.
             MapQualitySummaryText.SetResourceReference(TextBlock.ForegroundProperty, "NetLoom.Brush.AccentText");
@@ -52,6 +56,7 @@ namespace NetLoom.Wpf
                 case TopologyQualityGapKind.ObservedLink: return "MapQualityObservedGroup";
                 case TopologyQualityGapKind.InferredLink: return "MapQualityInferredGroup";
                 case TopologyQualityGapKind.OneSidedLldp: return "MapQualityOneSidedGroup";
+                case TopologyQualityGapKind.ManualObservedConflict: return "TopologyConflictQualityGroup";
                 default: return "MapQualitySyntheticGroup";
             }
         }

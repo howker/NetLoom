@@ -2781,4 +2781,37 @@ Poll: {2}</value>
   <data name="MapQualityShowName" xml:space="preserve">
     <value>Show on map: {0} — {1}</value>
   </data>
+  <data name="TopologyConflictLabelPrefix" xml:space="preserve">
+    <value>⚠ </value>
+  </data>
+  <data name="TopologyConflictHeading" xml:space="preserve">
+    <value>Topology conflict</value>
+  </data>
+  <data name="TopologyConflictEndpoints" xml:space="preserve">
+    <value>{0} {1} ↔ {2} {3}</value>
+  </data>
+  <data name="TopologyConflictManual" xml:space="preserve">
+    <value>Manual: {0}</value>
+  </data>
+  <data name="TopologyConflictObserved" xml:space="preserve">
+    <value>Observed: {0} · {1} · {2}</value>
+  </data>
+  <data name="TopologyConflictOpenEvidence" xml:space="preserve">
+    <value>Open evidence</value>
+  </data>
+  <data name="TopologyConflictKeepManual" xml:space="preserve">
+    <value>Keep manual</value>
+  </data>
+  <data name="TopologyConflictChangeManual" xml:space="preserve">
+    <value>Change manual</value>
+  </data>
+  <data name="TopologyConflictQualityGroup" xml:space="preserve">
+    <value>Manual and observed topology conflicts: {0}</value>
+  </data>
+  <data name="TopologyConflictQualitySubject" xml:space="preserve">
+    <value>Manual {0} ↔ {1}, observed {2} ↔ {3}</value>
+  </data>
+  <data name="TopologyConflictSaveFailed" xml:space="preserve">
+    <value>Could not save the decision. Try again.</value>
+  </data>
 </root>

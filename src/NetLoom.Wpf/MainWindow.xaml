@@ -2329,6 +2329,75 @@
                                  Style="{StaticResource NetLoom.Style.InspectorTab}">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
+                                    <ItemsControl x:Name="InspectorTopologyConflicts" Visibility="Collapsed">
+                                        <ItemsControl.Resources>
+                                            <Style x:Key="TopologyConflictCopyableText" TargetType="TextBox">
+                                                <Setter Property="IsReadOnly" Value="True" />
+                                                <Setter Property="TextWrapping" Value="Wrap" />
+                                                <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+                                                <Setter Property="Background" Value="{x:Null}" />
+                                                <Setter Property="BorderThickness" Value="{DynamicResource NetLoom.Thickness.None}" />
+                                                <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.None}" />
+                                                <Setter Property="Margin" Value="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                                                <Setter Property="SelectionBrush" Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+                                                <Setter Property="FocusVisualStyle" Value="{StaticResource NetLoom.Style.FocusVisual}" />
+                                            </Style>
+                                        </ItemsControl.Resources>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                                    <TextBlock Text="{Binding Heading}"
+                                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                                                    <TextBox Text="{Binding ManualText, Mode=OneWay}"
+                                                             AutomationProperties.Name="{Binding ManualText}"
+                                                             Style="{StaticResource TopologyConflictCopyableText}" />
+                                                    <TextBox Text="{Binding ObservedText, Mode=OneWay}"
+                                                             AutomationProperties.Name="{Binding ObservedText}"
+                                                             Style="{StaticResource TopologyConflictCopyableText}" />
+                                                    <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource NetLoom.Brush.Warning}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding ErrorText}" Value="">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <WrapPanel Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}">
+                                                        <Button Content="{Binding EvidenceText}"
+                                                                AutomationProperties.Name="{Binding EvidenceText}"
+                                                                Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                                Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                                Click="OnTopologyConflictEvidenceClick" />
+                                                        <Button Content="{Binding KeepManualText}"
+                                                                AutomationProperties.Name="{Binding KeepManualText}"
+                                                                Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                                Click="OnTopologyConflictKeepManualClick">
+                                                            <Button.Style>
+                                                                <Style TargetType="Button" BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding CanAcknowledge}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Button.Style>
+                                                        </Button>
+                                                        <Button Content="{Binding ChangeManualText}"
+                                                                AutomationProperties.Name="{Binding ChangeManualText}"
+                                                                Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                                Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                                Click="OnTopologyConflictChangeManualClick" />
+                                                    </WrapPanel>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                     <TextBlock x:Name="DiagnosticPrimaryTitleText"
                                                Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />

@@ -13,7 +13,8 @@ namespace NetLoom.Wpf.MapInteraction
         ObservedLink,
         InferredLink,
         OneSidedLldp,
-        SyntheticInterface
+        SyntheticInterface,
+        ManualObservedConflict
     }
 
     public sealed class TopologyQualityGap
@@ -53,11 +54,27 @@ namespace NetLoom.Wpf.MapInteraction
 
     public static class TopologyQualityProjection
     {
-        public static TopologyQualityReport Build(NetworkDiagnosticSnapshot diagnostics, MapSnapshot map)
+        public static TopologyQualityReport Build(NetworkDiagnosticSnapshot diagnostics, MapSnapshot map,
+            IReadOnlyList<TopologyConflict> conflicts = null)
         {
             var gaps = new List<TopologyQualityGap>();
             if (diagnostics == null || map == null || map.Nodes.Count == 0)
                 return new TopologyQualityReport(gaps);
+
+            foreach (var conflict in conflicts ?? TopologyConflictProjection.Build(diagnostics, null))
+            {
+                var manual = conflict.ManualLink;
+                var observed = conflict.ObservedLink;
+                var shared = conflict.SharedDeviceId;
+                gaps.Add(new TopologyQualityGap(TopologyQualityGapKind.ManualObservedConflict,
+                    conflict.ManualLinkId, null,
+                    UiText.Format("TopologyConflictQualitySubject",
+                        Value(shared == manual.DeviceAId ? manual.DeviceAName : manual.DeviceBName),
+                        Value(shared == manual.DeviceAId ? manual.DeviceBName : manual.DeviceAName),
+                        Value(shared == observed.DeviceAId ? observed.DeviceAName : observed.DeviceBName),
+                        Value(shared == observed.DeviceAId ? observed.DeviceBName : observed.DeviceAName)),
+                    UiText.Format("MapQualityLinkPorts", Value(manual.InterfaceAName), Value(manual.InterfaceBName))));
+            }
 
             var nodes = map.Nodes.Where(node => node.DeviceId.HasValue)
                 .GroupBy(node => node.DeviceId.Value).ToDictionary(group => group.Key, group => group.First());

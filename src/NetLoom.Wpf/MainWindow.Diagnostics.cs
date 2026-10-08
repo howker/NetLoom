@@ -46,6 +46,8 @@ public partial class MainWindow : Window
     {
         UpdateShellBreadcrumb();
         SynchronizeAlertCardSelectionWithMap();
+        if (!_selectedPhysicalLinkId.HasValue || _selectedDeviceId.HasValue || _selectedLocationId.HasValue)
+            ClearTopologyConflictBlocks();
 
         if (_selectedLocationId.HasValue)
         {
@@ -473,6 +475,7 @@ public partial class MainWindow : Window
 
     private void ClearInspectorEntity()
     {
+        ClearTopologyConflictBlocks();
         _inspectorEntityId =
             null;
         _inspectorPrimaryAlert =
@@ -1303,6 +1306,7 @@ public partial class MainWindow : Window
     private void ShowLinkDiagnostic(
         PhysicalLinkDiagnostic link)
     {
+        ShowTopologyConflictBlocks(link);
         SetInspectorEntity(
             "InspectorEntityLink",
             link.PhysicalLinkId);
