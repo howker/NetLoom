@@ -2745,4 +2745,40 @@
   <data name="OperatorStatusGlyphProfileFailed" xml:space="preserve">
     <value>✕</value>
   </data>
+  <data name="MapQualitySummary" xml:space="preserve">
+    <value>Топология неполная: {0}</value>
+  </data>
+  <data name="MapQualityObservedGroup" xml:space="preserve">
+    <value>Связи без подтверждения LLDP: {0}</value>
+  </data>
+  <data name="MapQualityInferredGroup" xml:space="preserve">
+    <value>Связи, выведенные косвенно: {0}</value>
+  </data>
+  <data name="MapQualityOneSidedGroup" xml:space="preserve">
+    <value>Односторонний LLDP: {0}</value>
+  </data>
+  <data name="MapQualitySyntheticGroup" xml:space="preserve">
+    <value>Порты без ifIndex: {0}</value>
+  </data>
+  <data name="MapQualityLinkSubject" xml:space="preserve">
+    <value>{0} ↔ {1}</value>
+  </data>
+  <data name="MapQualityLinkPorts" xml:space="preserve">
+    <value>Порты: {0} ↔ {1}</value>
+  </data>
+  <data name="MapQualityLldpReporter" xml:space="preserve">
+    <value>LLDP сообщает только {0}</value>
+  </data>
+  <data name="MapQualitySyntheticPort" xml:space="preserve">
+    <value>Порт {0} не имеет ifIndex</value>
+  </data>
+  <data name="MapQualityGapDetail" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="MapQualityShow" xml:space="preserve">
+    <value>Показать</value>
+  </data>
+  <data name="MapQualityShowName" xml:space="preserve">
+    <value>Показать на карте: {0} — {1}</value>
+  </data>
 </root>

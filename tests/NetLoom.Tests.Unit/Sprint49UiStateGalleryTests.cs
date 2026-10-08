@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -33,6 +34,90 @@ namespace NetLoom.Tests.Unit
 {
     public sealed partial class Sprint46UiStateGalleryTests
     {
+        // Оси: свёрнутые и раскрытые причины, обе темы и ширины 1100/1440.
+        // Состояния и имена берутся из полевого стенда без подмены данных.
+        [TestMethod]
+        public void TopologyQualityGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-quality");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png"))
+                    File.Delete(file);
+                var findings = new List<string>();
+
+                try
+                {
+                    foreach (var expanded in new[] { false, true })
+                    {
+                        var scenario = expanded ? "53-quality-expanded" : "52-quality-collapsed";
+                        foreach (var dark in new[] { false, true })
+                        {
+                            var theme = dark ? "dark" : "light";
+                            var bitmaps = new List<BitmapSource>();
+                            foreach (var width in new[] { 1100, 1440 })
+                            {
+                                var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                    "netloom-s49-quality-" + Guid.NewGuid().ToString("N") + ".db");
+                                MainWindow window = null;
+                                File.Copy(source, database);
+                                try
+                                {
+                                    window = CreateParallelLinksFieldWindow(database, dark);
+                                    PrepareWindow(window, width, GalleryHeight);
+                                    var currentWindow = window;
+                                    const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                                    WaitForCondition(() =>
+                                    {
+                                        var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags)
+                                            .GetValue(currentWindow);
+                                        return map != null && map.Nodes.Any(node => node.Label == "core-sw-01");
+                                    });
+                                    var report = (TopologyQualityReport)typeof(MainWindow)
+                                        .GetField("_topologyQualityReport", flags).GetValue(window);
+                                    if (report.Count == 0)
+                                        findings.Add(scenario + "/" + theme + "/" + width +
+                                            " — Полевой стенд не содержит ожидаемых пробелов топологии (§9).");
+                                    else
+                                        Assert.IsTrue(((Border)window.FindName("MapQualityNotice")).IsVisible);
+
+                                    ((ToggleButton)window.FindName("MapQualityToggle")).IsChecked = expanded;
+                                    PumpDispatcher();
+                                    window.UpdateLayout();
+                                    CollectTextClipping(window.Content as DependencyObject,
+                                        scenario + "/" + theme + "/" + width, findings);
+                                    bitmaps.Add(Capture(window.Content as FrameworkElement));
+                                }
+                                finally
+                                {
+                                    if (window != null) window.Close();
+                                    PumpDispatcher();
+                                    DeleteParallelLinksFieldCopy(database);
+                                }
+                            }
+                            SaveSideBySide(bitmaps[0], bitmaps[1],
+                                System.IO.Path.Combine(output, scenario + "-" + theme + ".png"));
+                        }
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(4, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
         // Один выбранный кабель в плотной части полевого стенда, обе ширины в каждом кадре.
         [TestMethod]
         public void LinkFocusGallery()

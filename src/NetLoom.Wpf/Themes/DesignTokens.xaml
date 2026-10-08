@@ -40,6 +40,11 @@
     <Thickness x:Key="NetLoom.Thickness.ButtonPadding">14,7</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ListItemPadding">8,6</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodePadding">8</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNoticePadding">12,6</Thickness>
+    <sys:Double x:Key="NetLoom.Map.QualityListMaxHeight">240</sys:Double>
+    <sys:Double x:Key="NetLoom.Expander.ArrowStrokeThickness">1.5</sys:Double>
+    <Geometry x:Key="NetLoom.Geometry.ExpanderCollapsed">M 0,0 L 4,4 L 0,8</Geometry>
+    <Geometry x:Key="NetLoom.Geometry.ExpanderExpanded">M 0,0 L 4,4 L 8,0</Geometry>
     <Thickness x:Key="NetLoom.Thickness.MapNodeIcon">0,0,8,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodeStateStripe">1,1,0,1</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapLinkLabelPadding">4,2</Thickness>

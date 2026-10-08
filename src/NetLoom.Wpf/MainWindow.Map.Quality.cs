@@ -1,0 +1,108 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
+using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.MapInteraction;
+
+namespace NetLoom.Wpf
+{
+    public partial class MainWindow
+    {
+        private TopologyQualityReport _topologyQualityReport = TopologyQualityProjection.Build(null, null);
+
+        private void UpdateTopologyQuality()
+        {
+            var nextReport = TopologyQualityProjection.Build(_lastDiagnosticSnapshot, _lastMapSnapshot);
+            var unchanged = _topologyQualityReport.Count == nextReport.Count &&
+                _topologyQualityReport.Gaps.Zip(nextReport.Gaps, (previous, next) =>
+                    previous.Kind == next.Kind && previous.PhysicalLinkId == next.PhysicalLinkId &&
+                    previous.DeviceId == next.DeviceId && previous.Subject == next.Subject &&
+                    previous.Detail == next.Detail).All(equal => equal);
+            _topologyQualityReport = nextReport;
+            var summary = UiText.Format("MapQualitySummary", _topologyQualityReport.Count);
+            ApplyOperatorStatus(MapQualityGlyph, MapQualitySummaryText, OperatorStatusSemantic.Unknown, summary);
+            AutomationProperties.SetName(MapQualityToggle, summary);
+            // Текст ссылки сохраняет акцент; нейтральную семантику несёт значок недостаточных данных.
+            MapQualitySummaryText.SetResourceReference(TextBlock.ForegroundProperty, "NetLoom.Brush.AccentText");
+            MapQualitySummaryText.ToolTip = summary;
+            // Неизменившиеся причины не пересоздают кнопки и не снимают фокус при очередном опросе.
+            if (!unchanged)
+                MapQualityGroups.ItemsSource = _topologyQualityReport.Gaps.GroupBy(gap => gap.Kind)
+                    .Select(group => new TopologyQualityGroupRow(
+                        UiText.Format(TopologyQualityGroupResourceKey(group.Key), group.Count()),
+                        group.Select(gap => new TopologyQualityGapRow(gap)).ToArray())).ToArray();
+            UpdateTopologyQualityVisibility();
+        }
+
+        private void UpdateTopologyQualityVisibility()
+        {
+            if (MapQualityNotice == null) return;
+            var visible = _shellSection == ShellSection.Map && _topologyQualityReport.Count > 0;
+            MapQualityNotice.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (!visible) MapQualityToggle.IsChecked = false;
+        }
+
+        private static string TopologyQualityGroupResourceKey(TopologyQualityGapKind kind)
+        {
+            switch (kind)
+            {
+                case TopologyQualityGapKind.ObservedLink: return "MapQualityObservedGroup";
+                case TopologyQualityGapKind.InferredLink: return "MapQualityInferredGroup";
+                case TopologyQualityGapKind.OneSidedLldp: return "MapQualityOneSidedGroup";
+                default: return "MapQualitySyntheticGroup";
+            }
+        }
+
+        private void OnMapQualityShowClick(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var gap = button?.Tag as TopologyQualityGap;
+            if (gap == null) return;
+
+            // Используем тот же выбор и вписывание объектов, что у действия «Показать на карте».
+            if (gap.PhysicalLinkId.HasValue)
+            {
+                SelectAlertPhysicalContext(gap.PhysicalLinkId.Value);
+                FocusAlertContextToViewport(new[] { gap.PhysicalLinkId.Value }, null);
+            }
+            else if (gap.DeviceId.HasValue)
+            {
+                SelectAlertDeviceContext(gap.DeviceId.Value);
+                FocusSelectedMapAtNativeZoom(() => AnimateDiscoveryFocus(gap.DeviceId.Value));
+            }
+
+            // Перемещение карты не уводит клавиатурный фокус из списка причин.
+            button.Focus();
+            e.Handled = true;
+        }
+
+        private sealed class TopologyQualityGroupRow
+        {
+            public TopologyQualityGroupRow(string heading, IReadOnlyList<TopologyQualityGapRow> gaps)
+            {
+                Heading = heading;
+                Gaps = gaps;
+            }
+            public string Heading { get; }
+            public IReadOnlyList<TopologyQualityGapRow> Gaps { get; }
+        }
+
+        private sealed class TopologyQualityGapRow
+        {
+            public TopologyQualityGapRow(TopologyQualityGap gap)
+            {
+                Gap = gap;
+                Text = UiText.Format("MapQualityGapDetail", gap.Subject, gap.Detail);
+                ShowText = UiText.Get("MapQualityShow");
+                ShowName = UiText.Format("MapQualityShowName", gap.Subject, gap.Detail);
+            }
+            public TopologyQualityGap Gap { get; }
+            public string Text { get; }
+            public string ShowText { get; }
+            public string ShowName { get; }
+        }
+    }
+}

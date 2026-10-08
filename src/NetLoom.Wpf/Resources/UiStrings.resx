@@ -2745,4 +2745,40 @@ Poll: {2}</value>
   <data name="OperatorStatusGlyphProfileFailed" xml:space="preserve">
     <value>✕</value>
   </data>
+  <data name="MapQualitySummary" xml:space="preserve">
+    <value>Topology incomplete: {0}</value>
+  </data>
+  <data name="MapQualityObservedGroup" xml:space="preserve">
+    <value>Links without LLDP confirmation: {0}</value>
+  </data>
+  <data name="MapQualityInferredGroup" xml:space="preserve">
+    <value>Inferred links: {0}</value>
+  </data>
+  <data name="MapQualityOneSidedGroup" xml:space="preserve">
+    <value>One-sided LLDP: {0}</value>
+  </data>
+  <data name="MapQualitySyntheticGroup" xml:space="preserve">
+    <value>Ports without ifIndex: {0}</value>
+  </data>
+  <data name="MapQualityLinkSubject" xml:space="preserve">
+    <value>{0} ↔ {1}</value>
+  </data>
+  <data name="MapQualityLinkPorts" xml:space="preserve">
+    <value>Ports: {0} ↔ {1}</value>
+  </data>
+  <data name="MapQualityLldpReporter" xml:space="preserve">
+    <value>LLDP reported only by {0}</value>
+  </data>
+  <data name="MapQualitySyntheticPort" xml:space="preserve">
+    <value>Port {0} has no ifIndex</value>
+  </data>
+  <data name="MapQualityGapDetail" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="MapQualityShow" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="MapQualityShowName" xml:space="preserve">
+    <value>Show on map: {0} — {1}</value>
+  </data>
 </root>

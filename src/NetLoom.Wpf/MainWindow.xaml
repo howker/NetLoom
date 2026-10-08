@@ -2105,17 +2105,95 @@
                     </Grid>
                 </Border>
 
-                <Border x:Name="Adr083MapMonitoringNotice"
-                        Grid.Row="1"
-                        Padding="12,6"
-                        Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
-                        BorderBrush="{DynamicResource NetLoom.Brush.Border}"
-                        BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
-                        Visibility="Collapsed">
-                    <TextBlock x:Name="Adr083MapMonitoringNoticeText"
-                               Style="{StaticResource NetLoom.Style.MutedText}"
-                               TextWrapping="Wrap" />
+                <StackPanel Grid.Row="1">
+                    <Border x:Name="Adr083MapMonitoringNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="Adr083MapMonitoringNoticeText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <Border x:Name="MapQualityNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="MapQualityGlyph"
+                                           Margin="{DynamicResource NetLoom.Thickness.StatusGlyph}"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False" />
+                                <ToggleButton x:Name="MapQualityToggle"
+                                              Style="{StaticResource NetLoom.Style.LinkToggleButton}"
+                                              IsChecked="False">
+                                    <TextBlock x:Name="MapQualitySummaryText"
+                                               shell:LiveRegion.IsPolite="True"
+                                               Typography.NumeralAlignment="Tabular" />
+                                </ToggleButton>
+                        </StackPanel>
+                            <ScrollViewer x:Name="MapQualityDetails"
+                                          MaxHeight="{DynamicResource NetLoom.Map.QualityListMaxHeight}"
+                                          Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ScrollViewer.Resources>
+                                    <Style TargetType="{x:Type ScrollBar}"
+                                           BasedOn="{StaticResource NetLoom.Style.MapScrollBar}">
+                                        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+                                    </Style>
+                                </ScrollViewer.Resources>
+                                <ScrollViewer.Style>
+                                    <Style TargetType="{x:Type ScrollViewer}"
+                                           BasedOn="{StaticResource NetLoom.Style.MapScrollViewer}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChecked, ElementName=MapQualityToggle}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ScrollViewer.Style>
+                            <ItemsControl x:Name="MapQualityGroups">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                            <TextBlock Text="{Binding Heading}"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap"
+                                                       shell:AutomationHeading.Level="2"
+                                                       Margin="{DynamicResource NetLoom.Thickness.FieldLabelCompact}" />
+                                            <ItemsControl ItemsSource="{Binding Gaps}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <DockPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                                            <Button DockPanel.Dock="Right"
+                                                                    Content="{Binding ShowText}"
+                                                                    Tag="{Binding Gap}"
+                                                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                                                    Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
+                                                                    AutomationProperties.Name="{Binding ShowName}"
+                                                                    Click="OnMapQualityShowClick" />
+                                                            <TextBlock Text="{Binding Text}"
+                                                                       TextWrapping="Wrap"
+                                                                       VerticalAlignment="Center" />
+                                                        </DockPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
                 </Border>
+                </StackPanel>
 
                 <ScrollViewer x:Name="MapScrollViewer"
                               Grid.Row="2"

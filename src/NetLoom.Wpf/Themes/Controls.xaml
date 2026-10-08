@@ -1979,7 +1979,36 @@
         </Setter>
     </Style>
 
-    <Style x:Key="NetLoom.Style.LinkButton" TargetType="{x:Type Button}" BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+    <!-- Общая ссылка для Button и ToggleButton: соседние типы WPF требуют базы ButtonBase. -->
+    <Style x:Key="NetLoom.Style.LinkButton" TargetType="{x:Type ButtonBase}">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource NetLoom.Style.FocusVisual}" />
+        <Setter Property="FontFamily" Value="{DynamicResource NetLoom.FontFamily.Ui}" />
+        <Setter Property="FontSize" Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="{DynamicResource NetLoom.Thickness.BorderThin}" />
+        <Setter Property="TextBlock.LineStackingStrategy" Value="BlockLineHeight" />
+        <Setter Property="TextBlock.LineHeight" Value="{DynamicResource NetLoom.FontSize.Body}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ButtonBase}">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource NetLoom.Radius.Control}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}"
+                                          RecognizesAccessKey="True">
+                            <ContentPresenter.RenderTransform>
+                                <TranslateTransform Y="{DynamicResource NetLoom.Type.OpticalOffsetY}" />
+                            </ContentPresenter.RenderTransform>
+                        </ContentPresenter>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <!-- §6: ссылка — это текст, поэтому токен акцентного текста, а не заливки: на приглушённой карточке
              (SurfaceMuted) заливочный Accent давал 4.35:1 при норме 4.5:1. -->
         <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.AccentText}" />
@@ -1990,6 +2019,61 @@
         <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Control.MinHitSize}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontWeight" Value="Normal" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.BorderStrong}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.Accent}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.Border}" />
+            </Trigger>
+            <Trigger Property="shell:InertState.IsInert" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.Border}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="NetLoom.Style.LinkToggleButton" TargetType="{x:Type ToggleButton}"
+           BasedOn="{StaticResource NetLoom.Style.LinkButton}">
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource NetLoom.Radius.Control}">
+                        <DockPanel Margin="{TemplateBinding Padding}">
+                            <Path x:Name="Arrow" DockPanel.Dock="Right"
+                                  Width="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                  Height="{DynamicResource NetLoom.Expander.ArrowSize}"
+                                  Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                  VerticalAlignment="Center" Stretch="Uniform"
+                                  Stroke="{TemplateBinding Foreground}"
+                                  StrokeThickness="{DynamicResource NetLoom.Expander.ArrowStrokeThickness}"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Data="{DynamicResource NetLoom.Geometry.ExpanderCollapsed}"
+                                  IsHitTestVisible="False" />
+                            <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True" />
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Arrow" Property="Data"
+                                    Value="{DynamicResource NetLoom.Geometry.ExpanderExpanded}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="NetLoom.Style.AlertSummary" TargetType="{x:Type TextBlock}">
