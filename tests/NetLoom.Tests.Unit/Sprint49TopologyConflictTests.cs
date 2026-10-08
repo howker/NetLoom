@@ -45,7 +45,9 @@ namespace NetLoom.Tests.Unit
                 Assert.IsTrue(blocks.IsVisible);
                 var text = ConfirmationTextBlocks(blocks).Select(item => item.Text)
                     .Concat(ConflictVisualTextBoxes(blocks).Select(item => item.Text)).ToArray();
-                CollectionAssert.Contains(text, UiText.Get("TopologyConflictHeading"));
+                // Заголовок группы инспектора выводится заглавными (стиль SidebarSectionLabel, TextCase.Upper).
+                Assert.IsTrue(text.Any(value => string.Equals(value, UiText.Get("TopologyConflictHeading"),
+                    StringComparison.CurrentCultureIgnoreCase)));
                 Assert.IsTrue(text.Any(value => value.StartsWith("Ручная:", StringComparison.Ordinal) &&
                     value.Contains("conflict-sw-b") && value.Contains("Gi0/2")));
                 Assert.IsTrue(text.Any(value => value.StartsWith("Наблюдается:", StringComparison.Ordinal) &&
