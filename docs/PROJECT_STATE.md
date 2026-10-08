@@ -8,7 +8,9 @@
 
 Sprint 45 is closed and pushed. Field acceptance exercised discovery, topology materialization, multi-target monitoring, diagnostics and export on the author's real network; the field baseline was 55 devices, 275 interfaces and 10 physical links, including Windows Server 2012 R2 in the actual site state. Closure evidence is in `docs/sprint45-field-acceptance.md`, and the closure baseline is `f475fec`.
 
-Sprint 47 is accepted and closed by the owner on 2026-10-07 (closure section below). Sprint 48 is next.
+Sprint 48 is accepted and closed by the owner on 2026-10-08 (closure section below). Sprint 49 is next.
+
+Sprint 47 is accepted and closed by the owner on 2026-10-07 (closure section below).
 
 Sprint 46 is closed by owner decision on 2026-10-07 (closure section below). The on-site check on the real field network and Windows Server 2012 R2 is done outside the Sprint when the site is available; its findings go to the Sprint that is active at that time. The paragraphs below record the Sprint 46 history before closure.
 
@@ -22,12 +24,28 @@ The committed product sequence is now:
   1. Sprint 45 - full field acceptance/hardening - complete.
   2. Sprint 46 - application shell/navigation and shared operator context - complete (closed 2026-10-07; on-site check outside the Sprint).
   3. Sprint 47 - visible monitoring progress - complete (accepted 2026-10-07).
-  4. Sprint 48 - explainable discovery and inbox - next.
-  5. Sprint 49 - readable large-site map.
+  4. Sprint 48 - explainable discovery and inbox - complete (accepted 2026-10-08).
+  5. Sprint 49 - readable large-site map - next.
   6. Sprint 50 - network redundancy: rings and single points of failure.
   7. Sprint 51 - polling policies and profile templates.
 
 Optical degradation remains parallel evidence gathering rather than committed product work. MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on the known current-site devices.
+
+## Sprint 48 closure — 2026-10-08
+
+Sprint 48 - explainable discovery and inbox - is accepted and closed by the owner.
+  - Completed operator surface: discovery progress shows only the phases that actually run (ICMP, TCP when ports are set, SNMP) with the current address while a run is active; per-address SNMP errors with a reason («SNMP: ошибка аутентификации · профиль … · время») and «Ошибок» in the run summary; runs are stored in the database and the last run with its summary survives a restart.
+  - Inbox on the right side of «Обнаружение»: New, Changed, Ambiguous, Missing, Excluded and Error groups, each row with a concrete reason and «Проверить снова»; known unchanged devices are a count. Bulk actions on selected rows or whole groups: «Принять», «Игнорировать» (with undo), «Отметить как неуправляемое», «Назначить размещение…»; the result is shown next to the selection count.
+  - New devices from discovery appear on the map, in Equipment and in the Inspector as «Не подтверждено» and are polled by monitoring right away until the operator resolves them in the inbox.
+  - SNMP profile check before saving: availability, sysName/sysObjectID, IF-MIB, LLDP-MIB, BRIDGE-MIB and Q-BRIDGE-MIB by item, run by Engine `check-profile`; the community goes only through the process environment and is never shown.
+  - Field-check gaps: Г1 (category from LLDP capabilities and sysObjectID), Г2 (sysDescr and sysObjectID stored, model in Equipment and the Inspector), Г4 (one-sided LLDP explained as an evidence gap in the link Inspector, no alert).
+  - Fixed on the way: profile exclusion rules were never passed to Engine (now `--exclude`); the event strip lost keyboard focus on every 5-second refresh (the intermittent keyboard-audit failure); Equipment headers broke mid-word at 1100 px; the global search hint is shortened instead of clipped.
+  - Migrations: 022 (`devices.sys_description`, `devices.sys_object_id`), 023 (discovery runs and results), 024 (`devices.is_unconfirmed`), 025 (`devices.ignored_utc`); additive only, existing devices stay confirmed.
+  - Commits: `3f7a24e` (Г1, Г2), `d1695ef` and `f9cb71a` (run summary), `beeb116` (Г4), `f7b7067` (phases), `81a21da` (per-address errors), `8605e3b` and `cce103d` (run journal), `3ab1ee6` (unconfirmed devices), `e91242a` (inbox), `5c5a85b` (bulk actions), `260e6d7` (profile check), `7e965ec` (event strip focus), `b5560aa` (owner review fixes); merges `bd6970d`, `527ec13`.
+  - Regression at closure: `tools/Run-UiAudit.ps1` 71/71 with no violations (11 known informational notes) and the keyboard-only pass clean; Modern 234/234, Integration 148/148, Snapshots 7/7; the full unit suite 499/503 keeps only the 4 known older failures (Sprint 39 ×2, Sprint 41, localization); field check F01–F15 passed except F12, which needs a real Engine; the Sprint 48 gallery (28 frames) has no findings.
+  - Known limits: discovery and the profile check were not run with the real Engine on the field network; «Изменились: Интерфейсов N → M» compares with the interfaces stored in the database and may report a false change when the operator hid interfaces; profile exclusion rules are applied but cannot be created in the UI (editor moved to Sprint 51); at a 1100 px window with the Inspector open the Equipment filter row is cut by the panel edge (СРЕДНЯЯ, recorded in `BACKLOG.md`).
+  - Owner decisions confirmed 2026-10-08: «Отметить как неуправляемое» turns SNMP polling off and confirms the device without changing its category; an address error is reported only when the address answered ICMP/TCP or the failure is not a timeout; a running monitoring set restarts once after a discovery run that added devices; Excluded rows have no «Проверить снова» (ignored rows have «Отменить игнорирование»); Ambiguous covers an address owned by several devices and a sysName already used by a device on another address; the profile exclusion rules editor goes to Sprint 51.
+  - Outside the Sprint: check with the real Engine on the field network, together with the Sprint 46 and Sprint 47 on-site checks.
 
 ## Sprint 47 closure — 2026-10-07
 

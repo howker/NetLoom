@@ -305,7 +305,8 @@ This sequence is authoritative for the next product/UI work. The assistant does 
     - Owner decision 2026-10-07: threshold 2 polls and Warning severity confirmed; separate ICMP / TCP availability (monitoring polls SNMP only today) is done in Sprint 47.
     - ICMP / TCP availability: after every SNMP poll Engine checks ICMP and TCP 22/80/443 with the discovery probe (`MonitoringAvailabilityChecker`) and appends `icmp=… tcpChecked=… tcpOpen=…` to the poll-completed line; a probe failure is «not checked», never «unavailable». Availability is not a poll step: answering ping does not make an SNMP poll successful. The Inspector state line uses the ТЗ §10 vocabulary while monitoring runs — «Доступен» (SNMP answered), «Частично доступен» (ICMP only), «Недоступен» — with ICMP / SNMP / TCP rows in «Сведения»; the unreachable-device reason says whether the device still answers ICMP. Session-only, like the other cycle data.
 
-- [ ] Sprint 48 — discovery with explainable results and an inbox.
+- [x] Sprint 48 — discovery with explainable results and an inbox.
+  - Accepted and closed by the owner on 2026-10-08; closure record in `docs/PROJECT_STATE.md` («Sprint 48 closure»). Merges `bd6970d`, `527ec13`.
   - Operator outcome: after discovery the operator can tell what is new, changed, ambiguous, missing, excluded or failed, why it happened, and can resolve results in bulk; a profile can be validated before use.
   - Inbox groups: New, Changed, Ambiguous, Missing, Excluded, Error.
   - Required bulk actions: accept selected, ignore, mark unmanaged, assign placement (`Размещение` in operator-facing UI).
