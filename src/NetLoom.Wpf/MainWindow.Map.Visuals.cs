@@ -67,6 +67,10 @@ public partial class MainWindow
 
         public Guid LocationId { get; set; }
 
+        public string LocationName { get; set; }
+
+        public Path StatusIcon { get; set; }
+
         public Guid? ParentLocationId { get; set; }
 
         public bool IsCollapsed { get; set; }
@@ -118,6 +122,10 @@ public partial class MainWindow
 
         public Guid? DeviceId { get; set; }
 
+        public MapNode Node { get; set; }
+
+        public Border SemanticLabel { get; set; }
+
         public Guid? LocationId { get; set; }
 
         public bool IsManual { get; set; }
@@ -148,6 +156,8 @@ public partial class MainWindow
         public TextBlock Label { get; }
 
         public MapFreshness? LastFreshness { get; set; }
+
+        public MapLink Link { get; set; }
 
         public double? LastPresentationOpacity { get; set; }
     }

@@ -274,6 +274,10 @@ public partial class MainWindow
                         "MapOperationalFocusSettings")
             };
 
+        // Окрестность — режим существующего меню «Показать», без новой верхней панели.
+        focusMenu.Items.Add(CreateNeighborhoodMenuItem());
+        focusMenu.Items.Add(new Separator());
+
         focusMenu.Items.Add(
             CreateOperationalFocusMenuItem(
                 MapOperationalFocusMode.AllProblems,
@@ -363,6 +367,7 @@ public partial class MainWindow
     private void SetOperationalFocusMode(
         MapOperationalFocusMode mode)
     {
+        DisableNeighborhood();
         _operationalFocusMode =
             mode;
 
@@ -379,8 +384,9 @@ public partial class MainWindow
         {
             pair.Value.IsChecked =
                 pair.Key ==
-                _operationalFocusMode;
+                _operationalFocusMode && !_neighborhoodSelectedDeviceId.HasValue;
         }
+        UpdateNeighborhoodMenuState();
     }
 
     private void RefreshOperationalFocusTargets()
@@ -487,6 +493,8 @@ public partial class MainWindow
             }
         }
 
+        foreach (var visual in _locationVisualsById.Values)
+            ApplyLocationSemanticPresentation(visual);
         ApplyLinkFocusPresentation();
     }
 
@@ -497,6 +505,7 @@ public partial class MainWindow
         visual.Border.Opacity =
             NodeOperationalFocusOpacity(
                 deviceId);
+        ApplyNodeSemanticPresentation(visual);
     }
 
     private double NodeOperationalFocusOpacity(
@@ -609,8 +618,8 @@ public partial class MainWindow
                             visual.Line.Y2))));
         }
 
-        FitMapBoundsToViewport(
-            bounds);
+        // Участники должны помещаться целиком; мелкий текст убирает семантический масштаб.
+        TryFitMapBoundsToViewport(bounds, _zoomMin);
     }
 
     private static bool OperationalFocusMatchesLink(
@@ -732,6 +741,10 @@ public partial class MainWindow
             visual.StatusIcon.ClearValue(
                 Path.StrokeProperty);
         }
+        ApplyNodeSemanticPresentation(visual);
+        // Изменение проблемы вне обновления схемы должно сразу попасть в сводку размещения.
+        foreach (var location in _locationVisualsById.Values)
+            ApplyLocationSemanticPresentation(location);
     }
 
     private MapNodeDegradationState

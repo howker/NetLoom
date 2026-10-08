@@ -2832,4 +2832,52 @@
   <data name="MapQualityShowSubjectName" xml:space="preserve">
     <value>Показать на карте: {0}</value>
   </data>
+  <data name="MapSemanticCloseHelp" xml:space="preserve">
+    <value>Вблизи: порты и подписи связей</value>
+  </data>
+  <data name="MapSemanticDetailedHelp" xml:space="preserve">
+    <value>Подробно: адреса и скорости</value>
+  </data>
+  <data name="MapSemanticFarHelp" xml:space="preserve">
+    <value>Издалека: размещения</value>
+  </data>
+  <data name="MapSemanticLocationSummary" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapSemanticMediumHelp" xml:space="preserve">
+    <value>Средний: устройства</value>
+  </data>
+  <data name="MapNeighborhoodMenu" xml:space="preserve">
+    <value>Окрестность выбранного устройства</value>
+  </data>
+  <data name="MapNeighborhoodSelectDevice" xml:space="preserve">
+    <value>Выберите устройство на карте</value>
+  </data>
+  <data name="MapNeighborhoodShow" xml:space="preserve">
+    <value>Показать: окрестность</value>
+  </data>
+  <data name="MapNeighborhoodSummary" xml:space="preserve">
+    <value>Окрестность «{0}»: {1} из {2} устройств</value>
+  </data>
+  <data name="MapNeighborhoodExpandUp" xml:space="preserve">
+    <value>Раскрыть вверх</value>
+  </data>
+  <data name="MapNeighborhoodExpandDown" xml:space="preserve">
+    <value>Раскрыть вниз</value>
+  </data>
+  <data name="MapNeighborhoodExpandOther" xml:space="preserve">
+    <value>Раскрыть остальные связи</value>
+  </data>
+  <data name="MapNeighborhoodWholeSite" xml:space="preserve">
+    <value>Вся площадка</value>
+  </data>
+  <data name="MapNeighborhoodNoStpUp" xml:space="preserve">
+    <value>Вверх некуда: нет корневых портов STP</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreUp" xml:space="preserve">
+    <value>Вверх некуда: все известные устройства выше уже показаны</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreDown" xml:space="preserve">
+    <value>Вниз некуда: нет известных устройств ниже</value>
+  </data>
 </root>

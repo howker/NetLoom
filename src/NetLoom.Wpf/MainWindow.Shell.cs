@@ -1089,6 +1089,7 @@ namespace NetLoom.Wpf
                 section);
 
             UpdateTopologyQualityVisibility();
+            RefreshNeighborhoodForSection();
 
             // G2: без выбранного объекта крошки называют открытый раздел.
             UpdateShellBreadcrumb();

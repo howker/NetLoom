@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Locations;
+using NetLoom.Application.MapLayout;
 using NetLoom.Application.Topology;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Persistence.Sqlite.Database;
@@ -28,12 +29,257 @@ using NetLoom.Topology.Map;
 using NetLoom.Topology.Refresh;
 using NetLoom.Wpf;
 using NetLoom.Wpf.MapInteraction;
+using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Tests.Unit
 {
     public sealed partial class Sprint46UiStateGalleryTests
     {
+        // Четыре состояния, две темы; каждая PNG объединяет ширины 1100 и 1440.
+        [TestMethod]
+        public void FocusNeighborhoodGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(ResolveOutputDirectory()),
+                    "sprint49-neighborhood");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png")) File.Delete(file);
+                var findings = new List<string>();
+                var information = new List<string>();
+                var scenarios = new[] { "61-whole-site", "62-neighborhood", "63-neighborhood-expanded-up",
+                    "64-alert-participants" };
+                try
+                {
+                    foreach (var scenario in scenarios)
+                    foreach (var dark in new[] { false, true })
+                    {
+                        var theme = dark ? "dark" : "light";
+                        var bitmaps = new List<BitmapSource>();
+                        foreach (var width in new[] { 1100, 1440 })
+                        {
+                            var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                "netloom-s49-neighborhood-" + Guid.NewGuid().ToString("N") + ".db");
+                            MainWindow window = null;
+                            File.Copy(source, database);
+                            try
+                            {
+                                // Копия стенда открывается без рабочего вида; оригинальная база не меняется.
+                                window = CreateParallelLinksFieldWindow(database, dark, withoutSavedView: true);
+                                PrepareWindow(window, width, GalleryHeight);
+                                var current = window;
+                                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                                WaitForCondition(() => ((MapSnapshot)typeof(MainWindow)
+                                    .GetField("_lastMapSnapshot", flags).GetValue(current)).Nodes.Count > 0);
+                                PumpDispatcher();
+                                var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags).GetValue(window);
+                                if (scenario == "62-neighborhood" || scenario == "63-neighborhood-expanded-up")
+                                {
+                                    var selected = map.Nodes.Where(node => node.DeviceId.HasValue)
+                                        .Where(node => map.Links.Where(link => link.SourceNodeKey == node.Key ||
+                                            link.TargetNodeKey == node.Key)
+                                            .Select(link => link.SourceNodeKey == node.Key ? link.TargetNodeKey : link.SourceNodeKey)
+                                            .Distinct().Count() >= 3)
+                                        .OrderByDescending(node => node.Label == "ps1-sw-01").FirstOrDefault();
+                                    Assert.IsNotNull(selected, "Field stand needs a switch with at least three neighbors.");
+                                    var border = ((Canvas)window.FindName("MapCanvas")).Children.OfType<Border>()
+                                        .Single(item => Equals(item.Tag, selected.DeviceId.Value));
+                                    border.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,
+                                        Environment.TickCount, MouseButton.Left)
+                                    { RoutedEvent = UIElement.MouseLeftButtonDownEvent, Source = border });
+                                    PumpDispatcher();
+                                    var show = (Button)window.FindName("MapOperationalFocusButton");
+                                    show.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    var neighborhood = show.ContextMenu.Items.OfType<MenuItem>()
+                                        .Single(item => System.Windows.Automation.AutomationProperties.GetName(item) ==
+                                            UiText.Get("MapNeighborhoodMenu"));
+                                    show.ContextMenu.IsOpen = false;
+                                    neighborhood.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                                    PumpDispatcher();
+                                    if (scenario == "63-neighborhood-expanded-up")
+                                    {
+                                        var up = (Button)window.FindName("MapNeighborhoodUpButton");
+                                        if (up.IsEnabled) up.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                        else
+                                        {
+                                            var reason = (TextBlock)window.FindName("MapNeighborhoodUpReason");
+                                            Assert.IsTrue(reason.IsVisible);
+                                            information.Add("ИНФО " + scenario + "/" + theme + "/" + width +
+                                                " — На границе окрестности нет направления STP вверх: " + reason.Text);
+                                        }
+                                    }
+                                }
+                                else if (scenario == "64-alert-participants")
+                                {
+                                    ((Button)window.FindName("ShellAlertsButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                    PumpDispatcher();
+                                    var alerts = (ItemsControl)window.FindName("AlertList");
+                                    Assert.IsTrue(alerts.Items.Count > 0, "Field stand needs an active alert.");
+                                    WaitForCondition(() => typeof(MainWindow).GetField("_selectedAlertKey", flags)
+                                        .GetValue(current) != null);
+                                }
+                                PumpDispatcher();
+                                window.UpdateLayout();
+                                CollectTextClipping(window.Content as DependencyObject,
+                                    scenario + "/" + theme + "/" + width, findings);
+                                bitmaps.Add(Capture(window.Content as FrameworkElement));
+                            }
+                            finally
+                            {
+                                window?.Close();
+                                PumpDispatcher();
+                                DeleteParallelLinksFieldCopy(database);
+                            }
+                        }
+                        SaveSideBySide(bitmaps[0], bitmaps[1],
+                            System.IO.Path.Combine(output, scenario + "-" + theme + ".png"));
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 && information.Count == 0 ? new[] { "Находок нет." }
+                            : findings.Concat(information).ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(8, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
+        private sealed class NeighborhoodStartupLayoutStore : IMapLayoutStore
+        {
+            private readonly IMapLayoutStore _inner;
+            internal NeighborhoodStartupLayoutStore(IMapLayoutStore inner) { _inner = inner; }
+            public MapLayoutSnapshot Load(Guid mapId) => null;
+            public void SaveViewport(Guid mapId, MapViewportLayout viewport) => _inner.SaveViewport(mapId, viewport);
+            public void SaveDevice(Guid mapId, MapDeviceLayout deviceLayout) => _inner.SaveDevice(mapId, deviceLayout);
+        }
+
+        // Оси: четыре уровня детализации, две темы, ширины 1100/1440; данные полевого стенда.
+        // Наведение и редакторы не входят: здесь проверяется только представление масштаба.
+        [TestMethod]
+        public void SemanticZoomGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-semantic-zoom");
+                Directory.CreateDirectory(output);
+                var findings = new List<string>();
+                var scenarios = new[] { "57-zoom-far", "58-zoom-medium", "59-zoom-close", "60-zoom-detailed" };
+                try
+                {
+                    for (var level = 0; level < scenarios.Length; level++)
+                    foreach (var dark in new[] { false, true })
+                    {
+                        var bitmaps = new List<BitmapSource>();
+                        foreach (var width in new[] { 1100, 1440 })
+                        {
+                            var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                "netloom-s49-semantic-" + Guid.NewGuid().ToString("N") + ".db");
+                            MainWindow window = null;
+                            File.Copy(source, database);
+                            try
+                            {
+                                window = CreateParallelLinksFieldWindow(database, dark);
+                                PrepareWindow(window, width, GalleryHeight);
+                                var currentWindow = window;
+                                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                                WaitForCondition(() => ((MapSnapshot)typeof(MainWindow)
+                                    .GetField("_lastMapSnapshot", flags).GetValue(currentWindow))
+                                    .Nodes.Any(node => node.Label == "core-sw-01"));
+                                FocusSemanticFieldContext(window, level);
+                                PumpDispatcher();
+                                window.UpdateLayout();
+                                CollectTextClipping(window.Content as DependencyObject,
+                                    scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
+                                bitmaps.Add(Capture(window.Content as FrameworkElement));
+                            }
+                            finally
+                            {
+                                if (window != null) window.Close();
+                                PumpDispatcher();
+                                DeleteParallelLinksFieldCopy(database);
+                            }
+                        }
+                        SaveSideBySide(bitmaps[0], bitmaps[1], System.IO.Path.Combine(output,
+                            scenarios[level] + "-" + (dark ? "dark" : "light") + ".png"));
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(8, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
+        private static void FocusSemanticFieldContext(MainWindow window, int level)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags).GetValue(window);
+            var canvas = (Canvas)window.FindName("MapCanvas");
+            typeof(MainWindow).GetField("_hoveredPhysicalLinkId", flags).SetValue(window, null);
+            if (level == 0)
+            {
+                var site = map.Locations.Single(location => location.Name == "Площадка А");
+                var ids = new HashSet<Guid> { site.Id };
+                while (true)
+                {
+                    var count = ids.Count;
+                    foreach (var location in map.Locations.Where(location =>
+                        location.ParentLocationId.HasValue && ids.Contains(location.ParentLocationId.Value)))
+                        ids.Add(location.Id);
+                    if (ids.Count == count) break;
+                }
+                var devices = map.Nodes.Where(node => node.LocationId.HasValue && ids.Contains(node.LocationId.Value))
+                    .Select(node => node.DeviceId).ToArray();
+                var bounds = canvas.Children.OfType<Border>().Where(border =>
+                        border.Tag is Guid && (ids.Contains((Guid)border.Tag) || devices.Contains((Guid)border.Tag)))
+                    .Select(border => new Rect(Canvas.GetLeft(border), Canvas.GetTop(border),
+                        border.ActualWidth, border.ActualHeight)).ToList();
+                Assert.IsTrue(bounds.Count > 0);
+                var maximum = (double)window.FindResource("NetLoom.Map.ReadableZoomMin") -
+                    (double)window.FindResource("NetLoom.Map.ZoomStep");
+                var fit = typeof(MainWindow).GetMethod("TryFitMapBoundsToViewport", flags, null,
+                    new[] { typeof(IReadOnlyList<Rect>), typeof(double?), typeof(double?) }, null);
+                Assert.IsTrue((bool)fit.Invoke(window, new object[] { bounds, null, maximum }));
+                PumpDispatcher();
+                window.UpdateLayout();
+                var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+                var siteBorder = canvas.Children.OfType<Border>().Single(border => Equals(border.Tag, site.Id));
+                var visible = siteBorder.TransformToAncestor(viewer).TransformBounds(new Rect(siteBorder.RenderSize));
+                Assert.IsTrue(visible.Left >= -1 && visible.Top >= -1 &&
+                    visible.Right <= viewer.ActualWidth + 1 && visible.Bottom <= viewer.ActualHeight + 1);
+            }
+            else
+            {
+                var core = map.Nodes.Single(node => node.Label == "core-sw-01");
+                var border = canvas.Children.OfType<Border>().Single(item => Equals(item.Tag, core.DeviceId));
+                border.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+                { RoutedEvent = UIElement.MouseLeftButtonDownEvent, Source = border });
+                PumpDispatcher();
+                var key = level == 1 ? "NetLoom.Map.ReadableZoomMin" :
+                    level == 2 ? "NetLoom.Map.LinkLabelMinZoom" : "NetLoom.Map.SemanticDetailMinZoom";
+                var zoom = (double)window.FindResource(key);
+                // Тот же путь, что у кнопок; явно центрируем выбор даже при неизменном масштабе.
+                typeof(MainWindow).GetMethod("ApplyZoomCenteredOnSelection", flags)
+                    .Invoke(window, new object[] { zoom, null });
+            }
+        }
+
         // Ручной кабель противоречит настоящей LLDP-связи на копии полевого стенда.
         [TestMethod]
         public void TopologyConflictGallery()
@@ -557,7 +803,7 @@ namespace NetLoom.Tests.Unit
             });
         }
 
-        private static MainWindow CreateParallelLinksFieldWindow(string database, bool dark)
+        private static MainWindow CreateParallelLinksFieldWindow(string database, bool dark, bool withoutSavedView = false)
         {
             var factory = new SqliteConnectionFactory(database);
             new DatabaseInitializer(factory).Initialize();
@@ -570,7 +816,8 @@ namespace NetLoom.Tests.Unit
                 new SqliteStpObservationStore(factory));
             var refresh = new MaterializedTopologyRefreshSnapshotProvider(
                 new SqliteMaterializedTopologyReadSetReader(factory), mapProvider, alerts);
-            return new MainWindow(refresh, new SqliteMacIpLookupReader(factory), layouts,
+            return new MainWindow(refresh, new SqliteMacIpLookupReader(factory),
+                withoutSavedView ? (IMapLayoutStore)new NeighborhoodStartupLayoutStore(layouts) : layouts,
                 new ManualTopologyService(topology, new SqliteManualTopologyAuditStore(factory)),
                 new LocationTopologyService(locations, topology), layouts,
                 new GalleryMonitoringControl(), new GalleryDiscoveryControl(),

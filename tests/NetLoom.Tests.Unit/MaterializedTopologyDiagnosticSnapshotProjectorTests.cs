@@ -289,6 +289,47 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
+        [DataRow(false, true, true, true, DiagnosticStpUplink.SideAIsUpstream)]
+        [DataRow(true, false, true, true, DiagnosticStpUplink.SideBIsUpstream)]
+        [DataRow(true, true, true, true, DiagnosticStpUplink.Unknown)]
+        [DataRow(false, false, true, true, DiagnosticStpUplink.Unknown)]
+        [DataRow(false, false, false, false, DiagnosticStpUplink.Unknown)]
+        [DataRow(false, true, false, true, DiagnosticStpUplink.Unknown)]
+        public void LinkDiagnosticProjectsOnlyKnownStpRootDirection(
+            bool rootA, bool rootB, bool hasA, bool hasB, DiagnosticStpUplink expected)
+        {
+            var a = Guid.NewGuid();
+            var b = Guid.NewGuid();
+            var portA = Guid.NewGuid();
+            var portB = Guid.NewGuid();
+            var observations = new System.Collections.Generic.List<BoundStpObservation>();
+            if (hasA) observations.Add(DirectionalStp(a, rootA));
+            if (hasB) observations.Add(DirectionalStp(b, rootB));
+            var link = new PhysicalLink(Guid.NewGuid(), a, portA, b, portB,
+                PhysicalLinkStrength.Confirmed, PhysicalLinkFreshness.Fresh,
+                null, 1000000000L, "STP", Now.AddHours(-1), Now, Now,
+                "sprint49", false, false, null);
+            var readSet = ReadSet(new[] { Device(a, "A"), Device(b, "B") },
+                new[] { Interface(portA, a, 101, "port-a"), Interface(portB, b, 101, "port-b") },
+                new[] { link }, new InterfaceDegradationState[0], observations.ToArray());
+            var map = new MaterializedTopologyMapProjector().Project(readSet.Devices, readSet.Interfaces,
+                readSet.PhysicalLinks, readSet.PhysicalLinkEvidence, readSet.Locations, Now);
+            var diagnostic = new MaterializedTopologyDiagnosticSnapshotProjector()
+                .Project(readSet, map, "cist").Links.Single();
+            Assert.AreEqual(expected, diagnostic.StpUplink);
+            if (hasA) Assert.AreEqual(StpTreePortState.Forwarding, diagnostic.StpStateA);
+            if (hasB) Assert.AreEqual(StpTreePortState.Forwarding, diagnostic.StpStateB);
+        }
+
+        private static BoundStpObservation DirectionalStp(Guid device, bool root)
+        {
+            var observation = new Observation(Guid.NewGuid(), ObservationKind.Stp, "192.0.2.49", Now);
+            return new BoundStpObservation(device, new StpObservation(observation, "cist", null,
+                "8000.001122334455", 0, root ? 5 : 0, root ? 101 : (int?)null,
+                new[] { new StpPortState(5, 101, null, 5, 1, 20000, null, null, null, null, null) }));
+        }
+
+        [TestMethod]
         public void RedundantLinkReportsAlternativePhysicalPath()
         {
             var a = Guid.NewGuid();

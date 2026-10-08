@@ -154,7 +154,25 @@ public partial class MainWindow
 
     private void UpdateSemanticMapVisibility()
     {
-        ApplyLinkFocusPresentation();
+        var next = MapSemanticLevels.For(_zoom, _readableZoomMin,
+            _linkLabelMinZoom, _semanticDetailMinZoom);
+        var changed = next != _semanticLevel;
+        _semanticLevel = next;
+        foreach (var visual in _nodeVisualsByIdentity.Values)
+            ApplyNodeSemanticPresentation(visual);
+        foreach (var visual in _locationVisualsById.Values)
+            ApplyLocationSemanticPresentation(visual);
+        ApplyNeighborhoodVisibility();
+
+        // Вторая строка меняет высоту карточки: обновляем геометрию существующих связей.
+        if (changed && _lastMapSnapshot != null)
+            ReconcileLinks(_lastMapSnapshot.Links,
+                _lastMapSnapshot.Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal));
+        else
+            ApplyLinkFocusPresentation();
+
+        System.Windows.Automation.AutomationProperties.SetHelpText(MapZoomValueText,
+            UiText.Get("MapSemantic" + _semanticLevel + "Help"));
     }
 
     private double ClampZoom(
@@ -536,9 +554,7 @@ public partial class MainWindow
                 .Select(
                     LocationVisibleBounds));
 
-        // Explicit operator action means exactly what it says:
-        // fit every visible object, even when that requires going below
-        // the automatic startup readability floor.
+        // Явное действие вписывает всю площадку до ZoomMin; текст меняется по уровню детализации.
         TryFitMapBoundsToViewport(
             bounds);
     }
@@ -568,9 +584,10 @@ public partial class MainWindow
                 .Select(
                     LocationVisibleBounds));
 
+        // Без сохранённого вида показываем всю площадку; читаемость задаёт детализация.
         return TryFitMapBoundsToViewport(
             bounds,
-            _readableZoomMin);
+            _zoomMin);
     }
 
     private void FitMapBoundsToViewport(
@@ -591,6 +608,14 @@ public partial class MainWindow
     private bool TryFitMapBoundsToViewport(
         IReadOnlyList<Rect> bounds,
         double? minimumZoom)
+    {
+        return TryFitMapBoundsToViewport(bounds, minimumZoom, null);
+    }
+
+    private bool TryFitMapBoundsToViewport(
+        IReadOnlyList<Rect> bounds,
+        double? minimumZoom,
+        double? maximumZoom)
     {
         if (bounds == null)
         {
@@ -659,12 +684,10 @@ public partial class MainWindow
                 (_fitPadding * 2.0));
 
         var fitZoom =
-            ClampZoom(
+            ClampZoom(Math.Min(maximumZoom ?? _zoomMax,
                 Math.Min(
-                    availableWidth /
-                    contentWidth,
-                    availableHeight /
-                    contentHeight));
+                    availableWidth / contentWidth,
+                    availableHeight / contentHeight)));
 
         var minimumReadableZoom =
             minimumZoom.HasValue
@@ -1602,6 +1625,7 @@ public partial class MainWindow
             snapshot.Links,
             nodes);
 
+        RefreshNeighborhoodSnapshot();
         UpdateSelectedLayoutControl();
 
         if (snapshot.Nodes.Count == 0 &&

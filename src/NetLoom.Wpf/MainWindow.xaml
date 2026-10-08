@@ -2193,6 +2193,45 @@
                         </ScrollViewer>
                     </StackPanel>
                 </Border>
+                    <Border x:Name="MapNeighborhoodNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock x:Name="MapNeighborhoodSummaryText"
+                                       Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+                                       TextWrapping="Wrap"
+                                       Typography.NumeralAlignment="Tabular"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}">
+                                    <Button x:Name="MapNeighborhoodUpButton"
+                                            Style="{StaticResource NetLoom.Style.LinkButton}"
+                                            Click="OnMapNeighborhoodExpandClick" />
+                                    <TextBlock x:Name="MapNeighborhoodUpReason"
+                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}">
+                                    <Button x:Name="MapNeighborhoodDownButton"
+                                            Style="{StaticResource NetLoom.Style.LinkButton}"
+                                            Click="OnMapNeighborhoodExpandClick" />
+                                    <TextBlock x:Name="MapNeighborhoodDownReason"
+                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button x:Name="MapNeighborhoodOtherButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                        Style="{StaticResource NetLoom.Style.LinkButton}"
+                                        Click="OnMapNeighborhoodExpandClick" />
+                                <Button x:Name="MapNeighborhoodWholeSiteButton"
+                                        Style="{StaticResource NetLoom.Style.LinkButton}"
+                                        Click="OnMapNeighborhoodWholeSiteClick" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <ScrollViewer x:Name="MapScrollViewer"

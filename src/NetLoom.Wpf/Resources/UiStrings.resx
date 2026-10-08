@@ -2832,4 +2832,52 @@ Poll: {2}</value>
   <data name="MapQualityShowSubjectName" xml:space="preserve">
     <value>Show on map: {0}</value>
   </data>
+  <data name="MapSemanticCloseHelp" xml:space="preserve">
+    <value>Close: ports and link labels</value>
+  </data>
+  <data name="MapSemanticDetailedHelp" xml:space="preserve">
+    <value>Detailed: addresses and speeds</value>
+  </data>
+  <data name="MapSemanticFarHelp" xml:space="preserve">
+    <value>Far: locations</value>
+  </data>
+  <data name="MapSemanticLocationSummary" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapSemanticMediumHelp" xml:space="preserve">
+    <value>Medium: devices</value>
+  </data>
+  <data name="MapNeighborhoodMenu" xml:space="preserve">
+    <value>Selected device neighborhood</value>
+  </data>
+  <data name="MapNeighborhoodSelectDevice" xml:space="preserve">
+    <value>Select a device on the map</value>
+  </data>
+  <data name="MapNeighborhoodShow" xml:space="preserve">
+    <value>Show: neighborhood</value>
+  </data>
+  <data name="MapNeighborhoodSummary" xml:space="preserve">
+    <value>Neighborhood of “{0}”: {1} of {2} devices</value>
+  </data>
+  <data name="MapNeighborhoodExpandUp" xml:space="preserve">
+    <value>Expand upstream</value>
+  </data>
+  <data name="MapNeighborhoodExpandDown" xml:space="preserve">
+    <value>Expand downstream</value>
+  </data>
+  <data name="MapNeighborhoodExpandOther" xml:space="preserve">
+    <value>Expand other links</value>
+  </data>
+  <data name="MapNeighborhoodWholeSite" xml:space="preserve">
+    <value>Whole site</value>
+  </data>
+  <data name="MapNeighborhoodNoStpUp" xml:space="preserve">
+    <value>Cannot expand upstream: no STP root ports</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreUp" xml:space="preserve">
+    <value>Cannot expand upstream: all known upstream devices are shown</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreDown" xml:space="preserve">
+    <value>Cannot expand downstream: no known devices below</value>
+  </data>
 </root>

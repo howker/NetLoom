@@ -516,8 +516,7 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
-        StopStartupTopologyFit();
-        FitTopologyToViewport();
+        ShowWholeSite();
     }
 
     private async void OnManualTopologyClick(

@@ -51,6 +51,8 @@ public partial class MainWindow : Window
     private readonly double _fitPadding;
     private readonly double _readableZoomMin;
     private readonly double _linkLabelMinZoom;
+    private readonly double _semanticDetailMinZoom;
+    private MapSemanticLevel _semanticLevel;
     private readonly double _virtualOriginX;
     private readonly double _virtualOriginY;
     private readonly double _locationDefaultWidth;
@@ -513,6 +515,9 @@ public partial class MainWindow : Window
         _linkLabelMinZoom =
             GetDoubleResource(
                 "NetLoom.Map.LinkLabelMinZoom");
+
+        _semanticDetailMinZoom =
+            GetDoubleResource("NetLoom.Map.SemanticDetailMinZoom");
 
         _virtualOriginX =
             GetDoubleResource(

@@ -46,6 +46,7 @@ public partial class MainWindow
 
     private void ApplyLinkFocusPresentation(MapLinkVisual visual)
     {
+        ApplyNeighborhoodLinkVisibility(visual);
         var physicalLinkId = visual.Line.Tag as Guid?;
         var focused = FocusedPhysicalLinkId.HasValue &&
             physicalLinkId == FocusedPhysicalLinkId;
@@ -85,7 +86,7 @@ public partial class MainWindow
 
         var conflict = HasTopologyConflict(physicalLinkId);
         var prefix = UiText.Get("TopologyConflictLabelPrefix");
-        var label = visual.Label.Text ?? string.Empty;
+        var label = visual.Link == null ? visual.Label.Text ?? string.Empty : SemanticLinkLabel(visual.Link);
         // Один путь для фокусной подписи и расхождения; префикс не накапливается при обновлении.
         if (label.StartsWith(prefix, StringComparison.Ordinal)) label = label.Substring(prefix.Length);
         visual.Label.Text = conflict ? prefix + label : label;
@@ -96,7 +97,9 @@ public partial class MainWindow
         }
 
         visual.Label.Visibility = visual.Line.Visibility == Visibility.Visible &&
-            (conflict || focused || _zoom >= _linkLabelMinZoom) &&
+            _semanticLevel != MapSemanticLevel.Far &&
+            (conflict || focused || _semanticLevel == MapSemanticLevel.Close ||
+             _semanticLevel == MapSemanticLevel.Detailed) &&
             !string.IsNullOrWhiteSpace(visual.Label.Text)
                 ? Visibility.Visible
                 : Visibility.Collapsed;
@@ -752,6 +755,7 @@ public partial class MainWindow
                     Visibility.Collapsed;
             }
         }
+        ApplyNeighborhoodVisibility();
     }
 
     private bool HasCollapsedLocationAncestor(
@@ -822,11 +826,20 @@ public partial class MainWindow
         };
         collapseButton.Click += OnMapLocationCollapseClick;
         var headerGrid = new Grid { Cursor = Cursors.SizeAll };
+        var statusIcon = new Path
+        {
+            Style = GetStyleResource("NetLoom.Style.MapNodeStatusIcon"),
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false
+        };
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        Grid.SetColumn(lockBadge, 1);
-        Grid.SetColumn(collapseButton, 2);
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(statusIcon, 1);
+        Grid.SetColumn(lockBadge, 2);
+        Grid.SetColumn(collapseButton, 3);
+        headerGrid.Children.Add(statusIcon);
         headerGrid.Children.Add(title);
         headerGrid.Children.Add(lockBadge);
         headerGrid.Children.Add(collapseButton);
@@ -863,7 +876,10 @@ public partial class MainWindow
         header.MouseLeftButtonUp += OnMapLocationMouseLeftButtonUp;
         header.MouseRightButtonDown += OnMapLocationMouseRightButtonDown;
         border.MouseLeftButtonDown += OnMapLocationBodyMouseLeftButtonDown;
-        return new MapLocationVisual(border, frame, header, title, collapseButton, lockBadge, resizeThumb);
+        return new MapLocationVisual(border, frame, header, title, collapseButton, lockBadge, resizeThumb)
+        {
+            StatusIcon = statusIcon
+        };
     }
 
     private ContextMenu CreateLocationContextMenu(
@@ -948,6 +964,7 @@ public partial class MainWindow
 
         visual.Title.Text =
             location.Name;
+        visual.LocationName = location.Name;
 
         var hasDescription =
             !string.IsNullOrWhiteSpace(
@@ -1434,7 +1451,7 @@ public partial class MainWindow
                     : "MapLocationCollapse");
 
         System.Windows.Automation.AutomationProperties.SetName(visual.CollapseButton,
-            UiText.Format(visual.IsCollapsed ? "MapLocationExpandName" : "MapLocationCollapseName", visual.Title.Text));
+            UiText.Format(visual.IsCollapsed ? "MapLocationExpandName" : "MapLocationCollapseName", visual.LocationName));
 
         visual.LockBadge.Text =
             visual.IsLocked
@@ -1451,6 +1468,7 @@ public partial class MainWindow
 
         visual.Header.Measure(new Size(visual.ExpandedWidth, _locationHeaderHeight));
         visual.Border.Width = visual.IsCollapsed ? visual.Header.DesiredSize.Width : visual.ExpandedWidth;
+        ApplyLocationSemanticPresentation(visual);
 
         UpdateLocationSelectionPresentation();
         UpdateTopologyQuality();
@@ -2054,13 +2072,33 @@ public partial class MainWindow
             Shape.StrokeProperty,
             "NetLoom.Brush.Selection");
 
+        var semanticTitle = new TextBlock
+        {
+            FontSize = GetDoubleResource("NetLoom.FontSize.Caption"),
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+        semanticTitle.SetResourceReference(TextBlock.ForegroundProperty, "NetLoom.Brush.TextPrimary");
+        var semanticLabel = new Border
+        {
+            Child = semanticTitle,
+            Padding = GetThicknessResource("NetLoom.Thickness.MapSemanticLabelPadding"),
+            BorderThickness = GetThicknessResource("NetLoom.Thickness.BorderThin"),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Visibility = Visibility.Collapsed
+        };
+        semanticLabel.SetResourceReference(Border.BackgroundProperty, "NetLoom.Brush.Surface");
+        semanticLabel.SetResourceReference(Border.BorderBrushProperty, "NetLoom.Brush.Border");
+        var root = new Grid();
+        root.Children.Add(cardContent);
+        root.Children.Add(semanticLabel);
         var border =
             new Border
             {
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapNodeCard"),
-                Child = cardContent,
+                Child = root,
                 Cursor = Cursors.Hand,
                 Focusable = false
             };
@@ -2092,7 +2130,7 @@ public partial class MainWindow
             secondary,
             categoryIcon,
             statusIcon,
-            lockBadge);
+            lockBadge) { SemanticLabel = semanticLabel };
     }
 
     private void UpdateNodeVisual(
@@ -2100,6 +2138,7 @@ public partial class MainWindow
         MapNode node,
         IReadOnlyDictionary<Guid, MapLocation> locations)
     {
+        visual.Node = node;
         visual.Title.Text =
             DisplayNodeLabel(
                 node);
@@ -2300,6 +2339,7 @@ public partial class MainWindow
         ParallelLinkSlot slot,
         IReadOnlyList<Rect> additionalLabelObstacles)
     {
+        visual.Link = link;
         var freshnessChanged =
             visual.LastFreshness.HasValue &&
             visual.LastFreshness.Value !=
@@ -2654,7 +2694,7 @@ public partial class MainWindow
 
         var measured =
             Math.Max(
-                visual.Border.ActualHeight,
+                _nodeHeight,
                 visual.Border.DesiredSize.Height);
 
         return measured > 0.0
@@ -2734,7 +2774,7 @@ public partial class MainWindow
                 : Cursors.SizeAll;
 
         visual.LockBadge.Visibility =
-            visual.IsLocked
+            visual.IsLocked && _semanticLevel != MapSemanticLevel.Far
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 

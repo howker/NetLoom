@@ -2098,7 +2098,14 @@
         <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Map.LocationToggleSize}" />
         <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.MapLocationToggle}" />
         <Setter Property="Margin" Value="{DynamicResource NetLoom.Thickness.None}" />
+        <!-- §8: кнопка лежит на масштабируемом холсте, общее кольцо 2 px при 75 % становится тоньше 2 px;
+             Своё кольцо толще и масштабируется вместе с картой. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Style.Triggers>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.FocusRing}" />
+                <Setter Property="BorderThickness" Value="{DynamicResource NetLoom.Thickness.MapFocusRing}" />
+            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
                 <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextSecondary}" />

@@ -52,6 +52,8 @@
     <Thickness x:Key="NetLoom.Thickness.GapXsTop">0,4,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.GapSmTop">0,8,0,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.InlineGap">8,0,0,0</Thickness>
+    <!-- Кольцо фокуса элементов на холсте карты: при масштабе 75 % остаётся не тоньше 2 px (§8). -->
+    <Thickness x:Key="NetLoom.Thickness.MapFocusRing">3</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FieldLabel">0,12,0,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FieldLabelCompact">0,0,0,4</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MessagePadding">10,8</Thickness>
@@ -236,6 +238,8 @@
     <sys:Double x:Key="NetLoom.Map.LocationResizeThumbSize">16</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ReadableZoomMin">0.75</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelMinZoom">0.95</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.SemanticDetailMinZoom">1.6</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.MapSemanticLabelPadding">8,4</Thickness>
     <sys:Double x:Key="NetLoom.Map.ZoomMin">0.01</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomMax">5.0</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomStep">0.1</sys:Double>

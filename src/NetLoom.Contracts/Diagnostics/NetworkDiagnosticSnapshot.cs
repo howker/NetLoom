@@ -33,6 +33,14 @@ namespace NetLoom.Contracts.Diagnostics
 
 
     // Какие концы связи сообщают о ней по LLDP (Sprint 48, Г4).
+    // Направление к корню известно только по корневым портам STP.
+    public enum DiagnosticStpUplink
+    {
+        Unknown = 0,
+        SideAIsUpstream = 1,
+        SideBIsUpstream = 2
+    }
+
     public enum DiagnosticLldpReporting
     {
         NotApplicable = 0,
@@ -466,7 +474,8 @@ namespace NetLoom.Contracts.Diagnostics
             int sideADeviceCount,
             int sideBDeviceCount,
             long separatedDevicePairCount,
-            DiagnosticLldpReporting lldpReporting = DiagnosticLldpReporting.NotApplicable)
+            DiagnosticLldpReporting lldpReporting = DiagnosticLldpReporting.NotApplicable,
+            DiagnosticStpUplink stpUplink = DiagnosticStpUplink.Unknown)
         {
             if (physicalLinkId == Guid.Empty)
             {
@@ -560,6 +569,7 @@ namespace NetLoom.Contracts.Diagnostics
             SideBDeviceCount = sideBDeviceCount;
             SeparatedDevicePairCount = separatedDevicePairCount;
             LldpReporting = lldpReporting;
+            StpUplink = stpUplink;
         }
 
         public Guid PhysicalLinkId { get; }
@@ -609,6 +619,8 @@ namespace NetLoom.Contracts.Diagnostics
         public long SeparatedDevicePairCount { get; }
 
         public DiagnosticLldpReporting LldpReporting { get; }
+
+        public DiagnosticStpUplink StpUplink { get; }
 
         private static string Normalize(string value)
         {
