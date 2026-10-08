@@ -11,6 +11,7 @@ using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.Locations;
 using NetLoom.Wpf.Discovery;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf
 {
@@ -57,6 +58,8 @@ namespace NetLoom.Wpf
             DiscoveryInboxActionsBar.Visibility = HasDiscoveryInboxActions &&
                 DiscoveryInboxGroupsList.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             DiscoveryInboxSelectedText.Text = UiText.Format("DiscoveryInboxSelectedCount", rows.Length);
+            // Итог прошлого действия относится к прошлому выбору: новый выбор его убирает.
+            if (rows.Length > 0) ShowDiscoveryInboxResult(null);
             SetDiscoveryInboxButtonState(DiscoveryInboxAcceptButton, DiscoveryInboxAction.Accept, rows);
             SetDiscoveryInboxButtonState(DiscoveryInboxIgnoreButton, DiscoveryInboxAction.Ignore, rows);
             SetDiscoveryInboxButtonState(DiscoveryInboxUnmanagedButton, DiscoveryInboxAction.MarkUnmanaged, rows);
@@ -66,11 +69,15 @@ namespace NetLoom.Wpf
         private void SetDiscoveryInboxButtonState(Button button, DiscoveryInboxAction action,
             IEnumerable<DiscoveryInboxRow> rows)
         {
-            // §8: завершившая действие кнопка сохраняет фокус до перехода оператора.
-            // Повтор без выбора отсеивается обработчиком; после ухода фокуса кнопка отключается.
+            // §8: завершившая действие кнопка сохраняет фокус до перехода оператора, но уже неактивна
+            // (вид и UI Automation — InertState). Повтор без выбора отсеивается обработчиком;
+            // После ухода фокуса кнопка отключается обычным образом.
+            var applicable = rows.Any(row =>
+                NetLoom.Application.DiscoveryInbox.DiscoveryInboxActions.CanApply(action, row.Result));
+            var keepsFocus = button == _discoveryInboxCompletedButton;
             button.IsEnabled = !_discoveryInboxActionRunning && DiscoveryInboxCanRetry &&
-                (rows.Any(row => NetLoom.Application.DiscoveryInbox.DiscoveryInboxActions.CanApply(action, row.Result)) ||
-                 button == _discoveryInboxCompletedButton);
+                (applicable || keepsFocus);
+            InertState.SetIsInert(button, keepsFocus && !applicable);
         }
 
         private async void OnDiscoveryInboxAcceptClick(object sender, RoutedEventArgs e) =>
@@ -132,7 +139,8 @@ namespace NetLoom.Wpf
                 RefreshDiscoveryInbox();
                 await RefreshTopologyAsync();
                 RefreshDiscoveryInbox();
-                DiscoveryMessageText.Text = DiscoveryInboxActionMessage(action, result);
+                DiscoveryMessageText.Text = string.Empty;
+                ShowDiscoveryInboxResult(DiscoveryInboxActionMessage(action, result));
             }
             catch (Exception error) { ShowDiscoveryActionFailure(error); }
             finally
@@ -140,6 +148,14 @@ namespace NetLoom.Wpf
                 _discoveryInboxActionRunning = false;
                 RestoreDiscoveryInboxActionFocus(button);
             }
+        }
+
+        private void ShowDiscoveryInboxResult(string message)
+        {
+            DiscoveryInboxResultText.Text = message ?? string.Empty;
+            DiscoveryInboxResultText.Visibility = string.IsNullOrEmpty(message)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
         }
 
         private string DiscoveryInboxActionMessage(DiscoveryInboxAction action, DiscoveryInboxActionResult result)
@@ -180,7 +196,8 @@ namespace NetLoom.Wpf
                 RefreshDiscoveryInbox();
                 await RefreshTopologyAsync();
                 RefreshDiscoveryInbox();
-                DiscoveryMessageText.Text = UiText.Format("DiscoveryInboxIgnoreUndone", result.Applied);
+                DiscoveryMessageText.Text = string.Empty;
+                ShowDiscoveryInboxResult(UiText.Format("DiscoveryInboxIgnoreUndone", result.Applied));
                 RestoreDiscoveryInboxFocus(row.Address);
             }
             catch (Exception error) { ShowDiscoveryActionFailure(error); }

@@ -1515,23 +1515,32 @@
                                         <StackPanel x:Name="DiscoveryInboxActionsBar"
                                                     Visibility="Collapsed"
                                                     Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}">
-                                            <TextBlock x:Name="DiscoveryInboxSelectedText"
-                                                       Style="{StaticResource NetLoom.Style.MutedText}"
-                                                       Typography.NumeralAlignment="Tabular" />
+                                            <!-- Sprint 48: итог действия («Принято: N») — рядом с числом выбранных, у кнопок, а не в форме слева. -->
+                                            <WrapPanel>
+                                                <TextBlock x:Name="DiscoveryInboxSelectedText"
+                                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                                           Typography.NumeralAlignment="Tabular" />
+                                                <TextBlock x:Name="DiscoveryInboxResultText"
+                                                           shell:LiveRegion.IsPolite="True"
+                                                           Visibility="Collapsed"
+                                                           Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
+                                                           Typography.NumeralAlignment="Tabular"
+                                                           TextWrapping="Wrap" />
+                                            </WrapPanel>
                                             <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                                <Button x:Name="DiscoveryInboxAcceptButton"
+                                                <shell:InertButton x:Name="DiscoveryInboxAcceptButton"
                                                         Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                                         Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
                                                         Click="OnDiscoveryInboxAcceptClick" />
-                                                <Button x:Name="DiscoveryInboxIgnoreButton"
+                                                <shell:InertButton x:Name="DiscoveryInboxIgnoreButton"
                                                         Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                                         Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
                                                         Click="OnDiscoveryInboxIgnoreClick" />
-                                                <Button x:Name="DiscoveryInboxUnmanagedButton"
+                                                <shell:InertButton x:Name="DiscoveryInboxUnmanagedButton"
                                                         Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                                         Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
                                                         Click="OnDiscoveryInboxUnmanagedClick" />
-                                                <Button x:Name="DiscoveryInboxPlacementButton"
+                                                <shell:InertButton x:Name="DiscoveryInboxPlacementButton"
                                                         Style="{StaticResource NetLoom.Style.SecondaryButton}"
                                                         Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
                                                         Click="OnDiscoveryInboxPlacementClick" />
@@ -2271,6 +2280,15 @@
                                                                Visibility="Collapsed" />
                                                 </Grid>
                                                 <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsProse}"
+                                                                 Value="True">
+                                                        <Setter TargetName="InspectorFieldValueText"
+                                                                Property="HorizontalAlignment"
+                                                                Value="Left" />
+                                                        <Setter TargetName="InspectorFieldValueText"
+                                                                Property="TextAlignment"
+                                                                Value="Left" />
+                                                    </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsSectionHeader}"
                                                                  Value="True">
                                                         <Setter TargetName="InspectorFieldLabelText"

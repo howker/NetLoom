@@ -1521,6 +1521,16 @@
                 <Setter Property="BorderBrush"
                         Value="{DynamicResource NetLoom.Brush.Accent}" />
             </Trigger>
+            <!-- §8: кнопка, выполнившая действие, неактивна, но держит фокус — вид как у IsEnabled=False. -->
+            <Trigger Property="shell:InertState.IsInert"
+                     Value="True">
+                <Setter Property="Foreground"
+                        Value="{DynamicResource NetLoom.Brush.TextDisabled}" />
+                <Setter Property="Background"
+                        Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource NetLoom.Brush.Border}" />
+            </Trigger>
         </Style.Triggers>
     </Style>
 

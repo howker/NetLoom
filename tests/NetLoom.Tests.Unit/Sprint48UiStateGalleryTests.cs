@@ -962,7 +962,7 @@ namespace NetLoom.Tests.Unit
                             if (scenario == "40-inbox-after-accept")
                             {
                                 Click((Button)window.FindName("DiscoveryInboxAcceptButton"));
-                                WaitForCondition(() => ((TextBlock)window.FindName("DiscoveryMessageText")).Text ==
+                                WaitForCondition(() => ((TextBlock)window.FindName("DiscoveryInboxResultText")).Text ==
                                     UiText.Format("DiscoveryInboxAppliedAccept", 4));
                                 var rows = ((ItemsControl)window.FindName("DiscoveryInboxGroupsList")).Items
                                     .Cast<DiscoveryInboxGroup>().SelectMany(group => group.Rows).ToArray();

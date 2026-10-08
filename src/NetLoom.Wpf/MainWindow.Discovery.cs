@@ -1873,6 +1873,25 @@ namespace NetLoom.Wpf
                     : UiText.Get(
                         "DiagnosticNotAvailable");
 
+            // Sprint 48: адрес и этап имеют смысл только во время запуска; после завершения строки скрываются.
+            var runInProgress =
+                snapshot.State == DiscoveryControlState.Starting ||
+                snapshot.State == DiscoveryControlState.Running ||
+                snapshot.State == DiscoveryControlState.Stopping;
+            var runRowsVisibility =
+                runInProgress
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            DiscoveryCurrentAddressLabelText.Visibility =
+                runRowsVisibility;
+            DiscoveryCurrentAddressValueText.Visibility =
+                runRowsVisibility;
+            DiscoveryPhaseLabelText.Visibility =
+                runRowsVisibility;
+            DiscoveryPhaseValueText.Visibility =
+                runRowsVisibility;
+
             var canStart =
                 snapshot.State ==
                     DiscoveryControlState.Idle ||

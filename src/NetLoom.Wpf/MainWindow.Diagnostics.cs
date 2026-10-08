@@ -941,10 +941,13 @@ public partial class MainWindow : Window
             _lastMapSnapshot.Nodes.Any(
                 node => node.DeviceId == device.DeviceId && node.IsUnconfirmed))
         {
+            // Sprint 48: пояснение — фраза в несколько строк, поэтому выровнено влево, а не по правому краю.
             stateFields.Add(
-                Field(
-                    "DiagnosticFieldConfirmation",
-                    UiText.Get("DeviceUnconfirmedHint")));
+                new DiagnosticFieldRow(
+                    UiText.Get("DiagnosticFieldConfirmation"),
+                    UiText.Get("DeviceUnconfirmedHint"),
+                    false,
+                    true));
         }
 
         stateFields.Add(
@@ -2954,10 +2957,24 @@ public partial class MainWindow : Window
             string label,
             string value,
             bool isSectionHeader)
+            : this(
+                label,
+                value,
+                isSectionHeader,
+                false)
+        {
+        }
+
+        public DiagnosticFieldRow(
+            string label,
+            string value,
+            bool isSectionHeader,
+            bool isProse)
         {
             Label = label;
             Value = value;
             IsSectionHeader = isSectionHeader;
+            IsProse = isProse;
         }
 
         public string Label { get; }
@@ -2965,6 +2982,9 @@ public partial class MainWindow : Window
         public string Value { get; }
 
         public bool IsSectionHeader { get; }
+
+        // Значение — фраза, а не короткое значение: выравнивается влево.
+        public bool IsProse { get; }
     }
 
     private sealed class DiagnosticEntityRow

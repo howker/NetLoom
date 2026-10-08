@@ -85,6 +85,31 @@ namespace NetLoom.Tests.Unit
                         Assert.AreEqual(
                             UiText.Get("DiagnosticNotAvailable"),
                             phaseText.Text);
+                        Assert.AreEqual(Visibility.Visible, phaseText.Visibility);
+
+                        // После завершения запуска строки «Текущий адрес» и «Этап» скрыты.
+                        control.PublishState(
+                            DiscoveryControlState.Completed,
+                            4,
+                            4,
+                            0,
+                            null);
+
+                        PumpDispatcher();
+
+                        foreach (var name in new[]
+                        {
+                            "DiscoveryCurrentAddressLabelText",
+                            "DiscoveryCurrentAddressValueText",
+                            "DiscoveryPhaseLabelText",
+                            "DiscoveryPhaseValueText"
+                        })
+                        {
+                            Assert.AreEqual(
+                                Visibility.Collapsed,
+                                ((TextBlock)window.FindName(name)).Visibility,
+                                name);
+                        }
                     }
                     finally
                     {

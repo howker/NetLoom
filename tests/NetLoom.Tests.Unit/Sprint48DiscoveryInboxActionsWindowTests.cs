@@ -2,12 +2,14 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Wpf.Discovery;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Tests.Unit
 {
@@ -46,19 +48,30 @@ namespace NetLoom.Tests.Unit
                     accept.BringIntoView();
                     accept.Focus();
                     Click(accept);
-                    WaitForCondition(() => ((TextBlock)window.FindName("DiscoveryMessageText")).Text ==
+                    var resultText = (TextBlock)window.FindName("DiscoveryInboxResultText");
+                    WaitForCondition(() => resultText.Text ==
                         UiText.Format("DiscoveryInboxAppliedAccept", 2));
+                    // Итог — рядом с «Выбрано: N», а не в сообщении формы слева.
+                    Assert.AreEqual(Visibility.Visible, resultText.Visibility);
+                    Assert.AreSame(((TextBlock)window.FindName("DiscoveryInboxSelectedText")).Parent, resultText.Parent);
+                    Assert.AreEqual(string.Empty, ((TextBlock)window.FindName("DiscoveryMessageText")).Text);
                     Assert.AreEqual(DiscoveryInboxAction.Accept, actions.LastAction);
                     Assert.AreEqual(data.RunId, actions.RunId);
                     Assert.AreEqual(data.Now, actions.NowUtc);
                     CollectionAssert.AreEquivalent(rows.Select(row => row.Address).ToArray(), actions.Addresses);
                     Assert.IsFalse(InboxRows(window).Any(row => row.IsSelected));
                     Assert.AreSame(accept, Keyboard.FocusedElement);
+                    // Выбор пуст: кнопка держит фокус, но неактивна по виду и для UI Automation.
+                    Assert.IsTrue(InertState.GetIsInert(accept));
+                    Assert.IsFalse(UIElementAutomationPeer.CreatePeerForElement(accept).IsEnabled());
+                    Assert.AreEqual(UiText.Format("DiscoveryInboxSelectedCount", 0),
+                        ((TextBlock)window.FindName("DiscoveryInboxSelectedText")).Text);
                     var select = InboxVisuals(list).OfType<CheckBox>().First(item =>
                         item.DataContext is DiscoveryInboxRow && item.IsVisible);
                     select.Focus();
                     PumpDispatcher();
                     Assert.IsFalse(accept.IsEnabled);
+                    Assert.IsFalse(InertState.GetIsInert(accept));
                 }
                 finally { window.Close(); }
             });

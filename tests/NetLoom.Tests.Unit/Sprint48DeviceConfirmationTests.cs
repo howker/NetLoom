@@ -121,6 +121,15 @@ namespace NetLoom.Tests.Unit
                         FindDiagnosticFieldValue(fields, UiText.Get("DiagnosticFieldConfirmation")));
                     Assert.AreEqual(UiText.Get("DiagnosticFieldConfirmation"),
                         DiagnosticRowString(fields.Items[0], "Label"));
+                    // Длинное пояснение выровнено влево, короткие значения — по правому краю.
+                    window.UpdateLayout();
+                    var values = ConfirmationTextBlocks(fields)
+                        .Where(item => item.Name == "InspectorFieldValueText" && item.IsVisible).ToArray();
+                    var confirmation = values.Single(item => item.Text == UiText.Get("DeviceUnconfirmedHint"));
+                    Assert.AreEqual(TextAlignment.Left, confirmation.TextAlignment);
+                    Assert.AreEqual(HorizontalAlignment.Left, confirmation.HorizontalAlignment);
+                    Assert.IsTrue(values.Where(item => item != confirmation)
+                        .All(item => item.TextAlignment == TextAlignment.Right));
 
                     Click((Button)window.FindName("ShellEquipmentButton"));
                     var rows = (ItemsControl)window.FindName("EquipmentList");
