@@ -1629,7 +1629,29 @@ public partial class MainWindow
             new HashSet<string>(
                 StringComparer.Ordinal);
 
-        foreach (var link in links)
+        var endpoints = links
+            .Where(link => nodes.ContainsKey(link.SourceNodeKey) && nodes.ContainsKey(link.TargetNodeKey))
+            .Select(link => new ParallelLinkEndpoints(
+                LinkIdentity(link),
+                NodeIdentity(nodes[link.SourceNodeKey]),
+                NodeIdentity(nodes[link.TargetNodeKey])))
+            .ToArray();
+        var slots = ParallelLinkLayout.Slots(endpoints);
+        var groupByIdentity = endpoints.ToDictionary(
+            item => item.LinkIdentity,
+            item => StringComparer.Ordinal.Compare(item.SourceNodeIdentity, item.TargetNodeIdentity) <= 0
+                ? Tuple.Create(item.SourceNodeIdentity, item.TargetNodeIdentity)
+                : Tuple.Create(item.TargetNodeIdentity, item.SourceNodeIdentity),
+            StringComparer.Ordinal);
+        var labelBoundsByGroup = new Dictionary<Tuple<string, string>, List<Rect>>();
+
+        // Подписи учитывают только ранее размещённые подписи той же пары узлов.
+        var orderedLinks = links
+            .Where(link => slots.ContainsKey(LinkIdentity(link)))
+            .GroupBy(link => groupByIdentity[LinkIdentity(link)])
+            .SelectMany(group => group.OrderBy(link => slots[LinkIdentity(link)].Slot));
+
+        foreach (var link in orderedLinks)
         {
             MapNode source;
             MapNode target;
@@ -1704,11 +1726,22 @@ public partial class MainWindow
                     visual.Label);
             }
 
+            var slot = slots[identity];
+            var group = groupByIdentity[identity];
+            List<Rect> labelBounds;
+            if (!labelBoundsByGroup.TryGetValue(group, out labelBounds))
+            {
+                labelBounds = new List<Rect>();
+                labelBoundsByGroup.Add(group, labelBounds);
+            }
+
             UpdateLinkVisual(
                 visual,
                 link,
                 sourceVisual,
-                targetVisual);
+                targetVisual,
+                slot,
+                slot.GroupSize > 1 ? labelBounds : null);
 
             var linkVisible =
                 sourceVisual.Border.Visibility ==
@@ -1725,6 +1758,15 @@ public partial class MainWindow
             {
                 visual.SelectionHalo.Visibility =
                     Visibility.Collapsed;
+            }
+
+            if (slot.GroupSize > 1 && linkVisible)
+            {
+                labelBounds.Add(new Rect(
+                    Canvas.GetLeft(visual.Label),
+                    Canvas.GetTop(visual.Label),
+                    visual.Label.DesiredSize.Width,
+                    visual.Label.DesiredSize.Height));
             }
 
             visual.Label.Visibility =
@@ -2378,7 +2420,9 @@ public partial class MainWindow
         MapLinkVisual visual,
         MapLink link,
         MapNodeVisual source,
-        MapNodeVisual target)
+        MapNodeVisual target,
+        ParallelLinkSlot slot,
+        IReadOnlyList<Rect> additionalLabelObstacles)
     {
         var freshnessChanged =
             visual.LastFreshness.HasValue &&
@@ -2421,6 +2465,13 @@ public partial class MainWindow
         var y2 =
             NodeTop(target) +
             (NodeVisualHeight(target) / 2.0);
+
+        ParallelLinkLayout.Offset(
+            x1, y1, x2, y2,
+            slot.Slot,
+            ParallelLinkLayout.HalfSpacing(slot.GroupSize, _parallelLinkSpacing, 0.75 * _nodeHeight),
+            slot.SourceIsCanonicalFirst,
+            out x1, out y1, out x2, out y2);
 
         visual.Line.X1 = x1;
         visual.Line.Y1 = y1;
@@ -2486,12 +2537,19 @@ public partial class MainWindow
                 FontWeights.Bold;
         }
 
+        // Скрытая масштабом подпись должна измеряться до размещения соседнего кабеля.
+        if (slot.GroupSize > 1 && visual.Label.Visibility == Visibility.Collapsed)
+        {
+            visual.Label.Visibility = Visibility.Hidden;
+        }
+
         PlaceLinkLabel(
             visual.Label,
             x1,
             y1,
             x2,
-            y2);
+            y2,
+            additionalLabelObstacles);
 
         if (freshnessChanged)
         {
@@ -2557,7 +2615,8 @@ public partial class MainWindow
         double x1,
         double y1,
         double x2,
-        double y2)
+        double y2,
+        IReadOnlyList<Rect> additionalObstacles = null)
     {
         label.Measure(
             new Size(
@@ -2610,6 +2669,7 @@ public partial class MainWindow
         var obstacles =
             _nodeVisualsByIdentity.Values
                 .Select(NodeBounds)
+                .Concat(additionalObstacles ?? Array.Empty<Rect>())
                 .ToArray();
 
         const int maxPlacementSteps = 40;

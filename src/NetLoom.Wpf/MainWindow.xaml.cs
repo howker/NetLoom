@@ -43,6 +43,7 @@ public partial class MainWindow : Window
     private readonly double _nodeWidth;
     private readonly double _nodeHeight;
     private readonly double _linkLabelPlacementStep;
+    private readonly double _parallelLinkSpacing;
     private readonly double _linkLabelCollisionMargin;
     private readonly double _zoomMin;
     private readonly double _zoomMax;
@@ -476,6 +477,10 @@ public partial class MainWindow : Window
         _nodeHeight =
             GetDoubleResource(
                 "NetLoom.Map.NodeHeight");
+
+        _parallelLinkSpacing =
+            GetDoubleResource(
+                "NetLoom.Map.ParallelLinkSpacing");
 
         _linkLabelPlacementStep =
             GetDoubleResource(

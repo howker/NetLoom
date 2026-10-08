@@ -236,6 +236,7 @@
     <sys:Double x:Key="NetLoom.Map.ZoomStep">0.1</sys:Double>
     <sys:Double x:Key="NetLoom.Map.FitPadding">48</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">3</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.ParallelLinkSpacing">14</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">5</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloThickness">18</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloOpacity">0.42</sys:Double>

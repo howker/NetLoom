@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetLoom.Application.MapLayout;
+using NetLoom.Application.TopologyMap;
 using NetLoom.Contracts.TopologyMap;
 
 namespace NetLoom.Application.Export
@@ -10,6 +11,7 @@ namespace NetLoom.Application.Export
     {
         public const double NodeWidth = 160.0;
         public const double NodeHeight = 56.0;
+        public const double ParallelLinkSpacing = 14.0;
         public const double LocationDefaultWidth = 560.0;
         public const double LocationDefaultHeight = 360.0;
         public const double LocationMinWidth = 240.0;
@@ -415,6 +417,11 @@ namespace NetLoom.Application.Export
                     item => item.Source.Key,
                     StringComparer.Ordinal);
 
+            var slots = ParallelLinkLayout.Slots(
+                map.Links
+                    .Where(link => nodeByKey.ContainsKey(link.SourceNodeKey) && nodeByKey.ContainsKey(link.TargetNodeKey))
+                    .Select(link => new ParallelLinkEndpoints(link.Key, link.SourceNodeKey, link.TargetNodeKey)));
+
             var links =
                 new List<TopologyExportDiagramLink>();
 
@@ -434,19 +441,27 @@ namespace NetLoom.Application.Export
                     continue;
                 }
 
+                var slot = slots[link.Key];
+                double x1;
+                double y1;
+                double x2;
+                double y2;
+                ParallelLinkLayout.Offset(
+                    source.X + (source.Width / 2.0),
+                    source.Y + (source.Height / 2.0),
+                    target.X + (target.Width / 2.0),
+                    target.Y + (target.Height / 2.0),
+                    slot.Slot,
+                    ParallelLinkLayout.HalfSpacing(
+                        slot.GroupSize,
+                        TopologyExportDiagramPolicy.ParallelLinkSpacing * scale,
+                        0.75 * source.Height),
+                    slot.SourceIsCanonicalFirst,
+                    out x1, out y1, out x2, out y2);
+
                 links.Add(
                     new TopologyExportDiagramLink(
-                        link,
-                        source.X +
-                            (source.Width / 2.0),
-                        source.Y +
-                            (source.Height / 2.0),
-                        target.X +
-                            (target.Width / 2.0),
-                        target.Y +
-                            (target.Height / 2.0),
-                        LinkLabel(
-                            link)));
+                        link, x1, y1, x2, y2, LinkLabel(link)));
             }
 
             var depths =

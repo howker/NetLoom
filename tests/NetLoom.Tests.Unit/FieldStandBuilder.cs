@@ -162,6 +162,9 @@ namespace NetLoom.Tests.Unit
                             "Площадка А",
                             device.Ports.Count),
                         now.AddDays(-7));
+
+                // Sprint 48: за неделю оператор принял найденные устройства во «Входящих».
+                topology.SetUnconfirmed(device.Id, false);
             }
 
             // 3. Опрос, который было бы видно три дня назад: устройства, недоступные сейчас.
