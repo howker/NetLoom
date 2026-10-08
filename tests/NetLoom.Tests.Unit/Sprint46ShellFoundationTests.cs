@@ -29,7 +29,7 @@ using NetLoom.Wpf.Shell;
 namespace NetLoom.Tests.Unit
 {
     [TestClass]
-    public sealed class Sprint46ShellFoundationTests
+    public sealed partial class Sprint46ShellFoundationTests
     {
         private static readonly DateTime Now =
             new DateTime(

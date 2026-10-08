@@ -1,11 +1,15 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using NetLoom.Application.Discovery;
+using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.Locations;
 using NetLoom.Application.Topology;
 using NetLoom.Desktop.Discovery;
 using NetLoom.Desktop.Monitoring;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
+using NetLoom.Persistence.Sqlite.Discovery;
 using NetLoom.Persistence.Sqlite.Locations;
 using NetLoom.Persistence.Sqlite.Lookup;
 using NetLoom.Persistence.Sqlite.MapLayout;
@@ -134,6 +138,26 @@ namespace NetLoom.Desktop
                     accessProfileRepository
                         .GetEnabled();
 
+                var runRepository =
+                    new SqliteDiscoveryRunRepository(
+                        connectionFactory);
+                var exclusionSource =
+                    new SqliteDiscoveryExclusionSource(
+                        connectionFactory);
+                var discoveryJournal =
+                    new DiscoveryRunJournal(
+                        runRepository,
+                        new MaterializedTopologyDiscoveryReader(
+                            topologyRepository),
+                        new DiscoveryCandidateTopologyMaterializer(
+                            topologyRepository),
+                        exclusionSource);
+
+                var locationTopologyService = new LocationTopologyService(
+                    locationRepository, topologyRepository);
+                var inboxActions = new DiscoveryInboxActions(runRepository, topologyRepository,
+                    topologyRepository, topologyRepository, locationTopologyService);
+
                 var application =
                     new System.Windows.Application();
 
@@ -147,17 +171,22 @@ namespace NetLoom.Desktop
                             topologyRepository,
                             new SqliteManualTopologyAuditStore(
                                 connectionFactory)),
-                        new LocationTopologyService(
-                            locationRepository,
-                            topologyRepository),
+                        locationTopologyService,
                         mapLayoutStore,
                         monitoringControl,
                         discoveryControl,
                         discoveryProfiles,
-                        new DiscoveryCandidateTopologyMaterializer(
-                            topologyRepository),
+                        discoveryJournal,
                         FileUiShellStateStore
                             .CreateDefault());
+
+                mainWindow.DiscoveryInboxActions = inboxActions;
+
+                mainWindow.DiscoveryProfileCheckRequested +=
+                    (sender, request) =>
+                    {
+                        request.Result = CheckProfileAsync(engineExecutablePath, processEnvironmentProvider, request);
+                    };
 
                 mainWindow.DiscoveryProfileCreateRequested +=
                     (sender, request) =>
@@ -253,6 +282,17 @@ namespace NetLoom.Desktop
                 {
                     hostLog.Dispose();
                 }
+            }
+        }
+
+        private static async Task<SnmpProfileCheckReport>
+            CheckProfileAsync(string engineExecutablePath, IDiscoveryProcessEnvironmentProvider environmentProvider,
+                MainWindow.DiscoveryProfileCheckRequestedEventArgs request)
+        {
+            using (var checker = new DesktopEngineProfileCheck(engineExecutablePath, environmentProvider))
+            {
+                return await checker.CheckAsync(request.Address, request.SnmpVersion,
+                    request.CommunityUtf8, request.ProfileId).ConfigureAwait(false);
             }
         }
     }

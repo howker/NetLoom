@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.Lookup;
 using NetLoom.Application.Monitoring;
@@ -215,6 +216,8 @@ namespace NetLoom.Tests.Unit
                             () =>
                                 provider.ReadCount >= 1);
 
+                        StartDiscoveryRunThroughTheWindow(window, "192.0.2.1", "192.0.2.254");
+
                         control.EmitCandidate(
                             new DiscoveryCandidateSnapshot(
                                 IPAddress.Parse(
@@ -244,13 +247,9 @@ namespace NetLoom.Tests.Unit
                                 .Address
                                 .ToString());
 
-                        var list =
-                            (ListBox)window.FindName(
-                                "DiscoveryCandidatesList");
-
                         Assert.AreEqual(
                             1,
-                            list.Items.Count,
+                            InboxRows(window).Length,
                             "A found candidate must be surfaced to the operator immediately.");
                     }
                     finally
@@ -709,15 +708,25 @@ namespace NetLoom.Tests.Unit
                 DiscoveryControlState state,
                 int processed,
                 int total,
-                int found)
+                int found,
+                IPAddress currentAddress = null,
+                DiscoveryPhase? phase = null,
+                int step = 0,
+                int steps = 0)
             {
                 Publish(
-                    Snapshot(
+                    new DiscoveryControlSnapshot(
                         state,
+                        null,
+                        null,
                         processed,
                         total,
                         found,
-                        null));
+                        currentAddress,
+                        null,
+                        phase,
+                        step,
+                        steps));
             }
 
             private void Publish(

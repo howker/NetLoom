@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using NetLoom.Application.Discovery;
 using NetLoom.Domain.Access;
 
@@ -34,7 +36,8 @@ namespace NetLoom.Application.DiscoveryControl
                 500,
                 DefaultTcpPorts,
                 50,
-                4096)
+                4096,
+                new string[0])
         {
         }
 
@@ -66,7 +69,8 @@ namespace NetLoom.Application.DiscoveryControl
                 tcpTimeoutMilliseconds,
                 tcpPorts,
                 interAddressDelayMilliseconds,
-                maxAddresses)
+                maxAddresses,
+                new string[0])
         {
         }
 
@@ -91,7 +95,8 @@ namespace NetLoom.Application.DiscoveryControl
                 500,
                 DefaultTcpPorts,
                 50,
-                4096)
+                4096,
+                new string[0])
         {
         }
 
@@ -125,7 +130,8 @@ namespace NetLoom.Application.DiscoveryControl
                 tcpTimeoutMilliseconds,
                 tcpPorts,
                 interAddressDelayMilliseconds,
-                maxAddresses)
+                maxAddresses,
+                new string[0])
         {
         }
 
@@ -144,7 +150,8 @@ namespace NetLoom.Application.DiscoveryControl
             int tcpTimeoutMilliseconds,
             IEnumerable<int> tcpPorts,
             int interAddressDelayMilliseconds,
-            int maxAddresses)
+            int maxAddresses,
+            IEnumerable<string> excludedAddresses)
         {
             var hasCidr =
                 !string.IsNullOrWhiteSpace(cidr);
@@ -285,6 +292,33 @@ namespace NetLoom.Application.DiscoveryControl
             InterAddressDelayMilliseconds =
                 interAddressDelayMilliseconds;
             MaxAddresses = maxAddresses;
+
+            if (excludedAddresses == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(excludedAddresses));
+            }
+
+            var addresses = new List<string>();
+
+            foreach (var value in excludedAddresses)
+            {
+                IPAddress address;
+
+                if (!IPAddress.TryParse(value, out address) ||
+                    address.AddressFamily != AddressFamily.InterNetwork)
+                {
+                    throw new ArgumentException(
+                        "INVALID_DISCOVERY_EXCLUDE",
+                        nameof(excludedAddresses));
+                }
+
+                addresses.Add(address.ToString());
+            }
+
+            ExcludedAddresses = addresses.Count == 0
+                ? (IReadOnlyList<string>)new string[0]
+                : addresses.AsReadOnly();
         }
 
         public string Cidr { get; }
@@ -319,6 +353,30 @@ namespace NetLoom.Application.DiscoveryControl
         public int InterAddressDelayMilliseconds { get; }
 
         public int MaxAddresses { get; }
+
+        public IReadOnlyList<string> ExcludedAddresses { get; }
+
+        public DiscoveryControlRequest WithExcludedAddresses(
+            IEnumerable<string> addresses)
+        {
+            return new DiscoveryControlRequest(
+                Cidr,
+                StartAddress,
+                EndAddress,
+                SubnetMask,
+                AccessProfileId,
+                Version,
+                Port,
+                TimeoutMilliseconds,
+                RetryCount,
+                MaxRepetitions,
+                IcmpTimeoutMilliseconds,
+                TcpTimeoutMilliseconds,
+                TcpPorts,
+                InterAddressDelayMilliseconds,
+                MaxAddresses,
+                addresses);
+        }
 
         private static string Normalize(
             string value)

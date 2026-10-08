@@ -77,6 +77,44 @@ namespace NetLoom.Tests.Modern
                 parsed.DiscoveryMaxAddresses);
             Assert.IsTrue(
                 parsed.ControlStdin);
+            Assert.AreEqual(0, parsed.DiscoveryExcludedAddresses.Count);
+        }
+
+        [TestMethod]
+        public void DiscoverCommandParsesExcludedAddresses()
+        {
+            var parsed = EngineCommandLine.Parse(
+                new[]
+                {
+                    "discover",
+                    "--cidr", "10.0.0.0/24",
+                    "--access-profile-id", Guid.NewGuid().ToString("D"),
+                    "--exclude", "10.0.0.5,10.0.0.9"
+                });
+
+            CollectionAssert.AreEqual(
+                new[] { IPAddress.Parse("10.0.0.5"), IPAddress.Parse("10.0.0.9") },
+                new List<IPAddress>(parsed.DiscoveryExcludedAddresses));
+        }
+
+        [DataTestMethod]
+        [DataRow("10.0.0.x")]
+        [DataRow("::1")]
+        [DataRow("10.0.0.5,")]
+        public void DiscoverCommandRejectsInvalidExcludedAddress(
+            string excluded)
+        {
+            var error = Assert.ThrowsExactly<ArgumentException>(
+                () => EngineCommandLine.Parse(
+                    new[]
+                    {
+                        "discover",
+                        "--cidr", "10.0.0.0/24",
+                        "--access-profile-id", Guid.NewGuid().ToString("D"),
+                        "--exclude", excluded
+                    }));
+
+            Assert.AreEqual("INVALID_DISCOVERY_EXCLUDE", error.Message);
         }
 
         [TestMethod]
@@ -469,6 +507,24 @@ namespace NetLoom.Tests.Modern
                 CultureInfo.CurrentCulture =
                     previousCulture;
             }
+        }
+
+        [TestMethod]
+        public void DiscoveryCandidateOutputIncludesAuthenticationError()
+        {
+            var output = new RecordingWriter();
+
+            EngineMachineOutput.WriteDiscoveryCandidate(
+                output,
+                new DiscoveryCandidate(
+                    IPAddress.Parse("192.0.2.7"),
+                    true,
+                    new int[0],
+                    null,
+                    null,
+                    SnmpTransportFailure.Authentication));
+
+            StringAssert.Contains(output.ToString(), " snmpError=authentication");
         }
 
         private static DiscoveryRequest CreateRequest(

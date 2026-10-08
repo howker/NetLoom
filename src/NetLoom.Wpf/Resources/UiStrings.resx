@@ -462,6 +462,18 @@
   <data name="DiagnosticFieldStrength" xml:space="preserve">
     <value>Strength</value>
   </data>
+  <data name="DiagnosticFieldLldpReporting" xml:space="preserve">
+    <value>Reported by</value>
+  </data>
+  <data name="DiagnosticLldpReportingBoth" xml:space="preserve">
+    <value>Both ends (LLDP)</value>
+  </data>
+  <data name="DiagnosticLldpReportingOneSide" xml:space="preserve">
+    <value>Only {0} (LLDP)</value>
+  </data>
+  <data name="DiagnosticEvidenceGapOneSidedLldp" xml:space="preserve">
+    <value>Evidence gap: only {0} reports this link. {1} does not report it: LLDP is disabled or not supported there, or the device is not polled. The link is shown from one side only.</value>
+  </data>
   <data name="DiagnosticFieldFreshness" xml:space="preserve">
     <value>Freshness</value>
   </data>
@@ -1354,6 +1366,12 @@ Drag the header to move this placement together with its child placements and as
   <data name="DiscoveryCurrentAddressLabel" xml:space="preserve">
     <value>Current address</value>
   </data>
+  <data name="DiscoveryPhaseLabel" xml:space="preserve">
+    <value>Step</value>
+  </data>
+  <data name="DiscoveryPhaseValue" xml:space="preserve">
+    <value>{0} · {1} of {2}</value>
+  </data>
   <data name="DiscoveryCidrLabel" xml:space="preserve">
     <value>Network range (IPv4 CIDR)</value>
   </data>
@@ -1446,6 +1464,27 @@ Drag the header to move this placement together with its child placements and as
   </data>
   <data name="DiscoverySnmpUnavailable" xml:space="preserve">
     <value>no response</value>
+  </data>
+  <data name="DiscoveryErrorSnmpTimeout" xml:space="preserve">
+    <value>SNMP: no response (timeout)</value>
+  </data>
+  <data name="DiscoveryErrorSnmpAuthentication" xml:space="preserve">
+    <value>SNMP: authentication error</value>
+  </data>
+  <data name="DiscoveryErrorSnmpProtocol" xml:space="preserve">
+    <value>SNMP: protocol error</value>
+  </data>
+  <data name="DiscoveryErrorSnmpSocket" xml:space="preserve">
+    <value>SNMP: network error</value>
+  </data>
+  <data name="DiscoveryErrorSnmpUnsupported" xml:space="preserve">
+    <value>SNMP: profile settings are not supported</value>
+  </data>
+  <data name="DiscoveryCandidateErrorSummary" xml:space="preserve">
+    <value>{1} · profile {2} · {3}</value>
+  </data>
+  <data name="DiscoveryRunErrorsLabel" xml:space="preserve">
+    <value>Errors</value>
   </data>
   <data name="DiscoveryStateIdle" xml:space="preserve">
     <value>Not run yet</value>
@@ -2378,5 +2417,332 @@ Poll: {2}</value>
   </data>
   <data name="AvailabilityTcpClosed" xml:space="preserve">
     <value>Closed: {0}</value>
+  </data>
+  <data name="DiscoveryRunKnownUnchangedLabel" xml:space="preserve">
+    <value>Unchanged</value>
+  </data>
+  <data name="DeviceUnconfirmedMark" xml:space="preserve">
+    <value>Unconfirmed</value>
+  </data>
+  <data name="DeviceUnconfirmedHint" xml:space="preserve">
+    <value>Found by discovery and not confirmed yet. Resolve it in the Discovery inbox.</value>
+  </data>
+  <data name="DiagnosticFieldConfirmation" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
+  <data name="DiscoveryInboxTitle" xml:space="preserve">
+    <value>Inbox · run {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryNew" xml:space="preserve">
+    <value>New {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryChanged" xml:space="preserve">
+    <value>Changed {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryAmbiguous" xml:space="preserve">
+    <value>Ambiguous {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryMissing" xml:space="preserve">
+    <value>Missing {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryExcluded" xml:space="preserve">
+    <value>Excluded {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryError" xml:space="preserve">
+    <value>Errors {0}</value>
+  </data>
+  <data name="DiscoveryInboxSummaryUnchanged" xml:space="preserve">
+    <value>Unchanged {0}</value>
+  </data>
+  <data name="DiscoveryInboxGroupNew" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="DiscoveryInboxGroupChanged" xml:space="preserve">
+    <value>Changed</value>
+  </data>
+  <data name="DiscoveryInboxGroupAmbiguous" xml:space="preserve">
+    <value>Ambiguous</value>
+  </data>
+  <data name="DiscoveryInboxGroupMissing" xml:space="preserve">
+    <value>Missing</value>
+  </data>
+  <data name="DiscoveryInboxGroupExcluded" xml:space="preserve">
+    <value>Excluded</value>
+  </data>
+  <data name="DiscoveryInboxGroupError" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="DiscoveryInboxGroupHeader" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="DiscoveryInboxRetry" xml:space="preserve">
+    <value>Check again</value>
+  </data>
+  <data name="DiscoveryInboxRetryAutomationName" xml:space="preserve">
+    <value>Check again {0}</value>
+  </data>
+  <data name="DiscoveryInboxReady" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="DiscoveryInboxPartialSnmp" xml:space="preserve">
+    <value>Partial: no SNMP response</value>
+  </data>
+  <data name="DiscoveryInboxPartialName" xml:space="preserve">
+    <value>Partial: no sysName</value>
+  </data>
+  <data name="DiscoveryInboxPartialInterfaces" xml:space="preserve">
+    <value>Partial: IF-MIB has no interfaces</value>
+  </data>
+  <data name="DiscoveryInboxChanged" xml:space="preserve">
+    <value>Changed: {0}</value>
+  </data>
+  <data name="DiscoveryInboxTextChange" xml:space="preserve">
+    <value>{0}: “{1}” → “{2}”</value>
+  </data>
+  <data name="DiscoveryInboxNumberChange" xml:space="preserve">
+    <value>{0}: {1} → {2}</value>
+  </data>
+  <data name="DiscoveryInboxFieldName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="DiscoveryInboxFieldDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="DiscoveryInboxFieldObjectId" xml:space="preserve">
+    <value>sysObjectID</value>
+  </data>
+  <data name="DiscoveryInboxFieldInterfaces" xml:space="preserve">
+    <value>Interfaces</value>
+  </data>
+  <data name="DiscoveryInboxDuplicateAddress" xml:space="preserve">
+    <value>The address belongs to several devices: {0}. Data was not applied.</value>
+  </data>
+  <data name="DiscoveryInboxMatchingName" xml:space="preserve">
+    <value>The name matches {0}: the device may have changed its address.</value>
+  </data>
+  <data name="DiscoveryInboxMissingLastSeen" xml:space="preserve">
+    <value>Known device was not found in this run · last responded {0}</value>
+  </data>
+  <data name="DiscoveryInboxMissingNoData" xml:space="preserve">
+    <value>Known device was not found in this run · no polling data</value>
+  </data>
+  <data name="DiscoveryInboxProfileExclusion" xml:space="preserve">
+    <value>Profile “{0}” rule: exclude {1}</value>
+  </data>
+  <data name="DiscoveryInboxIgnored" xml:space="preserve">
+    <value>Ignored by operator on {0}</value>
+  </data>
+  <data name="DiscoveryInboxIcmp" xml:space="preserve">
+    <value>ICMP</value>
+  </data>
+  <data name="DiscoveryInboxTcp" xml:space="preserve">
+    <value>TCP {0}</value>
+  </data>
+  <data name="DiscoveryInboxSnmp" xml:space="preserve">
+    <value>SNMP</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesOne" xml:space="preserve">
+    <value>{0} interface</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesFew" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesMany" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryInboxInterfacesOther" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryInboxSeparator" xml:space="preserve">
+    <value> · </value>
+  </data>
+  <data name="DiscoveryInboxListSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="DiscoveryInboxChangeSeparator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="DiscoveryInboxEllipsis" xml:space="preserve">
+    <value>…</value>
+  </data>
+  <data name="DiscoveryProgressSectionTitle" xml:space="preserve">
+    <value>Run progress</value>
+  </data>
+  <data name="DiscoveryInboxEmpty" xml:space="preserve">
+    <value>Nothing was found in this run.</value>
+  </data>
+  <data name="DiscoveryInboxAccept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="DiscoveryInboxIgnore" xml:space="preserve">
+    <value>Ignore</value>
+  </data>
+  <data name="DiscoveryInboxMarkUnmanaged" xml:space="preserve">
+    <value>Mark as unmanaged</value>
+  </data>
+  <data name="DiscoveryInboxAssignPlacement" xml:space="preserve">
+    <value>Assign placement…</value>
+  </data>
+  <data name="DiscoveryInboxSelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="DiscoveryInboxSelectAllAutomationName" xml:space="preserve">
+    <value>Select all: {0}</value>
+  </data>
+  <data name="DiscoveryInboxSelectAutomationName" xml:space="preserve">
+    <value>Select {0}</value>
+  </data>
+  <data name="DiscoveryInboxSelectedCount" xml:space="preserve">
+    <value>Selected: {0}</value>
+  </data>
+  <data name="DiscoveryInboxResolutionAccepted" xml:space="preserve">
+    <value>Accepted {0}</value>
+  </data>
+  <data name="DiscoveryInboxResolutionIgnored" xml:space="preserve">
+    <value>Ignored since {0}</value>
+  </data>
+  <data name="DiscoveryInboxResolutionUnmanaged" xml:space="preserve">
+    <value>Unmanaged</value>
+  </data>
+  <data name="DiscoveryInboxResolutionPlaced" xml:space="preserve">
+    <value>Placement: {0}</value>
+  </data>
+  <data name="DiscoveryInboxUndoIgnore" xml:space="preserve">
+    <value>Undo ignore</value>
+  </data>
+  <data name="DiscoveryInboxUndoIgnoreAutomationName" xml:space="preserve">
+    <value>Undo ignore {0}</value>
+  </data>
+  <data name="DiscoveryInboxIgnoreUndone" xml:space="preserve">
+    <value>Ignore undone: {0}</value>
+  </data>
+  <data name="DiscoveryInboxPlacementTitle" xml:space="preserve">
+    <value>Assign placement</value>
+  </data>
+  <data name="DiscoveryInboxPlacementLabel" xml:space="preserve">
+    <value>Placement</value>
+  </data>
+  <data name="DiscoveryInboxPlacementConfirm" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="DiscoveryInboxNoPlacements" xml:space="preserve">
+    <value>No placements. Create them on the map in edit mode.</value>
+  </data>
+  <data name="DiscoveryInboxPlacementSeparator" xml:space="preserve">
+    <value> / </value>
+  </data>
+  <data name="DiscoveryInboxAppliedAccept" xml:space="preserve">
+    <value>Accepted: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedAcceptWithSkipped" xml:space="preserve">
+    <value>Accepted: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxAppliedIgnore" xml:space="preserve">
+    <value>Ignored: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedIgnoreWithSkipped" xml:space="preserve">
+    <value>Ignored: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxAppliedMarkUnmanaged" xml:space="preserve">
+    <value>Unmanaged: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedMarkUnmanagedWithSkipped" xml:space="preserve">
+    <value>Unmanaged: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxAppliedAssignPlacement" xml:space="preserve">
+    <value>Placement assigned: {0}</value>
+  </data>
+  <data name="DiscoveryInboxAppliedAssignPlacementWithSkipped" xml:space="preserve">
+    <value>Placement assigned: {0}. Skipped: {1} (the action does not apply)</value>
+  </data>
+  <data name="DiscoveryInboxPlacementClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="DiscoveryProfileCheckTitle" xml:space="preserve">
+    <value>Check on a device</value>
+  </data>
+  <data name="DiscoveryProfileCheckAddressHint" xml:space="preserve">
+    <value>Address example: 192.0.2.1</value>
+  </data>
+  <data name="DiscoveryProfileCheckAddressInvalid" xml:space="preserve">
+    <value>Enter an IPv4 address, for example 192.0.2.1</value>
+  </data>
+  <data name="DiscoveryProfileCheckAction" xml:space="preserve">
+    <value>Check profile</value>
+  </data>
+  <data name="DiscoveryProfileChecking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="DiscoveryProfileCheckCompleted" xml:space="preserve">
+    <value>Check completed</value>
+  </data>
+  <data name="DiscoveryProfileCheckUnavailable" xml:space="preserve">
+    <value>Could not check the profile. Try again</value>
+  </data>
+  <data name="DiscoveryProfileCheckAvailability" xml:space="preserve">
+    <value>Availability</value>
+  </data>
+  <data name="DiscoveryProfileCheckSystem" xml:space="preserve">
+    <value>sysName, sysObjectID</value>
+  </data>
+  <data name="DiscoveryProfileCheckIfMib" xml:space="preserve">
+    <value>IF-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckLldpMib" xml:space="preserve">
+    <value>LLDP-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckBridgeMib" xml:space="preserve">
+    <value>BRIDGE-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckQBridgeMib" xml:space="preserve">
+    <value>Q-BRIDGE-MIB</value>
+  </data>
+  <data name="DiscoveryProfileCheckPartial" xml:space="preserve">
+    <value>Partial</value>
+  </data>
+  <data name="DiscoveryProfileCheckAbsent" xml:space="preserve">
+    <value>Absent in agent</value>
+  </data>
+  <data name="DiscoveryProfileCheckNotChecked" xml:space="preserve">
+    <value>Not checked</value>
+  </data>
+  <data name="DiscoveryProfileCheckNoResponse" xml:space="preserve">
+    <value>No response</value>
+  </data>
+  <data name="DiscoveryProfileCheckMilliseconds" xml:space="preserve">
+    <value>{0} ms</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesOne" xml:space="preserve">
+    <value>{0} interface</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesFew" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesMany" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryProfileCheckInterfacesOther" xml:space="preserve">
+    <value>{0} interfaces</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsOne" xml:space="preserve">
+    <value>{0} neighbor</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsFew" xml:space="preserve">
+    <value>{0} neighbors</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsMany" xml:space="preserve">
+    <value>{0} neighbors</value>
+  </data>
+  <data name="DiscoveryProfileCheckNeighborsOther" xml:space="preserve">
+    <value>{0} neighbors</value>
+  </data>
+  <data name="OperatorStatusGlyphNotChecked" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="OperatorStatusGlyphProfileWarning" xml:space="preserve">
+    <value>⚠</value>
+  </data>
+  <data name="OperatorStatusGlyphProfileFailed" xml:space="preserve">
+    <value>✕</value>
   </data>
 </root>

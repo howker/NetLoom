@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using NetLoom.Application.Snmp;
 
 namespace NetLoom.Application.DiscoveryControl
 {
@@ -17,7 +18,8 @@ namespace NetLoom.Application.DiscoveryControl
             string sysDescription,
             string sysObjectId,
             string sysLocation,
-            int interfaceCount)
+            int interfaceCount,
+            SnmpTransportFailure? snmpError = null)
         {
             Address = address ??
                 throw new ArgumentNullException(
@@ -57,6 +59,14 @@ namespace NetLoom.Application.DiscoveryControl
                     nameof(interfaceCount));
             }
 
+            if (snmpResponded && snmpError.HasValue)
+            {
+                throw new ArgumentException(
+                    "SNMP response cannot have a transport error.",
+                    nameof(snmpError));
+            }
+
+            SnmpError = snmpError;
             AccessProfileId = accessProfileId;
             IcmpReachable = icmpReachable;
             SnmpResponded = snmpResponded;
@@ -75,6 +85,8 @@ namespace NetLoom.Application.DiscoveryControl
         public bool IcmpReachable { get; }
 
         public bool SnmpResponded { get; }
+
+        public SnmpTransportFailure? SnmpError { get; }
 
         public IReadOnlyList<int> OpenTcpPorts { get; }
 

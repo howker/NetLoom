@@ -39,6 +39,17 @@ namespace NetLoom.Application.Discovery
             DiscoveryRequest request,
             CancellationToken cancellationToken)
         {
+            return Discover(
+                request,
+                cancellationToken,
+                null);
+        }
+
+        public IEnumerable<DiscoveryProgress> Discover(
+            DiscoveryRequest request,
+            CancellationToken cancellationToken,
+            Action<DiscoveryPhaseUpdate> phaseChanged)
+        {
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
@@ -73,7 +84,10 @@ namespace NetLoom.Application.Discovery
                 var candidate = Probe(
                     address,
                     request,
-                    cancellationToken);
+                    cancellationToken,
+                    index + 1,
+                    addresses.Length,
+                    phaseChanged);
 
                 yield return new DiscoveryProgress(
                     address,
@@ -86,8 +100,23 @@ namespace NetLoom.Application.Discovery
         private DiscoveryCandidate Probe(
             IPAddress address,
             DiscoveryRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            int addressIndex,
+            int totalAddresses,
+            Action<DiscoveryPhaseUpdate> phaseChanged)
         {
+            var stepCount =
+                request.TcpPorts.Count > 0 ? 3 : 2;
+
+            phaseChanged?.Invoke(
+                new DiscoveryPhaseUpdate(
+                    address,
+                    addressIndex,
+                    totalAddresses,
+                    DiscoveryPhase.Icmp,
+                    1,
+                    stepCount));
+
             var icmpReachable =
                 _networkProbe.IsIcmpReachable(
                     address,
@@ -96,17 +125,41 @@ namespace NetLoom.Application.Discovery
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var openTcpPorts =
-                _networkProbe.FindOpenTcpPorts(
-                    address,
-                    request.TcpPorts,
-                    request.TcpTimeoutMilliseconds,
-                    cancellationToken);
+            IReadOnlyList<int> openTcpPorts = new int[0];
+
+            if (request.TcpPorts.Count > 0)
+            {
+                phaseChanged?.Invoke(
+                    new DiscoveryPhaseUpdate(
+                        address,
+                        addressIndex,
+                        totalAddresses,
+                        DiscoveryPhase.Tcp,
+                        2,
+                        stepCount));
+
+                openTcpPorts =
+                    _networkProbe.FindOpenTcpPorts(
+                        address,
+                        request.TcpPorts,
+                        request.TcpTimeoutMilliseconds,
+                        cancellationToken);
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
 
             InventorySnapshot inventory = null;
+            SnmpTransportFailure? snmpFailure = null;
             Guid? accessProfileId = null;
+
+            phaseChanged?.Invoke(
+                new DiscoveryPhaseUpdate(
+                    address,
+                    addressIndex,
+                    totalAddresses,
+                    DiscoveryPhase.Snmp,
+                    stepCount,
+                    stepCount));
 
             try
             {
@@ -126,15 +179,26 @@ namespace NetLoom.Application.Discovery
                 accessProfileId =
                     profile.AccessProfileId;
             }
-            catch (SnmpTransportException)
+            catch (SnmpTransportException error)
             {
+                snmpFailure = error.Failure;
             }
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Ошибка адреса сообщается без инвентаря SNMP, если выполнено хотя бы одно условие:
+            // Адрес ответил по ICMP или TCP; ошибка отличается от таймаута и неподдерживаемых учётных данных.
+            // Молчащий адрес с таймаутом означает отсутствие устройства, иначе пустая /24 дала бы 254 ошибки.
+            var reportSnmpFailure = inventory == null &&
+                snmpFailure.HasValue &&
+                (icmpReachable || openTcpPorts.Count > 0 ||
+                 (snmpFailure != SnmpTransportFailure.Timeout &&
+                  snmpFailure != SnmpTransportFailure.UnsupportedCredentials));
+
             if (!icmpReachable &&
                 openTcpPorts.Count == 0 &&
-                inventory == null)
+                inventory == null &&
+                !reportSnmpFailure)
             {
                 return null;
             }
@@ -144,7 +208,8 @@ namespace NetLoom.Application.Discovery
                 icmpReachable,
                 openTcpPorts,
                 inventory,
-                accessProfileId);
+                accessProfileId,
+                reportSnmpFailure ? snmpFailure : null);
         }
 
         private static void WaitBeforeNextAddress(

@@ -8,11 +8,17 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Threading;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.DiscoveryInbox;
+using NetLoom.Application.MonitoringControl;
+using NetLoom.Application.Snmp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.Discovery;
 using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf
@@ -25,6 +31,9 @@ namespace NetLoom.Wpf
         private IReadOnlyList<AccessProfile> _discoveryProfiles;
         private Guid? _profileSettingsSelectedId;
 
+        public event EventHandler<DiscoveryProfileCheckRequestedEventArgs>
+            DiscoveryProfileCheckRequested;
+
         public event EventHandler<DiscoveryProfileCreateRequestedEventArgs>
             DiscoveryProfileCreateRequested;
         public event EventHandler<DiscoveryProfileUpdateRequestedEventArgs>
@@ -34,21 +43,33 @@ namespace NetLoom.Wpf
         private readonly IDiscoveryCandidateMaterializer
             _discoveryCandidateMaterializer;
 
-        private readonly List<DiscoveryCandidateRow>
-            _discoveryCandidateRows =
-                new List<DiscoveryCandidateRow>();
+        private readonly IDiscoveryRunJournal _discoveryRunJournal;
+        private Guid? _activeDiscoveryRunId;
+        private bool _discoveryRetryActive;
+        private Guid? _discoveryInboxRunId;
+        private string _discoveryRetryFocusAddress;
 
-        private DateTime? _discoveryRunStartedUtc;
-        private DateTime? _discoveryRunFinishedUtc;
+        public static readonly DependencyProperty DiscoveryInboxCanRetryProperty =
+            DependencyProperty.Register(nameof(DiscoveryInboxCanRetry), typeof(bool),
+                typeof(MainWindow), new PropertyMetadata(true));
+
+        public bool DiscoveryInboxCanRetry
+        {
+            get => (bool)GetValue(DiscoveryInboxCanRetryProperty);
+            private set
+            {
+                SetValue(DiscoveryInboxCanRetryProperty, value);
+                if (DiscoveryInboxActionsBar != null) UpdateDiscoveryInboxActionsBar();
+            }
+        }
+
+        private bool _discoveryRunAddedDevices;
+        private bool _discoveryRunInProgress;
+        private Task _discoveryTopologyRefreshTask = Task.CompletedTask;
+        private DiscoveryRunRecord _discoveryLatestRun;
         // Часы итога запуска; галерея подставляет свои, чтобы показать правдоподобную длительность.
         internal Func<DateTime> DiscoveryRunClock { get; set; } =
             () => DateTime.UtcNow;
-        private DiscoveryControlState _discoveryRunLastState =
-            DiscoveryControlState.Idle;
-        private readonly HashSet<string> _discoveryRunSnmpAddresses =
-            new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase);
-        private DiscoveryControlSnapshot _discoveryRunLastSnapshot;
 
         private bool _discoveryClosed;
 
@@ -68,10 +89,16 @@ namespace NetLoom.Wpf
                 UiText.Get("DiscoveryRunCheckedLabel");
             DiscoveryRunFoundLabelText.Text =
                 UiText.Get("DiscoveryRunFoundLabel");
+            DiscoveryRunErrorsLabelText.Text =
+                UiText.Get("DiscoveryRunErrorsLabel");
+            DiscoveryRunKnownUnchangedLabelText.Text =
+                UiText.Get("DiscoveryRunKnownUnchangedLabel");
             DiscoveryProgressLabelText.Text =
                 UiText.Get("DiscoveryProgressLabel");
             DiscoveryCurrentAddressLabelText.Text =
                 UiText.Get("DiscoveryCurrentAddressLabel");
+            DiscoveryPhaseLabelText.Text =
+                UiText.Get("DiscoveryPhaseLabel");
             DiscoveryRangeTitleText.Text =
                 UiText.Get("DiscoveryRangeTitle");
             DiscoveryStartAddressLabelText.Text =
@@ -108,7 +135,12 @@ namespace NetLoom.Wpf
             DiscoveryWarningText.Text =
                 UiText.Get("DiscoveryWarning");
             DiscoveryCandidatesLabelText.Text =
-                UiText.Get("DiscoveryCandidatesLabel");
+                UiText.Get("DiscoveryProgressSectionTitle");
+            DiscoveryInboxEmptyText.Text = UiText.Get("DiscoveryInboxEmpty");
+            DiscoveryInboxAcceptButton.Content = UiText.Get("DiscoveryInboxAccept");
+            DiscoveryInboxIgnoreButton.Content = UiText.Get("DiscoveryInboxIgnore");
+            DiscoveryInboxUnmanagedButton.Content = UiText.Get("DiscoveryInboxMarkUnmanaged");
+            DiscoveryInboxPlacementButton.Content = UiText.Get("DiscoveryInboxAssignPlacement");
 
             DiscoveryStartAddressTextBox.Text =
                 string.Empty;
@@ -133,9 +165,6 @@ namespace NetLoom.Wpf
             DiscoveryProfileComboBox.SelectedIndex =
                 -1;
 
-            DiscoveryCandidatesList.ItemsSource =
-                new DiscoveryCandidateRow[0];
-
             _discoveryControl.SnapshotChanged +=
                 OnDiscoverySnapshotChanged;
             _discoveryControl.CandidateDiscovered +=
@@ -144,6 +173,16 @@ namespace NetLoom.Wpf
             DiscoveryMessageText.Text =
                 string.Empty;
 
+            _discoveryLatestRun =
+                _discoveryRunJournal.CloseInterruptedRuns(DateTime.UtcNow);
+
+            if (_discoveryLatestRun != null &&
+                _discoveryLatestRun.FinishedUtc.HasValue)
+            {
+                RenderDiscoveryRunSummary();
+            }
+
+            RefreshDiscoveryInbox();
             UpdateDiscoveryPresentation(
                 _discoveryControl.Current);
         }
@@ -561,6 +600,27 @@ namespace NetLoom.Wpf
                         Visibility.Collapsed
                 };
 
+            var checkTitle = new TextBlock { Text = UiText.Get("DiscoveryProfileCheckTitle") };
+            var checkAddress = new TextBox
+            {
+                Name = "DiscoveryProfileCheckAddress",
+                Text = DiscoveryStartAddressTextBox.Text ?? string.Empty
+            };
+            var checkAddressHint = new TextBlock { Text = UiText.Get("DiscoveryProfileCheckAddressHint") };
+            var checkError = new TextBlock { TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+            var checkButton = new Button
+            {
+                Name = "DiscoveryProfileCheckButton",
+                Content = UiText.Get("DiscoveryProfileCheckAction"),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            var checkProgress = new TextBlock { TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+            var checkRows = new StackPanel { Name = "DiscoveryProfileCheckRows" };
+            AutomationProperties.SetLabeledBy(checkAddress, checkTitle);
+            AutomationProperties.SetName(checkAddress, checkTitle.Text);
+            LiveRegion.SetIsPolite(checkProgress, true);
+            LiveRegion.SetIsPolite(checkError, true);
+
             var saveButton =
                 new Button
                 {
@@ -616,6 +676,13 @@ namespace NetLoom.Wpf
                 communityHint);
             content.Children.Add(
                 errorText);
+            content.Children.Add(checkTitle);
+            content.Children.Add(checkAddress);
+            content.Children.Add(checkAddressHint);
+            content.Children.Add(checkError);
+            content.Children.Add(checkButton);
+            content.Children.Add(checkProgress);
+            content.Children.Add(checkRows);
             content.Children.Add(
                 actionPanel);
 
@@ -627,7 +694,7 @@ namespace NetLoom.Wpf
                         : UiText.Get(
                             "DiscoveryProfileEditDialogTitle"),
                     content,
-                    430);
+                    (double)FindResource("NetLoom.Width.DiscoveryProfileDialog"));
 
             content.Margin =
                 (Thickness)dialog.FindResource(
@@ -668,6 +735,84 @@ namespace NetLoom.Wpf
             saveButton.Margin =
                 (Thickness)dialog.FindResource(
                     "NetLoom.Thickness.InlineGap");
+
+            checkTitle.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.FieldLabel");
+            checkTitle.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.SectionGapTop");
+            checkAddress.SetResourceReference(Control.FontFamilyProperty, "NetLoom.FontFamily.Mono");
+            checkAddressHint.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            checkAddressHint.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapXsTop");
+            checkError.SetResourceReference(TextBlock.ForegroundProperty, "NetLoom.Brush.Critical");
+            checkError.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            checkButton.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.SecondaryButton");
+            checkButton.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            checkProgress.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            checkProgress.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            var dialogClosed = false;
+            dialog.Closed += (sender, args) => dialogClosed = true;
+            System.Windows.Input.KeyboardNavigation.SetTabNavigation(dialog,
+                System.Windows.Input.KeyboardNavigationMode.Cycle);
+            dialog.Loaded += (sender, args) => nameTextBox.Focus();
+
+            checkButton.Click += async (sender, args) =>
+            {
+                System.Net.IPAddress address;
+                if (!System.Net.IPAddress.TryParse((checkAddress.Text ?? string.Empty).Trim(), out address)
+                    || address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork
+                    || (checkAddress.Text ?? string.Empty).Trim().Split('.').Length != 4)
+                {
+                    checkRows.Children.Clear();
+                    checkProgress.Visibility = Visibility.Collapsed;
+                    checkError.Text = UiText.Get("DiscoveryProfileCheckAddressInvalid");
+                    checkError.Visibility = Visibility.Visible;
+                    checkAddress.Focus();
+                    return;
+                }
+                var selectedVersion = versionComboBox.SelectedItem as DiscoverySnmpVersionOption;
+                var handler = DiscoveryProfileCheckRequested;
+                if (handler == null || selectedVersion == null)
+                {
+                    checkError.Text = UiText.Get("DiscoveryProfileCheckUnavailable");
+                    checkError.Visibility = Visibility.Visible;
+                    return;
+                }
+                var community = communityPasswordBox.Password ?? string.Empty;
+                if (creating && community.Length == 0)
+                {
+                    checkError.Text = UiText.Get("DiscoveryProfileValidationCommunity");
+                    checkError.Visibility = Visibility.Visible;
+                    communityPasswordBox.Focus();
+                    return;
+                }
+                var bytes = community.Length == 0 ? null : Encoding.UTF8.GetBytes(community);
+                checkError.Visibility = Visibility.Collapsed;
+                checkRows.Children.Clear();
+                checkButton.IsEnabled = false;
+                checkProgress.Text = UiText.Get("DiscoveryProfileChecking");
+                checkProgress.Visibility = Visibility.Visible;
+                try
+                {
+                    var request = new DiscoveryProfileCheckRequestedEventArgs(address, selectedVersion.Version,
+                        bytes, creating ? (Guid?)null : editingProfile.Id);
+                    handler(this, request);
+                    if (request.Result == null) throw new InvalidOperationException();
+                    var report = await request.Result;
+                    if (dialogClosed) return;
+                    foreach (var item in report.Items) checkRows.Children.Add(CreateProfileCheckRow(item));
+                    checkProgress.Text = UiText.Get("DiscoveryProfileCheckCompleted");
+                }
+                catch
+                {
+                    if (dialogClosed) return;
+                    checkProgress.Visibility = Visibility.Collapsed;
+                    checkError.Text = UiText.Get("DiscoveryProfileCheckUnavailable");
+                    checkError.Visibility = Visibility.Visible;
+                }
+                finally
+                {
+                    if (bytes != null) Array.Clear(bytes, 0, bytes.Length);
+                    if (!dialogClosed) checkButton.IsEnabled = true;
+                }
+            };
 
             Action<string> showError =
                 message =>
@@ -857,6 +1002,74 @@ namespace NetLoom.Wpf
                 };
 
             dialog.ShowDialog();
+        }
+
+        private FrameworkElement CreateProfileCheckRow(SnmpProfileCheckItem item)
+        {
+            var neutralAbsent = item.Status == SnmpProfileCheckStatus.Absent
+                && (item.Kind == SnmpProfileCheckKind.BridgeMib || item.Kind == SnmpProfileCheckKind.QBridgeMib);
+            var semantic = item.Status == SnmpProfileCheckStatus.Failed ? OperatorStatusSemantic.Critical
+                : item.Status == SnmpProfileCheckStatus.Partial || item.Status == SnmpProfileCheckStatus.Absent && !neutralAbsent
+                    ? OperatorStatusSemantic.Warning : OperatorStatusSemantic.Normal;
+            var row = new Grid { DataContext = item };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            var glyph = new TextBlock
+            {
+                Text = item.Status == SnmpProfileCheckStatus.NotChecked || neutralAbsent
+                    ? UiText.Get("OperatorStatusGlyphNotChecked")
+                    : semantic == OperatorStatusSemantic.Warning ? UiText.Get("OperatorStatusGlyphProfileWarning")
+                    : semantic == OperatorStatusSemantic.Critical ? UiText.Get("OperatorStatusGlyphProfileFailed")
+                    : OperatorStatusGlyph(semantic),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            glyph.SetResourceReference(TextBlock.ForegroundProperty, OperatorStatusBrushKey(semantic));
+            glyph.SetResourceReference(FrameworkElement.MinWidthProperty, "NetLoom.Status.GlyphMinWidth");
+            glyph.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.StatusGlyph");
+            var label = new TextBlock
+            {
+                Text = UiText.Get("DiscoveryProfileCheck" + item.Kind),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var detail = new TextBlock
+            {
+                Text = ProfileCheckDetail(item),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap
+            };
+            detail.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.FieldGapLeft");
+            detail.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            System.Windows.Documents.Typography.SetNumeralAlignment(detail, FontNumeralAlignment.Tabular);
+            Grid.SetColumn(label, 1);
+            Grid.SetColumn(detail, 2);
+            row.Children.Add(glyph);
+            row.Children.Add(label);
+            row.Children.Add(detail);
+            return row;
+        }
+
+        private static string ProfileCheckDetail(SnmpProfileCheckItem item)
+        {
+            if (item.Status == SnmpProfileCheckStatus.NotChecked) return UiText.Get("DiscoveryProfileCheckNotChecked");
+            if (item.Status == SnmpProfileCheckStatus.Failed)
+            {
+                if (!item.Failure.HasValue) return UiText.Get("DiscoveryProfileCheckNoResponse");
+                var key = item.Failure == SnmpTransportFailure.UnsupportedCredentials ? "Unsupported"
+                    : item.Failure.Value.ToString();
+                return UiText.Get("DiscoveryErrorSnmp" + key);
+            }
+            if (item.Status == SnmpProfileCheckStatus.Partial) return UiText.Get("DiscoveryProfileCheckPartial");
+            if (item.Status == SnmpProfileCheckStatus.Absent) return UiText.Get("DiscoveryProfileCheckAbsent");
+            if (item.Kind == SnmpProfileCheckKind.Availability && item.Milliseconds.HasValue)
+                return UiText.Format("DiscoveryProfileCheckMilliseconds", item.Milliseconds.Value);
+            if (item.Kind == SnmpProfileCheckKind.IfMib && item.Count.HasValue)
+                return UiText.FormatCount("DiscoveryProfileCheckInterfaces", item.Count.Value);
+            if (item.Kind == SnmpProfileCheckKind.LldpMib && item.Count.HasValue)
+                return UiText.FormatCount("DiscoveryProfileCheckNeighbors", item.Count.Value);
+            return string.Empty;
         }
 
         private bool ShowProfileDeleteConfirmation(
@@ -1249,13 +1462,21 @@ namespace NetLoom.Wpf
                 return;
             }
 
-            _discoveryCandidateRows.Clear();
-            RefreshDiscoveryCandidateRows();
             DiscoveryMessageText.Text =
                 string.Empty;
 
             try
             {
+                var selected =
+                    (DiscoveryProfileOption)DiscoveryProfileComboBox.SelectedItem;
+                var start = _discoveryRunJournal.BeginRun(
+                    request,
+                    selected.Profile.Name,
+                    DiscoveryRunClock());
+                _activeDiscoveryRunId = start.RunId;
+                RefreshDiscoveryInbox();
+                request = request.WithExcludedAddresses(start.ExcludedAddresses);
+
                 await _discoveryControl
                     .StartAsync(
                         request,
@@ -1265,12 +1486,32 @@ namespace NetLoom.Wpf
                 when (_lifetimeCancellation
                     .IsCancellationRequested)
             {
+                FinishFailedDiscoveryStart();
             }
             catch (Exception error)
             {
+                FinishFailedDiscoveryStart();
                 ShowDiscoveryActionFailure(
                     error);
             }
+        }
+
+        private void FinishFailedDiscoveryStart()
+        {
+            if (!_activeDiscoveryRunId.HasValue)
+            {
+                return;
+            }
+
+            _discoveryLatestRun = _discoveryRunJournal.FinishRun(
+                _activeDiscoveryRunId.Value,
+                _discoveryControl.Current,
+                DiscoveryRunClock());
+            _activeDiscoveryRunId = null;
+            _discoveryRetryActive = false;
+            RefreshDiscoveryInbox();
+            RestoreDiscoveryInboxFocus();
+            UpdateDiscoveryPresentation(_discoveryControl.Current);
         }
 
         private async void OnDiscoveryStopClick(
@@ -1417,61 +1658,46 @@ namespace NetLoom.Wpf
             var address =
                 candidate.Address.ToString();
 
-            var existingIndex =
-                _discoveryCandidateRows.FindIndex(
-                    row =>
-                        string.Equals(
-                            row.Address,
-                            address,
-                            StringComparison.OrdinalIgnoreCase));
-
-            var row =
-                new DiscoveryCandidateRow(
-                    address,
-                    UiText.Format(
-                        "DiscoveryCandidateSummary",
-                        address,
-                        string.IsNullOrWhiteSpace(
-                            candidate.SysName)
-                            ? UiText.Get(
-                                "DiscoveryUnnamedCandidate")
-                            : candidate.SysName,
-                        UiText.Get(
-                            candidate.SnmpResponded
-                                ? "DiscoverySnmpResponded"
-                                : "DiscoverySnmpUnavailable")));
-
-            if (existingIndex >= 0)
-            {
-                _discoveryCandidateRows[existingIndex] =
-                    row;
-            }
-            else
-            {
-                _discoveryCandidateRows.Add(
-                    row);
-            }
-
-            if (candidate.SnmpResponded)
-            {
-                _discoveryRunSnmpAddresses.Add(
-                    address);
-            }
-
-            RefreshDiscoveryCandidateRows();
-            RenderDiscoveryRunSummary();
-
             try
             {
-                _discoveryCandidateMaterializer
-                    .Materialize(
+                var knownDeviceIds = _lastMapSnapshot?.Nodes
+                    .Where(node => node.DeviceId.HasValue)
+                    .Select(node => node.DeviceId.Value)
+                    .ToArray() ?? new Guid[0];
+                Guid? deviceId;
+
+                if (_activeDiscoveryRunId.HasValue)
+                {
+                    var result = _discoveryRunJournal.RecordCandidate(
+                        _activeDiscoveryRunId.Value,
                         candidate,
-                        DateTime.UtcNow);
+                        DiscoveryRunClock());
+                    deviceId = result.DeviceId;
+                    RefreshDiscoveryInbox();
+                }
+                else
+                {
+                    deviceId = _discoveryCandidateMaterializer.Materialize(
+                        candidate,
+                        DiscoveryRunClock());
+                }
 
-                await RefreshTopologyAsync();
+                if (deviceId.HasValue && !knownDeviceIds.Contains(deviceId.Value))
+                {
+                    _discoveryRunAddedDevices = true;
+                }
 
-                FocusDiscoveredDevice(
-                    address);
+                var refreshTask = RefreshTopologyAsync();
+                _discoveryTopologyRefreshTask = _discoveryTopologyRefreshTask.IsCompleted
+                    ? refreshTask
+                    : Task.WhenAll(_discoveryTopologyRefreshTask, refreshTask);
+                await refreshTask;
+
+                if (deviceId.HasValue)
+                {
+                    FocusDiscoveredDevice(
+                        address);
+                }
             }
             catch (Exception error)
             {
@@ -1590,9 +1816,14 @@ namespace NetLoom.Wpf
             TrackDiscoveryRun(
                 snapshot);
 
+            var lastRunState =
+                snapshot.State == DiscoveryControlState.Idle &&
+                _discoveryLatestRun != null
+                    ? _discoveryLatestRun.State
+                    : snapshot.State;
             var discoveryStatus =
                 DiscoveryStatusSemantic(
-                    snapshot.State);
+                    lastRunState);
 
             ApplyOperatorStatus(
                 DiscoveryStateGlyphText,
@@ -1600,17 +1831,29 @@ namespace NetLoom.Wpf
                 discoveryStatus,
                 UiText.Get(
                     DiscoveryStateResourceKey(
-                        snapshot.State)));
+                        lastRunState)));
+
+            // Sprint 48: после перезапуска приложения прогресс — из сохранённого запуска, как и его состояние.
+            var showsSavedRun =
+                snapshot.State == DiscoveryControlState.Idle &&
+                snapshot.TotalAddresses == 0 &&
+                _discoveryLatestRun != null;
 
             DiscoveryProgressValueText.Text =
-                snapshot.TotalAddresses > 0
+                showsSavedRun
                     ? UiText.Format(
                         "DiscoveryProgressValue",
-                        snapshot.ProcessedAddresses,
-                        snapshot.TotalAddresses,
-                        snapshot.FoundCandidates)
-                    : UiText.Get(
-                        "DiscoveryProgressPending");
+                        _discoveryLatestRun.ProcessedAddresses,
+                        _discoveryLatestRun.TotalAddresses,
+                        _discoveryLatestRun.FoundCandidates)
+                    : snapshot.TotalAddresses > 0
+                        ? UiText.Format(
+                            "DiscoveryProgressValue",
+                            snapshot.ProcessedAddresses,
+                            snapshot.TotalAddresses,
+                            snapshot.FoundCandidates)
+                        : UiText.Get(
+                            "DiscoveryProgressPending");
 
             DiscoveryCurrentAddressValueText.Text =
                 snapshot.CurrentAddress == null
@@ -1618,6 +1861,36 @@ namespace NetLoom.Wpf
                         "DiagnosticNotAvailable")
                     : snapshot.CurrentAddress
                         .ToString();
+
+            // Sprint 48: только реально выполняемые фазы обнаружения — ICMP, TCP (если заданы порты), SNMP.
+            DiscoveryPhaseValueText.Text =
+                snapshot.CurrentPhase.HasValue
+                    ? UiText.Format(
+                        "DiscoveryPhaseValue",
+                        snapshot.CurrentPhase.Value.ToString().ToUpperInvariant(),
+                        snapshot.PhaseStep,
+                        snapshot.PhaseCount)
+                    : UiText.Get(
+                        "DiagnosticNotAvailable");
+
+            // Sprint 48: адрес и этап имеют смысл только во время запуска; после завершения строки скрываются.
+            var runInProgress =
+                snapshot.State == DiscoveryControlState.Starting ||
+                snapshot.State == DiscoveryControlState.Running ||
+                snapshot.State == DiscoveryControlState.Stopping;
+            var runRowsVisibility =
+                runInProgress
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            DiscoveryCurrentAddressLabelText.Visibility =
+                runRowsVisibility;
+            DiscoveryCurrentAddressValueText.Visibility =
+                runRowsVisibility;
+            DiscoveryPhaseLabelText.Visibility =
+                runRowsVisibility;
+            DiscoveryPhaseValueText.Visibility =
+                runRowsVisibility;
 
             var canStart =
                 snapshot.State ==
@@ -1628,6 +1901,8 @@ namespace NetLoom.Wpf
                     DiscoveryControlState.Stopped ||
                 snapshot.State ==
                     DiscoveryControlState.Faulted;
+
+            DiscoveryInboxCanRetry = canStart && !_activeDiscoveryRunId.HasValue;
 
             DiscoveryStartAddressTextBox.IsEnabled =
                 canStart;
@@ -1699,33 +1974,53 @@ namespace NetLoom.Wpf
             RenderDiscoveryRunSummary();
         }
 
-        // Sprint 48: итог запуска обнаружения (проверено, найдено, длительность) — до перезапуска приложения; хранение запусков — пункт «Входящих».
-        private void TrackDiscoveryRun(
+        private async void TrackDiscoveryRun(
             DiscoveryControlSnapshot snapshot)
         {
-            if (IsDiscoveryRunActive(snapshot.State) &&
-                !IsDiscoveryRunActive(_discoveryRunLastState))
+            if (IsDiscoveryRunActive(snapshot.State))
             {
-                _discoveryRunStartedUtc =
-                    DiscoveryRunClock();
-                _discoveryRunFinishedUtc =
-                    null;
-                _discoveryRunSnmpAddresses.Clear();
+                if (!_discoveryRunInProgress)
+                {
+                    _discoveryRunAddedDevices = false;
+                    _discoveryRunInProgress = true;
+                }
+
+                return;
             }
 
             if ((snapshot.State == DiscoveryControlState.Completed ||
                  snapshot.State == DiscoveryControlState.Stopped ||
                  snapshot.State == DiscoveryControlState.Faulted) &&
-                IsDiscoveryRunActive(_discoveryRunLastState))
+                _activeDiscoveryRunId.HasValue)
             {
-                _discoveryRunFinishedUtc =
-                    DiscoveryRunClock();
+                var runId = _activeDiscoveryRunId.Value;
+                _discoveryRunJournal.FinishRun(runId, snapshot, DiscoveryRunClock());
+                _discoveryLatestRun = _discoveryRunJournal.GetRun(runId);
+                var wasRetry = _discoveryRetryActive;
+                _activeDiscoveryRunId = null;
+                _discoveryRetryActive = false;
+                RefreshDiscoveryInbox();
+                if (wasRetry) RestoreDiscoveryInboxFocus();
             }
 
-            _discoveryRunLastSnapshot =
-                snapshot;
-            _discoveryRunLastState =
-                snapshot.State;
+            var restartMonitoring = _discoveryRunInProgress &&
+                _discoveryRunAddedDevices &&
+                (snapshot.State == DiscoveryControlState.Completed ||
+                 snapshot.State == DiscoveryControlState.Stopped) &&
+                _monitoringTargetSetSessionActive &&
+                _monitoringControl.Current.State == MonitoringControlState.Running;
+
+            _discoveryRunInProgress = false;
+            _discoveryRunAddedDevices = false;
+
+            if (restartMonitoring)
+            {
+                // Sprint 48: новые результаты обнаружения опрашиваются сразу — набор целей перезапускается после запуска обнаружения (на ходу Engine набор не меняет).
+                // Дожидаемся обновлений от кандидатов и читаем итоговый набор перед перезапуском.
+                await _discoveryTopologyRefreshTask;
+                await RefreshTopologyAsync();
+                await RestartMonitoringTargetSetAsync();
+            }
         }
 
         private static bool IsDiscoveryRunActive(
@@ -1738,9 +2033,10 @@ namespace NetLoom.Wpf
 
         private void RenderDiscoveryRunSummary()
         {
-            if (!_discoveryRunStartedUtc.HasValue ||
-                !_discoveryRunFinishedUtc.HasValue ||
-                _discoveryRunLastSnapshot == null)
+            if (_discoveryLatestRun == null ||
+                !_discoveryLatestRun.FinishedUtc.HasValue ||
+                _activeDiscoveryRunId.HasValue ||
+                IsDiscoveryRunActive(_discoveryControl.Current.State))
             {
                 DiscoveryRunSummaryPanel.Visibility =
                     Visibility.Collapsed;
@@ -1750,23 +2046,29 @@ namespace NetLoom.Wpf
             DiscoveryRunSummaryPanel.Visibility =
                 Visibility.Visible;
             DiscoveryRunStartedValueText.Text =
-                _discoveryRunStartedUtc.Value
+                _discoveryLatestRun.StartedUtc
                     .ToLocalTime()
                     .ToString("G", CultureInfo.CurrentCulture);
             DiscoveryRunDurationValueText.Text =
                 DiscoveryRunDurationText(
-                    _discoveryRunFinishedUtc.Value -
-                    _discoveryRunStartedUtc.Value);
+                    _discoveryLatestRun.FinishedUtc.Value -
+                    _discoveryLatestRun.StartedUtc);
             DiscoveryRunCheckedValueText.Text =
                 UiText.FormatCount(
                     "DiscoveryRunChecked",
-                    _discoveryRunLastSnapshot.TotalAddresses,
-                    _discoveryRunLastSnapshot.ProcessedAddresses);
+                    _discoveryLatestRun.TotalAddresses,
+                    _discoveryLatestRun.ProcessedAddresses);
             DiscoveryRunFoundValueText.Text =
                 UiText.Format(
                     "DiscoveryRunFoundValue",
-                    _discoveryRunLastSnapshot.FoundCandidates,
-                    _discoveryRunSnmpAddresses.Count);
+                    _discoveryLatestRun.FoundCandidates,
+                    _discoveryLatestRun.SnmpResponded);
+            DiscoveryRunErrorsValueText.Text =
+                _discoveryLatestRun.ErrorCount.ToString(
+                    CultureInfo.CurrentCulture);
+            DiscoveryRunKnownUnchangedValueText.Text =
+                _discoveryLatestRun.KnownUnchangedCount.ToString(
+                    CultureInfo.CurrentCulture);
         }
 
         private static string DiscoveryRunDurationText(
@@ -1796,18 +2098,165 @@ namespace NetLoom.Wpf
                 totalSeconds / 60 % 60);
         }
 
-        private void RefreshDiscoveryCandidateRows()
+        private void RefreshDiscoveryInbox()
         {
-            DiscoveryCandidatesList.ItemsSource =
-                _discoveryCandidateRows
-                    .OrderBy(
-                        row =>
-                            row.Address,
-                        StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
+            var focusedRow = (System.Windows.Input.Keyboard.FocusedElement as Button)?.DataContext
+                as DiscoveryInboxRow;
+            var run = _activeDiscoveryRunId.HasValue
+                ? _discoveryRunJournal.GetRun(_activeDiscoveryRunId.Value)
+                : _discoveryLatestRun;
+            DiscoveryInboxCanRetry = !_activeDiscoveryRunId.HasValue &&
+                !IsDiscoveryRunActive(_discoveryControl.Current.State);
+            DiscoveryInboxPanel.Visibility = run == null ? Visibility.Collapsed : Visibility.Visible;
+            if (run == null)
+            {
+                DiscoveryInboxGroupsList.ItemsSource = new DiscoveryInboxGroup[0];
+                _discoveryInboxRunId = null;
+                UpdateDiscoveryInboxActionsBar();
+                return;
+            }
 
-            UpdateDiscoveryResultsSurface(
-                _discoveryControl.Current);
+            var groups = DiscoveryInboxProjection.Build(
+                _discoveryRunJournal.GetResults(run.Id), run,
+                id => _discoveryProfiles.FirstOrDefault(profile => profile.Id == id)?.Name,
+                DiscoveryRunClock(),
+                id => _lastMapSnapshot?.Nodes.FirstOrDefault(node => node.DeviceId == id)?.Label,
+                DiscoveryInboxPlacementPath);
+            var previous = DiscoveryInboxGroupsList.Items.Cast<DiscoveryInboxGroup>().ToArray();
+            var sameRun = _discoveryInboxRunId == run.Id;
+            if (sameRun)
+            {
+                foreach (var group in groups)
+                {
+                    var oldGroup = previous.FirstOrDefault(item => item.Group == group.Group);
+                    if (oldGroup != null) group.IsExpanded = oldGroup.IsExpanded;
+                }
+            }
+            var changed = !sameRun || previous.Length != groups.Count ||
+                !previous.Zip(groups, (oldGroup, group) => oldGroup.Group == group.Group &&
+                    oldGroup.Count == group.Count && oldGroup.Rows.Zip(group.Rows,
+                        (oldRow, row) => oldRow.HasSameContent(row)).All(equal => equal)).All(equal => equal);
+            if (changed)
+            {
+                foreach (var row in previous.SelectMany(group => group.Rows))
+                    row.PropertyChanged -= OnDiscoveryInboxSelectionChanged;
+                if (sameRun)
+                {
+                    var selected = new HashSet<string>(previous.SelectMany(group => group.Rows)
+                        .Where(row => row.IsSelected).Select(row => row.Address));
+                    foreach (var row in groups.SelectMany(group => group.Rows))
+                        row.IsSelected = selected.Contains(row.Address);
+                }
+                DiscoveryInboxGroupsList.ItemsSource = groups;
+                foreach (var row in groups.SelectMany(group => group.Rows))
+                    row.PropertyChanged += OnDiscoveryInboxSelectionChanged;
+            }
+            UpdateDiscoveryInboxActionsBar();
+            _discoveryInboxRunId = run.Id;
+            DiscoveryInboxTitleText.Text = DiscoveryInboxProjection.BuildTitle(run);
+            DiscoveryInboxSummaryText.Text = DiscoveryInboxProjection.BuildSummary(groups, run);
+            DiscoveryInboxEmptyText.Visibility = groups.Count == 0 && run.FinishedUtc.HasValue
+                ? Visibility.Visible : Visibility.Collapsed;
+            UpdateDiscoveryResultsSurface(_discoveryControl.Current);
+            if (changed && focusedRow != null && DiscoveryInboxCanRetry)
+                RestoreDiscoveryInboxFocus(focusedRow.Address);
+        }
+
+        private async void OnDiscoveryInboxRetryClick(object sender, RoutedEventArgs e)
+        {
+            var row = (sender as Button)?.DataContext as DiscoveryInboxRow;
+            if (row == null || !DiscoveryInboxCanRetry) return;
+            if (row.CanUndoIgnore)
+            {
+                await UndoDiscoveryInboxIgnoreAsync(row);
+                return;
+            }
+            if (!row.CanRetry) return;
+            var run = _discoveryRunJournal.GetRun(row.RunId);
+            if (run == null) return;
+            var selected = DiscoveryProfileComboBox.SelectedItem as DiscoveryProfileOption;
+            var profile = _discoveryProfiles.FirstOrDefault(item => item.Id == run.AccessProfileId)
+                ?? selected?.Profile;
+            if (profile == null)
+            {
+                DiscoveryMessageText.Text = UiText.Get("DiscoveryValidationProfileRequired");
+                return;
+            }
+
+            DiscoveryMessageText.Text = string.Empty;
+            try
+            {
+                var request = new DiscoveryControlRequest(row.Address, row.Address,
+                    "255.255.255.255", profile.Id, profile.SnmpVersion);
+                _discoveryRunJournal.BeginRetry(row.RunId, row.Address, DiscoveryRunClock());
+                _activeDiscoveryRunId = row.RunId;
+                _discoveryRetryActive = true;
+                _discoveryRetryFocusAddress = row.Address;
+                DiscoveryInboxCanRetry = false;
+                await _discoveryControl.StartAsync(request, _lifetimeCancellation.Token);
+                if (_discoveryRetryActive) DiscoveryStopButton.Focus();
+            }
+            catch (OperationCanceledException) when (_lifetimeCancellation.IsCancellationRequested)
+            {
+                FinishFailedDiscoveryStart();
+            }
+            catch (Exception error)
+            {
+                FinishFailedDiscoveryStart();
+                ShowDiscoveryActionFailure(error);
+            }
+        }
+
+        private void RestoreDiscoveryInboxFocus(string address = null)
+        {
+            address = address ?? _discoveryRetryFocusAddress;
+            _discoveryRetryFocusAddress = null;
+            if (address == null) return;
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+            {
+                if (_discoveryClosed) return;
+                DiscoveryInboxGroupsList.UpdateLayout();
+                ExpandDiscoveryInboxAddress(DiscoveryInboxGroupsList, address);
+                DiscoveryInboxGroupsList.UpdateLayout();
+                var button = FindRetryButton(DiscoveryInboxGroupsList, address);
+                if (button != null && button.IsVisible && button.IsEnabled)
+                {
+                    button.BringIntoView();
+                    if (button.Focus()) return;
+                }
+                DiscoveryStartButton.Focus();
+            }));
+        }
+
+        private static bool ExpandDiscoveryInboxAddress(DependencyObject root, string address)
+        {
+            for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+            {
+                var child = VisualTreeHelper.GetChild(root, index);
+                var expander = child as Expander;
+                var group = expander?.DataContext as DiscoveryInboxGroup;
+                if (group != null && group.Rows.Any(row => row.Address == address && row.CanRetry))
+                {
+                    expander.IsExpanded = true;
+                    return true;
+                }
+                if (ExpandDiscoveryInboxAddress(child, address)) return true;
+            }
+            return false;
+        }
+
+        private static Button FindRetryButton(DependencyObject root, string address)
+        {
+            for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+            {
+                var child = VisualTreeHelper.GetChild(root, index);
+                var button = child as Button;
+                var row = button?.DataContext as DiscoveryInboxRow;
+                if (row != null && row.Address == address && row.CanRetry) return button;
+                var found = FindRetryButton(child, address);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         private void UpdateDiscoveryResultsSurface(
@@ -1821,7 +2270,8 @@ namespace NetLoom.Wpf
             }
 
             var isBeforeFirstRun =
-                _discoveryCandidateRows.Count == 0 &&
+                _discoveryLatestRun == null &&
+                !_activeDiscoveryRunId.HasValue &&
                 snapshot.State ==
                     DiscoveryControlState.Idle &&
                 snapshot.TotalAddresses == 0 &&
@@ -1916,6 +2366,24 @@ namespace NetLoom.Wpf
                     throw new ArgumentOutOfRangeException(
                         nameof(version));
             }
+        }
+
+        public sealed class DiscoveryProfileCheckRequestedEventArgs : EventArgs
+        {
+            public DiscoveryProfileCheckRequestedEventArgs(System.Net.IPAddress address, SnmpVersion snmpVersion,
+                byte[] communityUtf8, Guid? profileId)
+            {
+                Address = address ?? throw new ArgumentNullException(nameof(address));
+                SnmpVersion = snmpVersion;
+                CommunityUtf8 = communityUtf8;
+                ProfileId = profileId;
+            }
+
+            public System.Net.IPAddress Address { get; }
+            public SnmpVersion SnmpVersion { get; }
+            public byte[] CommunityUtf8 { get; }
+            public Guid? ProfileId { get; }
+            public Task<SnmpProfileCheckReport> Result { get; set; }
         }
 
         public sealed class DiscoveryProfileCreateRequestedEventArgs :
@@ -2090,21 +2558,6 @@ namespace NetLoom.Wpf
             public AccessProfile Profile { get; }
 
             public string DisplayName { get; }
-        }
-
-        private sealed class DiscoveryCandidateRow
-        {
-            public DiscoveryCandidateRow(
-                string address,
-                string summary)
-            {
-                Address = address;
-                Summary = summary;
-            }
-
-            public string Address { get; }
-
-            public string Summary { get; }
         }
 
         private sealed class EmptyDiscoveryControl :

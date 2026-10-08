@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using NetLoom.Application.Monitoring;
 using NetLoom.Domain.Access;
 
@@ -63,6 +64,9 @@ namespace NetLoom.Engine
         public int DiscoveryInterAddressDelayMilliseconds { get; private set; }
 
         public int DiscoveryMaxAddresses { get; private set; }
+
+        public IReadOnlyList<IPAddress> DiscoveryExcludedAddresses { get; private set; } =
+            new IPAddress[0];
 
         public double? InterfaceErrorRatePerMinuteThreshold
         {
@@ -162,6 +166,31 @@ namespace NetLoom.Engine
                 };
             }
 
+            if (command == "check-profile")
+            {
+                var checkValues = ParseOptions(args.Skip(1).ToArray(), new[]
+                {
+                    "address", "port", "version", "timeout-ms", "retries", "max-repetitions", "icmp-timeout-ms"
+                });
+                IPAddress checkAddress;
+                if (!IPAddress.TryParse(Required(checkValues, "address"), out checkAddress)
+                    || checkAddress.AddressFamily != AddressFamily.InterNetwork)
+                    throw Invalid("INVALID_ADDRESS");
+                var checkVersion = ParseEnum<SnmpVersion>(Get(checkValues, "version") ?? "V2C", "INVALID_SNMP_VERSION");
+                if (!Enum.IsDefined(typeof(SnmpVersion), checkVersion)) throw Invalid("INVALID_SNMP_VERSION");
+                return new EngineCommandLine
+                {
+                    Command = command,
+                    Address = checkAddress,
+                    Port = ParseInt(Get(checkValues, "port"), 161, 1, 65535, "INVALID_PORT"),
+                    Version = checkVersion,
+                    TimeoutMilliseconds = ParseInt(Get(checkValues, "timeout-ms"), 750, 1, int.MaxValue, "INVALID_TIMEOUT"),
+                    RetryCount = ParseInt(Get(checkValues, "retries"), 0, 0, int.MaxValue, "INVALID_RETRY_COUNT"),
+                    MaxRepetitions = ParseInt(Get(checkValues, "max-repetitions"), 10, 1, int.MaxValue, "INVALID_MAX_REPETITIONS"),
+                    DiscoveryIcmpTimeoutMilliseconds = ParseInt(Get(checkValues, "icmp-timeout-ms"), 500, 1, int.MaxValue, "INVALID_ICMP_TIMEOUT")
+                };
+            }
+
             if (command == "discover")
             {
                 var discoveryValues =
@@ -184,6 +213,7 @@ namespace NetLoom.Engine
                             "tcp-ports",
                             "inter-address-delay-ms",
                             "max-addresses",
+                            "exclude",
                             "control-stdin"
                         });
 
@@ -311,6 +341,8 @@ namespace NetLoom.Engine
                             1,
                             int.MaxValue,
                             "INVALID_TCP_TIMEOUT"),
+                    DiscoveryExcludedAddresses = ParseExcludedAddresses(
+                        Get(discoveryValues, "exclude")),
                     DiscoveryTcpPorts = ParsePorts(
                         Get(discoveryValues, "tcp-ports") ??
                         "22,80,443"),
@@ -671,6 +703,32 @@ namespace NetLoom.Engine
             }
 
             return parsed;
+        }
+
+        private static IReadOnlyList<IPAddress> ParseExcludedAddresses(
+            string value)
+        {
+            if (value == null)
+            {
+                return new IPAddress[0];
+            }
+
+            var result = new List<IPAddress>();
+
+            foreach (var token in value.Split(','))
+            {
+                IPAddress address;
+
+                if (!IPAddress.TryParse(token.Trim(), out address) ||
+                    address.AddressFamily != AddressFamily.InterNetwork)
+                {
+                    throw Invalid("INVALID_DISCOVERY_EXCLUDE");
+                }
+
+                result.Add(address);
+            }
+
+            return result.AsReadOnly();
         }
 
         private static IReadOnlyList<int> ParsePorts(

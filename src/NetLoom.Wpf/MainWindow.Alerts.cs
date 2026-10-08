@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using NetLoom.Application.Alerts;
 using NetLoom.Application.MapLayout;
@@ -512,9 +514,11 @@ public partial class MainWindow
 
     // Лента: сначала активные критические и предупреждения, затем остальное по свежести.
     // Sprint 47: сюда же попадает событие завершённого цикла опроса.
+    // Sprint 48: лента не пересоздаётся, если события не изменились, а при изменении фокус клавиатуры
+    // Остаётся на том же событии или переходит на «Все события» (§8, фокус не теряется без действия оператора).
     private void RenderShellEventList()
     {
-        ShellEventList.ItemsSource =
+        var rows =
             _shellEventRows
                 .OrderByDescending(
                     row =>
@@ -531,6 +535,89 @@ public partial class MainWindow
             _shellEventRows.Count == 0
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+
+        var currentRows =
+            ShellEventList.ItemsSource as ShellEventRow[];
+        var unchanged =
+            currentRows != null &&
+            currentRows.Length == rows.Length;
+
+        for (var index = 0;
+             unchanged && index < rows.Length;
+             index++)
+        {
+            unchanged =
+                ReferenceEquals(
+                    currentRows[index],
+                    rows[index]);
+        }
+
+        if (unchanged)
+        {
+            return;
+        }
+
+        var hadKeyboardFocus =
+            ShellEventList.IsKeyboardFocusWithin;
+        var focusedRow =
+            hadKeyboardFocus
+                ? (Keyboard.FocusedElement as FrameworkElement)
+                    ?.DataContext as ShellEventRow
+                : null;
+
+        ShellEventList.ItemsSource = rows;
+
+        if (!hadKeyboardFocus)
+        {
+            return;
+        }
+
+        ShellEventList.UpdateLayout();
+
+        if (focusedRow != null &&
+            rows.Any(row => ReferenceEquals(row, focusedRow)))
+        {
+            var container =
+                ShellEventList.ItemContainerGenerator
+                    .ContainerFromItem(focusedRow);
+            var button =
+                FindEventButton(container);
+
+            if (button != null &&
+                button.IsVisible &&
+                button.ActualWidth > 0 &&
+                button.Focus())
+            {
+                return;
+            }
+        }
+
+        ShellAllEventsButton.Focus();
+
+        Button FindEventButton(DependencyObject root)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            for (var index = 0;
+                 index < VisualTreeHelper.GetChildrenCount(root);
+                 index++)
+            {
+                var child =
+                    VisualTreeHelper.GetChild(root, index);
+                var button =
+                    child as Button ?? FindEventButton(child);
+
+                if (button != null)
+                {
+                    return button;
+                }
+            }
+
+            return null;
+        }
     }
 
     private void AddShellEvent(

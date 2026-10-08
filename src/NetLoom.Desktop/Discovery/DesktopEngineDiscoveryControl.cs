@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Desktop.Monitoring;
 
@@ -613,6 +614,25 @@ namespace NetLoom.Desktop.Discovery
                             _started;
                         break;
 
+                    case EngineDiscoveryMarkerKind.Phase:
+                        if (!_stopRequested)
+                        {
+                            PublishSnapshotLocked(
+                                Snapshot(
+                                    DiscoveryControlState.Running,
+                                    _activeRequest.Cidr,
+                                    _activeRequest.AccessProfileId,
+                                    marker.ProcessedAddresses,
+                                    marker.TotalAddresses,
+                                    marker.FoundCandidates,
+                                    marker.Address,
+                                    null,
+                                    marker.Phase,
+                                    marker.PhaseStep,
+                                    marker.PhaseCount));
+                        }
+                        break;
+
                     case EngineDiscoveryMarkerKind.Progress:
                         if (!_stopRequested)
                         {
@@ -775,7 +795,10 @@ namespace NetLoom.Desktop.Discovery
             int totalAddresses,
             int foundCandidates,
             System.Net.IPAddress currentAddress,
-            string faultMessage)
+            string faultMessage,
+            DiscoveryPhase? currentPhase = null,
+            int phaseStep = 0,
+            int phaseCount = 0)
         {
             return new DiscoveryControlSnapshot(
                 state,
@@ -785,7 +808,10 @@ namespace NetLoom.Desktop.Discovery
                 totalAddresses,
                 foundCandidates,
                 currentAddress,
-                faultMessage);
+                faultMessage,
+                currentPhase,
+                phaseStep,
+                phaseCount);
         }
 
         private void PublishSnapshot(

@@ -608,8 +608,8 @@
                                         <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.CategoryColumnWidth}" />
                                         <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.DescriptionColumnWidth}" />
                                         <ColumnDefinition Width="1.35*" />
-                                        <ColumnDefinition Width="0.55*" />
-                                        <ColumnDefinition Width="0.75*" />
+                                        <ColumnDefinition Width="0.55*" MinWidth="{DynamicResource NetLoom.Equipment.ConnectionsColumnMinWidth}" />
+                                        <ColumnDefinition Width="0.75*" MinWidth="{DynamicResource NetLoom.Equipment.UpdatedColumnMinWidth}" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock x:Name="EquipmentNameHeaderText"
                                                Grid.Column="1"
@@ -659,8 +659,8 @@
                                                             <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.CategoryColumnWidth}" />
                                                             <ColumnDefinition Width="{DynamicResource NetLoom.Equipment.DescriptionColumnWidth}" />
                                                             <ColumnDefinition Width="1.35*" />
-                                                            <ColumnDefinition Width="0.55*" />
-                                                            <ColumnDefinition Width="0.75*" />
+                                                            <ColumnDefinition Width="0.55*" MinWidth="{DynamicResource NetLoom.Equipment.ConnectionsColumnMinWidth}" />
+                                                            <ColumnDefinition Width="0.75*" MinWidth="{DynamicResource NetLoom.Equipment.UpdatedColumnMinWidth}" />
                                                         </Grid.ColumnDefinitions>
 
                                                         <!-- E2: проблема — значком ⚠ / × по грамматике статусов (§2), норма — серая точка, нет данных — «—». -->
@@ -690,6 +690,14 @@
                                                                        Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                                                        TextTrimming="CharacterEllipsis"
                                                                        ToolTip="{Binding ProblemText}" />
+                                                            <TextBlock x:Name="EquipmentUnconfirmedText"
+                                                                       Text="{Binding UnconfirmedText}"
+                                                                       Visibility="{Binding UnconfirmedVisibility}"
+                                                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                       FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       ToolTip="{Binding UnconfirmedHint}" />
                                                         </StackPanel>
 
                                                         <TextBlock Grid.Column="2"
@@ -1350,6 +1358,32 @@
                                                    VerticalAlignment="Center"
                                                    TextWrapping="Wrap" />
                                     </Grid>
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DiscoveryRunErrorsLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="DiscoveryRunErrorsValueText"
+                                                   Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                    <Grid Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="DiscoveryRunKnownUnchangedLabelText"
+                                                   Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock x:Name="DiscoveryRunKnownUnchangedValueText"
+                                                   Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
                                 </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
@@ -1406,6 +1440,7 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
@@ -1448,31 +1483,196 @@
                                                                Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
                                                                FontFamily="{DynamicResource NetLoom.FontFamily.Mono}"
                                                                TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="DiscoveryPhaseLabelText"
+                                                               Grid.Row="3"
+                                                               Grid.Column="0"
+                                                               Style="{StaticResource NetLoom.Style.FieldLabel}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                                                    <TextBlock x:Name="DiscoveryPhaseValueText"
+                                                               Grid.Row="3"
+                                                               Grid.Column="1"
+                                                               HorizontalAlignment="Right"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                               TextWrapping="Wrap" />
                                                 </Grid>
                                             </Border>
 
-                                            <ListBox x:Name="DiscoveryCandidatesList"
-                                                     Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
-                                                <ListBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Grid Margin="{DynamicResource NetLoom.Thickness.ResultRowPadding}">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="Auto" />
-                                                                <ColumnDefinition Width="*" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock Text="{Binding Address}"
-                                                                       Style="{StaticResource NetLoom.Style.MonoText}" />
-                                                            <TextBlock Grid.Column="1"
-                                                                       Text="{Binding Summary}"
-                                                                       Style="{StaticResource NetLoom.Style.MutedText}"
-                                                                       Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
-                                                                       TextWrapping="Wrap" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ListBox.ItemTemplate>
-                                            </ListBox>
+
                                         </StackPanel>
                                     </Expander>
+                                    <StackPanel x:Name="DiscoveryInboxPanel"
+                                                Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                        <TextBlock x:Name="DiscoveryInboxTitleText"
+                                                   Style="{StaticResource NetLoom.Style.GroupTitle}" />
+                                        <TextBlock x:Name="DiscoveryInboxSummaryText"
+                                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock x:Name="DiscoveryInboxEmptyText"
+                                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                                   Margin="{DynamicResource NetLoom.Thickness.GapSmTop}"
+                                                   TextWrapping="Wrap" />
+                                        <StackPanel x:Name="DiscoveryInboxActionsBar"
+                                                    Visibility="Collapsed"
+                                                    Margin="{DynamicResource NetLoom.Thickness.SectionGapTop}">
+                                            <!-- Sprint 48: итог действия («Принято: N») — рядом с числом выбранных, у кнопок, а не в форме слева. -->
+                                            <WrapPanel>
+                                                <TextBlock x:Name="DiscoveryInboxSelectedText"
+                                                           Style="{StaticResource NetLoom.Style.MutedText}"
+                                                           Typography.NumeralAlignment="Tabular" />
+                                                <TextBlock x:Name="DiscoveryInboxResultText"
+                                                           shell:LiveRegion.IsPolite="True"
+                                                           Visibility="Collapsed"
+                                                           Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
+                                                           Typography.NumeralAlignment="Tabular"
+                                                           TextWrapping="Wrap" />
+                                            </WrapPanel>
+                                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                                <shell:InertButton x:Name="DiscoveryInboxAcceptButton"
+                                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                        Click="OnDiscoveryInboxAcceptClick" />
+                                                <shell:InertButton x:Name="DiscoveryInboxIgnoreButton"
+                                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                        Click="OnDiscoveryInboxIgnoreClick" />
+                                                <shell:InertButton x:Name="DiscoveryInboxUnmanagedButton"
+                                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                        Click="OnDiscoveryInboxUnmanagedClick" />
+                                                <shell:InertButton x:Name="DiscoveryInboxPlacementButton"
+                                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                        Click="OnDiscoveryInboxPlacementClick" />
+                                            </WrapPanel>
+                                        </StackPanel>
+                                        <ItemsControl x:Name="DiscoveryInboxGroupsList">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Expander Style="{StaticResource NetLoom.Style.OperatorExpander}"
+                                                              Margin="{DynamicResource NetLoom.Thickness.GroupGap}"
+                                                              IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
+                                                        <Expander.Header>
+                                                            <TextBlock Text="{Binding Header}"
+                                                                       Style="{StaticResource NetLoom.Style.SidebarSectionLabel}" />
+                                                        </Expander.Header>
+                                                        <!-- Sprint 48: «Выбрать все» — в содержимом группы: в заголовке стрелка раскрытия вставала между строками. -->
+                                                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.ExpanderContent}">
+                                                            <CheckBox Content="{Binding SelectAllText}"
+                                                                      AutomationProperties.Name="{Binding SelectAllAutomationName}"
+                                                                      IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
+                                                                      IsThreeState="True">
+                                                                <CheckBox.Style>
+                                                                    <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding CanSelect}" Value="False">
+                                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding HasDiscoveryInboxActions, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="False">
+                                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </CheckBox.Style>
+                                                            </CheckBox>
+                                                            <ItemsControl ItemsSource="{Binding Rows}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Border Style="{StaticResource NetLoom.Style.OperatorCard}"
+                                                                                Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                                                ToolTip="{Binding FullReason}">
+                                                                            <Grid>
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="Auto" />
+                                                                                    <ColumnDefinition Width="Auto" />
+                                                                                    <ColumnDefinition Width="*" />
+                                                                                    <ColumnDefinition Width="Auto" />
+                                                                                </Grid.ColumnDefinitions>
+                                                                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                                          AutomationProperties.Name="{Binding SelectAutomationName}"
+                                                                                          Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxSelection}"
+                                                                                          VerticalAlignment="Top">
+                                                                                    <CheckBox.Style>
+                                                                                        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                                                                                            <Style.Triggers>
+                                                                                                <DataTrigger Binding="{Binding CanSelect}" Value="False">
+                                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                                </DataTrigger>
+                                                                                                <DataTrigger Binding="{Binding HasDiscoveryInboxActions, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="False">
+                                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                                </DataTrigger>
+                                                                                            </Style.Triggers>
+                                                                                        </Style>
+                                                                                    </CheckBox.Style>
+                                                                                </CheckBox>
+                                                                                <TextBlock Grid.Column="1" Text="{Binding Address}"
+                                                                                           Width="{DynamicResource NetLoom.Width.DiscoveryInboxAddress}"
+                                                                                           Style="{StaticResource NetLoom.Style.MonoText}" />
+                                                                                <StackPanel Grid.Column="2"
+                                                                                            Margin="{DynamicResource NetLoom.Thickness.InlineGap}">
+                                                                                    <TextBlock Text="{Binding Name}"
+                                                                                               FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                                                    <TextBlock Text="{Binding Reason}"
+                                                                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                                               TextWrapping="Wrap" />
+                                                                                    <TextBlock Text="{Binding ResolutionText}" TextWrapping="Wrap">
+                                                                                        <TextBlock.Style>
+                                                                                            <Style TargetType="TextBlock" BasedOn="{StaticResource NetLoom.Style.MutedText}">
+                                                                                                <Style.Triggers>
+                                                                                                    <DataTrigger Binding="{Binding ResolutionText}" Value="">
+                                                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                                                    </DataTrigger>
+                                                                                                </Style.Triggers>
+                                                                                            </Style>
+                                                                                        </TextBlock.Style>
+                                                                                    </TextBlock>
+                                                                                    <TextBlock Text="{Binding Completeness}" TextWrapping="Wrap">
+                                                                                        <TextBlock.Style>
+                                                                                            <Style TargetType="TextBlock" BasedOn="{StaticResource NetLoom.Style.MutedText}">
+                                                                                                <Style.Triggers>
+                                                                                                    <DataTrigger Binding="{Binding Completeness}" Value="">
+                                                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                                                    </DataTrigger>
+                                                                                                </Style.Triggers>
+                                                                                            </Style>
+                                                                                        </TextBlock.Style>
+                                                                                    </TextBlock>
+                                                                                </StackPanel>
+                                                                                <Button Grid.Column="3"
+                                                                                        Content="{Binding RetryText}"
+                                                                                        AutomationProperties.Name="{Binding RetryAutomationName}"
+                                                                                        Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                                                                        VerticalAlignment="Top"
+                                                                                        IsEnabled="{Binding DiscoveryInboxCanRetry, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                                                                        Click="OnDiscoveryInboxRetryClick">
+                                                                                    <Button.Style>
+                                                                                        <Style TargetType="Button" BasedOn="{StaticResource NetLoom.Style.LinkButton}">
+                                                                                            <Style.Triggers>
+                                                                                                <DataTrigger Binding="{Binding HasRowAction}" Value="False">
+                                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                                </DataTrigger>
+                                                                                                <MultiDataTrigger>
+                                                                                                    <MultiDataTrigger.Conditions>
+                                                                                                        <Condition Binding="{Binding CanUndoIgnore}" Value="True" />
+                                                                                                        <Condition Binding="{Binding HasDiscoveryInboxActions, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="False" />
+                                                                                                    </MultiDataTrigger.Conditions>
+                                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                                </MultiDataTrigger>
+                                                                                            </Style.Triggers>
+                                                                                        </Style>
+                                                                                    </Button.Style>
+                                                                                </Button>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </Expander>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </StackPanel>
                             </ScrollViewer>
                         </Grid>
@@ -2080,6 +2280,15 @@
                                                                Visibility="Collapsed" />
                                                 </Grid>
                                                 <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsProse}"
+                                                                 Value="True">
+                                                        <Setter TargetName="InspectorFieldValueText"
+                                                                Property="HorizontalAlignment"
+                                                                Value="Left" />
+                                                        <Setter TargetName="InspectorFieldValueText"
+                                                                Property="TextAlignment"
+                                                                Value="Left" />
+                                                    </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsSectionHeader}"
                                                                  Value="True">
                                                         <Setter TargetName="InspectorFieldLabelText"

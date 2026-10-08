@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
+using NetLoom.Application.Snmp;
 
 namespace NetLoom.Desktop.Discovery
 {
@@ -15,7 +17,8 @@ namespace NetLoom.Desktop.Discovery
         Progress = 3,
         Candidate = 4,
         Completed = 5,
-        Stopped = 6
+        Stopped = 6,
+        Phase = 7
     }
 
     internal sealed class EngineDiscoveryMarker
@@ -28,7 +31,10 @@ namespace NetLoom.Desktop.Discovery
             int foundCandidates = 0,
             IPAddress address = null,
             bool? candidateFound = null,
-            DiscoveryCandidateSnapshot candidate = null)
+            DiscoveryCandidateSnapshot candidate = null,
+            DiscoveryPhase? phase = null,
+            int phaseStep = 0,
+            int phaseCount = 0)
         {
             Kind = kind;
             AccessProfileId = accessProfileId;
@@ -38,6 +44,9 @@ namespace NetLoom.Desktop.Discovery
             Address = address;
             CandidateFound = candidateFound;
             Candidate = candidate;
+            Phase = phase;
+            PhaseStep = phaseStep;
+            PhaseCount = phaseCount;
         }
 
         public EngineDiscoveryMarkerKind Kind { get; }
@@ -55,6 +64,12 @@ namespace NetLoom.Desktop.Discovery
         public bool? CandidateFound { get; }
 
         public DiscoveryCandidateSnapshot Candidate { get; }
+
+        public DiscoveryPhase? Phase { get; }
+
+        public int PhaseStep { get; }
+
+        public int PhaseCount { get; }
     }
 
     internal static class EngineDiscoveryMarkerParser
@@ -159,6 +174,69 @@ namespace NetLoom.Desktop.Discovery
                         0,
                         total,
                         0);
+                return true;
+            }
+
+            if (string.Equals(
+                state,
+                "phase",
+                StringComparison.Ordinal))
+            {
+                int processed;
+                int total;
+                int found;
+                IPAddress address;
+                DiscoveryPhase phase;
+                int step;
+                int steps;
+
+                if (!TryNonNegativeInt(
+                        values,
+                        "processed",
+                        out processed) ||
+                    !TryNonNegativeInt(
+                        values,
+                        "total",
+                        out total) ||
+                    total <= processed ||
+                    !TryNonNegativeInt(
+                        values,
+                        "found",
+                        out found) ||
+                    found > processed ||
+                    !TryAddress(
+                        values,
+                        "address",
+                        out address) ||
+                    !TryPhase(
+                        values,
+                        out phase) ||
+                    !TryInt(
+                        values,
+                        "step",
+                        1,
+                        3,
+                        out step) ||
+                    !TryInt(
+                        values,
+                        "steps",
+                        step,
+                        3,
+                        out steps))
+                {
+                    return false;
+                }
+
+                marker =
+                    new EngineDiscoveryMarker(
+                        EngineDiscoveryMarkerKind.Phase,
+                        processedAddresses: processed,
+                        totalAddresses: total,
+                        foundCandidates: found,
+                        address: address,
+                        phase: phase,
+                        phaseStep: step,
+                        phaseCount: steps);
                 return true;
             }
 
@@ -271,6 +349,7 @@ namespace NetLoom.Desktop.Discovery
             Guid? accessProfileId;
             bool icmp;
             bool snmp;
+            SnmpTransportFailure? snmpError;
             IReadOnlyList<int> tcpPorts;
             string sysName;
             string sysDescription;
@@ -294,6 +373,8 @@ namespace NetLoom.Desktop.Discovery
                     values,
                     "snmp",
                     out snmp) ||
+                !TrySnmpError(values, out snmpError) ||
+                (snmp && snmpError.HasValue) ||
                 !TryPorts(
                     values,
                     "tcpPorts",
@@ -339,7 +420,8 @@ namespace NetLoom.Desktop.Discovery
                         sysDescription,
                         sysObjectId,
                         sysLocation,
-                        interfaceCount);
+                        interfaceCount,
+                        snmpError);
             }
             catch
             {
@@ -353,6 +435,42 @@ namespace NetLoom.Desktop.Discovery
                     candidate: candidate);
 
             return true;
+        }
+
+        private static bool TrySnmpError(
+            IReadOnlyDictionary<string, string> values,
+            out SnmpTransportFailure? failure)
+        {
+            failure = null;
+            string text;
+
+            if (!values.TryGetValue("snmpError", out text))
+            {
+                return true;
+            }
+
+            switch (text)
+            {
+                case "none":
+                    return true;
+                case "timeout":
+                    failure = SnmpTransportFailure.Timeout;
+                    return true;
+                case "socket":
+                    failure = SnmpTransportFailure.Socket;
+                    return true;
+                case "protocol":
+                    failure = SnmpTransportFailure.Protocol;
+                    return true;
+                case "unsupported":
+                    failure = SnmpTransportFailure.UnsupportedCredentials;
+                    return true;
+                case "authentication":
+                    failure = SnmpTransportFailure.Authentication;
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static Dictionary<string, string> ParseValues(
@@ -372,8 +490,7 @@ namespace NetLoom.Desktop.Discovery
                 var separator =
                     part.IndexOf('=');
 
-                if (separator <= 0 ||
-                    separator == part.Length - 1)
+                if (separator <= 0)
                 {
                     continue;
                 }
@@ -439,6 +556,36 @@ namespace NetLoom.Desktop.Discovery
 
             value = parsed;
             return true;
+        }
+
+        private static bool TryPhase(
+            IReadOnlyDictionary<string, string> values,
+            out DiscoveryPhase phase)
+        {
+            phase = default(DiscoveryPhase);
+            string text;
+
+            if (!values.TryGetValue(
+                "phase",
+                out text))
+            {
+                return false;
+            }
+
+            switch (text)
+            {
+                case "icmp":
+                    phase = DiscoveryPhase.Icmp;
+                    return true;
+                case "tcp":
+                    phase = DiscoveryPhase.Tcp;
+                    return true;
+                case "snmp":
+                    phase = DiscoveryPhase.Snmp;
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static bool TryPositiveInt(

@@ -73,7 +73,8 @@ namespace NetLoom.Topology.Map
                     .Where(
                         device =>
                             !device.IsHidden &&
-                            !device.IsArchived)
+                            !device.IsArchived &&
+                            !device.IgnoredUtc.HasValue)
                     .OrderBy(
                         device =>
                             DisplayName(device),
@@ -157,7 +158,8 @@ namespace NetLoom.Topology.Map
                         MapCategory(
                             device.Category),
                         device.Id,
-                        device.ManagementAddress));
+                        device.ManagementAddress,
+                        device.IsUnconfirmed));
             }
 
             var mapLinks =

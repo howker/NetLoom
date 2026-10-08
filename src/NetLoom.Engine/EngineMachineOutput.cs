@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using NetLoom.Application.Discovery;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.Snmp;
 
 namespace NetLoom.Engine
 {
@@ -376,6 +377,40 @@ namespace NetLoom.Engine
                     CultureInfo.InvariantCulture));
         }
 
+        public static void WriteDiscoveryPhase(
+            TextWriter writer,
+            DiscoveryPhaseUpdate update,
+            int foundCandidates)
+        {
+            if (update == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(update));
+            }
+
+            WriteLine(
+                writer,
+                "NETLOOM_DISCOVERY state=phase processed=" +
+                (update.AddressIndex - 1).ToString(
+                    CultureInfo.InvariantCulture) +
+                " total=" +
+                update.TotalAddresses.ToString(
+                    CultureInfo.InvariantCulture) +
+                " found=" +
+                foundCandidates.ToString(
+                    CultureInfo.InvariantCulture) +
+                " address=" +
+                update.Address +
+                " phase=" +
+                update.Phase.ToString().ToLowerInvariant() +
+                " step=" +
+                update.Step.ToString(
+                    CultureInfo.InvariantCulture) +
+                " steps=" +
+                update.StepCount.ToString(
+                    CultureInfo.InvariantCulture));
+        }
+
         public static void WriteDiscoveryProgress(
             TextWriter writer,
             DiscoveryProgress progress,
@@ -462,7 +497,31 @@ namespace NetLoom.Engine
                  inventory.Interfaces == null
                     ? "0"
                     : inventory.Interfaces.Count.ToString(
-                        CultureInfo.InvariantCulture)));
+                        CultureInfo.InvariantCulture)) +
+                " snmpError=" +
+                FormatSnmpFailure(candidate.SnmpFailure));
+        }
+
+        private static string FormatSnmpFailure(
+            SnmpTransportFailure? failure)
+        {
+            switch (failure)
+            {
+                case null:
+                    return "none";
+                case SnmpTransportFailure.Timeout:
+                    return "timeout";
+                case SnmpTransportFailure.Socket:
+                    return "socket";
+                case SnmpTransportFailure.Protocol:
+                    return "protocol";
+                case SnmpTransportFailure.UnsupportedCredentials:
+                    return "unsupported";
+                case SnmpTransportFailure.Authentication:
+                    return "authentication";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(failure));
+            }
         }
 
         public static void WriteDiscoveryCompleted(

@@ -77,10 +77,17 @@ namespace NetLoom.Desktop.Discovery
                     CultureInfo.InvariantCulture),
                 "--max-addresses",
                 request.MaxAddresses.ToString(
-                    CultureInfo.InvariantCulture),
-                "--control-stdin",
-                "true"
+                    CultureInfo.InvariantCulture)
                 })
+            .Concat(
+                request.ExcludedAddresses.Count > 0
+                    ? new[]
+                    {
+                        "--exclude",
+                        string.Join(",", request.ExcludedAddresses)
+                    }
+                    : new string[0])
+            .Concat(new[] { "--control-stdin", "true" })
             .ToArray();
         }
 

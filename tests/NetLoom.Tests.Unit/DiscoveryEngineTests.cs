@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -259,6 +260,234 @@ namespace NetLoom.Tests.Unit
                 inventory.CollectionCount);
         }
 
+        [TestMethod]
+        public void PhasesAreReportedInProbeOrderForEachAddress()
+        {
+            var first = IPAddress.Parse("192.0.2.80");
+            var second = IPAddress.Parse("192.0.2.81");
+            var calls = new List<string>();
+            var phases = new List<DiscoveryPhaseUpdate>();
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(
+                    false,
+                    new int[0],
+                    calls),
+                new SuccessfulInventoryCollector(
+                    calls));
+
+            var results = engine.Discover(
+                    CreateRequest(
+                        Guid.NewGuid(),
+                        new[] { first, second }),
+                    CancellationToken.None,
+                    update =>
+                    {
+                        phases.Add(update);
+                        calls.Add(
+                            "phase:" + update.Phase + ":" + update.Address);
+                    })
+                .ToArray();
+
+            Assert.AreEqual(
+                2,
+                results.Length);
+            Assert.AreEqual(
+                6,
+                phases.Count);
+
+            var expectedPhases = new[]
+            {
+                DiscoveryPhase.Icmp,
+                DiscoveryPhase.Tcp,
+                DiscoveryPhase.Snmp
+            };
+
+            for (var index = 0; index < phases.Count; index++)
+            {
+                Assert.AreEqual(
+                    index < 3 ? first : second,
+                    phases[index].Address);
+                Assert.AreEqual(
+                    index / 3 + 1,
+                    phases[index].AddressIndex);
+                Assert.AreEqual(
+                    2,
+                    phases[index].TotalAddresses);
+                Assert.AreEqual(
+                    expectedPhases[index % 3],
+                    phases[index].Phase);
+                Assert.AreEqual(
+                    index % 3 + 1,
+                    phases[index].Step);
+                Assert.AreEqual(
+                    3,
+                    phases[index].StepCount);
+            }
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "phase:Icmp:192.0.2.80",
+                    "probe:icmp:192.0.2.80",
+                    "phase:Tcp:192.0.2.80",
+                    "probe:tcp:192.0.2.80",
+                    "phase:Snmp:192.0.2.80",
+                    "probe:snmp:192.0.2.80",
+                    "phase:Icmp:192.0.2.81",
+                    "probe:icmp:192.0.2.81",
+                    "phase:Tcp:192.0.2.81",
+                    "probe:tcp:192.0.2.81",
+                    "phase:Snmp:192.0.2.81",
+                    "probe:snmp:192.0.2.81"
+                },
+                calls);
+        }
+
+        [TestMethod]
+        public void TcpPhaseIsSkippedWhenNoPortsAreConfigured()
+        {
+            var address = IPAddress.Parse("192.0.2.82");
+            var calls = new List<string>();
+            var phases = new List<DiscoveryPhaseUpdate>();
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(
+                    false,
+                    new int[0],
+                    calls),
+                new SuccessfulInventoryCollector(
+                    calls));
+
+            var request = new DiscoveryRequest(
+                new[] { address },
+                new IPAddress[0],
+                new int[0],
+                CreateProfile(Guid.NewGuid()),
+                100,
+                100,
+                0);
+
+            var results = engine.Discover(
+                    request,
+                    CancellationToken.None,
+                    update =>
+                    {
+                        phases.Add(update);
+                        calls.Add(
+                            "phase:" + update.Phase + ":" + update.Address);
+                    })
+                .ToArray();
+
+            Assert.AreEqual(
+                1,
+                results.Length);
+            Assert.AreEqual(
+                0,
+                results[0].Candidate.OpenTcpPorts.Count);
+            Assert.AreEqual(
+                2,
+                phases.Count);
+            Assert.AreEqual(
+                DiscoveryPhase.Icmp,
+                phases[0].Phase);
+            Assert.AreEqual(
+                1,
+                phases[0].Step);
+            Assert.AreEqual(
+                DiscoveryPhase.Snmp,
+                phases[1].Phase);
+            Assert.AreEqual(
+                2,
+                phases[1].Step);
+
+            foreach (var phase in phases)
+            {
+                Assert.AreEqual(
+                    address,
+                    phase.Address);
+                Assert.AreEqual(
+                    1,
+                    phase.AddressIndex);
+                Assert.AreEqual(
+                    1,
+                    phase.TotalAddresses);
+                Assert.AreEqual(
+                    2,
+                    phase.StepCount);
+            }
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "phase:Icmp:192.0.2.82",
+                    "probe:icmp:192.0.2.82",
+                    "phase:Snmp:192.0.2.82",
+                    "probe:snmp:192.0.2.82"
+                },
+                calls);
+        }
+
+        [TestMethod]
+        public void SilentAddressWithSnmpTimeoutIsNotAnError()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(false, new int[0]),
+                new CountingFailingInventoryCollector(SnmpTransportFailure.Timeout));
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(0, results.Count);
+        }
+
+        [TestMethod]
+        public void AddressAnsweringIcmpWithSnmpTimeoutReportsTimeout()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(true, new int[0]),
+                new CountingFailingInventoryCollector(SnmpTransportFailure.Timeout));
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(1, results.Count);
+            Assert.AreEqual(SnmpTransportFailure.Timeout, results[0].SnmpFailure);
+        }
+
+        [TestMethod]
+        public void SilentAddressWithAuthenticationFailureIsReported()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(false, new int[0]),
+                new CountingFailingInventoryCollector(SnmpTransportFailure.Authentication));
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(1, results.Count);
+            Assert.IsFalse(results[0].IcmpReachable);
+            Assert.AreEqual(0, results[0].OpenTcpPorts.Count);
+            Assert.AreEqual(SnmpTransportFailure.Authentication, results[0].SnmpFailure);
+        }
+
+        [TestMethod]
+        public void SuccessfulSnmpHasNoFailure()
+        {
+            var engine = new DiscoveryEngine(
+                new FakeNetworkProbe(false, new int[0]),
+                new SuccessfulInventoryCollector());
+
+            var results = engine.Discover(CreateRequest(
+                Guid.NewGuid(),
+                new[] { IPAddress.Parse("192.0.2.7") }));
+
+            Assert.AreEqual(1, results.Count);
+            Assert.IsTrue(results[0].SnmpResponded);
+            Assert.IsNull(results[0].SnmpFailure);
+        }
+
         private static DiscoveryRequest CreateRequest(
             Guid profileId,
             IReadOnlyList<IPAddress> addresses,
@@ -293,13 +522,16 @@ namespace NetLoom.Tests.Unit
         {
             private readonly bool _icmp;
             private readonly IReadOnlyList<int> _ports;
+            private readonly IList<string> _calls;
 
             public FakeNetworkProbe(
                 bool icmp,
-                IReadOnlyList<int> ports)
+                IReadOnlyList<int> ports,
+                IList<string> calls = null)
             {
                 _icmp = icmp;
                 _ports = ports;
+                _calls = calls;
             }
 
             public bool IsIcmpReachable(
@@ -308,6 +540,7 @@ namespace NetLoom.Tests.Unit
                 CancellationToken cancellationToken)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                _calls?.Add("probe:icmp:" + address);
                 return _icmp;
             }
 
@@ -318,6 +551,7 @@ namespace NetLoom.Tests.Unit
                 CancellationToken cancellationToken)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                _calls?.Add("probe:tcp:" + address);
                 return _ports;
             }
         }
@@ -388,9 +622,18 @@ namespace NetLoom.Tests.Unit
         private sealed class SuccessfulInventoryCollector
             : IInventoryCollector
         {
+            private readonly IList<string> _calls;
+
+            public SuccessfulInventoryCollector(
+                IList<string> calls = null)
+            {
+                _calls = calls;
+            }
+
             public InventorySnapshot Collect(
                 InventoryCollectionRequest request)
             {
+                _calls?.Add("probe:snmp:" + request.Address);
                 return new InventorySnapshot(
                     request.Address,
                     "switch-01",
@@ -406,6 +649,14 @@ namespace NetLoom.Tests.Unit
         private sealed class CountingFailingInventoryCollector
             : IInventoryCollector
         {
+            private readonly SnmpTransportFailure _failure;
+
+            public CountingFailingInventoryCollector(
+                SnmpTransportFailure failure = SnmpTransportFailure.Timeout)
+            {
+                _failure = failure;
+            }
+
             public int CollectionCount { get; private set; }
 
             public InventorySnapshot Collect(
@@ -414,8 +665,8 @@ namespace NetLoom.Tests.Unit
                 CollectionCount++;
 
                 throw new SnmpTransportException(
-                    SnmpTransportFailure.Timeout,
-                    "Timeout",
+                    _failure,
+                    "Synthetic SNMP failure",
                     null);
             }
         }
