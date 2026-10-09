@@ -42,6 +42,13 @@
     <Thickness x:Key="NetLoom.Thickness.MapNodePadding">8</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNoticePadding">12,6</Thickness>
     <sys:Double x:Key="NetLoom.Map.QualityListMaxHeight">240</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.QualityPanelWidth">520</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.OverlayShadowBlur">16</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.OverlayShadowDepth">4</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.OverlayShadowOpacity">0.18</sys:Double>
+    <sys:Int32 x:Key="NetLoom.Map.OverlayZIndex">10</sys:Int32>
+    <Thickness x:Key="NetLoom.Thickness.MapOverlayMargin">12</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapOverlayPadding">12</Thickness>
     <sys:Double x:Key="NetLoom.Expander.ArrowStrokeThickness">1.5</sys:Double>
     <Geometry x:Key="NetLoom.Geometry.ExpanderCollapsed">M 0,0 L 4,4 L 0,8</Geometry>
     <Geometry x:Key="NetLoom.Geometry.ExpanderExpanded">M 0,0 L 4,4 L 8,0</Geometry>
@@ -71,6 +78,10 @@
     <!-- §8: тематическая рамка фокуса вместо системного пунктира — 2 px, снаружи элемента с зазором 1 px. -->
     <Thickness x:Key="NetLoom.Thickness.FocusRing">2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FocusRingOffset">-3</Thickness>
+    <!-- Кольцо фокуса элементов холста карты: окно пересчитывает обе величины как экранные 2 px и -3 px,
+         Делённые на масштаб карты (§8), и кладёт их в ресурсы MapScrollViewer. Здесь — значения при 100 %. -->
+    <Thickness x:Key="NetLoom.Thickness.MapFocusRing">2</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapFocusRingOffset">-3</Thickness>
     <!-- A2: выбранная карточка предупреждения — рамка 2; поле карточки меньше на 1, чтобы содержимое не сдвигалось. -->
     <Thickness x:Key="NetLoom.Thickness.CardSelectedBorder">2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardSelectedPadding">19</Thickness>
@@ -246,6 +257,8 @@
     <sys:Double x:Key="NetLoom.Map.FitPadding">48</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">3</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ParallelLinkSpacing">14</sys:Double>
+    <!-- Наименьшее экранное расстояние между параллельными связями пары при любом масштабе. -->
+    <sys:Double x:Key="NetLoom.Map.ParallelLinkMinScreenGap">8</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">5</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloThickness">18</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloOpacity">0.42</sys:Double>

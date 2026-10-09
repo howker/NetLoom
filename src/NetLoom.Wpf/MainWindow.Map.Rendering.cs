@@ -334,6 +334,8 @@ public partial class MainWindow
             locations.ToDictionary(
                 item => item.Id);
 
+        var locationOrder = 0;
+
         var ordered =
             locations
                 .OrderBy(
@@ -400,10 +402,23 @@ public partial class MainWindow
 
             Panel.SetZIndex(
                 visual.Border,
-                -100 +
-                LocationDepth(
-                    location,
-                    byId));
+                ReferenceEquals(
+                    visual.Border,
+                    _focusRaisedLocationFrame)
+                    ? FocusRaisedLocationZIndex
+                    : -100 +
+                      LocationDepth(
+                          location,
+                          byId));
+
+            // Порядок Tab не зависит от Z-порядка (рамка с фокусом поднимается наверх): по глубине и порядку снимка.
+            KeyboardNavigation.SetTabIndex(
+                visual.CollapseButton,
+                (LocationDepth(
+                     location,
+                     byId) *
+                 10000) +
+                locationOrder++);
 
             UpdateLocationVisual(
                 visual,
@@ -447,6 +462,54 @@ public partial class MainWindow
         }
 
         UpdateLocationSelectionPresentation();
+    }
+
+    // §8: вкладка с фокусом клавиатуры не должна лежать под чужой рамкой (сохранённые рамки могут
+    // Накладываться) — её размещение поднимается над остальными рамками, но остаётся под связями и узлами.
+    private const int FocusRaisedLocationZIndex = -1;
+    private UIElement _focusRaisedLocationFrame;
+    private int _focusRaisedLocationOriginalZIndex;
+
+    private void OnMapLocationToggleGotKeyboardFocus(
+        object sender,
+        KeyboardFocusChangedEventArgs e)
+    {
+        DependencyObject current = sender as DependencyObject;
+        while (current != null &&
+               !ReferenceEquals(VisualTreeHelper.GetParent(current), MapCanvas))
+        {
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        var frame = current as UIElement;
+        if (frame == null ||
+            ReferenceEquals(frame, _focusRaisedLocationFrame))
+        {
+            return;
+        }
+
+        RestoreFocusRaisedLocationFrame();
+        _focusRaisedLocationFrame = frame;
+        _focusRaisedLocationOriginalZIndex = Panel.GetZIndex(frame);
+        Panel.SetZIndex(frame, FocusRaisedLocationZIndex);
+    }
+
+    private void OnMapLocationToggleLostKeyboardFocus(
+        object sender,
+        KeyboardFocusChangedEventArgs e)
+    {
+        RestoreFocusRaisedLocationFrame();
+    }
+
+    private void RestoreFocusRaisedLocationFrame()
+    {
+        if (_focusRaisedLocationFrame == null)
+        {
+            return;
+        }
+
+        Panel.SetZIndex(_focusRaisedLocationFrame, _focusRaisedLocationOriginalZIndex);
+        _focusRaisedLocationFrame = null;
     }
 
     private void NormalizeLocationHierarchy(
@@ -825,6 +888,8 @@ public partial class MainWindow
             VerticalAlignment = VerticalAlignment.Center
         };
         collapseButton.Click += OnMapLocationCollapseClick;
+        collapseButton.GotKeyboardFocus += OnMapLocationToggleGotKeyboardFocus;
+        collapseButton.LostKeyboardFocus += OnMapLocationToggleLostKeyboardFocus;
         var headerGrid = new Grid { Cursor = Cursors.SizeAll };
         var statusIcon = new Path
         {
@@ -2379,7 +2444,7 @@ public partial class MainWindow
         ParallelLinkLayout.Offset(
             x1, y1, x2, y2,
             slot.Slot,
-            ParallelLinkLayout.HalfSpacing(slot.GroupSize, _parallelLinkSpacing, 0.75 * _nodeHeight),
+            ParallelLinkLayout.HalfSpacing(slot.GroupSize, ParallelLinkSpacingAtZoom(), 0.75 * _nodeHeight),
             slot.SourceIsCanonicalFirst,
             out x1, out y1, out x2, out y2);
 

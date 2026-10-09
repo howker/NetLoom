@@ -559,8 +559,11 @@ namespace NetLoom.Tests.Unit
                         framework);
 
                 if (region.Width < 2 ||
-                    region.Height < 2)
+                    region.Height < 2 ||
+                    !IsFullyInsideScrollViewport(
+                        framework))
                 {
+                    // Элемент за краем прокручиваемой области (например, на карте) — рамку не измерить.
                     continue;
                 }
 
@@ -616,10 +619,22 @@ namespace NetLoom.Tests.Unit
                         before,
                         after);
 
+                // §8 требует 2 px на экране: периметр — по экранным границам (на масштабируемой карте
+                // Элемент меньше своего логического размера).
+                var screenBounds =
+                    framework
+                        .TransformToAncestor(root)
+                        .TransformBounds(
+                            new Rect(
+                                0,
+                                0,
+                                framework.ActualWidth,
+                                framework.ActualHeight));
+
                 var perimeter =
                     2.0 *
-                    (framework.ActualWidth +
-                     framework.ActualHeight);
+                    (screenBounds.Width +
+                     screenBounds.Height);
 
                 if (FocusSampleNames.Contains(
                         framework.Name))
@@ -654,6 +669,48 @@ namespace NetLoom.Tests.Unit
             }
 
             Keyboard.ClearFocus();
+        }
+
+        private static bool IsFullyInsideScrollViewport(
+            FrameworkElement element)
+        {
+            DependencyObject current =
+                VisualTreeHelper.GetParent(
+                    element);
+
+            while (current != null &&
+                   !(current is ScrollViewer))
+            {
+                current =
+                    VisualTreeHelper.GetParent(
+                        current);
+            }
+
+            var viewer =
+                current as ScrollViewer;
+
+            if (viewer == null)
+            {
+                return true;
+            }
+
+            var bounds =
+                element
+                    .TransformToAncestor(viewer)
+                    .TransformBounds(
+                        new Rect(
+                            0,
+                            0,
+                            element.ActualWidth,
+                            element.ActualHeight));
+
+            return new Rect(
+                    0,
+                    0,
+                    viewer.ViewportWidth,
+                    viewer.ViewportHeight)
+                .Contains(
+                    bounds);
         }
 
         private static Int32Rect FocusRegion(

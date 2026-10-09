@@ -23,7 +23,7 @@ namespace NetLoom.Tests.Unit
     public sealed partial class Sprint46ShellFoundationTests
     {
         [TestMethod]
-        public void TopologyQualityLineExpandsAndShowsLinkAndDeviceWithoutLeavingList()
+        public void TopologyQualityLineGroupsObjectReasonsAndShowReturnsFocusToToggle()
         {
             WithTopologyQualityWindow(Sprint49TopologyQualityFixture.Snapshot(secondLink: true,
                 secondStrength: DiagnosticLinkStrength.Inferred), window =>
@@ -31,9 +31,9 @@ namespace NetLoom.Tests.Unit
                 var notice = (Border)window.FindName("MapQualityNotice");
                 var summary = (TextBlock)window.FindName("MapQualitySummaryText");
                 var toggle = (ToggleButton)window.FindName("MapQualityToggle");
-                var details = (ScrollViewer)window.FindName("MapQualityDetails");
+                var details = (Border)window.FindName("MapQualityDetails");
                 Assert.IsTrue(notice.IsVisible);
-                Assert.AreEqual("Топология неполная: 4", summary.Text);
+                Assert.AreEqual("Топология неполная: 3", summary.Text);
                 Assert.AreEqual(summary.Text, AutomationProperties.GetName(toggle));
                 Assert.AreEqual(AutomationLiveSetting.Polite, AutomationProperties.GetLiveSetting(summary));
                 Assert.AreEqual(false, toggle.IsChecked);
@@ -48,42 +48,168 @@ namespace NetLoom.Tests.Unit
                 window.UpdateLayout();
                 Assert.AreEqual(ToggleState.On, pattern.ToggleState);
                 Assert.IsTrue(details.IsVisible);
-                Assert.AreEqual((double)window.FindResource("NetLoom.Map.QualityListMaxHeight"), details.MaxHeight);
-                var groups = (ItemsControl)window.FindName("MapQualityGroups");
-                Assert.AreEqual(4, groups.Items.Count);
-                var headings = ConfirmationTextBlocks(groups).Select(text => text.Text).ToArray();
-                CollectionAssert.Contains(headings, UiText.Format("MapQualityObservedGroup", 1));
-                CollectionAssert.Contains(headings, UiText.Format("MapQualityInferredGroup", 1));
-                CollectionAssert.Contains(headings, UiText.Format("MapQualityOneSidedGroup", 1));
-                CollectionAssert.Contains(headings, UiText.Format("MapQualitySyntheticGroup", 1));
+                var items = (ItemsControl)window.FindName("MapQualityItems");
+                Assert.AreEqual(3, items.Items.Count);
+                var report = (TopologyQualityReport)TopologyQualityField(window, "_topologyQualityReport");
+                Assert.AreEqual(3, report.Count);
+                Assert.AreEqual(4, report.Items.Sum(item => item.Reasons.Count));
+                var texts = ConfirmationTextBlocks(items).Select(text => text.Text).ToArray();
+                foreach (var item in report.Items)
+                {
+                    CollectionAssert.Contains(texts, item.Subject);
+                    foreach (var reason in item.Reasons)
+                        Assert.IsTrue(texts.Any(text => text.Contains(reason.Text)), reason.Text);
+                }
 
-                var buttons = TopologyQualityVisualButtons(groups).ToArray();
-                Assert.AreEqual(4, buttons.Length);
-                var linkButton = buttons.First(button => ((TopologyQualityGap)button.Tag).Kind ==
-                    TopologyQualityGapKind.ObservedLink);
+                var buttons = TopologyQualityVisualButtons(items).ToArray();
+                Assert.AreEqual(3, buttons.Length);
+                var linkButton = buttons.Single(button => ((TopologyQualityItem)button.Tag).PhysicalLinkId ==
+                    Sprint49TopologyQualityFixture.LinkAB);
+                var linkItem = (TopologyQualityItem)linkButton.Tag;
+                CollectionAssert.AreEquivalent(new[] { TopologyQualityGapKind.ObservedLink, TopologyQualityGapKind.OneSidedLldp },
+                    linkItem.Reasons.Select(reason => reason.Kind).ToArray());
                 linkButton.Focus();
                 Click(linkButton);
                 Assert.AreEqual(Sprint49TopologyQualityFixture.LinkAB,
                     TopologyQualityField(window, "_selectedPhysicalLinkId"));
                 Assert.IsNull(TopologyQualityField(window, "_selectedDeviceId"));
-                Assert.AreSame(linkButton, Keyboard.FocusedElement);
-                Assert.AreEqual(true, toggle.IsChecked);
+                Assert.AreSame(toggle, Keyboard.FocusedElement);
+                Assert.AreEqual(false, toggle.IsChecked);
+                Assert.AreEqual(Visibility.Collapsed, details.Visibility);
 
-                var deviceButton = buttons.Single(button => ((TopologyQualityGap)button.Tag).Kind ==
-                    TopologyQualityGapKind.SyntheticInterface);
+                pattern.Toggle();
+                PumpDispatcher();
+                window.UpdateLayout();
+                var deviceButton = TopologyQualityVisualButtons(items).Single(button =>
+                    ((TopologyQualityItem)button.Tag).DeviceId == Sprint49TopologyQualityFixture.DeviceA);
                 deviceButton.Focus();
-                Click(deviceButton);
-                Assert.AreEqual(Sprint49TopologyQualityFixture.DeviceA,
-                    TopologyQualityField(window, "_selectedDeviceId"));
-                Assert.IsNull(TopologyQualityField(window, "_selectedPhysicalLinkId"));
-                Assert.AreSame(deviceButton, Keyboard.FocusedElement);
-
+                // Неизменившийся опрос сохраняет кнопку и фокус внутри раскрытой панели.
                 typeof(MainWindow).GetMethod("ApplyTopologyRefresh", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(window, new object[] { Sprint49TopologyQualityFixture.Snapshot(secondLink: true,
                         secondStrength: DiagnosticLinkStrength.Inferred) });
                 PumpDispatcher();
                 Assert.AreSame(deviceButton, Keyboard.FocusedElement);
                 Assert.AreEqual(true, toggle.IsChecked);
+
+                Click(deviceButton);
+                Assert.AreEqual(Sprint49TopologyQualityFixture.DeviceA,
+                    TopologyQualityField(window, "_selectedDeviceId"));
+                Assert.IsNull(TopologyQualityField(window, "_selectedPhysicalLinkId"));
+                Assert.AreSame(toggle, Keyboard.FocusedElement);
+                Assert.AreEqual(false, toggle.IsChecked);
+                Assert.AreEqual(Visibility.Collapsed, details.Visibility);
+            });
+        }
+
+        [TestMethod]
+        [DataRow(1100)]
+        [DataRow(1440)]
+        public void TopologyQualityPanelOverlaysMapWithoutMovingOrShrinkingIt(int width)
+        {
+            WithTopologyQualityWindow(Sprint49TopologyQualityFixture.Snapshot(), window =>
+            {
+                window.Width = width;
+                window.Height = 900;
+                window.UpdateLayout();
+                var map = (ScrollViewer)window.FindName("MapScrollViewer");
+                var before = map.TransformToAncestor(window).TransformBounds(new Rect(map.RenderSize));
+                var toggle = (ToggleButton)window.FindName("MapQualityToggle");
+                var details = (Border)window.FindName("MapQualityDetails");
+                toggle.IsChecked = true;
+                PumpDispatcher();
+                window.UpdateLayout();
+
+                Assert.IsTrue(details.IsVisible);
+                Assert.AreEqual(before, map.TransformToAncestor(window).TransformBounds(new Rect(map.RenderSize)));
+                Assert.AreSame(System.Windows.Media.VisualTreeHelper.GetParent(map),
+                    System.Windows.Media.VisualTreeHelper.GetParent(details));
+                Assert.AreEqual(2, Grid.GetRow(details));
+                Assert.AreEqual(Grid.GetRow(map), Grid.GetRow(details));
+                Assert.IsTrue(Panel.GetZIndex(details) > Panel.GetZIndex(map));
+                Assert.AreEqual(HorizontalAlignment.Left, details.HorizontalAlignment);
+                Assert.AreEqual(VerticalAlignment.Top, details.VerticalAlignment);
+                Assert.AreEqual((double)window.FindResource("NetLoom.Map.QualityPanelWidth"), details.Width);
+                Assert.IsTrue(details.ActualWidth <= map.ActualWidth - details.Margin.Left - details.Margin.Right + 0.001);
+                Assert.IsTrue(details.ActualHeight <= (double)window.FindResource("NetLoom.Map.QualityListMaxHeight") + 0.001);
+                Assert.AreEqual((Thickness)window.FindResource("NetLoom.Thickness.BorderThin"), details.BorderThickness);
+                Assert.AreEqual(((System.Windows.Media.SolidColorBrush)window.FindResource("NetLoom.Brush.Border")).Color,
+                    ((System.Windows.Media.SolidColorBrush)details.BorderBrush).Color);
+                var surface = details.Background as System.Windows.Media.SolidColorBrush;
+                Assert.IsNotNull(surface);
+                Assert.AreEqual((byte)255, surface.Color.A);
+                Assert.AreEqual(1.0, surface.Opacity);
+                Assert.AreEqual(1.0, details.Opacity);
+                Assert.AreEqual(((System.Windows.Media.SolidColorBrush)window.FindResource("NetLoom.Brush.Surface")).Color,
+                    surface.Color);
+                var shadow = details.Effect as System.Windows.Media.Effects.DropShadowEffect;
+                Assert.IsNotNull(shadow);
+                Assert.AreEqual((double)window.FindResource("NetLoom.Map.OverlayShadowBlur"), shadow.BlurRadius);
+                Assert.AreEqual((double)window.FindResource("NetLoom.Map.OverlayShadowDepth"), shadow.ShadowDepth);
+                Assert.AreEqual((double)window.FindResource("NetLoom.Map.OverlayShadowOpacity"), shadow.Opacity);
+                Assert.AreEqual((System.Windows.Media.Color)window.FindResource("NetLoom.Color.OverlayShadow"), shadow.Color);
+
+                toggle.IsChecked = false;
+                window.UpdateLayout();
+                Assert.AreEqual(Visibility.Collapsed, details.Visibility);
+                Assert.AreEqual(before, map.TransformToAncestor(window).TransformBounds(new Rect(map.RenderSize)));
+            });
+        }
+
+        [TestMethod]
+        public void TopologyQualityEscapeClosesPanelReturnsFocusAndPreservesEditMode()
+        {
+            WithTopologyQualityWindow(Sprint49TopologyQualityFixture.Snapshot(), window =>
+            {
+                Click((Button)window.FindName("MapEditModeButton"));
+                Assert.AreEqual("Edit", TopologyQualityField(window, "_mapInteractionMode").ToString());
+                var toggle = (ToggleButton)window.FindName("MapQualityToggle");
+                var details = (Border)window.FindName("MapQualityDetails");
+                toggle.IsChecked = true;
+                PumpDispatcher();
+                window.UpdateLayout();
+                var button = TopologyQualityVisualButtons((ItemsControl)window.FindName("MapQualityItems")).First();
+                button.Focus();
+                Assert.IsTrue(details.IsKeyboardFocusWithin);
+                var key = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window),
+                    Environment.TickCount, Key.Escape) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+                button.RaiseEvent(key);
+                PumpDispatcher();
+                window.UpdateLayout();
+
+                Assert.IsTrue(key.Handled);
+                Assert.AreEqual(false, toggle.IsChecked);
+                Assert.AreEqual(Visibility.Collapsed, details.Visibility);
+                Assert.AreSame(toggle, Keyboard.FocusedElement);
+                Assert.AreEqual("Edit", TopologyQualityField(window, "_mapInteractionMode").ToString());
+            });
+        }
+
+        [TestMethod]
+        public void TopologyQualityPanelClosesOnlyForMapClickAndLeavesClickUnhandled()
+        {
+            WithTopologyQualityWindow(Sprint49TopologyQualityFixture.Snapshot(), window =>
+            {
+                var toggle = (ToggleButton)window.FindName("MapQualityToggle");
+                var details = (Border)window.FindName("MapQualityDetails");
+                toggle.IsChecked = true;
+                PumpDispatcher();
+                window.UpdateLayout();
+
+                var inside = new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+                { RoutedEvent = Mouse.PreviewMouseDownEvent };
+                details.RaiseEvent(inside);
+                Assert.AreEqual(true, toggle.IsChecked);
+                Assert.IsTrue(details.IsVisible);
+
+                var map = (ScrollViewer)window.FindName("MapScrollViewer");
+                var outside = new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+                { RoutedEvent = Mouse.PreviewMouseDownEvent };
+                map.RaiseEvent(outside);
+                PumpDispatcher();
+                window.UpdateLayout();
+                Assert.AreEqual(false, toggle.IsChecked);
+                Assert.AreEqual(Visibility.Collapsed, details.Visibility);
+                Assert.IsFalse(outside.Handled);
             });
         }
 
@@ -94,7 +220,7 @@ namespace NetLoom.Tests.Unit
                 DiagnosticLinkStrength.Confirmed, DiagnosticLldpReporting.BothSides, synthetic: false), window =>
             {
                 Assert.AreEqual(Visibility.Collapsed, ((Border)window.FindName("MapQualityNotice")).Visibility);
-                Assert.AreEqual(0, ((ItemsControl)window.FindName("MapQualityGroups")).Items.Count);
+                Assert.AreEqual(0, ((ItemsControl)window.FindName("MapQualityItems")).Items.Count);
             });
         }
 
@@ -138,7 +264,7 @@ namespace NetLoom.Tests.Unit
                 Assert.AreEqual(Visibility.Collapsed, notice.Visibility);
                 Click((Button)window.FindName("ShellMapButton"));
                 Assert.IsTrue(notice.IsVisible);
-                Assert.AreEqual("Топология неполная: 3", ((TextBlock)window.FindName("MapQualitySummaryText")).Text);
+                Assert.AreEqual("Топология неполная: 2", ((TextBlock)window.FindName("MapQualitySummaryText")).Text);
             });
         }
 

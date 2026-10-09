@@ -2748,23 +2748,8 @@ Poll: {2}</value>
   <data name="MapQualitySummary" xml:space="preserve">
     <value>Topology incomplete: {0}</value>
   </data>
-  <data name="MapQualityObservedGroup" xml:space="preserve">
-    <value>Links without LLDP confirmation: {0}</value>
-  </data>
-  <data name="MapQualityInferredGroup" xml:space="preserve">
-    <value>Inferred links: {0}</value>
-  </data>
-  <data name="MapQualityOneSidedGroup" xml:space="preserve">
-    <value>One-sided LLDP: {0}</value>
-  </data>
-  <data name="MapQualitySyntheticGroup" xml:space="preserve">
-    <value>Ports without ifIndex: {0}</value>
-  </data>
   <data name="MapQualityLinkSubject" xml:space="preserve">
     <value>{0} ↔ {1}</value>
-  </data>
-  <data name="MapQualityLinkPorts" xml:space="preserve">
-    <value>Ports: {0} ↔ {1}</value>
   </data>
   <data name="MapQualityLldpReporter" xml:space="preserve">
     <value>LLDP reported only by {0}</value>
@@ -2772,14 +2757,8 @@ Poll: {2}</value>
   <data name="MapQualitySyntheticPort" xml:space="preserve">
     <value>Port {0} has no ifIndex</value>
   </data>
-  <data name="MapQualityGapDetail" xml:space="preserve">
-    <value>{0} — {1}</value>
-  </data>
   <data name="MapQualityShow" xml:space="preserve">
     <value>Show</value>
-  </data>
-  <data name="MapQualityShowName" xml:space="preserve">
-    <value>Show on map: {0} — {1}</value>
   </data>
   <data name="TopologyConflictLabelPrefix" xml:space="preserve">
     <value>⚠ </value>
@@ -2805,12 +2784,6 @@ Poll: {2}</value>
   <data name="TopologyConflictChangeManual" xml:space="preserve">
     <value>Change manual</value>
   </data>
-  <data name="TopologyConflictQualityGroup" xml:space="preserve">
-    <value>Manual and observed topology conflicts: {0}</value>
-  </data>
-  <data name="TopologyConflictQualitySubject" xml:space="preserve">
-    <value>Manual {0} ↔ {1}, observed {2} ↔ {3}</value>
-  </data>
   <data name="TopologyConflictSaveFailed" xml:space="preserve">
     <value>Could not save the decision. Try again.</value>
   </data>
@@ -2819,15 +2792,6 @@ Poll: {2}</value>
   </data>
   <data name="MapLocationExpandName" xml:space="preserve">
     <value>Expand location “{0}”</value>
-  </data>
-  <data name="MapQualityLocationOverlapSubject" xml:space="preserve">
-    <value>Locations “{0}” and “{1}” overlap</value>
-  </data>
-  <data name="MapQualityLocationOutsideParentSubject" xml:space="preserve">
-    <value>Location “{0}” extends outside “{1}”</value>
-  </data>
-  <data name="MapQualityLocationOverlapGroup" xml:space="preserve">
-    <value>Overlapping locations: {0}</value>
   </data>
   <data name="MapQualityShowSubjectName" xml:space="preserve">
     <value>Show on map: {0}</value>
@@ -2879,5 +2843,20 @@ Poll: {2}</value>
   </data>
   <data name="MapNeighborhoodNoMoreDown" xml:space="preserve">
     <value>Cannot expand downstream: no known devices below</value>
+  </data>
+  <data name="MapQualityObservedReason" xml:space="preserve">
+    <value>Observed without LLDP confirmation</value>
+  </data>
+  <data name="MapQualityInferredReason" xml:space="preserve">
+    <value>Inferred indirectly (ARP/FDB)</value>
+  </data>
+  <data name="TopologyConflictQualityReason" xml:space="preserve">
+    <value>Manual topology: {0}; observed: {1}</value>
+  </data>
+  <data name="MapQualityLocationOverlapReason" xml:space="preserve">
+    <value>Overlaps location “{0}”</value>
+  </data>
+  <data name="MapQualityLocationOutsideParentReason" xml:space="preserve">
+    <value>Extends outside “{0}”</value>
   </data>
 </root>

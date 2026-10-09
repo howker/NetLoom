@@ -163,12 +163,15 @@ namespace NetLoom.Tests.Unit
             CollectionAssert.AreEqual(first.Select(conflict => conflict.ObservedLinkId).ToArray(),
                 reversed.Select(conflict => conflict.ObservedLinkId).ToArray());
             var report = TopologyQualityProjection.Build(diagnostics, snapshot.MapSnapshot, first);
-            Assert.AreEqual(2, report.Counts[TopologyQualityGapKind.ManualObservedConflict]);
-            Assert.IsTrue(report.Gaps.Where(gap => gap.Kind == TopologyQualityGapKind.ManualObservedConflict)
-                .All(gap => gap.PhysicalLinkId == Sprint49TopologyConflictFixture.ManualId));
+            var conflictItem = report.Items.Single(item => item.Reasons.Any(reason =>
+                reason.Kind == TopologyQualityGapKind.ManualObservedConflict));
+            Assert.AreEqual(Sprint49TopologyConflictFixture.ManualId, conflictItem.PhysicalLinkId);
+            Assert.AreEqual(2, conflictItem.Reasons.Count(reason => reason.Kind == TopologyQualityGapKind.ManualObservedConflict));
+            Assert.AreEqual(2, report.Count);
             var acknowledged = first.Select(conflict => new TopologyConflictKey(conflict.ManualLinkId, conflict.ObservedLinkId)).ToArray();
-            Assert.AreEqual(0, TopologyQualityProjection.Build(diagnostics, snapshot.MapSnapshot,
-                TopologyConflictProjection.Build(diagnostics, acknowledged)).Counts[TopologyQualityGapKind.ManualObservedConflict]);
+            Assert.IsFalse(TopologyQualityProjection.Build(diagnostics, snapshot.MapSnapshot,
+                TopologyConflictProjection.Build(diagnostics, acknowledged)).Items
+                .SelectMany(item => item.Reasons).Any(reason => reason.Kind == TopologyQualityGapKind.ManualObservedConflict));
         }
     }
 }

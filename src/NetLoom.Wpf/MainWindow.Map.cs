@@ -149,7 +149,85 @@ public partial class MainWindow
                 _zoom,
                 _zoom);
 
+        UpdateMapFocusRingScale();
         UpdateSemanticMapVisibility();
+        UpdateParallelLinksForZoom();
+    }
+
+    // Замечание владельца (Sprint 49): на средних и мелких масштабах связи одной пары не сливаются в одну
+    // Полосу — расстояние между полосами не меньше NetLoom.Map.ParallelLinkMinScreenGap экранных пикселей.
+    private double ParallelLinkSpacingAtZoom()
+    {
+        var zoom =
+            _zoom > 0.0
+                ? _zoom
+                : 1.0;
+
+        return Math.Max(
+            _parallelLinkSpacing,
+            GetDoubleResource(
+                "NetLoom.Map.ParallelLinkMinScreenGap") /
+            zoom);
+    }
+
+    private void UpdateParallelLinksForZoom()
+    {
+        var spacing =
+            ParallelLinkSpacingAtZoom();
+
+        if (Math.Abs(spacing - _lastParallelLinkSpacing) < 0.01)
+        {
+            return;
+        }
+
+        _lastParallelLinkSpacing =
+            spacing;
+
+        if (_lastMapSnapshot == null ||
+            !_lastMapSnapshot.Links
+                .GroupBy(link => string.CompareOrdinal(link.SourceNodeKey, link.TargetNodeKey) <= 0
+                    ? link.SourceNodeKey + "|" + link.TargetNodeKey
+                    : link.TargetNodeKey + "|" + link.SourceNodeKey)
+                .Any(group => group.Count() > 1))
+        {
+            return;
+        }
+
+        UpdateLinksForCurrentNodePositions();
+    }
+
+    private double _lastParallelLinkSpacing;
+
+    // §8: кольцо фокуса элементов холста масштабируется вместе с картой; толщина делится на масштаб,
+    // Чтобы на экране кольцо оставалось 2 px при любом масштабе (ресурсы читает NetLoom.Style.MapFocusVisual).
+    private void UpdateMapFocusRingScale()
+    {
+        var zoom =
+            _zoom > 0.0
+                ? _zoom
+                : 1.0;
+
+        var ring =
+            GetThicknessResource(
+                "NetLoom.Thickness.FocusRing");
+
+        var offset =
+            GetThicknessResource(
+                "NetLoom.Thickness.FocusRingOffset");
+
+        MapScrollViewer.Resources["NetLoom.Thickness.MapFocusRing"] =
+            new Thickness(
+                ring.Left / zoom,
+                ring.Top / zoom,
+                ring.Right / zoom,
+                ring.Bottom / zoom);
+
+        MapScrollViewer.Resources["NetLoom.Thickness.MapFocusRingOffset"] =
+            new Thickness(
+                offset.Left / zoom,
+                offset.Top / zoom,
+                offset.Right / zoom,
+                offset.Bottom / zoom);
     }
 
     private void UpdateSemanticMapVisibility()
