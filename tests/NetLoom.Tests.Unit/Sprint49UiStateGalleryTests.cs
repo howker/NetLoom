@@ -1010,6 +1010,136 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        // Кратчайший известный физический путь между устройствами из разных размещений полевого стенда:
+        // Полоса «Путь A → B: N связей», выделенные узлы и связи, остальные связи приглушены. Обе темы, ширины 1100/1440.
+        [TestMethod]
+        public void ShortestPathGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-path");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png"))
+                    File.Delete(file);
+                var findings = new List<string>();
+                const string scenario = "65-shortest-path";
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+                try
+                {
+                    foreach (var dark in new[] { false, true })
+                    {
+                        var theme = dark ? "dark" : "light";
+                        var bitmaps = new List<BitmapSource>();
+                        foreach (var width in new[] { 1100, 1440 })
+                        {
+                            var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                "netloom-s49-path-" + Guid.NewGuid().ToString("N") + ".db");
+                            MainWindow window = null;
+                            File.Copy(source, database);
+                            try
+                            {
+                                window = CreateParallelLinksFieldWindow(database, dark);
+                                PrepareWindow(window, width, GalleryHeight);
+                                var currentWindow = window;
+                                WaitForCondition(() =>
+                                {
+                                    var current = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot",
+                                        flags).GetValue(currentWindow);
+                                    return current != null && current.Nodes.Any(node => node.Label == "core-sw-01") &&
+                                        typeof(MainWindow).GetField("_lastDiagnosticSnapshot", flags)
+                                            .GetValue(currentWindow) != null;
+                                });
+                                PumpDispatcher();
+
+                                var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags)
+                                    .GetValue(window);
+                                var start = map.Nodes.Single(node => node.Label == "core-sw-01");
+                                var nodesByKey = map.Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal);
+                                var links = new List<MapNeighborhoodLink>();
+                                foreach (var link in map.Links.Where(item => item.PhysicalLinkId.HasValue))
+                                {
+                                    MapNode a;
+                                    MapNode b;
+                                    if (nodesByKey.TryGetValue(link.SourceNodeKey, out a) &&
+                                        nodesByKey.TryGetValue(link.TargetNodeKey, out b) &&
+                                        a.DeviceId.HasValue && b.DeviceId.HasValue)
+                                        links.Add(new MapNeighborhoodLink(link.PhysicalLinkId.Value,
+                                            a.DeviceId.Value, b.DeviceId.Value));
+                                }
+                                // Ближайшее к стартовому устройству из другого размещения, до которого не меньше трёх связей.
+                                var target = map.Nodes
+                                    .Where(node => node.DeviceId.HasValue && node.DeviceId != start.DeviceId &&
+                                        node.LocationId != start.LocationId)
+                                    .Select(node => new
+                                    {
+                                        Node = node,
+                                        Path = MapShortestPath.Find(start.DeviceId.Value, node.DeviceId.Value, links)
+                                    })
+                                    .Where(item => item.Path.Found && item.Path.LinkIds.Count >= 3)
+                                    .OrderBy(item => item.Path.LinkIds.Count)
+                                    .ThenBy(item => item.Node.Label, StringComparer.Ordinal)
+                                    .FirstOrDefault();
+                                Assert.IsNotNull(target, "Field stand must contain a path of three or more links between locations.");
+
+                                window.HandleMapDeviceShiftClick(start.DeviceId.Value);
+                                window.HandleMapDeviceShiftClick(target.Node.DeviceId.Value);
+                                PumpDispatcher();
+                                window.UpdateLayout();
+                                // Кадр показывает путь без временного наведения реального указателя.
+                                typeof(MainWindow).GetField("_hoveredPhysicalLinkId", flags).SetValue(window, null);
+                                typeof(MainWindow).GetMethod("ApplyLinkFocusPresentation", flags, null,
+                                    Type.EmptyTypes, null).Invoke(window, null);
+                                window.UpdateLayout();
+
+                                // Главный критерий владельца: подписи пути не наезжают друг на друга.
+                                CollectOverlappingMapLabels(window, scenario + "/" + theme + "/" + width, findings);
+                                var notice = (Border)window.FindName("MapPathNotice");
+                                Assert.IsTrue(notice.IsVisible);
+                                Assert.AreEqual(UiText.Format("MapPathSummary", start.Label, target.Node.Label,
+                                    UiText.FormatCount("MapLinkCount", target.Path.LinkIds.Count)),
+                                    ((TextBlock)window.FindName("MapPathSummaryText")).Text);
+                                var canvas = (Canvas)window.FindName("MapCanvas");
+                                var pathIds = new HashSet<Guid>(target.Path.LinkIds);
+                                var dimmed = (double)window.FindResource("NetLoom.Map.LinkFocusDimmedOpacity");
+                                var pathLines = canvas.Children.OfType<Line>()
+                                    .Where(line => line.Tag is Guid && pathIds.Contains((Guid)line.Tag)).ToArray();
+                                Assert.AreEqual(pathIds.Count, pathLines.Length);
+                                Assert.IsTrue(pathLines.All(line => line.IsVisible && line.Opacity > dimmed + 0.01));
+                                Assert.IsTrue(canvas.Children.OfType<Line>().Any(line => line.Tag is Guid &&
+                                    !pathIds.Contains((Guid)line.Tag) && line.IsVisible && line.Opacity <= dimmed + 0.0001));
+                                CollectTextClipping(window.Content as DependencyObject,
+                                    scenario + "/" + theme + "/" + width, findings);
+                                bitmaps.Add(Capture(window.Content as FrameworkElement));
+                            }
+                            finally
+                            {
+                                if (window != null) window.Close();
+                                PumpDispatcher();
+                                DeleteParallelLinksFieldCopy(database);
+                            }
+                        }
+                        SaveSideBySide(bitmaps[0], bitmaps[1],
+                            System.IO.Path.Combine(output, scenario + "-" + theme + ".png"));
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(2, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
         // Средний масштаб: устройства с именами, подписи связей ещё скрыты (между ReadableZoomMin 0,93 и LinkLabelMinZoom 1,0).
         private const double MediumParallelLinksZoom = 0.95;
 

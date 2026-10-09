@@ -2868,4 +2868,16 @@
   <data name="MapQualityLocationOutsideParentReason" xml:space="preserve">
     <value>Выходит за рамку «{0}»</value>
   </data>
+  <data name="MapPathSummary" xml:space="preserve">
+    <value>Путь {0} → {1}: {2}</value>
+  </data>
+  <data name="MapPathNone" xml:space="preserve">
+    <value>Известного физического пути между {0} и {1} нет</value>
+  </data>
+  <data name="MapPathStart" xml:space="preserve">
+    <value>Начало пути: {0}. Щёлкните с Shift по второму устройству</value>
+  </data>
+  <data name="MapPathReset" xml:space="preserve">
+    <value>Сбросить путь</value>
+  </data>
 </root>

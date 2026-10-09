@@ -360,6 +360,9 @@ public partial class MainWindow
             return;
         }
 
+        // Sprint 49: смена режима показа — действие, прежний вид которого попадает в историю.
+        RecordMapView(false);
+
         SetOperationalFocusMode(
             (MapOperationalFocusMode)item.Tag);
     }
@@ -557,8 +560,11 @@ public partial class MainWindow
             }
         }
 
-        var linkFocusOpacity = FocusedPhysicalLinkId.HasValue &&
-            physicalLinkId != FocusedPhysicalLinkId
+        // Sprint 49: пока показан путь, остальные связи приглушены так же, как при фокусной связи.
+        var pathActive = _pathLinkIds.Count > 0;
+        var onPath = pathActive && physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value);
+        var linkFocusOpacity = !onPath && (pathActive ||
+            (FocusedPhysicalLinkId.HasValue && physicalLinkId != FocusedPhysicalLinkId))
                 ? GetDoubleResource("NetLoom.Map.LinkFocusDimmedOpacity")
                 : 1.0;
 

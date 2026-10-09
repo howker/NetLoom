@@ -1091,6 +1091,14 @@ namespace NetLoom.Wpf
             UpdateTopologyQualityVisibility();
             RefreshNeighborhoodForSection();
 
+            // Sprint 49: путь относится к рабочему виду «Карты» и в других разделах не показывается.
+            if (section != ShellSection.Map)
+            {
+                ClearMapPathState(true);
+            }
+
+            UpdateMapPathNotice();
+
             // G2: без выбранного объекта крошки называют открытый раздел.
             UpdateShellBreadcrumb();
             RefreshEmptyInspectorPrompt();
@@ -1637,6 +1645,9 @@ namespace NetLoom.Wpf
 
             var deviceId =
                 (Guid)button.Tag;
+
+            // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+            RecordMapView(false);
 
             _highlightedDeviceId =
                 null;

@@ -168,14 +168,17 @@ namespace NetLoom.Tests.Unit
                 mode.SetValue(window, Enum.Parse(mode.FieldType, "None"));
                 participants.Clear();
 
-                // Фокусная подпись остаётся на среднем уровне, но скрывается на дальнем.
+                // Фокусная подпись видна на всех уровнях; на дальнем — в экранном размере (не мельче Caption).
                 var line = ((Canvas)window.FindName("MapCanvas")).Children.OfType<System.Windows.Shapes.Line>()
                     .Single(item => Equals(item.Tag, cable));
                 line.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount)
                 { RoutedEvent = Mouse.MouseEnterEvent });
                 Assert.AreEqual(Visibility.Visible, label.Visibility);
                 SemanticZoom(window, 0.5);
-                Assert.AreEqual(Visibility.Collapsed, label.Visibility);
+                Assert.AreEqual(Visibility.Visible, label.Visibility);
+                var screenScale = label.TransformToAncestor(window).TransformBounds(new Rect(0, 0, 1, 1)).Height;
+                Assert.IsTrue(label.FontSize * screenScale >= (double)window.FindResource("NetLoom.FontSize.Caption") - 0.05,
+                    "The focused link label must stay readable at the far level.");
             });
         }
 

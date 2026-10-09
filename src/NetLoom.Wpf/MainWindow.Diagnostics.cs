@@ -2044,6 +2044,9 @@ public partial class MainWindow : Window
                 var deviceId =
                     _selectedDeviceId.Value;
 
+                // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+                RecordMapView(false);
+
                 FocusSelectedMapAtNativeZoom(
                     () =>
                         AnimateDiscoveryFocus(
@@ -2056,6 +2059,9 @@ public partial class MainWindow : Window
         var linkIds =
             _inspectorPrimaryAlert.PhysicalLinkIds
                 .ToArray();
+
+        // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+        RecordMapView(false);
 
         SelectAlertPhysicalContext(
             linkIds[0]);

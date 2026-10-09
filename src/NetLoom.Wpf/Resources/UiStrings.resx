@@ -2868,4 +2868,16 @@ Poll: {2}</value>
   <data name="MapQualityLocationOutsideParentReason" xml:space="preserve">
     <value>Extends outside “{0}”</value>
   </data>
+  <data name="MapPathSummary" xml:space="preserve">
+    <value>Path {0} → {1}: {2}</value>
+  </data>
+  <data name="MapPathNone" xml:space="preserve">
+    <value>There is no known physical path between {0} and {1}</value>
+  </data>
+  <data name="MapPathStart" xml:space="preserve">
+    <value>Path start: {0}. Shift+click a second device</value>
+  </data>
+  <data name="MapPathReset" xml:space="preserve">
+    <value>Clear path</value>
+  </data>
 </root>

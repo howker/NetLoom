@@ -108,6 +108,9 @@ namespace NetLoom.Wpf
             var item = button?.Tag as TopologyQualityItem;
             if (item == null) return;
 
+            // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+            RecordMapView(false);
+
             // Используем тот же выбор и вписывание объектов, что у действия «Показать на карте».
             if (item.LocationId.HasValue && item.OtherLocationId.HasValue)
             {

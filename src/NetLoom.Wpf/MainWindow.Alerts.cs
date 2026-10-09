@@ -1250,6 +1250,9 @@ public partial class MainWindow
         _mapViewportBeforeAlerts =
             null;
 
+        // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+        RecordMapView(false);
+
         ShowAlertRowOnMap(
             row,
             true);

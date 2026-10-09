@@ -42,14 +42,22 @@ public partial class MainWindow
         {
             ApplyLinkFocusPresentation(visual);
         }
+
+        // На дальнем уровне видимые подписи связей не должны наезжать на ярлыки имён.
+        if (_semanticLevel == MapSemanticLevel.Far)
+        {
+            ApplyFarLabelDeclutter();
+        }
     }
 
     private void ApplyLinkFocusPresentation(MapLinkVisual visual)
     {
         ApplyNeighborhoodLinkVisibility(visual);
         var physicalLinkId = visual.Line.Tag as Guid?;
-        var focused = FocusedPhysicalLinkId.HasValue &&
-            physicalLinkId == FocusedPhysicalLinkId;
+        // Sprint 49: связи показанного пути оформляются как фокусная связь (подпись, толщина, ореол).
+        var onPath = physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value);
+        var focused = (FocusedPhysicalLinkId.HasValue &&
+            physicalLinkId == FocusedPhysicalLinkId) || onPath;
         var opacity = LinkPresentationOpacity(
             physicalLinkId, visual.LastFreshness ?? MapFreshness.Fresh);
 
@@ -65,12 +73,12 @@ public partial class MainWindow
 
         ApplyLinkOperationalPresentation(visual, physicalLinkId);
         var selected = physicalLinkId.HasValue && physicalLinkId == _selectedPhysicalLinkId;
-        if (selected)
+        if (selected || onPath)
         {
             visual.Line.StrokeThickness = LinkSelectedStrokeThickness(
                 LinkOperationalState(physicalLinkId));
         }
-        visual.SelectionHalo.Visibility = selected && visual.Line.Visibility == Visibility.Visible
+        visual.SelectionHalo.Visibility = (selected || onPath) && visual.Line.Visibility == Visibility.Visible
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -104,8 +112,10 @@ public partial class MainWindow
             ? new ScaleTransform(1 / _zoom, 1 / _zoom)
             : Transform.Identity;
         visual.Label.Visibility = visual.Line.Visibility == Visibility.Visible &&
+            // На уровне «Издалека» — только подписи, которые оператор явно выделил (фокус, путь)
+            // Или которые требуют решения (расхождение); все они экранного размера.
             (far
-                ? conflict
+                ? conflict || focused
                 : conflict || focused || _semanticLevel == MapSemanticLevel.Close ||
                   _semanticLevel == MapSemanticLevel.Detailed) &&
             !string.IsNullOrWhiteSpace(visual.Label.Text)
@@ -2284,7 +2294,10 @@ public partial class MainWindow
                   _highlightedDeviceId.Value) ||
              (_selectedDeviceId.HasValue &&
               node.DeviceId.Value ==
-                  _selectedDeviceId.Value));
+                  _selectedDeviceId.Value) ||
+             // Sprint 49: узлы показанного пути выделяются так же, как выбранный.
+             _pathDeviceIds.Contains(
+                 node.DeviceId.Value));
 
         ApplyNodeDegradationPresentation(
             visual,

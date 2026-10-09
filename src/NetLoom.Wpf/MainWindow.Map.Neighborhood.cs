@@ -174,6 +174,9 @@ public partial class MainWindow
         if (!_selectedDeviceId.HasValue || _lastMapSnapshot == null ||
             !_lastMapSnapshot.Nodes.Any(node => node.DeviceId == _selectedDeviceId)) return;
         StopStartupTopologyFit();
+        // Sprint 49: вход в окрестность — фокусный вид; прежний вид попадает в историю, показанный путь сбрасывается.
+        RecordMapView(true);
+        ClearMapPathState(true);
         // Операционный фокус и окрестность — взаимоисключающие режимы показа.
         _operationalFocusMode = MapOperationalFocusMode.None;
         RefreshOperationalFocusTargets();
@@ -198,6 +201,8 @@ public partial class MainWindow
     private void ShowWholeSite()
     {
         StopStartupTopologyFit();
+        // Sprint 49: «Вся площадка» завершает фокусный вид; прежний вид попадает в историю.
+        RecordMapView(false);
         SetOperationalFocusMode(MapOperationalFocusMode.None);
         // Вся площадка допускает ZoomMin; читаемость обеспечивает семантический масштаб.
         FitTopologyToViewport();
@@ -359,6 +364,8 @@ public partial class MainWindow
     {
         if (!_neighborhoodSelectedDeviceId.HasValue) return;
         var button = (Button)sender;
+        // Sprint 49: раскрытие остаётся в фокусном виде; прежний вид попадает в историю.
+        RecordMapView(true);
         var links = NeighborhoodLinks();
         var distances = PollingDistances();
         _neighborhoodDeviceIds = button == MapNeighborhoodUpButton ? MapNeighborhood.ExpandUp(_neighborhoodDeviceIds, links, distances)

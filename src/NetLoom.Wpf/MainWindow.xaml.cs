@@ -620,6 +620,8 @@ public partial class MainWindow : Window
         Loaded += OnWindowLoaded;
         Closed += OnWindowClosed;
         PreviewKeyDown += OnMainWindowPreviewKeyDown;
+        PreviewKeyUp += OnMainWindowPreviewKeyUp;
+        Deactivated += OnMainWindowDeactivated;
 
         Title = UiText.Get("WindowTitle");
         MapTitleText.Text = UiText.Get("MapTitle");

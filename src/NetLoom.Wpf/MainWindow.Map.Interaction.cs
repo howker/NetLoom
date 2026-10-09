@@ -50,6 +50,23 @@ public partial class MainWindow
 
         StopStartupTopologyFit();
 
+        // Sprint 49: Shift+щелчок в режиме просмотра отмечает начало или конец кратчайшего пути.
+        if (!IsMapEditMode &&
+            e.ClickCount == 1 &&
+            (Keyboard.Modifiers & ModifierKeys.Shift) ==
+                ModifierKeys.Shift)
+        {
+            e.Handled = true;
+
+            HandleMapDeviceShiftClick(
+                deviceId);
+
+            return;
+        }
+
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(false);
+
         _highlightedDeviceId = null;
 
         _selectedDeviceId =
@@ -257,6 +274,40 @@ public partial class MainWindow
 
                 SetMapInteractionMode(
                     MapInteractionMode.View);
+
+                return;
+            }
+
+            // Sprint 49: вне редактора и режима правки Esc возвращает карту к виду до фокусного показа.
+            if (HandleMapNavigationKey(
+                    e.Key,
+                    Keyboard.Modifiers,
+                    e.IsRepeat,
+                    e.OriginalSource))
+            {
+                e.Handled = true;
+            }
+
+            return;
+        }
+
+        // Sprint 49: F, Alt+← и пробел; Alt-сочетания приходят как Key.System.
+        var navigationKey =
+            e.Key == Key.System
+                ? e.SystemKey
+                : e.Key;
+
+        if (navigationKey == Key.F ||
+            navigationKey == Key.Left ||
+            navigationKey == Key.Space)
+        {
+            if (HandleMapNavigationKey(
+                    navigationKey,
+                    Keyboard.Modifiers,
+                    e.IsRepeat,
+                    e.OriginalSource))
+            {
+                e.Handled = true;
             }
 
             return;
@@ -625,6 +676,9 @@ public partial class MainWindow
     {
         StopStartupTopologyFit();
 
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(true);
+
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
         _selectedInterfaceId = null;
@@ -678,6 +732,18 @@ public partial class MainWindow
             e.Handled = true;
 
             await OpenLocationTopologyEditorAsync(
+                locationId.Value);
+
+            return;
+        }
+
+        // Sprint 49: в режиме просмотра двойной щелчок вписывает поддерево размещения в экран.
+        if (!IsMapEditMode &&
+            e.ClickCount >= 2)
+        {
+            e.Handled = true;
+
+            FitLocationSubtree(
                 locationId.Value);
 
             return;
@@ -740,6 +806,12 @@ public partial class MainWindow
             e.ClickCount >= 2)
         {
             await OpenLocationTopologyEditorAsync(
+                locationId.Value);
+        }
+        else if (!IsMapEditMode &&
+                 e.ClickCount >= 2)
+        {
+            FitLocationSubtree(
                 locationId.Value);
         }
 
@@ -2131,13 +2203,23 @@ public partial class MainWindow
         object sender,
         MouseButtonEventArgs e)
     {
+        // Sprint 49: при зажатом пробеле левая кнопка панорамирует карту, даже над узлом.
+        var panWithLeftButton =
+            _mapSpacePanActive &&
+            e.ChangedButton ==
+                MouseButton.Left;
+
         if (e.ChangedButton !=
-            MouseButton.Middle)
+                MouseButton.Middle &&
+            !panWithLeftButton)
         {
             return;
         }
 
         StopStartupTopologyFit();
+
+        _panWithLeftButton =
+            panWithLeftButton;
 
         _isPanning = true;
         _panStartPoint =
@@ -2162,7 +2244,9 @@ public partial class MainWindow
         MouseEventArgs e)
     {
         if (!_isPanning ||
-            e.MiddleButton !=
+            (_panWithLeftButton
+                ? e.LeftButton
+                : e.MiddleButton) !=
                 MouseButtonState.Pressed)
         {
             return;
@@ -2197,19 +2281,29 @@ public partial class MainWindow
     {
         if (!_isPanning ||
             e.ChangedButton !=
-                MouseButton.Middle)
+                (_panWithLeftButton
+                    ? MouseButton.Left
+                    : MouseButton.Middle))
         {
             return;
         }
 
         _isPanning = false;
+        _panWithLeftButton = false;
 
         if (MapScrollViewer.IsMouseCaptured)
         {
             MapScrollViewer.ReleaseMouseCapture();
         }
 
-        MapScrollViewer.Cursor = null;
+        // Пока пробел зажат, карта остаётся в режиме панорамирования с рукой вместо стрелки.
+        MapScrollViewer.Cursor =
+            _mapSpacePanActive
+                ? Cursors.Hand
+                : null;
+
+        MapScrollViewer.ForceCursor =
+            _mapSpacePanActive;
 
         TrySaveViewportLayout();
         e.Handled = true;
@@ -2232,6 +2326,9 @@ public partial class MainWindow
             (Guid)element.Tag;
 
         StopStartupTopologyFit();
+
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(false);
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
@@ -2401,6 +2498,9 @@ public partial class MainWindow
         }
 
         StopStartupTopologyFit();
+
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(false);
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;

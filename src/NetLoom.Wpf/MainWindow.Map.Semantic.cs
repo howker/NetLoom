@@ -47,7 +47,9 @@ public partial class MainWindow
         var important = visual.StatusIcon.Visibility == Visibility.Visible ||
             (node.DeviceId.HasValue && (node.DeviceId == _selectedDeviceId || node.DeviceId == _highlightedDeviceId ||
              _operationalFocusDeviceIds.Contains(node.DeviceId.Value) ||
-             _neighborhoodDeviceIds.Contains(node.DeviceId.Value)));
+             _neighborhoodDeviceIds.Contains(node.DeviceId.Value) ||
+             // Устройства показанного пути: без имён путь на дальнем уровне не прочитать.
+             _pathDeviceIds.Contains(node.DeviceId.Value)));
         var showLabel = far && important && !visual.LabelHidden;
         visual.SemanticLabel.Visibility = showLabel ? Visibility.Visible : Visibility.Collapsed;
         var title = (TextBlock)visual.SemanticLabel.Child;
@@ -180,6 +182,23 @@ public partial class MainWindow
                 LocationTop(visual) * zoom, size.Width, size.Height), 3 + depth));
         }
 
+        // Подписи связей, видимые на дальнем уровне (фокус, путь, расхождение), — обратно масштабированы
+        // Вокруг центра: на экране их размер равен DesiredSize. Уступают именам устройств.
+        var linkByKey = new Dictionary<string, MapLinkVisual>(StringComparer.Ordinal);
+        foreach (var pair in _linkVisualsByIdentity)
+        {
+            var label = pair.Value.Label;
+            if (label.Visibility != Visibility.Visible) continue;
+            var key = "K:" + pair.Key;
+            linkByKey[key] = pair.Value;
+            var size = label.DesiredSize;
+            var centerX = (Canvas.GetLeft(label) + size.Width / 2.0) * zoom;
+            var centerY = (Canvas.GetTop(label) + size.Height / 2.0) * zoom;
+            candidates.Add(new MapLabelCandidate(key, new Rect(centerX - size.Width / 2.0,
+                centerY - size.Height / 2.0, size.Width, size.Height),
+                HasTopologyConflict(pair.Value.Line.Tag as Guid?) ? 2 : 3));
+        }
+
         var shown = MapLabelDeclutter.SelectVisible(candidates, GetDoubleResource("NetLoom.Map.FarLabelGap"));
         foreach (var pair in nodeByKey)
         {
@@ -193,6 +212,10 @@ public partial class MainWindow
             pair.Value.LabelHidden = true;
             ApplyLocationSemanticPresentation(pair.Value);
         }
+        foreach (var pair in linkByKey)
+        {
+            if (!shown.Contains(pair.Key)) pair.Value.Label.Visibility = Visibility.Collapsed;
+        }
     }
 
     private int FarNodeLabelPriority(MapNodeVisual visual)
@@ -201,7 +224,9 @@ public partial class MainWindow
         if (deviceId.HasValue)
         {
             if (deviceId == _selectedDeviceId) return 0;
-            if (deviceId == _highlightedDeviceId || _operationalFocusDeviceIds.Contains(deviceId.Value)) return 1;
+            // Устройства показанного пути важны так же, как участники предупреждения.
+            if (deviceId == _highlightedDeviceId || _operationalFocusDeviceIds.Contains(deviceId.Value) ||
+                _pathDeviceIds.Contains(deviceId.Value)) return 1;
         }
         return visual.StatusIcon.Visibility == Visibility.Visible ? 2 : 5;
     }
