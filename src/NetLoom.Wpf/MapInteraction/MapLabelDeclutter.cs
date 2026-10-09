@@ -4,8 +4,8 @@ using System.Windows;
 
 namespace NetLoom.Wpf.MapInteraction
 {
-    // Кандидат на показ подписи уровня «Издалека»: ключ, прямоугольник в экранных координатах холста
-    // и приоритет (меньше — важнее).
+    // Кандидат на показ подписи уровня «Издалека»: ключ, прямоугольник в экранных координатах холста,
+    // Приоритет (меньше — важнее).
     public sealed class MapLabelCandidate
     {
         public MapLabelCandidate(string key, Rect bounds, int priority)
