@@ -2295,9 +2295,15 @@
                         <Style TargetType="{x:Type ScrollBar}"
                                BasedOn="{StaticResource NetLoom.Style.MapScrollBar}" />
                     </ScrollViewer.Resources>
-                    <!-- §8: холст — своя группа обхода Tab; порядок кнопок размещений задаёт окно и не зависит от Z-порядка. -->
+                    <!-- §8, K4: карта — составной элемент и одна остановка Tab (Once). Внутри ходят стрелки,
+                         Их обрабатывает окно (MapSpatialNavigation), поэтому направленная навигация WPF отключена.
+                         Остановку Tab и порядок вкладок задаёт окно, он не зависит от Z-порядка. -->
                     <Canvas x:Name="MapCanvas"
-                            KeyboardNavigation.TabNavigation="Local"
+                            KeyboardNavigation.TabNavigation="Once"
+                            KeyboardNavigation.DirectionalNavigation="None"
+                            PreviewGotKeyboardFocus="OnMapCanvasPreviewGotKeyboardFocus"
+                            GotKeyboardFocus="OnMapCanvasGotKeyboardFocus"
+                            LostKeyboardFocus="OnMapCanvasLostKeyboardFocus"
                             Background="{DynamicResource NetLoom.Brush.Canvas}"
                             MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
                             Width="{DynamicResource NetLoom.Map.CanvasWidth}"
@@ -2667,7 +2673,9 @@
                                     <TextBlock x:Name="DiagnosticTertiaryTitleText"
                                                Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                                    <ItemsControl x:Name="DiagnosticTertiaryList">
+                                    <!-- Список оснований — текст для чтения: сам фокус не принимает (§8, кольцо у пустого контейнера не видно). -->
+                                    <ItemsControl x:Name="DiagnosticTertiaryList"
+                                                  Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Text}"

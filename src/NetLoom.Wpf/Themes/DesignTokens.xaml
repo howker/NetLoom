@@ -277,6 +277,11 @@
     <sys:Double x:Key="NetLoom.Map.NewLocationPlacementStep">48</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationFillOpacity">0.68</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationToggleSize">24</sys:Double>
+    <!-- Sprint 49, K4: шаг сдвига узла или вкладки Ctrl+стрелкой и мелкий шаг Ctrl+Shift+стрелкой (единицы холста).
+         Запас у края области карты нужен, когда прокрутка выводит элемент в видимую часть. -->
+    <sys:Double x:Key="NetLoom.Map.KeyboardMoveStep">24</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.KeyboardMoveFineStep">4</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.KeyboardScrollMargin">24</sys:Double>
     <Thickness x:Key="NetLoom.Thickness.MapLocationTab">12,3</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapLocationTabBorder">1,1,1,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapLocationToggle">4,0</Thickness>

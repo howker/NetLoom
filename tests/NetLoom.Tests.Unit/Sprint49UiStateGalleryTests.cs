@@ -1140,6 +1140,150 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        // K4 (§8): кольцо фокуса клавиатуры на карте — на карточке устройства и на подписи связи (связь становится
+        // Фокусной: подпись видна, остальные приглушены). Кадры берутся с слоем украшений, где WPF рисует кольцо.
+        [TestMethod]
+        public void MapKeyboardFocusGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-keyboard");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png"))
+                    File.Delete(file);
+                var findings = new List<string>();
+                var scenarios = new[] { "66-keyboard-focus-node", "67-keyboard-focus-link" };
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+                try
+                {
+                    for (var scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
+                    foreach (var dark in new[] { false, true })
+                    {
+                        var scenario = scenarios[scenarioIndex];
+                        var theme = dark ? "dark" : "light";
+                        var bitmaps = new List<BitmapSource>();
+                        foreach (var width in new[] { 1100, 1440 })
+                        {
+                            var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                                "netloom-s49-keyboard-" + Guid.NewGuid().ToString("N") + ".db");
+                            MainWindow window = null;
+                            File.Copy(source, database);
+                            try
+                            {
+                                window = CreateParallelLinksFieldWindow(database, dark);
+                                PrepareWindow(window, width, GalleryHeight);
+                                var currentWindow = window;
+                                WaitForCondition(() =>
+                                {
+                                    var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags)
+                                        .GetValue(currentWindow);
+                                    return map != null && map.Nodes.Any(node => node.Label == "core-sw-01") &&
+                                        map.Nodes.Any(node => node.Label == "core-sw-02");
+                                });
+                                FocusParallelLinksFieldPair(window, null, null);
+                                typeof(MainWindow).GetField("_hoveredPhysicalLinkId", flags).SetValue(window, null);
+                                PumpDispatcher();
+                                window.UpdateLayout();
+
+                                var snapshot = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags)
+                                    .GetValue(window);
+                                var canvas = (Canvas)window.FindName("MapCanvas");
+                                var first = snapshot.Nodes.Single(node => node.Label == "core-sw-01");
+                                var second = snapshot.Nodes.Single(node => node.Label == "core-sw-02");
+                                var pair = snapshot.Links.Where(link =>
+                                    (link.SourceNodeKey == first.Key && link.TargetNodeKey == second.Key) ||
+                                    (link.SourceNodeKey == second.Key && link.TargetNodeKey == first.Key))
+                                    .OrderBy(link => link.PhysicalLinkId).ToArray();
+
+                                // Рамку фокуса WPF рисует, только если последним устройством ввода была клавиатура.
+                                window.Activate();
+                                MarkKeyboardAsLastGalleryInput();
+                                FrameworkElement focusTarget;
+                                if (scenarioIndex == 0)
+                                {
+                                    focusTarget = canvas.Children.OfType<Border>()
+                                        .Single(border => Equals(border.Tag, first.DeviceId));
+                                }
+                                else
+                                {
+                                    focusTarget = canvas.Children.OfType<TextBlock>()
+                                        .Single(label => Equals(label.Tag, pair[0].PhysicalLinkId.Value));
+                                }
+                                Assert.IsTrue(focusTarget.Focusable, "Map elements must accept keyboard focus (K4).");
+                                Keyboard.Focus(focusTarget);
+                                PumpDispatcher();
+                                window.UpdateLayout();
+                                Assert.AreSame(focusTarget, Keyboard.FocusedElement);
+                                if (scenarioIndex == 1)
+                                {
+                                    var dimmed = (double)window.FindResource("NetLoom.Map.LinkFocusDimmedOpacity");
+                                    var otherLine = canvas.Children.OfType<Line>()
+                                        .Single(line => Equals(line.Tag, pair[1].PhysicalLinkId.Value));
+                                    Assert.IsTrue(focusTarget.IsVisible);
+                                    Assert.AreEqual(FontWeights.SemiBold, ((TextBlock)focusTarget).FontWeight);
+                                    Assert.IsTrue(otherLine.Opacity <= dimmed + 0.0001,
+                                        "Keyboard focus on a link label must dim the other cable.");
+                                }
+
+                                CollectTextClipping(window.Content as DependencyObject,
+                                    scenario + "/" + theme + "/" + width, findings);
+                                bitmaps.Add(CaptureWithAdorners(window.Content as FrameworkElement));
+                            }
+                            finally
+                            {
+                                if (window != null) window.Close();
+                                PumpDispatcher();
+                                DeleteParallelLinksFieldCopy(database);
+                            }
+                        }
+                        SaveSideBySide(bitmaps[0], bitmaps[1],
+                            System.IO.Path.Combine(output, scenario + "-" + theme + ".png"));
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(4, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
+        // Снимок вместе со слоем украшений: кольцо фокуса клавиатуры рисуется в нём, а не в самом содержимом окна.
+        private static BitmapSource CaptureWithAdorners(FrameworkElement root)
+        {
+            Assert.IsNotNull(root, "Gallery visual is unavailable.");
+            root.UpdateLayout();
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                Math.Max(1, (int)Math.Ceiling(root.ActualWidth)),
+                Math.Max(1, (int)Math.Ceiling(root.ActualHeight)),
+                96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            var decorator = System.Windows.Media.VisualTreeHelper.GetParent(root) as System.Windows.Media.Visual;
+            while (decorator != null && !(decorator is System.Windows.Documents.AdornerDecorator))
+                decorator = System.Windows.Media.VisualTreeHelper.GetParent(decorator) as System.Windows.Media.Visual;
+            bitmap.Render(decorator ?? root);
+            bitmap.Freeze();
+            return bitmap;
+        }
+
+        // Событие, поданное через код, это поле не обновляет, а настоящее нажатие Tab — обновляет.
+        private static void MarkKeyboardAsLastGalleryInput()
+        {
+            var property = typeof(InputManager).GetProperty("MostRecentInputDevice",
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (property != null && property.CanWrite)
+                property.SetValue(InputManager.Current, Keyboard.PrimaryDevice);
+        }
+
         // Средний масштаб: устройства с именами, подписи связей ещё скрыты (между ReadableZoomMin 0,93 и LinkLabelMinZoom 1,0).
         private const double MediumParallelLinksZoom = 0.95;
 

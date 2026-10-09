@@ -663,6 +663,7 @@ public partial class MainWindow : Window
             UiText.Get("MapSettingsAction");
 
         InitializeMapSettingsMenu();
+        InitializeMapKeyboard();
 
         UpdateZoomText();
         UpdateMotionModeText();

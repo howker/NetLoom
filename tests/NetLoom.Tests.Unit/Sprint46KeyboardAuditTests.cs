@@ -901,20 +901,176 @@ namespace NetLoom.Tests.Unit
                 VisibleDeviceBorders(window)
                     .ToList();
 
-            if (nodes.Count == 0 ||
-                nodes.Any(
-                    node => node.Focusable))
+            if (nodes.Count == 0)
             {
                 return;
             }
 
-            // Перенесено в Sprint 49 решением владельца 2026-10-07 (docs/sprint46-mockup-gap.md, K4).
-            report.Add(
-                "КЛАВИАТУРА",
-                "ИНФО",
-                context,
-                "узлы и связи карты выбираются только мышью (Focusable=false); выбор с клавиатуры — через " +
-                "«Оборудование», поиск Ctrl+K и «Показать на карте» (перенесено в Sprint 49, акт сверки K4)");
+            // Sprint 49, K4: карта — одна остановка Tab; стрелки ходят по её элементам, Enter выбирает.
+            var canvas =
+                window.FindName("MapCanvas") as Canvas;
+
+            var start =
+                window.FindName("MapZoomInButton") as UIElement;
+
+            if (canvas == null ||
+                start == null)
+            {
+                return;
+            }
+
+            Keyboard.Focus(
+                start);
+            Settle(30);
+
+            // Tab из панели инструментов карты должен попасть на элемент карты (не дальше нескольких нажатий).
+            FrameworkElement onMap =
+                null;
+
+            for (var press = 0;
+                 press < 8 &&
+                 onMap == null;
+                 press++)
+            {
+                PressKey(
+                    window,
+                    Key.Tab);
+                Settle(30);
+
+                var focused =
+                    Keyboard.FocusedElement as FrameworkElement;
+
+                if (focused != null &&
+                    focused.IsDescendantOf(canvas))
+                {
+                    onMap =
+                        focused;
+                }
+            }
+
+            if (onMap == null)
+            {
+                report.Add(
+                    "КЛАВИАТУРА",
+                    "ВЫСОКАЯ",
+                    context,
+                    "Tab из панели инструментов не попадает на элемент карты (§8, K4)");
+
+                return;
+            }
+
+            // Стрелка вправо переводит фокус на другой элемент; если справа ничего нет, годится любое направление.
+            FrameworkElement moved =
+                null;
+
+            foreach (var arrow in new[] { Key.Right, Key.Left, Key.Down, Key.Up })
+            {
+                PressKey(
+                    window,
+                    arrow);
+                Settle(30);
+
+                var focused =
+                    Keyboard.FocusedElement as FrameworkElement;
+
+                if (focused != null &&
+                    !ReferenceEquals(
+                        focused,
+                        onMap) &&
+                    focused.IsDescendantOf(canvas))
+                {
+                    moved =
+                        focused;
+
+                    break;
+                }
+            }
+
+            if (moved == null)
+            {
+                report.Add(
+                    "КЛАВИАТУРА",
+                    "ВЫСОКАЯ",
+                    context,
+                    "стрелка на карте не переводит фокус на другой элемент (§8, K4): " +
+                    Describe(onMap));
+
+                return;
+            }
+
+            // Enter выбирает элемент в фокусе; в инспекторе тот же объект (кнопка сворачивания Enter нажимает сама).
+            if (moved is Button)
+            {
+                return;
+            }
+
+            var title =
+                window.FindName("DiagnosticElementTitleText") as TextBlock;
+
+            var before =
+                title == null
+                    ? null
+                    : title.Text;
+
+            PressKey(
+                window,
+                Key.Enter);
+            Settle(60);
+
+            var selectedTitle =
+                title == null
+                    ? null
+                    : title.Text;
+
+            var name =
+                System.Windows.Automation.AutomationProperties.GetName(
+                    moved);
+
+            var matches =
+                !string.IsNullOrWhiteSpace(selectedTitle) &&
+                !string.IsNullOrWhiteSpace(name) &&
+                (name.IndexOf(
+                     selectedTitle,
+                     StringComparison.CurrentCultureIgnoreCase) >= 0 ||
+                 selectedTitle.IndexOf(
+                     name,
+                     StringComparison.CurrentCultureIgnoreCase) >= 0 ||
+                 // У связи инспектор называет пару устройств, а имя подписи — порты: сверяем только непустоту.
+                 moved is TextBlock);
+
+            if (string.IsNullOrWhiteSpace(selectedTitle) ||
+                (string.Equals(
+                     before,
+                     selectedTitle,
+                     StringComparison.Ordinal) &&
+                 !matches))
+            {
+                report.Add(
+                    "КЛАВИАТУРА",
+                    "ВЫСОКАЯ",
+                    context,
+                    "Enter на элементе карты не выбирает его в инспекторе (§8, K4): " +
+                    Describe(moved) +
+                    " — инспектор: «" +
+                    selectedTitle +
+                    "»");
+            }
+            else if (!matches)
+            {
+                report.Add(
+                    "КЛАВИАТУРА",
+                    "ВЫСОКАЯ",
+                    context,
+                    "после Enter инспектор показывает не выбранный элемент (§8, K4): " +
+                    Describe(moved) +
+                    " (имя «" +
+                    name +
+                    "») — инспектор: «" +
+                    selectedTitle +
+                    "»");
+            }
+
+            Keyboard.ClearFocus();
         }
 
         private static void AuditEscapeInField(

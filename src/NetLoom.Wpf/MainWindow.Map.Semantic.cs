@@ -215,7 +215,9 @@ public partial class MainWindow
         }
         foreach (var pair in linkByKey)
         {
-            if (!shown.Contains(pair.Key) && !HasTopologyConflict(pair.Value.Line.Tag as Guid?))
+            // Подпись в фокусе клавиатуры не скрывается: скрытый элемент теряет фокус (K4).
+            if (!shown.Contains(pair.Key) && !HasTopologyConflict(pair.Value.Line.Tag as Guid?) &&
+                !pair.Value.Label.IsKeyboardFocused)
                 pair.Value.Label.Visibility = Visibility.Collapsed;
         }
     }

@@ -748,6 +748,19 @@ public partial class MainWindow
             visual.StatusIcon.ClearValue(
                 Path.StrokeProperty);
         }
+        // Sprint 49, K4: имя карточки для UI Automation — подпись и состояние, как в «Оборудовании».
+        if (visual.Node != null)
+        {
+            System.Windows.Automation.AutomationProperties.SetName(
+                visual.Border,
+                UiText.Format(
+                    "MapNodeAutomationName",
+                    DisplayNodeLabel(
+                        visual.Node),
+                    OperatorStatusLabel(
+                        semantic)));
+        }
+
         ApplyNodeSemanticPresentation(visual);
         // Изменение проблемы вне обновления схемы должно сразу попасть в сводку размещения.
         foreach (var location in _locationVisualsById.Values)

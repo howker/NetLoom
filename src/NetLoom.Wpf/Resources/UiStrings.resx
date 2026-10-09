@@ -2880,4 +2880,16 @@ Poll: {2}</value>
   <data name="MapPathReset" xml:space="preserve">
     <value>Clear path</value>
   </data>
+  <data name="MapKeyboardHelp" xml:space="preserve">
+    <value>Arrow keys move between elements, Enter selects, F focuses the selection</value>
+  </data>
+  <data name="MapNodeAutomationName" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="MapLinkAutomationName" xml:space="preserve">
+    <value>Link {0} ↔ {1}, ports {2}</value>
+  </data>
+  <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
+    <value>Link {0} ↔ {1}</value>
+  </data>
 </root>

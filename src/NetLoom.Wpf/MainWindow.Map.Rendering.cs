@@ -26,6 +26,7 @@ using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.MapInteraction;
+using NetLoom.Wpf.Shell;
 
 namespace NetLoom.Wpf;
 
@@ -33,8 +34,11 @@ public partial class MainWindow
 {
     private Guid? _hoveredPhysicalLinkId;
 
+    // Sprint 49, K4: связь, подпись которой в фокусе клавиатуры, становится фокусной так же, как по наведению.
+    private Guid? _keyboardFocusedPhysicalLinkId;
+
     private Guid? FocusedPhysicalLinkId =>
-        _hoveredPhysicalLinkId ?? _selectedPhysicalLinkId;
+        _hoveredPhysicalLinkId ?? _keyboardFocusedPhysicalLinkId ?? _selectedPhysicalLinkId;
 
     private void ApplyLinkFocusPresentation()
     {
@@ -111,6 +115,7 @@ public partial class MainWindow
         visual.Label.RenderTransform = _zoom > 0.0 && _zoom < 1.0
             ? new ScaleTransform(1 / _zoom, 1 / _zoom)
             : Transform.Identity;
+        UpdateLinkLabelFocusRing(visual.Label);
         visual.Label.Visibility = visual.Line.Visibility == Visibility.Visible &&
             // На уровне «Издалека» — только подписи, которые оператор явно выделил (фокус, путь)
             // Или которые требуют решения (расхождение); все они экранного размера.
@@ -905,6 +910,8 @@ public partial class MainWindow
             Style = GetStyleResource("NetLoom.Style.MapLocationToggle"),
             VerticalAlignment = VerticalAlignment.Center
         };
+        // Sprint 49, K4: вкладка и кнопка — перемещаемые остановки Tab (IsTabStop задаёт окно, MapCanvas — Once).
+        collapseButton.IsTabStop = false;
         collapseButton.Click += OnMapLocationCollapseClick;
         collapseButton.GotKeyboardFocus += OnMapLocationToggleGotKeyboardFocus;
         collapseButton.LostKeyboardFocus += OnMapLocationToggleLostKeyboardFocus;
@@ -926,11 +933,14 @@ public partial class MainWindow
         headerGrid.Children.Add(title);
         headerGrid.Children.Add(lockBadge);
         headerGrid.Children.Add(collapseButton);
-        var header = new Border
+        var header = new MapKeyboardBorder
         {
             Style = GetStyleResource("NetLoom.Style.MapLocationTab"),
-            Child = headerGrid
+            Child = headerGrid,
+            FocusVisualStyle = GetStyleResource("NetLoom.Style.MapFocusVisual")
         };
+        header.GotKeyboardFocus += OnMapLocationToggleGotKeyboardFocus;
+        header.LostKeyboardFocus += OnMapLocationToggleLostKeyboardFocus;
         var fill = new Border { Style = GetStyleResource("NetLoom.Style.MapLocationFill") };
         var frame = new Border
         {
@@ -1048,6 +1058,11 @@ public partial class MainWindow
         visual.Title.Text =
             location.Name;
         visual.LocationName = location.Name;
+
+        // Имя вкладки для UI Automation — название размещения (на «Издалека» текст вкладки — сводка).
+        System.Windows.Automation.AutomationProperties.SetName(
+            visual.Header,
+            location.Name);
 
         var hasDescription =
             !string.IsNullOrWhiteSpace(
@@ -2175,15 +2190,18 @@ public partial class MainWindow
         var root = new Grid();
         root.Children.Add(cardContent);
         root.Children.Add(semanticLabel);
+        // Sprint 49, K4: карточка получает фокус клавиатуры (перемещаемая остановка Tab: IsTabStop задаёт окно).
         var border =
-            new Border
+            new MapKeyboardBorder
             {
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapNodeCard"),
                 Child = root,
                 Cursor = Cursors.Hand,
-                Focusable = false
+                FocusVisualStyle =
+                    GetStyleResource(
+                        "NetLoom.Style.MapFocusVisual")
             };
 
         border.ContextMenu =
@@ -2367,14 +2385,17 @@ public partial class MainWindow
                 Focusable = false
             };
 
+        // Sprint 49, K4: подпись связи получает фокус клавиатуры; связь при этом становится фокусной.
         var label =
-            new TextBlock
+            new MapKeyboardLabel
             {
                 Style =
                     GetStyleResource(
                         "NetLoom.Style.MapLinkLabel"),
                 Cursor = Cursors.Hand,
-                Focusable = false
+                FocusVisualStyle =
+                    GetStyleResource(
+                        "NetLoom.Style.MapFocusVisual")
             };
 
         line.ContextMenu =
@@ -2493,6 +2514,20 @@ public partial class MainWindow
 
         visual.Label.Text =
             linkLabel;
+
+        // Имя подписи связи для UI Automation: «Связь A ↔ B, порты …».
+        System.Windows.Automation.AutomationProperties.SetName(
+            visual.Label,
+            string.IsNullOrWhiteSpace(linkLabel)
+                ? UiText.Format(
+                    "MapLinkAutomationNameNoPorts",
+                    DisplayNodeLabel(source.Node),
+                    DisplayNodeLabel(target.Node))
+                : UiText.Format(
+                    "MapLinkAutomationName",
+                    DisplayNodeLabel(source.Node),
+                    DisplayNodeLabel(target.Node),
+                    linkLabel));
 
         visual.Label.ToolTip =
             OperatorStatusLabel(

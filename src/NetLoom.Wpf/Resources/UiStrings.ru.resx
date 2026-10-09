@@ -2880,4 +2880,16 @@
   <data name="MapPathReset" xml:space="preserve">
     <value>Сбросить путь</value>
   </data>
+  <data name="MapKeyboardHelp" xml:space="preserve">
+    <value>Стрелки — переход между элементами, Enter — выбрать, F — фокус на выбранном</value>
+  </data>
+  <data name="MapNodeAutomationName" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="MapLinkAutomationName" xml:space="preserve">
+    <value>Связь {0} ↔ {1}, порты {2}</value>
+  </data>
+  <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
+    <value>Связь {0} ↔ {1}</value>
+  </data>
 </root>

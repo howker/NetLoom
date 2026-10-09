@@ -252,6 +252,29 @@ public partial class MainWindow
             return;
         }
 
+        // Sprint 49, K4: Tab снаружи карты входит на выбранный или центральный элемент. На элементе карты
+        // Стрелки, Enter, пробел, Shift+F10 и Ctrl+стрелка действуют раньше общей навигации по карте.
+        var mapElementKey =
+            e.Key == Key.System
+                ? e.SystemKey
+                : e.Key;
+
+        if (mapElementKey == Key.Tab)
+        {
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.None)
+            {
+                PrepareMapTabEntry();
+            }
+        }
+        else if (HandleMapElementKey(
+                     mapElementKey,
+                     Keyboard.Modifiers,
+                     e.IsRepeat))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // §8: Esc закрывает всплывающее окно, диалог или редактор; ADR-083: «Режим правки · Esc — выйти».
         // Esc не переключает разделы и не перехватывается у поиска и выпадающих списков — они закрываются сами.
         if (e.Key == Key.Escape)
