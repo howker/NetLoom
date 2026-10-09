@@ -62,9 +62,12 @@ namespace NetLoom.Wpf.Shell
 
             foreach (var property in first.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
+                // Изменяемое состояние представления (выбор с открытым сеттером) живёт в самой строке;
+                // Неизменяемый IsSelected — данные строки и сравнивается.
                 if (!property.CanRead ||
                     property.GetIndexParameters().Length > 0 ||
-                    PresentationState.Contains(property.Name))
+                    (PresentationState.Contains(property.Name) &&
+                     property.GetSetMethod() != null))
                 {
                     continue;
                 }
