@@ -540,6 +540,7 @@ public partial class MainWindow
         IReadOnlyList<MapNode> nodes)
     {
         var byId = locations.ToDictionary(item => item.Id);
+        LayoutAutomaticLocationSubtrees(locations, nodes, byId);
         // Только несохранённый родитель растёт вокруг содержимого; ручная геометрия не меняется.
         foreach (var location in locations.OrderByDescending(item => LocationDepth(item, byId)))
         {
@@ -645,6 +646,161 @@ public partial class MainWindow
             }
             placed.Add(bounds);
         }
+    }
+
+    // Sprint 49, остаток M2: размещения, в поддереве которых нет сохранённой геометрии (ни рамок, ни
+    // Позиций устройств), карта раскладывает сама и вложенно: устройства размещения — сеткой по имени,
+    // Вложенные рамки — рядами под ними, рамка охватывает содержимое с отступами. Раскладка детерминирована
+    // И при обновлении данных не прыгает. Иначе проектор ставит устройства разных размещений вперемешку,
+    // И рамки, растущие вокруг своих устройств, пересекаются. Сохранённая геометрия не трогается (ADR-084).
+    private void LayoutAutomaticLocationSubtrees(
+        IReadOnlyList<MapLocation> locations,
+        IReadOnlyList<MapNode> nodes,
+        IReadOnlyDictionary<Guid, MapLocation> byId)
+    {
+        var children = locations.ToLookup(item => item.ParentLocationId);
+        var nodesByLocation = nodes
+            .Where(node => node.LocationId.HasValue && _nodeVisualsByIdentity.ContainsKey(NodeIdentity(node)))
+            .ToLookup(node => node.LocationId.Value);
+        var automatic = new Dictionary<Guid, bool>();
+        Func<Guid, bool> isAutomatic = id =>
+        {
+            bool value;
+            if (!automatic.TryGetValue(id, out value))
+            {
+                value = _locationVisualsById.ContainsKey(id) &&
+                    !HasPersistedGeometryInSubtree(id, locations, nodes);
+                automatic[id] = value;
+            }
+            return value;
+        };
+
+        var sizes = new Dictionary<Guid, Size>();
+        foreach (var location in locations.OrderBy(item => item.Name, StringComparer.CurrentCulture)
+                     .ThenBy(item => item.Id))
+        {
+            if (!isAutomatic(location.Id))
+            {
+                continue;
+            }
+
+            // Корень автоматического поддерева: родителя нет или он раскладывается не автоматически.
+            if (location.ParentLocationId.HasValue &&
+                byId.ContainsKey(location.ParentLocationId.Value) &&
+                isAutomatic(location.ParentLocationId.Value))
+            {
+                continue;
+            }
+
+            var visual = _locationVisualsById[location.Id];
+            MeasureAutomaticLocation(location.Id, children, nodesByLocation, sizes);
+            ArrangeAutomaticLocation(location.Id, LocationLeft(visual), LocationTop(visual),
+                children, nodesByLocation, sizes);
+        }
+    }
+
+    private Size MeasureAutomaticLocation(
+        Guid locationId,
+        ILookup<Guid?, MapLocation> children,
+        ILookup<Guid, MapNode> nodesByLocation,
+        IDictionary<Guid, Size> sizes)
+    {
+        var gap = _locationContentPadding;
+        var own = nodesByLocation[locationId].Count();
+        var columns = own == 0 ? 0 : (int)Math.Ceiling(Math.Sqrt(own));
+        var rows = columns == 0 ? 0 : (int)Math.Ceiling(own / (double)columns);
+        var gridWidth = columns == 0 ? 0.0 : (columns * _nodeWidth) + ((columns - 1) * gap);
+        var gridHeight = rows == 0 ? 0.0 : (rows * _nodeHeight) + ((rows - 1) * gap);
+
+        var kids = AutomaticChildren(locationId, children);
+        var kidSizes = kids
+            .Select(kid => VisibleAutomaticSize(kid.Id,
+                MeasureAutomaticLocation(kid.Id, children, nodesByLocation, sizes)))
+            .ToArray();
+        var kidColumns = kids.Length == 0 ? 0 : (int)Math.Ceiling(Math.Sqrt(kids.Length));
+        var kidsWidth = 0.0;
+        var kidsHeight = 0.0;
+        for (var start = 0; start < kids.Length; start += kidColumns)
+        {
+            var row = kidSizes.Skip(start).Take(kidColumns).ToArray();
+            kidsWidth = Math.Max(kidsWidth, row.Sum(size => size.Width) + ((row.Length - 1) * gap));
+            kidsHeight += row.Max(size => size.Height) + (start > 0 ? gap : 0.0);
+        }
+
+        var contentWidth = Math.Max(gridWidth, kidsWidth);
+        var contentHeight = gridHeight + (gridHeight > 0.0 && kidsHeight > 0.0 ? gap : 0.0) + kidsHeight;
+        var size = new Size(
+            Math.Max(_locationMinWidth, contentWidth + (2.0 * _locationContentPadding)),
+            Math.Max(_locationMinHeight, _locationHeaderHeight + (2.0 * _locationContentPadding) + contentHeight));
+        sizes[locationId] = size;
+        return size;
+    }
+
+    private void ArrangeAutomaticLocation(
+        Guid locationId,
+        double left,
+        double top,
+        ILookup<Guid?, MapLocation> children,
+        ILookup<Guid, MapNode> nodesByLocation,
+        IDictionary<Guid, Size> sizes)
+    {
+        var gap = _locationContentPadding;
+        var visual = _locationVisualsById[locationId];
+        var size = sizes[locationId];
+        Canvas.SetLeft(visual.Border, left);
+        Canvas.SetTop(visual.Border, top);
+        visual.ExpandedWidth = size.Width;
+        visual.ExpandedHeight = size.Height;
+        UpdateLocationVisualState(visual);
+
+        var contentLeft = left + _locationContentPadding;
+        var contentTop = top + _locationHeaderHeight + _locationContentPadding;
+        var own = nodesByLocation[locationId]
+            .OrderBy(node => DisplayNodeLabel(node), StringComparer.CurrentCulture)
+            .ThenBy(node => NodeIdentity(node), StringComparer.Ordinal)
+            .ToArray();
+        var columns = own.Length == 0 ? 0 : (int)Math.Ceiling(Math.Sqrt(own.Length));
+        for (var index = 0; index < own.Length; index++)
+        {
+            var nodeVisual = _nodeVisualsByIdentity[NodeIdentity(own[index])];
+            Canvas.SetLeft(nodeVisual.Border, contentLeft + ((index % columns) * (_nodeWidth + gap)));
+            Canvas.SetTop(nodeVisual.Border, contentTop + ((index / columns) * (_nodeHeight + gap)));
+        }
+
+        var rows = columns == 0 ? 0 : (int)Math.Ceiling(own.Length / (double)columns);
+        var y = contentTop + (rows == 0 ? 0.0 : (rows * _nodeHeight) + (rows * gap));
+        var kids = AutomaticChildren(locationId, children);
+        var kidColumns = kids.Length == 0 ? 0 : (int)Math.Ceiling(Math.Sqrt(kids.Length));
+        for (var start = 0; start < kids.Length; start += kidColumns)
+        {
+            var x = contentLeft;
+            var rowHeight = 0.0;
+            foreach (var kid in kids.Skip(start).Take(kidColumns))
+            {
+                ArrangeAutomaticLocation(kid.Id, x, y, children, nodesByLocation, sizes);
+                var kidSize = VisibleAutomaticSize(kid.Id, sizes[kid.Id]);
+                x += kidSize.Width + gap;
+                rowHeight = Math.Max(rowHeight, kidSize.Height);
+            }
+            y += rowHeight + gap;
+        }
+    }
+
+    private MapLocation[] AutomaticChildren(Guid locationId, ILookup<Guid?, MapLocation> children)
+    {
+        return children[locationId]
+            .Where(item => _locationVisualsById.ContainsKey(item.Id))
+            .OrderBy(item => item.Name, StringComparer.CurrentCulture)
+            .ThenBy(item => item.Id)
+            .ToArray();
+    }
+
+    // Свёрнутое размещение занимает место одной вкладки.
+    private Size VisibleAutomaticSize(Guid locationId, Size expanded)
+    {
+        return _locationVisualsById[locationId].IsCollapsed
+            ? new Size(_locationMinWidth, _locationHeaderHeight)
+            : expanded;
     }
 
     private bool HasPersistedGeometryInSubtree(
