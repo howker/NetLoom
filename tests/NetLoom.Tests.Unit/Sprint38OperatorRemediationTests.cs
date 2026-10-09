@@ -357,9 +357,19 @@ namespace NetLoom.Tests.Unit
                                     canvas.LayoutTransform
                                         as ScaleTransform;
 
+                                // Sprint 49: стартовое вписывание «Вся площадка» ограничено не читаемым
+                                // Масштабом 0.75, а NetLoom.Map.ZoomMin; читаемость даёт уровень детализации.
+                                var zoomMin =
+                                    (double)window.FindResource(
+                                        "NetLoom.Map.ZoomMin");
+
                                 if (resizedScale == null ||
-                                    resizedScale.ScaleX < 0.75 ||
-                                    resizedScale.ScaleY < 0.75)
+                                    resizedScale.ScaleX < zoomMin ||
+                                    resizedScale.ScaleY < zoomMin ||
+                                    !IsFullyVisibleInViewport(
+                                        scroll,
+                                        resizedScale,
+                                        location))
                                 {
                                     return false;
                                 }
@@ -387,10 +397,14 @@ namespace NetLoom.Tests.Unit
                         Assert.IsNotNull(
                             finalScale);
 
+                        var minimumZoom =
+                            (double)window.FindResource(
+                                "NetLoom.Map.ZoomMin");
+
                         Assert.IsTrue(
-                            finalScale.ScaleX >= 0.75 &&
-                            finalScale.ScaleY >= 0.75,
-                            "Sprint 46 keeps automatic fitting at a readable zoom instead of shrinking the whole site below 75%.");
+                            finalScale.ScaleX >= minimumZoom &&
+                            finalScale.ScaleY >= minimumZoom,
+                            "Sprint 49 startup fitting shows the whole site down to NetLoom.Map.ZoomMin; readability comes from the semantic zoom level.");
 
                         var finalViewport =
                             new Rect(

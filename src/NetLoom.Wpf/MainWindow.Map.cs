@@ -71,11 +71,10 @@ public partial class MainWindow
                 return;
             }
 
+            // Сохранённый вид «Вся площадка» может быть мельче порога читаемости (Sprint 49): восстанавливаем как есть.
             _zoom =
-                Math.Max(
-                    _readableZoomMin,
-                    ClampZoom(
-                        snapshot.Viewport.Zoom));
+                ClampZoom(
+                    snapshot.Viewport.Zoom);
 
             _pendingPanX =
                 snapshot.Viewport.PanX;
@@ -83,7 +82,9 @@ public partial class MainWindow
             _pendingPanY =
                 snapshot.Viewport.PanY;
 
-            _hasPersistedViewport = true;
+            // Вид без сохранения (новый объект) — стартовое вписывание всей площадки (M3).
+            _hasPersistedViewport =
+                snapshot.Viewport.IsSaved;
 
             _persistedDeviceLayouts.Clear();
 
@@ -663,9 +664,11 @@ public partial class MainWindow
                     LocationVisibleBounds));
 
         // Без сохранённого вида показываем всю площадку; читаемость задаёт детализация.
+        // Вписывание всей площадки не увеличивает выше 100 %: маленький объект не раздувается.
         return TryFitMapBoundsToViewport(
             bounds,
-            _zoomMin);
+            _zoomMin,
+            1.0);
     }
 
     private void FitMapBoundsToViewport(

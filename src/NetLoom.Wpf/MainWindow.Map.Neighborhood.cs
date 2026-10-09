@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using NetLoom.Application.Lookup;
 using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf.Localization;
@@ -38,11 +40,34 @@ public partial class MainWindow
         return _neighborhoodMenuItem;
     }
 
+    // ADR-085: точка опроса Engine и направление «вверх» (ближе к ней).
+    // Desktop и Engine работают на одной машине, поэтому её адреса известны Desktop.
+    private IEngineHostAddresses _engineHostAddresses = new SystemEngineHostAddresses();
+    private EnginePollingPointResult _pollingPoint;
+    private bool _pollingPointRunning;
+    private bool _pollingPointRerun;
+
+    // Источник MAC-адресов машины Engine; по умолчанию системный, тесты и галерея подставляют свой.
+    public IEngineHostAddresses EngineHostAddresses
+    {
+        get { return _engineHostAddresses; }
+        set
+        {
+            _engineHostAddresses = value ?? new SystemEngineHostAddresses();
+            _pollingPoint = null;
+            // До первого снимка пересчёт не нужен: его выполнит ApplyTopologyRefresh.
+            if (_lastDiagnosticSnapshot != null && _lastDiagnosticSnapshot.Devices.Count > 0)
+                RefreshEnginePollingPoint();
+        }
+    }
+
+    // Текущее определение точки опроса; null — расчёт ещё не завершён.
+    internal EnginePollingPointResult PollingPoint => _pollingPoint;
+
     private IReadOnlyList<MapNeighborhoodLink> NeighborhoodLinks()
     {
         if (_lastMapSnapshot == null) return new MapNeighborhoodLink[0];
         var nodes = _lastMapSnapshot.Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal);
-        var diagnostics = _lastDiagnosticSnapshot?.Links.ToDictionary(link => link.PhysicalLinkId);
         var links = new List<MapNeighborhoodLink>();
         foreach (var link in _lastMapSnapshot.Links)
         {
@@ -50,18 +75,98 @@ public partial class MainWindow
             MapNode b;
             if (!nodes.TryGetValue(link.SourceNodeKey, out a) || !nodes.TryGetValue(link.TargetNodeKey, out b) ||
                 !a.DeviceId.HasValue || !b.DeviceId.HasValue) continue;
-            PhysicalLinkDiagnostic diagnostic = null;
-            if (link.PhysicalLinkId.HasValue && diagnostics != null)
-                diagnostics.TryGetValue(link.PhysicalLinkId.Value, out diagnostic);
-            var uplink = diagnostic?.StpUplink ?? DiagnosticStpUplink.Unknown;
-            // Концы диагностической связи и направление линии карты могут идти в обратном порядке.
-            if (diagnostic != null && diagnostic.DeviceAId != a.DeviceId.Value)
-                uplink = uplink == DiagnosticStpUplink.SideAIsUpstream ? DiagnosticStpUplink.SideBIsUpstream
-                    : uplink == DiagnosticStpUplink.SideBIsUpstream ? DiagnosticStpUplink.SideAIsUpstream : uplink;
-            links.Add(new MapNeighborhoodLink(link.PhysicalLinkId ?? Guid.Empty,
-                a.DeviceId.Value, b.DeviceId.Value, uplink));
+            links.Add(new MapNeighborhoodLink(link.PhysicalLinkId ?? Guid.Empty, a.DeviceId.Value, b.DeviceId.Value));
         }
         return links;
+    }
+
+    // Расстояния до точки опроса считаются по физическим связям диагностики (неориентированный граф устройств).
+    // Точка опроса не определена — null: направления «вверх/вниз» нет.
+    private Dictionary<Guid, int> PollingDistances()
+    {
+        if (_pollingPoint == null || _pollingPoint.Status != EnginePollingPointStatus.Determined ||
+            !_pollingPoint.DeviceId.HasValue || _lastDiagnosticSnapshot == null) return null;
+        var links = _lastDiagnosticSnapshot.Links
+            .Select(link => new MapNeighborhoodLink(link.PhysicalLinkId, link.DeviceAId, link.DeviceBId)).ToArray();
+        return MapNeighborhood.Distances(_pollingPoint.DeviceId.Value, links);
+    }
+
+    // Пересчёт точки опроса: один поиск по MAC в фоновом потоке за обновление снимков.
+    // Обновление, пришедшее во время расчёта, ставит один повторный расчёт, а не очередь.
+    private async void RefreshEnginePollingPoint()
+    {
+        if (_lifetimeCancellation.IsCancellationRequested || _lastDiagnosticSnapshot == null) return;
+        if (_pollingPointRunning)
+        {
+            _pollingPointRerun = true;
+            return;
+        }
+        _pollingPointRunning = true;
+        try
+        {
+            do
+            {
+                _pollingPointRerun = false;
+                var linkInterfaces = new HashSet<Guid>();
+                foreach (var link in _lastDiagnosticSnapshot.Links)
+                {
+                    if (link.InterfaceAId.HasValue) linkInterfaces.Add(link.InterfaceAId.Value);
+                    if (link.InterfaceBId.HasValue) linkInterfaces.Add(link.InterfaceBId.Value);
+                }
+                var hostAddresses = _engineHostAddresses;
+                var token = _lifetimeCancellation.Token;
+                EnginePollingPointResult result;
+                try
+                {
+                    var candidates = await Task.Run(() =>
+                    {
+                        var found = new List<MacIpLookupCandidate>();
+                        foreach (var mac in hostAddresses.GetMacAddresses())
+                        {
+                            try
+                            {
+                                found.AddRange(_lookupSearchService.Search(mac, LookupCandidateLimit).Candidates);
+                            }
+                            catch (ArgumentException)
+                            {
+                                // Адрес адаптера в неподдерживаемом виде пропускаем.
+                            }
+                        }
+                        return found;
+                    }, token);
+                    result = EnginePollingPoint.Resolve(candidates, linkInterfaces);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch (Exception error)
+                {
+                    System.Diagnostics.Trace.TraceError(error.ToString());
+                    result = new EnginePollingPointResult(EnginePollingPointStatus.NotFound, null);
+                }
+                if (_lifetimeCancellation.IsCancellationRequested) return;
+                _pollingPoint = result;
+                UpdateNeighborhoodMenuState();
+            }
+            while (_pollingPointRerun);
+        }
+        finally
+        {
+            _pollingPointRunning = false;
+        }
+    }
+
+    private string PollingReasonKey()
+    {
+        if (_pollingPoint == null) return "MapNeighborhoodPollingPending";
+        switch (_pollingPoint.Status)
+        {
+            case EnginePollingPointStatus.Ambiguous: return "MapNeighborhoodPollingAmbiguous";
+            case EnginePollingPointStatus.NoAccessPort: return "MapNeighborhoodPollingNoAccessPort";
+            case EnginePollingPointStatus.NotFound: return "MapNeighborhoodPollingNotFound";
+            default: return null;
+        }
     }
 
     private void EnableNeighborhood()
@@ -205,7 +310,6 @@ public partial class MainWindow
             actions[i].Content = UiText.Get(keys[i]);
             AutomationProperties.SetName(actions[i], UiText.Get(keys[i]));
         }
-        MapNeighborhoodDownReason.Text = UiText.Get("MapNeighborhoodNoMoreDown");
         var active = _neighborhoodSelectedDeviceId.HasValue;
         if (_neighborhoodMenuItem != null) _neighborhoodMenuItem.IsChecked = active;
         var caption = UiText.Get(active ? "MapNeighborhoodShow" : "ShellMapFocusAction");
@@ -218,13 +322,16 @@ public partial class MainWindow
         MapNeighborhoodSummaryText.Text = UiText.Format("MapNeighborhoodSummary", selected?.Label,
             _neighborhoodDeviceIds.Count, _lastMapSnapshot.Nodes.Count(node => node.DeviceId.HasValue));
         var links = NeighborhoodLinks();
-        MapNeighborhoodUpButton.IsEnabled = MapNeighborhood.CanExpandUp(_neighborhoodDeviceIds, links);
-        MapNeighborhoodDownButton.IsEnabled = MapNeighborhood.CanExpandDown(_neighborhoodDeviceIds, links);
-        MapNeighborhoodUpReason.Text = UiText.Get(links.Any(link => link.StpUplink != DiagnosticStpUplink.Unknown)
-            ? "MapNeighborhoodNoMoreUp" : "MapNeighborhoodNoStpUp");
+        var distances = PollingDistances();
+        MapNeighborhoodUpButton.IsEnabled = MapNeighborhood.CanExpandUp(_neighborhoodDeviceIds, links, distances);
+        MapNeighborhoodDownButton.IsEnabled = MapNeighborhood.CanExpandDown(_neighborhoodDeviceIds, links, distances);
+        // Точка опроса не определена — причина называет вид неопределённости; иначе — что раскрывать нечего.
+        var pollingReason = PollingReasonKey();
+        MapNeighborhoodUpReason.Text = UiText.Get(pollingReason ?? "MapNeighborhoodNoMoreUp");
+        MapNeighborhoodDownReason.Text = UiText.Get(pollingReason ?? "MapNeighborhoodNoMoreDown");
         MapNeighborhoodUpReason.Visibility = MapNeighborhoodUpButton.IsEnabled ? Visibility.Collapsed : Visibility.Visible;
         MapNeighborhoodDownReason.Visibility = MapNeighborhoodDownButton.IsEnabled ? Visibility.Collapsed : Visibility.Visible;
-        MapNeighborhoodOtherButton.Visibility = MapNeighborhood.CanExpandUndirected(_neighborhoodDeviceIds, links)
+        MapNeighborhoodOtherButton.Visibility = MapNeighborhood.CanExpandUndirected(_neighborhoodDeviceIds, links, distances)
             ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -233,9 +340,10 @@ public partial class MainWindow
         if (!_neighborhoodSelectedDeviceId.HasValue) return;
         var button = (Button)sender;
         var links = NeighborhoodLinks();
-        _neighborhoodDeviceIds = button == MapNeighborhoodUpButton ? MapNeighborhood.ExpandUp(_neighborhoodDeviceIds, links)
-            : button == MapNeighborhoodDownButton ? MapNeighborhood.ExpandDown(_neighborhoodDeviceIds, links)
-            : MapNeighborhood.ExpandUndirected(_neighborhoodDeviceIds, links);
+        var distances = PollingDistances();
+        _neighborhoodDeviceIds = button == MapNeighborhoodUpButton ? MapNeighborhood.ExpandUp(_neighborhoodDeviceIds, links, distances)
+            : button == MapNeighborhoodDownButton ? MapNeighborhood.ExpandDown(_neighborhoodDeviceIds, links, distances)
+            : MapNeighborhood.ExpandUndirected(_neighborhoodDeviceIds, links, distances);
         RefreshNeighborhoodPresentation();
         FitNeighborhoodToViewport();
         // После исчезновения или блокировки действия фокус переходит на следующую кнопку полосы.

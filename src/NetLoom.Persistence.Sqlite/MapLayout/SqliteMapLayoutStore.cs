@@ -318,7 +318,8 @@ WHERE id = @mapId;";
                         return new MapViewportLayout(
                             1.0,
                             0.0,
-                            0.0);
+                            0.0,
+                            false);
                     }
 
                     return new MapViewportLayout(

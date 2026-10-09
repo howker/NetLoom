@@ -96,10 +96,18 @@ public partial class MainWindow
                 OperatorStatusBrushKey(OperatorStatusSemantic.Warning));
         }
 
+        // ADR-079: подпись расхождения видна при любом масштабе.
+        // Ниже масштаба 1 видимая подпись обратно масштабируется до экранного размера, текст остаётся полным.
+        var far = _semanticLevel == MapSemanticLevel.Far;
+        visual.Label.RenderTransformOrigin = new Point(0.5, 0.5);
+        visual.Label.RenderTransform = _zoom > 0.0 && _zoom < 1.0
+            ? new ScaleTransform(1 / _zoom, 1 / _zoom)
+            : Transform.Identity;
         visual.Label.Visibility = visual.Line.Visibility == Visibility.Visible &&
-            _semanticLevel != MapSemanticLevel.Far &&
-            (conflict || focused || _semanticLevel == MapSemanticLevel.Close ||
-             _semanticLevel == MapSemanticLevel.Detailed) &&
+            (far
+                ? conflict
+                : conflict || focused || _semanticLevel == MapSemanticLevel.Close ||
+                  _semanticLevel == MapSemanticLevel.Detailed) &&
             !string.IsNullOrWhiteSpace(visual.Label.Text)
                 ? Visibility.Visible
                 : Visibility.Collapsed;

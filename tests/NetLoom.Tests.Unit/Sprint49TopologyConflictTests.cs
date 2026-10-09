@@ -60,6 +60,14 @@ namespace NetLoom.Tests.Unit
                     .Invoke(window, null);
                 Assert.IsTrue(labels.All(label => label.Visibility == Visibility.Visible));
                 Assert.IsTrue(labels.All(label => !label.Text.StartsWith("⚠ ⚠", StringComparison.Ordinal)));
+                // На уровне «Издалека» подпись обратно масштабирована до экранного размера.
+                var farZoom = (double)window.FindResource("NetLoom.Map.ZoomMin");
+                foreach (var label in labels)
+                {
+                    var inverse = (ScaleTransform)label.RenderTransform;
+                    Assert.AreEqual(1 / farZoom, inverse.ScaleX, 0.001);
+                    Assert.IsTrue(label.Text.Contains(" ↔ "));
+                }
 
                 ConflictSelect(window, Sprint49TopologyConflictFixture.ObservedId);
                 var toggle = (ToggleButton)window.FindName("MapQualityToggle");

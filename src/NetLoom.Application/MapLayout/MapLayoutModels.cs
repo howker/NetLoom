@@ -20,7 +20,24 @@ namespace NetLoom.Application.MapLayout
             double zoom,
             double panX,
             double panY)
+            : this(
+                zoom,
+                panX,
+                panY,
+                true)
         {
+        }
+
+        // isSaved = false — оператор вида ещё не сохранял (новый объект): окно показывает всю площадку
+        // (Sprint 49, M3), а не вид по умолчанию.
+        public MapViewportLayout(
+            double zoom,
+            double panX,
+            double panY,
+            bool isSaved)
+        {
+            IsSaved = isSaved;
+
             if (!IsFinite(zoom) || zoom <= 0.0)
             {
                 throw new ArgumentOutOfRangeException(
@@ -43,6 +60,8 @@ namespace NetLoom.Application.MapLayout
             PanX = panX;
             PanY = panY;
         }
+
+        public bool IsSaved { get; }
 
         public double Zoom { get; }
 

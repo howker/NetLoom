@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Application.Lookup;
 using NetLoom.Application.TopologyRefresh;
 using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.Diagnostics;
@@ -15,6 +16,7 @@ using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Wpf;
 using NetLoom.Wpf.Localization;
+using NetLoom.Wpf.MapInteraction;
 
 namespace NetLoom.Tests.Unit
 {
@@ -26,6 +28,9 @@ namespace NetLoom.Tests.Unit
         internal static readonly Guid Child = Guid.Parse("49494949-0008-0001-0000-000000000002");
         internal static readonly Guid Empty = Guid.Parse("49494949-0008-0001-0000-000000000003");
 
+        // Локально администрируемый MAC машины Engine (второй бит первого октета установлен).
+        internal const string PollingMac = "02:00:5E:10:49:01";
+
         internal static TopologyRefreshSnapshot Snapshot(bool reverse = false, bool withAlert = false)
         {
             var now = DateTime.UtcNow;
@@ -34,18 +39,22 @@ namespace NetLoom.Tests.Unit
                 MapNodeOrigin.Automatic, MapMonitoringCapability.Unknown, MapNodeCategory.Switch, id)).ToArray();
             var links = new List<MapLink>();
             var diagnostics = new List<PhysicalLinkDiagnostic>();
-            for (var i = 0; i < Devices.Length - 1; i++)
+            // Цепочка 0–1–…–7 плюс связь 1–3 (индекс 7): устройства 2 и 3 равноудалены от точки опроса
+            // (устройство 0), поэтому связь между ними не имеет направления.
+            var pairs = Enumerable.Range(0, Devices.Length - 1).Select(i => new[] { i, i + 1 })
+                .Concat(new[] { new[] { 1, 3 } }).ToArray();
+            foreach (var pair in pairs)
             {
                 var id = Guid.NewGuid();
-                var direction = i < 4 ? DiagnosticStpUplink.SideAIsUpstream : DiagnosticStpUplink.Unknown;
-                links.Add(new MapLink(id.ToString("D"), Devices[reverse ? i + 1 : i].ToString("D"),
-                    Devices[reverse ? i : i + 1].ToString("D"), "Gi0/1", "Gi0/2",
+                var a = pair[0];
+                var b = pair[1];
+                links.Add(new MapLink(id.ToString("D"), Devices[reverse ? b : a].ToString("D"),
+                    Devices[reverse ? a : b].ToString("D"), "Gi0/1", "Gi0/2",
                     MapConfidence.High, MapFreshness.Fresh, new MapEvidenceItem[0], id));
-                diagnostics.Add(new PhysicalLinkDiagnostic(id, Devices[i], Devices[i + 1], null, null,
-                    nodes[i].Label, nodes[i + 1].Label, "Gi0/1", "Gi0/2", DiagnosticLinkStrength.Confirmed,
+                diagnostics.Add(new PhysicalLinkDiagnostic(id, Devices[a], Devices[b], null, null,
+                    nodes[a].Label, nodes[b].Label, "Gi0/1", "Gi0/2", DiagnosticLinkStrength.Confirmed,
                     MapFreshness.Fresh, null, null, "STP", now, now, StpTreePortState.Forwarding,
-                    StpTreePortState.Forwarding, new DiagnosticEvidenceItem[0], false, 0, 0, 0,
-                    stpUplink: direction));
+                    StpTreePortState.Forwarding, new DiagnosticEvidenceItem[0], false, 0, 0, 0));
             }
             var alerts = withAlert ? new[]
             {
@@ -60,32 +69,124 @@ namespace NetLoom.Tests.Unit
                 new MapLocation(Child, Root, "Distribution", null),
                 new MapLocation(Empty, null, "Other building", null)
             }), new TopologyAlertSnapshot(now, "cist", alerts),
-                new NetworkDiagnosticSnapshot(now, new DeviceDiagnostic[0], diagnostics));
+                // Карта и диагностика — из одного набора: у каждого узла карты есть диагностика устройства,
+                // Иначе выбор устройства снимается как «выбранный объект пропал».
+                new NetworkDiagnosticSnapshot(now, nodes.Select(node => new DeviceDiagnostic(node.DeviceId.Value,
+                    node.Label, null, null, now, now, new InterfaceDiagnostic[0],
+                    "192.0.2." + (10 + Array.IndexOf(Devices, node.DeviceId.Value)))).ToArray(), diagnostics));
         }
+    }
+
+    // Адреса машины Engine для тестов и галереи (ADR-085).
+    internal sealed class Sprint49FixedHostAddresses : IEngineHostAddresses
+    {
+        private readonly string[] _macs;
+
+        internal Sprint49FixedHostAddresses(params string[] macs)
+        {
+            _macs = macs;
+        }
+
+        public IReadOnlyList<string> GetMacAddresses() => _macs;
+    }
+
+    // Поиск по MAC, который видит заданный MAC на порту доступа одного устройства (порт не входит в связи снимка).
+    internal sealed class Sprint49PollingPointLookupReader : IMacIpLookupReader
+    {
+        private readonly string _mac;
+        private readonly Guid _deviceId;
+
+        internal Sprint49PollingPointLookupReader(string mac, Guid deviceId)
+        {
+            _mac = mac;
+            _deviceId = deviceId;
+        }
+
+        public MacIpLookupResult FindByMac(string macAddress, int maxCandidates)
+        {
+            var found = string.Equals(macAddress, _mac, StringComparison.OrdinalIgnoreCase);
+            var candidates = found
+                ? new[]
+                {
+                    new MacIpLookupCandidate("192.0.2.49", _mac, _deviceId, Guid.NewGuid(), 1, 1,
+                        Guid.NewGuid(), DateTime.UtcNow, "192.0.2.1", null, null, null,
+                        MacIpLookupCandidateStatus.ResolvedInterface)
+                }
+                : new MacIpLookupCandidate[0];
+            return new MacIpLookupResult(MacIpLookupKind.Mac, macAddress, candidates);
+        }
+
+        public MacIpLookupResult FindByIp(string ipAddress, int maxCandidates) =>
+            new MacIpLookupResult(MacIpLookupKind.Ip, ipAddress, new MacIpLookupCandidate[0]);
     }
 
     public sealed partial class Sprint46ShellFoundationTests
     {
         [TestMethod]
+        public void NeighborhoodWithUndeterminedPollingPointDisablesDirectionsWithReasonAndExpandsOtherLinks()
+        {
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var snapshot = Sprint49NeighborhoodFixture.Snapshot();
+                var ids = Sprint49NeighborhoodFixture.Devices;
+                // MAC машины не виден ни на одном порту: точка опроса не найдена.
+                var window = new MainWindow(new FixedRefreshProvider(snapshot), new EmptyLookupReader())
+                {
+                    EngineHostAddresses = new Sprint49FixedHostAddresses(Sprint49NeighborhoodFixture.PollingMac)
+                };
+                try
+                {
+                    window.Show();
+                    WaitForCondition(() => DeviceBorder(window, ids[7]) != null && window.PollingPoint != null);
+                    Assert.AreEqual(EnginePollingPointStatus.NotFound, window.PollingPoint.Status);
+                    SelectDevice(window, ids[2]);
+                    NeighborhoodMenu(window).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 1, 2, 3);
+                    var up = (Button)window.FindName("MapNeighborhoodUpButton");
+                    var down = (Button)window.FindName("MapNeighborhoodDownButton");
+                    Assert.IsFalse(up.IsEnabled);
+                    Assert.IsFalse(down.IsEnabled);
+                    var upReason = (TextBlock)window.FindName("MapNeighborhoodUpReason");
+                    var downReason = (TextBlock)window.FindName("MapNeighborhoodDownReason");
+                    Assert.IsTrue(upReason.IsVisible && downReason.IsVisible);
+                    Assert.AreEqual(UiText.Get("MapNeighborhoodPollingNotFound"), upReason.Text);
+                    Assert.AreEqual(UiText.Get("MapNeighborhoodPollingNotFound"), downReason.Text);
+                    Click((Button)window.FindName("MapNeighborhoodOtherButton"));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 0, 1, 2, 3, 4);
+                }
+                finally { window.Close(); PumpDispatcher(); }
+            });
+        }
+
+        [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
-        public void NeighborhoodMenuHidesOtherDevicesAndExpandsStpAndUnknownSeparately(bool reverse)
+        public void NeighborhoodMenuHidesOtherDevicesAndExpandsByDistanceToPollingPoint(bool reverse)
         {
             RunOnSta(() =>
             {
                 SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
                 var snapshot = Sprint49NeighborhoodFixture.Snapshot(reverse);
                 var ids = Sprint49NeighborhoodFixture.Devices;
-                var window = new MainWindow(new FixedRefreshProvider(snapshot), new EmptyLookupReader());
+                var window = new MainWindow(new FixedRefreshProvider(snapshot),
+                    new Sprint49PollingPointLookupReader(Sprint49NeighborhoodFixture.PollingMac, ids[0]))
+                {
+                    EngineHostAddresses = new Sprint49FixedHostAddresses(Sprint49NeighborhoodFixture.PollingMac)
+                };
                 try
                 {
                     window.Show();
-                    WaitForCondition(() => DeviceBorder(window, ids[7]) != null);
-                    SelectDevice(window, ids[2]);
+                    WaitForCondition(() => DeviceBorder(window, ids[7]) != null && window.PollingPoint != null);
+                    Assert.AreEqual(EnginePollingPointStatus.Determined, window.PollingPoint.Status);
+                    Assert.AreEqual(ids[0], window.PollingPoint.DeviceId);
+                    SelectDevice(window, ids[4]);
                     NeighborhoodMenu(window).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
                     PumpDispatcher();
-                    AssertNeighborhoodDevices(window, 1, 2, 3);
-                    Assert.AreEqual(UiText.Format("MapNeighborhoodSummary", "neighbor-sw-2", 3, 8),
+                    AssertNeighborhoodDevices(window, 3, 4, 5);
+                    Assert.AreEqual(UiText.Format("MapNeighborhoodSummary", "neighbor-sw-4", 3, 8),
                         ((TextBlock)window.FindName("MapNeighborhoodSummaryText")).Text);
                     Assert.AreEqual(UiText.Get("MapNeighborhoodShow"),
                         ((Button)window.FindName("MapOperationalFocusButton")).Content);
@@ -97,27 +198,43 @@ namespace NetLoom.Tests.Unit
                     Assert.AreEqual(Visibility.Visible, canvas.Children.OfType<Border>()
                         .Single(border => Equals(border.Tag, Sprint49NeighborhoodFixture.Root)).Visibility);
 
+                    // Вверх — на одну связь ближе к точке опроса (устройство 0); равноудалённые 2 и 3 — без направления.
+                    Assert.IsTrue(((Button)window.FindName("MapNeighborhoodUpButton")).IsEnabled);
+                    Assert.IsTrue(((Button)window.FindName("MapNeighborhoodDownButton")).IsEnabled);
+                    Assert.IsTrue(((Button)window.FindName("MapNeighborhoodOtherButton")).IsVisible);
                     Click((Button)window.FindName("MapNeighborhoodUpButton"));
                     PumpDispatcher();
-                    AssertNeighborhoodDevices(window, 0, 1, 2, 3);
+                    AssertNeighborhoodDevices(window, 1, 3, 4, 5);
+                    Assert.IsTrue(((Button)window.FindName("MapNeighborhoodUpButton")).IsEnabled);
+                    Click((Button)window.FindName("MapNeighborhoodUpButton"));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 0, 1, 3, 4, 5);
                     Assert.IsFalse(((Button)window.FindName("MapNeighborhoodUpButton")).IsEnabled);
                     Assert.IsTrue(((TextBlock)window.FindName("MapNeighborhoodUpReason")).IsVisible);
+                    Assert.AreEqual(UiText.Get("MapNeighborhoodNoMoreUp"),
+                        ((TextBlock)window.FindName("MapNeighborhoodUpReason")).Text);
                     Assert.IsTrue(((Button)window.FindName("MapNeighborhoodDownButton")).IsKeyboardFocused);
-                    Click((Button)window.FindName("MapNeighborhoodDownButton"));
-                    PumpDispatcher();
-                    AssertNeighborhoodDevices(window, 0, 1, 2, 3, 4);
-                    Assert.IsFalse(((Button)window.FindName("MapNeighborhoodDownButton")).IsEnabled);
-                    Assert.IsTrue(((Button)window.FindName("MapNeighborhoodOtherButton")).IsKeyboardFocused);
                     Click((Button)window.FindName("MapNeighborhoodOtherButton"));
                     PumpDispatcher();
                     AssertNeighborhoodDevices(window, 0, 1, 2, 3, 4, 5);
-                    Assert.IsTrue(((Button)window.FindName("MapNeighborhoodOtherButton")).IsKeyboardFocused);
+                    Assert.IsFalse(((Button)window.FindName("MapNeighborhoodOtherButton")).IsVisible);
+                    Assert.IsTrue(((Button)window.FindName("MapNeighborhoodWholeSiteButton")).IsKeyboardFocused);
 
                     window.ShowMap(snapshot.MapSnapshot);
                     PumpDispatcher();
                     AssertNeighborhoodDevices(window, 0, 1, 2, 3, 4, 5);
                     var zoom = NeighborhoodZoom(window);
                     Assert.IsTrue(zoom >= (double)window.FindResource("NetLoom.Map.ReadableZoomMin") && zoom <= 1.0);
+
+                    Click((Button)window.FindName("MapNeighborhoodDownButton"));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 0, 1, 2, 3, 4, 5, 6);
+                    Click((Button)window.FindName("MapNeighborhoodDownButton"));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, Enumerable.Range(0, 8).ToArray());
+                    Assert.IsFalse(((Button)window.FindName("MapNeighborhoodDownButton")).IsEnabled);
+                    Assert.AreEqual(UiText.Get("MapNeighborhoodNoMoreDown"),
+                        ((TextBlock)window.FindName("MapNeighborhoodDownReason")).Text);
 
                     Click((Button)window.FindName("MapNeighborhoodWholeSiteButton"));
                     PumpDispatcher();
@@ -185,8 +302,12 @@ namespace NetLoom.Tests.Unit
                 try
                 {
                     window.Show();
+                    // Стартовый вид — вся площадка: ждём, пока последний узел окажется в видимой области.
                     WaitForCondition(() => DeviceBorder(window, ids[7]) != null &&
-                        NeighborhoodZoom(window) < (double)window.FindResource("NetLoom.Map.ReadableZoomMin"));
+                        new Rect(0, 0, ((ScrollViewer)window.FindName("MapScrollViewer")).ViewportWidth,
+                            ((ScrollViewer)window.FindName("MapScrollViewer")).ViewportHeight).Contains(
+                            DeviceBorder(window, ids[7]).TransformToAncestor((ScrollViewer)window.FindName("MapScrollViewer"))
+                                .TransformBounds(new Rect(DeviceBorder(window, ids[7]).RenderSize))));
                     PumpDispatcher();
                     var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
                     var viewport = new Rect(0, 0, viewer.ViewportWidth, viewer.ViewportHeight);
@@ -203,6 +324,8 @@ namespace NetLoom.Tests.Unit
                         snapshot.MapSnapshot.Links.Where(link => link.SourceNodeKey != ids[2].ToString("D") &&
                             link.TargetNodeKey != ids[2].ToString("D")), snapshot.MapSnapshot.Locations));
                     Assert.IsFalse(((Border)window.FindName("MapNeighborhoodNotice")).IsVisible);
+                    // Удалённая карточка исчезает с анимацией — дождаться её снятия с холста.
+                    WaitForCondition(() => DeviceBorder(window, ids[2]) == null);
                     AssertNeighborhoodDevices(window, 0, 1, 3, 4, 5, 6, 7);
                 }
                 finally { window.Close(); PumpDispatcher(); }

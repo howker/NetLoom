@@ -5297,8 +5297,10 @@ namespace NetLoom.Tests.Unit
                             "−",
                             UiText.Get(
                                 "MapZoomOutAction"));
+                        // Sprint 49: порог читаемости — масштаб, при котором заголовок карточки (13 px)
+                        // Достигает NetLoom.FontSize.Caption (12 px): 12 / 13, округлено вверх.
                         Assert.AreEqual(
-                            0.75,
+                            0.93,
                             (double)window.FindResource(
                                 "NetLoom.Map.ReadableZoomMin"),
                             0.001);

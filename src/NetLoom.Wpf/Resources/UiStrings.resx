@@ -2835,8 +2835,17 @@ Poll: {2}</value>
   <data name="MapNeighborhoodWholeSite" xml:space="preserve">
     <value>Whole site</value>
   </data>
-  <data name="MapNeighborhoodNoStpUp" xml:space="preserve">
-    <value>Cannot expand upstream: no STP root ports</value>
+  <data name="MapNeighborhoodPollingNotFound" xml:space="preserve">
+    <value>Engine polling point not found: this machine’s MAC is not seen on any switch port</value>
+  </data>
+  <data name="MapNeighborhoodPollingAmbiguous" xml:space="preserve">
+    <value>Engine polling point is ambiguous: this machine’s MAC is seen on access ports of several devices</value>
+  </data>
+  <data name="MapNeighborhoodPollingNoAccessPort" xml:space="preserve">
+    <value>Engine polling point not determined: this machine’s MAC is seen only on ports that link devices</value>
+  </data>
+  <data name="MapNeighborhoodPollingPending" xml:space="preserve">
+    <value>Engine polling point is being determined</value>
   </data>
   <data name="MapNeighborhoodNoMoreUp" xml:space="preserve">
     <value>Cannot expand upstream: all known upstream devices are shown</value>

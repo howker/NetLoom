@@ -73,10 +73,13 @@ namespace NetLoom.Tests.Unit
                 foreach (var theme in new[] { UiShellTheme.Light, UiShellTheme.Dark })
                 {
                     typeof(MainWindow).GetMethod("ApplyShellTheme", LocationFrameFlags).Invoke(window, new object[] { theme });
-                    foreach (var zoom in new[] { 0.5, 0.75, 0.95, 1.6, 0.5 })
+                    var readable = (double)window.FindResource("NetLoom.Map.ReadableZoomMin");
+                    var labelMin = (double)window.FindResource("NetLoom.Map.LinkLabelMinZoom");
+                    var detailMin = (double)window.FindResource("NetLoom.Map.SemanticDetailMinZoom");
+                    foreach (var zoom in new[] { 0.5, readable, labelMin, detailMin, 0.5 })
                     {
                         SemanticZoom(window, zoom);
-                        var level = MapSemanticLevels.For(zoom, 0.75, 0.95, 1.6);
+                        var level = MapSemanticLevels.For(zoom, readable, labelMin, detailMin);
                         Assert.AreSame(border, DeviceBorder(window, first));
                         Assert.AreSame(firstVisual, SemanticVisual(window, "_nodeVisualsByIdentity", "device:" + first.ToString("D")));
                         Assert.AreEqual(level == MapSemanticLevel.Far ? Visibility.Collapsed : Visibility.Visible, title.Visibility);
@@ -126,7 +129,7 @@ namespace NetLoom.Tests.Unit
                 Assert.AreEqual(Visibility.Visible, nameLabel.Visibility);
                 Assert.AreEqual("Первый", ((TextBlock)nameLabel.Child).Text);
                 Assert.AreEqual(4.0, ((TransformGroup)nameLabel.RenderTransform).Children.OfType<ScaleTransform>().Single().ScaleX);
-                SemanticZoom(window, 0.75);
+                SemanticZoom(window, (double)window.FindResource("NetLoom.Map.ReadableZoomMin"));
                 Assert.AreEqual(Visibility.Collapsed, nameLabel.Visibility);
                 Assert.IsTrue(nameLabel.RenderTransform.Value.IsIdentity);
                 Assert.AreEqual(0, store.DeviceWrites);
@@ -160,7 +163,7 @@ namespace NetLoom.Tests.Unit
                 participants.Add(second);
                 typeof(MainWindow).GetMethod("ReapplyOperationalFocusPresentation", LocationFrameFlags).Invoke(window, null);
                 Assert.AreEqual(Visibility.Visible, SemanticProperty<Border>(secondVisual, "SemanticLabel").Visibility);
-                SemanticZoom(window, 0.75);
+                SemanticZoom(window, (double)window.FindResource("NetLoom.Map.ReadableZoomMin"));
                 Assert.IsTrue(status.RenderTransform.Value.IsIdentity);
                 mode.SetValue(window, Enum.Parse(mode.FieldType, "None"));
                 participants.Clear();

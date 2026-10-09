@@ -908,6 +908,10 @@ public partial class MainWindow : Window
             state.Snapshot.MapSnapshot);
 
         ShowSelectedDiagnostic();
+
+        // ADR-085: точка опроса пересчитывается один раз за обновление снимков.
+        RefreshEnginePollingPoint();
+
         UpdateMonitoringPresentation(
             _monitoringControl.Current);
 
@@ -1196,7 +1200,8 @@ public partial class MainWindow : Window
                 new MapViewportLayout(
                     1.0,
                     0.0,
-                    0.0),
+                    0.0,
+                    false),
                 new MapDeviceLayout[0]);
         }
 

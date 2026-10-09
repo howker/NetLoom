@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.Locations;
+using NetLoom.Application.Lookup;
 using NetLoom.Application.MapLayout;
 using NetLoom.Application.Topology;
 using NetLoom.Contracts.TopologyMap;
@@ -72,21 +73,25 @@ namespace NetLoom.Tests.Unit
                             {
                                 // Копия стенда открывается без рабочего вида; оригинальная база не меняется.
                                 window = CreateParallelLinksFieldWindow(database, dark, withoutSavedView: true);
+                                // ADR-085: «машина Engine» — MAC первой камеры стенда на порту доступа ps1-sw-01.
+                                window.EngineHostAddresses = FieldStandEngineHost(database);
                                 PrepareWindow(window, width, GalleryHeight);
                                 var current = window;
                                 const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
                                 WaitForCondition(() => ((MapSnapshot)typeof(MainWindow)
-                                    .GetField("_lastMapSnapshot", flags).GetValue(current)).Nodes.Count > 0);
+                                    .GetField("_lastMapSnapshot", flags).GetValue(current)).Nodes.Count > 0 &&
+                                    current.PollingPoint != null);
                                 PumpDispatcher();
                                 var map = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags).GetValue(window);
+                                if (scenario == "61-whole-site" && width == 1100 && !dark)
+                                    information.Add("ИНФО Точка опроса на стенде: " + window.PollingPoint.Status +
+                                        (window.PollingPoint.DeviceId.HasValue
+                                            ? " (" + map.Nodes.First(node => node.DeviceId == window.PollingPoint.DeviceId).Label + ")"
+                                            : string.Empty));
                                 if (scenario == "62-neighborhood" || scenario == "63-neighborhood-expanded-up")
                                 {
-                                    var selected = map.Nodes.Where(node => node.DeviceId.HasValue)
-                                        .Where(node => map.Links.Where(link => link.SourceNodeKey == node.Key ||
-                                            link.TargetNodeKey == node.Key)
-                                            .Select(link => link.SourceNodeKey == node.Key ? link.TargetNodeKey : link.SourceNodeKey)
-                                            .Distinct().Count() >= 3)
-                                        .OrderByDescending(node => node.Label == "ps1-sw-01").FirstOrDefault();
+                                    var selected = ChooseNeighborhoodAnchor(map, window.PollingPoint,
+                                        scenario == "63-neighborhood-expanded-up");
                                     Assert.IsNotNull(selected, "Field stand needs a switch with at least three neighbors.");
                                     var border = ((Canvas)window.FindName("MapCanvas")).Children.OfType<Border>()
                                         .Single(item => Equals(item.Tag, selected.DeviceId.Value));
@@ -108,10 +113,15 @@ namespace NetLoom.Tests.Unit
                                         if (up.IsEnabled) up.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                                         else
                                         {
+                                            // Данные не подделываем: показываем неактивное действие с причиной
+                                            // И раскрытие остальных связей.
                                             var reason = (TextBlock)window.FindName("MapNeighborhoodUpReason");
                                             Assert.IsTrue(reason.IsVisible);
                                             information.Add("ИНФО " + scenario + "/" + theme + "/" + width +
-                                                " — На границе окрестности нет направления STP вверх: " + reason.Text);
+                                                " — «Раскрыть вверх» неактивно: " + reason.Text);
+                                            var other = (Button)window.FindName("MapNeighborhoodOtherButton");
+                                            if (other.IsVisible && other.IsEnabled)
+                                                other.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                                         }
                                     }
                                 }
@@ -128,6 +138,9 @@ namespace NetLoom.Tests.Unit
                                 window.UpdateLayout();
                                 CollectTextClipping(window.Content as DependencyObject,
                                     scenario + "/" + theme + "/" + width, findings);
+                                // Критерий владельца: на карте нет текста мельче Caption (кроме раздела предупреждений).
+                                if (scenario != "64-alert-participants")
+                                    CollectTinyMapText(window, scenario + "/" + theme + "/" + width, findings);
                                 bitmaps.Add(Capture(window.Content as FrameworkElement));
                             }
                             finally
@@ -150,6 +163,78 @@ namespace NetLoom.Tests.Unit
                 Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
                 Assert.AreEqual(8, Directory.GetFiles(output, "*.png").Length);
             });
+        }
+
+        // MAC первой камеры полевого стенда (IP 198.51.100.101): по FDB он виден на порту доступа одного коммутатора
+        // И не входит в физические связи. Это единственный «хост Engine», который стенд может правдоподобно дать.
+        private static IEngineHostAddresses FieldStandEngineHost(string database)
+        {
+            var reader = new SqliteMacIpLookupReader(new SqliteConnectionFactory(database));
+            var found = reader.FindByIp("198.51.100.101", 10).Candidates
+                .FirstOrDefault(candidate => candidate.Status == MacIpLookupCandidateStatus.ResolvedInterface);
+            return new Sprint49FixedHostAddresses(found == null ? new string[0] : new[] { found.MacAddress });
+        }
+
+        // Устройство-центр окрестности: коммутатор с тремя и более соседями; для кадра «раскрыто вверх»
+        // Берём такой, у которого «вверх» действительно есть куда раскрывать (если точка опроса определена).
+        private static MapNode ChooseNeighborhoodAnchor(MapSnapshot map, EnginePollingPointResult polling, bool expandUp)
+        {
+            var nodes = map.Nodes.ToDictionary(node => node.Key);
+            var links = new List<MapNeighborhoodLink>();
+            foreach (var link in map.Links)
+            {
+                MapNode a;
+                MapNode b;
+                if (nodes.TryGetValue(link.SourceNodeKey, out a) && nodes.TryGetValue(link.TargetNodeKey, out b) &&
+                    a.DeviceId.HasValue && b.DeviceId.HasValue)
+                    links.Add(new MapNeighborhoodLink(link.PhysicalLinkId ?? Guid.Empty, a.DeviceId.Value, b.DeviceId.Value));
+            }
+            var distances = polling != null && polling.Status == EnginePollingPointStatus.Determined &&
+                polling.DeviceId.HasValue ? MapNeighborhood.Distances(polling.DeviceId.Value, links) : null;
+            var candidates = map.Nodes.Where(node => node.DeviceId.HasValue &&
+                    MapNeighborhood.Initial(node.DeviceId.Value, links).Count >= 4)
+                .ToArray();
+            return candidates
+                .OrderByDescending(node => expandUp && MapNeighborhood.CanExpandUp(
+                    MapNeighborhood.Initial(node.DeviceId.Value, links), links, distances))
+                .ThenByDescending(node => node.Label == "ps1-sw-01")
+                .FirstOrDefault();
+        }
+
+        // Критерий владельца Sprint 49: на карте нет видимого текста, чей экранный размер меньше Caption.
+        // Экранный размер = FontSize × масштаб карты × обратное масштабирование элемента (всё это даёт
+        // Преобразование элемента до окна). Учитывается только текст, попадающий в видимую область карты.
+        private static void CollectTinyMapText(MainWindow window, string context, List<string> findings)
+        {
+            var canvas = (Canvas)window.FindName("MapCanvas");
+            var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+            var caption = (double)window.FindResource("NetLoom.FontSize.Caption");
+            var viewport = viewer.TransformToAncestor(window).TransformBounds(new Rect(viewer.RenderSize));
+            var tiny = new Dictionary<string, List<string>>();
+            var pending = new Stack<DependencyObject>();
+            pending.Push(canvas);
+            while (pending.Count > 0)
+            {
+                var item = pending.Pop();
+                for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(item); i++)
+                    pending.Push(System.Windows.Media.VisualTreeHelper.GetChild(item, i));
+                var block = item as TextBlock;
+                if (block == null || !block.IsVisible || string.IsNullOrWhiteSpace(block.Text)) continue;
+                var transform = block.TransformToAncestor(window);
+                if (!viewport.IntersectsWith(transform.TransformBounds(new Rect(block.RenderSize)))) continue;
+                var origin = transform.Transform(new Point(0, 0));
+                var unit = transform.Transform(new Point(0, 1));
+                var size = block.FontSize * (unit - origin).Length;
+                if (size >= caption - 0.05) continue;
+                var key = size.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
+                List<string> texts;
+                if (!tiny.TryGetValue(key, out texts)) tiny[key] = texts = new List<string>();
+                texts.Add(block.Text);
+            }
+            foreach (var pair in tiny)
+                findings.Add(context + " — Мелкий текст на карте: " + pair.Value.Count + " шт., экранный размер " +
+                    pair.Key + " px при минимуме " + caption.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) +
+                    " px, например «" + pair.Value[0] + "»");
         }
 
         private sealed class NeighborhoodStartupLayoutStore : IMapLayoutStore
@@ -202,6 +287,8 @@ namespace NetLoom.Tests.Unit
                                 PumpDispatcher();
                                 window.UpdateLayout();
                                 CollectTextClipping(window.Content as DependencyObject,
+                                    scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
+                                CollectTinyMapText(window,
                                     scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
                                 bitmaps.Add(Capture(window.Content as FrameworkElement));
                             }
@@ -832,8 +919,8 @@ namespace NetLoom.Tests.Unit
             });
         }
 
-        // Средний масштаб: устройства с именами, подписи связей ещё скрыты (ниже LinkLabelMinZoom).
-        private const double MediumParallelLinksZoom = 0.8;
+        // Средний масштаб: устройства с именами, подписи связей ещё скрыты (между ReadableZoomMin 0,93 и LinkLabelMinZoom 1,0).
+        private const double MediumParallelLinksZoom = 0.95;
 
         private static MainWindow CreateParallelLinksFieldWindow(string database, bool dark, bool withoutSavedView = false)
         {

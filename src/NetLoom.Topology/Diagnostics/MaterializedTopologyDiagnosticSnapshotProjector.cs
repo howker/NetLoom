@@ -394,8 +394,7 @@ namespace NetLoom.Topology.Diagnostics
                 impact != null && impact.IsBridge
                     ? impact.SeparatedDevicePairCount
                     : 0L,
-                lldpReporting,
-                LinkStpUplink(link, stpByDevice));
+                lldpReporting);
         }
 
         private static string DirectionFrom(
@@ -513,32 +512,6 @@ namespace NetLoom.Topology.Diagnostics
                             StringComparison.Ordinal))
                 .ToDictionary(
                     item => item.DeviceId);
-        }
-
-        private static bool? EndpointIsRootPort(
-            Guid deviceId,
-            Guid? interfaceId,
-            IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice)
-        {
-            StpTreeSnapshot stp;
-            if (!interfaceId.HasValue || !stpByDevice.TryGetValue(deviceId, out stp))
-                return null;
-
-            var port = stp.Ports.FirstOrDefault(item => item.InterfaceId == interfaceId);
-            return port == null ? (bool?)null : port.IsRootPort;
-        }
-
-        private static DiagnosticStpUplink LinkStpUplink(
-            PhysicalLink link,
-            IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice)
-        {
-            var rootA = EndpointIsRootPort(link.DeviceAId, link.InterfaceAId, stpByDevice);
-            var rootB = EndpointIsRootPort(link.DeviceBId, link.InterfaceBId, stpByDevice);
-            // Вверх — к корню STP: корневой порт находится на нижнем конце связи.
-            // Без данных обоих концов направление не выводим из имён или геометрии.
-            if (!rootA.HasValue || !rootB.HasValue || rootA.Value == rootB.Value)
-                return DiagnosticStpUplink.Unknown;
-            return rootB.Value ? DiagnosticStpUplink.SideAIsUpstream : DiagnosticStpUplink.SideBIsUpstream;
         }
 
         private static StpTreePortState EndpointStpState(

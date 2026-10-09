@@ -48,8 +48,11 @@ public partial class MainWindow
              _operationalFocusDeviceIds.Contains(node.DeviceId.Value)));
         visual.SemanticLabel.Visibility = far && important ? Visibility.Visible : Visibility.Collapsed;
         var title = (TextBlock)visual.SemanticLabel.Child;
-        title.Text = DisplayNodeLabel(node);
-        title.ToolTip = title.Text;
+        // Скрытый ярлык не дублирует имя карточки (в дереве UI Automation и в поиске текста).
+        title.Text = visual.SemanticLabel.Visibility == Visibility.Visible
+            ? DisplayNodeLabel(node)
+            : string.Empty;
+        title.ToolTip = title.Text.Length == 0 ? null : title.Text;
         visual.SemanticLabel.ToolTip = title.Text;
         if (far && important)
         {
@@ -92,6 +95,7 @@ public partial class MainWindow
         visual.Header.ToolTip = visual.Border.ToolTip + (far ? "\n" + visual.Title.Text : string.Empty) +
             (visual.StatusIcon.Visibility == Visibility.Visible ? "\n" + visual.StatusIcon.ToolTip : string.Empty);
         visual.Header.RenderTransform = far ? new ScaleTransform(1 / _zoom, 1 / _zoom) : Transform.Identity;
+        UpdateLocationHeaderFocusRing(visual, far);
         // Вкладка может выступить вправо не больше своей экранной высоты; длинное имя обрезается.
         visual.Header.MaxWidth = far
             ? visual.ExpandedWidth * _zoom + _locationHeaderHeight
@@ -101,6 +105,25 @@ public partial class MainWindow
         {
             visual.Border.Width = visual.Header.DesiredSize.Width / (far ? _zoom : 1);
             visual.Border.Height = _locationHeaderHeight / (far ? _zoom : 1);
+        }
+    }
+
+    // Кольцо фокуса кнопки вкладки: на «Издалека» вкладка обратно масштабирована и стоит на экране 1:1.
+    // Поэтому кольцу нужны обычные 2 px, а не толщина, делённая на масштаб карты (UpdateMapFocusRingScale).
+    private void UpdateLocationHeaderFocusRing(MapLocationVisual visual, bool screenScale)
+    {
+        const string ringKey = "NetLoom.Thickness.MapFocusRing";
+        const string offsetKey = "NetLoom.Thickness.MapFocusRingOffset";
+        if (screenScale)
+        {
+            visual.Header.Resources[ringKey] = GetThicknessResource("NetLoom.Thickness.FocusRing");
+            visual.Header.Resources[offsetKey] = GetThicknessResource("NetLoom.Thickness.FocusRingOffset");
+        }
+        else if (visual.Header.Resources.Contains(ringKey) || visual.Header.Resources.Contains(offsetKey))
+        {
+            // Без собственных значений вкладка снова берёт толщину из ресурсов области карты.
+            visual.Header.Resources.Remove(ringKey);
+            visual.Header.Resources.Remove(offsetKey);
         }
     }
 

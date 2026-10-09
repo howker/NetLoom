@@ -2835,8 +2835,17 @@
   <data name="MapNeighborhoodWholeSite" xml:space="preserve">
     <value>Вся площадка</value>
   </data>
-  <data name="MapNeighborhoodNoStpUp" xml:space="preserve">
-    <value>Вверх некуда: нет корневых портов STP</value>
+  <data name="MapNeighborhoodPollingNotFound" xml:space="preserve">
+    <value>Точка опроса Engine не найдена: MAC этой машины не виден на портах коммутаторов</value>
+  </data>
+  <data name="MapNeighborhoodPollingAmbiguous" xml:space="preserve">
+    <value>Точка опроса Engine неоднозначна: MAC этой машины виден на портах доступа нескольких устройств</value>
+  </data>
+  <data name="MapNeighborhoodPollingNoAccessPort" xml:space="preserve">
+    <value>Точка опроса Engine не определена: MAC этой машины виден только на портах связей между устройствами</value>
+  </data>
+  <data name="MapNeighborhoodPollingPending" xml:space="preserve">
+    <value>Точка опроса Engine определяется</value>
   </data>
   <data name="MapNeighborhoodNoMoreUp" xml:space="preserve">
     <value>Вверх некуда: все известные устройства выше уже показаны</value>
