@@ -164,7 +164,10 @@ namespace NetLoom.Tests.Unit
 
                 // Ctrl+K открывает поиск прежним обработчиком (модификатор состояния клавиатуры в тесте не задать),
                 // А обычное K окном не перехватывается.
-                Assert.IsFalse(S49NavKey(window, Key.K).Handled);
+                // Модификаторы — реальное состояние клавиатуры; предыдущий тест может оставить Ctrl «нажатым»
+                // Во внутреннем состоянии WPF. Правило: K перехватывается тогда и только тогда, когда нажат Ctrl.
+                var ctrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+                Assert.AreEqual(ctrlDown, S49NavKey(window, Key.K).Handled);
 
                 typeof(MainWindow).GetMethod("FocusAdr083GlobalSearch", S49NavFlags).Invoke(window, null);
                 var search = (TextBox)window.FindName("ShellGlobalSearchTextBox");
