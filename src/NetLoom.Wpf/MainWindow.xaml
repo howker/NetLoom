@@ -10,7 +10,8 @@
         FontSize="{DynamicResource NetLoom.FontSize.Body}"
         TextOptions.TextFormattingMode="Display"
         Background="{DynamicResource NetLoom.Brush.Window}"
-        Foreground="{DynamicResource NetLoom.Brush.TextPrimary}">
+        Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+        PreviewKeyDown="OnMapQualityPreviewKeyDown">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -2123,8 +2124,7 @@
                             BorderBrush="{DynamicResource NetLoom.Brush.Border}"
                             BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
                             Visibility="Collapsed">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
                                 <TextBlock x:Name="MapQualityGlyph"
                                            Margin="{DynamicResource NetLoom.Thickness.StatusGlyph}"
                                            VerticalAlignment="Center"
@@ -2137,63 +2137,89 @@
                                                Typography.NumeralAlignment="Tabular" />
                                 </ToggleButton>
                         </StackPanel>
-                            <ScrollViewer x:Name="MapQualityDetails"
-                                          MaxHeight="{DynamicResource NetLoom.Map.QualityListMaxHeight}"
-                                          Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
-                                          VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Disabled">
-                                <ScrollViewer.Resources>
-                                    <Style TargetType="{x:Type ScrollBar}"
-                                           BasedOn="{StaticResource NetLoom.Style.MapScrollBar}">
-                                        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceMuted}" />
-                                    </Style>
-                                </ScrollViewer.Resources>
-                                <ScrollViewer.Style>
-                                    <Style TargetType="{x:Type ScrollViewer}"
-                                           BasedOn="{StaticResource NetLoom.Style.MapScrollViewer}">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsChecked, ElementName=MapQualityToggle}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ScrollViewer.Style>
-                            <ItemsControl x:Name="MapQualityGroups">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
-                                            <TextBlock Text="{Binding Heading}"
+                    </Border>
+                </StackPanel>
+
+                <Border x:Name="MapQualityDetails"
+                        Grid.Row="2"
+                        Panel.ZIndex="{DynamicResource NetLoom.Map.OverlayZIndex}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Width="{DynamicResource NetLoom.Map.QualityPanelWidth}"
+                        MaxHeight="{DynamicResource NetLoom.Map.QualityListMaxHeight}"
+                        Margin="{DynamicResource NetLoom.Thickness.MapOverlayMargin}"
+                        Padding="{DynamicResource NetLoom.Thickness.MapOverlayPadding}"
+                        Background="{DynamicResource NetLoom.Brush.Surface}"
+                        BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                        BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                        CornerRadius="{DynamicResource NetLoom.Radius.Panel}"
+                        Loaded="OnMapQualityDetailsLoaded">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="{DynamicResource NetLoom.Map.OverlayShadowBlur}"
+                                          ShadowDepth="{DynamicResource NetLoom.Map.OverlayShadowDepth}"
+                                          Opacity="{DynamicResource NetLoom.Map.OverlayShadowOpacity}"
+                                          Color="{DynamicResource NetLoom.Color.OverlayShadow}" />
+                    </Border.Effect>
+                    <Border.Style>
+                        <Style TargetType="{x:Type Border}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=MapQualityToggle}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <ScrollViewer Style="{StaticResource NetLoom.Style.MapScrollViewer}"
+                                  Background="{DynamicResource NetLoom.Brush.Surface}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="{x:Type ScrollBar}"
+                                   BasedOn="{StaticResource NetLoom.Style.MapScrollBar}">
+                                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
+                            </Style>
+                        </ScrollViewer.Resources>
+                        <ItemsControl x:Name="MapQualityItems">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                        <DockPanel Margin="{DynamicResource NetLoom.Thickness.FieldLabelCompact}">
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="{Binding ShowText}"
+                                                    Tag="{Binding Item}"
+                                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                                    Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
+                                                    VerticalAlignment="Top"
+                                                    AutomationProperties.Name="{Binding ShowName}"
+                                                    Click="OnMapQualityShowClick" />
+                                            <TextBlock Text="{Binding Subject}"
                                                        FontWeight="SemiBold"
                                                        TextWrapping="Wrap"
-                                                       shell:AutomationHeading.Level="2"
-                                                       Margin="{DynamicResource NetLoom.Thickness.FieldLabelCompact}" />
-                                            <ItemsControl ItemsSource="{Binding Gaps}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <DockPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
-                                                            <Button DockPanel.Dock="Right"
-                                                                    Content="{Binding ShowText}"
-                                                                    Tag="{Binding Gap}"
-                                                                    Style="{StaticResource NetLoom.Style.LinkButton}"
-                                                                    Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
-                                                                    AutomationProperties.Name="{Binding ShowName}"
-                                                                    Click="OnMapQualityShowClick" />
-                                                            <TextBlock Text="{Binding Text}"
-                                                                       TextWrapping="Wrap"
-                                                                       VerticalAlignment="Center" />
-                                                        </DockPanel>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </StackPanel>
+                                                       VerticalAlignment="Center"
+                                                       shell:AutomationHeading.Level="2" />
+                                        </DockPanel>
+                                        <ItemsControl ItemsSource="{Binding Reasons}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                                        <TextBlock Text="•"
+                                                                   Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                                                   Foreground="{DynamicResource NetLoom.Brush.TextSecondary}"
+                                                                   IsHitTestVisible="False" />
+                                                        <TextBlock Text="{Binding Text}"
+                                                                   TextWrapping="Wrap"
+                                                                   Foreground="{DynamicResource NetLoom.Brush.TextSecondary}" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Border>
-                </StackPanel>
 
                 <ScrollViewer x:Name="MapScrollViewer"
                               Grid.Row="2"
@@ -2202,7 +2228,8 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
                               PreviewMouseWheel="OnMapPreviewMouseWheel"
-                              PreviewMouseDown="OnMapPreviewMouseDown"
+                              SizeChanged="OnMapQualityViewportSizeChanged"
+                              PreviewMouseDown="OnMapQualityMapPreviewMouseDown"
                               PreviewMouseMove="OnMapPreviewMouseMove"
                               PreviewMouseUp="OnMapPreviewMouseUp">
                     <ScrollViewer.Resources>

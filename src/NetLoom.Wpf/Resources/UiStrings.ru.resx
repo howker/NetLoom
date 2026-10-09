@@ -2748,38 +2748,17 @@
   <data name="MapQualitySummary" xml:space="preserve">
     <value>Топология неполная: {0}</value>
   </data>
-  <data name="MapQualityObservedGroup" xml:space="preserve">
-    <value>Связи без подтверждения LLDP: {0}</value>
-  </data>
-  <data name="MapQualityInferredGroup" xml:space="preserve">
-    <value>Связи, выведенные косвенно: {0}</value>
-  </data>
-  <data name="MapQualityOneSidedGroup" xml:space="preserve">
-    <value>Односторонний LLDP: {0}</value>
-  </data>
-  <data name="MapQualitySyntheticGroup" xml:space="preserve">
-    <value>Порты без ifIndex: {0}</value>
-  </data>
   <data name="MapQualityLinkSubject" xml:space="preserve">
     <value>{0} ↔ {1}</value>
-  </data>
-  <data name="MapQualityLinkPorts" xml:space="preserve">
-    <value>Порты: {0} ↔ {1}</value>
   </data>
   <data name="MapQualityLldpReporter" xml:space="preserve">
     <value>LLDP сообщает только {0}</value>
   </data>
   <data name="MapQualitySyntheticPort" xml:space="preserve">
-    <value>Порт {0} не имеет ifIndex</value>
-  </data>
-  <data name="MapQualityGapDetail" xml:space="preserve">
-    <value>{0} — {1}</value>
+    <value>Порт {0} без ifIndex</value>
   </data>
   <data name="MapQualityShow" xml:space="preserve">
     <value>Показать</value>
-  </data>
-  <data name="MapQualityShowName" xml:space="preserve">
-    <value>Показать на карте: {0} — {1}</value>
   </data>
   <data name="TopologyConflictLabelPrefix" xml:space="preserve">
     <value>⚠ </value>
@@ -2805,12 +2784,6 @@
   <data name="TopologyConflictChangeManual" xml:space="preserve">
     <value>Изменить ручную</value>
   </data>
-  <data name="TopologyConflictQualityGroup" xml:space="preserve">
-    <value>Расхождения ручной и наблюдаемой схемы: {0}</value>
-  </data>
-  <data name="TopologyConflictQualitySubject" xml:space="preserve">
-    <value>Ручная {0} ↔ {1}, наблюдается {2} ↔ {3}</value>
-  </data>
   <data name="TopologyConflictSaveFailed" xml:space="preserve">
     <value>Не удалось сохранить решение. Повторите попытку.</value>
   </data>
@@ -2820,16 +2793,22 @@
   <data name="MapLocationExpandName" xml:space="preserve">
     <value>Развернуть размещение «{0}»</value>
   </data>
-  <data name="MapQualityLocationOverlapSubject" xml:space="preserve">
-    <value>Размещения «{0}» и «{1}» накладываются</value>
-  </data>
-  <data name="MapQualityLocationOutsideParentSubject" xml:space="preserve">
-    <value>Размещение «{0}» выходит за рамку «{1}»</value>
-  </data>
-  <data name="MapQualityLocationOverlapGroup" xml:space="preserve">
-    <value>Наложенные размещения: {0}</value>
-  </data>
   <data name="MapQualityShowSubjectName" xml:space="preserve">
     <value>Показать на карте: {0}</value>
+  </data>
+  <data name="MapQualityObservedReason" xml:space="preserve">
+    <value>Наблюдается без подтверждения LLDP</value>
+  </data>
+  <data name="MapQualityInferredReason" xml:space="preserve">
+    <value>Выведена косвенно (ARP/FDB)</value>
+  </data>
+  <data name="TopologyConflictQualityReason" xml:space="preserve">
+    <value>Ручная схема: {0}; наблюдается: {1}</value>
+  </data>
+  <data name="MapQualityLocationOverlapReason" xml:space="preserve">
+    <value>Накладывается на размещение «{0}»</value>
+  </data>
+  <data name="MapQualityLocationOutsideParentReason" xml:space="preserve">
+    <value>Выходит за рамку «{0}»</value>
   </data>
 </root>

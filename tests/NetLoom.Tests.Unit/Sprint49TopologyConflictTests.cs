@@ -61,16 +61,30 @@ namespace NetLoom.Tests.Unit
                 Assert.IsTrue(labels.All(label => label.Visibility == Visibility.Visible));
                 Assert.IsTrue(labels.All(label => !label.Text.StartsWith("⚠ ⚠", StringComparison.Ordinal)));
 
-                ((ToggleButton)window.FindName("MapQualityToggle")).IsChecked = true;
-                window.UpdateLayout();
-                var groups = (ItemsControl)window.FindName("MapQualityGroups");
-                CollectionAssert.Contains(ConfirmationTextBlocks(groups).Select(item => item.Text).ToArray(),
-                    UiText.Format("TopologyConflictQualityGroup", 1));
-                var show = TopologyQualityVisualButtons(groups).Single(button =>
-                    ((TopologyQualityGap)button.Tag).Kind == TopologyQualityGapKind.ManualObservedConflict);
                 ConflictSelect(window, Sprint49TopologyConflictFixture.ObservedId);
+                var toggle = (ToggleButton)window.FindName("MapQualityToggle");
+                toggle.IsChecked = true;
+                window.UpdateLayout();
+                var items = (ItemsControl)window.FindName("MapQualityItems");
+                var show = TopologyQualityVisualButtons(items).Single(button =>
+                    ((TopologyQualityItem)button.Tag).Reasons.Any(reason =>
+                        reason.Kind == TopologyQualityGapKind.ManualObservedConflict));
+                var qualityItem = (TopologyQualityItem)show.Tag;
+                Assert.AreEqual(Sprint49TopologyConflictFixture.ManualId, qualityItem.PhysicalLinkId);
+                var conflictReason = qualityItem.Reasons.Single(value => value.Kind == TopologyQualityGapKind.ManualObservedConflict);
+                var qualityTexts = ConfirmationTextBlocks(items).Select(value => value.Text).ToArray();
+                CollectionAssert.Contains(qualityTexts, qualityItem.Subject);
+                Assert.IsTrue(qualityTexts.Any(value => value.Contains(conflictReason.Text)));
+                StringAssert.Contains(conflictReason.Text, "conflict-sw-b");
+                StringAssert.Contains(conflictReason.Text, "Gi0/2");
+                StringAssert.Contains(conflictReason.Text, "conflict-sw-c");
+                StringAssert.Contains(conflictReason.Text, "Gi0/5");
+                show.Focus();
                 Click(show);
                 Assert.AreEqual(Sprint49TopologyConflictFixture.ManualId, TopologyQualityField(window, "_selectedPhysicalLinkId"));
+                Assert.AreEqual(false, toggle.IsChecked);
+                Assert.AreEqual(Visibility.Collapsed, ((Border)window.FindName("MapQualityDetails")).Visibility);
+                Assert.AreSame(toggle, Keyboard.FocusedElement);
             });
         }
 

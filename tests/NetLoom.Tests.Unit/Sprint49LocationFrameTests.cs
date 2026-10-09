@@ -131,18 +131,25 @@ namespace NetLoom.Tests.Unit
                 var toggle = (ToggleButton)window.FindName("MapQualityToggle");
                 toggle.IsChecked = true;
                 window.UpdateLayout();
-                var groups = (ItemsControl)window.FindName("MapQualityGroups");
-                var texts = ConfirmationTextBlocks(groups).Select(text => text.Text).ToArray();
-                CollectionAssert.Contains(texts, "Наложенные размещения: 1");
-                CollectionAssert.Contains(texts, "Размещения «А» и «Б» накладываются");
-                var show = TopologyQualityVisualButtons(groups).Single(button =>
-                    ((TopologyQualityGap)button.Tag).Kind == TopologyQualityGapKind.LocationOverlap);
+                var items = (ItemsControl)window.FindName("MapQualityItems");
+                Assert.AreEqual(1, items.Items.Count);
+                var texts = ConfirmationTextBlocks(items).Select(text => text.Text).ToArray();
+                CollectionAssert.Contains(texts, "А");
+                Assert.IsTrue(texts.Any(text => text.Contains("Накладывается на размещение «Б»")));
+                var show = TopologyQualityVisualButtons(items).Single(button =>
+                    ((TopologyQualityItem)button.Tag).Reasons.Any(reason =>
+                        reason.Kind == TopologyQualityGapKind.LocationOverlap));
+                var item = (TopologyQualityItem)show.Tag;
+                Assert.AreEqual(first, item.LocationId);
+                Assert.AreEqual(second, item.OtherLocationId);
+                Assert.AreEqual(1, item.Reasons.Count);
                 show.Focus();
                 show.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, show));
                 PumpDispatcher();
                 Assert.AreEqual(first, TopologyQualityField(window, "_selectedLocationId"));
-                Assert.AreSame(show, Keyboard.FocusedElement);
-                Assert.AreEqual(true, toggle.IsChecked);
+                Assert.AreSame(toggle, Keyboard.FocusedElement);
+                Assert.AreEqual(false, toggle.IsChecked);
+                Assert.AreEqual(Visibility.Collapsed, ((Border)window.FindName("MapQualityDetails")).Visibility);
                 var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
                 foreach (var id in new[] { first, second })
                 {

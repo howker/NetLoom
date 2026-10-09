@@ -821,6 +821,19 @@ namespace NetLoom.Tests.Unit
                             qualityText.Text,
                             "A child frame outside its parent must be reported in the topology quality line.");
 
+                        var qualityReport =
+                            (NetLoom.Wpf.MapInteraction.TopologyQualityReport)typeof(MainWindow)
+                                .GetField("_topologyQualityReport", BindingFlags.Instance | BindingFlags.NonPublic)
+                                .GetValue(window);
+                        var qualityItem = qualityReport.Items.Single();
+                        Assert.AreEqual(childId, qualityItem.LocationId);
+                        Assert.AreEqual(parentId, qualityItem.OtherLocationId);
+                        Assert.AreEqual("Room", qualityItem.Subject);
+                        var qualityReason = qualityItem.Reasons.Single();
+                        Assert.AreEqual(NetLoom.Wpf.MapInteraction.TopologyQualityGapKind.LocationOverlap,
+                            qualityReason.Kind);
+                        StringAssert.Contains(qualityReason.Text, "Building");
+
                         window.ShowMap(
                             hierarchy);
 

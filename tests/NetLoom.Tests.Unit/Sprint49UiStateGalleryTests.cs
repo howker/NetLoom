@@ -235,9 +235,31 @@ namespace NetLoom.Tests.Unit
                                     else
                                         Assert.IsTrue(((Border)window.FindName("MapQualityNotice")).IsVisible);
 
+                                    Assert.AreEqual(report.Items.Count, report.Count);
+                                    window.UpdateLayout();
+                                    var mapViewer = (ScrollViewer)window.FindName("MapScrollViewer");
+                                    var mapBounds = mapViewer.TransformToAncestor(window)
+                                        .TransformBounds(new Rect(mapViewer.RenderSize));
                                     ((ToggleButton)window.FindName("MapQualityToggle")).IsChecked = expanded;
                                     PumpDispatcher();
                                     window.UpdateLayout();
+                                    Assert.AreEqual(mapBounds, mapViewer.TransformToAncestor(window)
+                                        .TransformBounds(new Rect(mapViewer.RenderSize)));
+                                    var details = (Border)window.FindName("MapQualityDetails");
+                                    Assert.AreEqual(expanded, details.IsVisible);
+                                    if (expanded)
+                                    {
+                                        Assert.AreEqual(2, Grid.GetRow(details));
+                                        Assert.IsTrue(Panel.GetZIndex(details) > Panel.GetZIndex(mapViewer));
+                                        Assert.IsInstanceOfType(details.Effect, typeof(System.Windows.Media.Effects.DropShadowEffect));
+                                        var surface = details.Background as System.Windows.Media.SolidColorBrush;
+                                        Assert.IsNotNull(surface);
+                                        Assert.AreEqual((byte)255, surface.Color.A);
+                                        Assert.AreEqual(1.0, surface.Opacity);
+                                        Assert.AreEqual(1.0, details.Opacity);
+                                        Assert.IsTrue(details.ActualWidth <=
+                                            mapViewer.ActualWidth - details.Margin.Left - details.Margin.Right + 0.001);
+                                    }
                                     CollectTextClipping(window.Content as DependencyObject,
                                         scenario + "/" + theme + "/" + width, findings);
                                     bitmaps.Add(Capture(window.Content as FrameworkElement));
@@ -308,7 +330,7 @@ namespace NetLoom.Tests.Unit
                                     return map != null && map.Nodes.Any(node => node.Label == "core-sw-01") &&
                                         map.Nodes.Any(node => node.Label == "core-sw-02");
                                 });
-                                FocusParallelLinksFieldPair(window, 0);
+                                FocusParallelLinksFieldPair(window, 0, null);
                                 PumpDispatcher();
                                 window.UpdateLayout();
 
@@ -437,7 +459,7 @@ namespace NetLoom.Tests.Unit
                                         typeof(MainWindow).GetMethod("UpdateTopologyQuality", flags).Invoke(window, null);
                                         var report = (TopologyQualityReport)typeof(MainWindow)
                                             .GetField("_topologyQualityReport", flags).GetValue(window);
-                                        Assert.IsTrue(report.Gaps.Any(gap => gap.Kind == TopologyQualityGapKind.LocationOverlap));
+                                        Assert.IsTrue(report.Items.Any(item => item.Reasons.Any(reason => reason.Kind == TopologyQualityGapKind.LocationOverlap)));
                                         ((ToggleButton)window.FindName("MapQualityToggle")).IsChecked = true;
                                         window.UpdateLayout();
                                         var ids = map.Locations.Where(location => new[] { "1", "2", "3", "4-4" }
@@ -502,10 +524,16 @@ namespace NetLoom.Tests.Unit
 
                 try
                 {
-                    // Два кадра показывают выбор каждого кабеля; каждый объединяет обе ширины.
-                    for (var selectedCable = 0; selectedCable < 2; selectedCable++)
+                    // Кадры: выбор каждого кабеля; без выбора — видны обе связи пары и их порты;
+                    // Без выбора на среднем масштабе — связи пары не сливаются в одну полосу (замечание владельца).
+                    var scenarios = new[]
                     {
-                        var scenario = selectedCable == 0 ? "50-parallel-links" : "50-parallel-links-second-cable";
+                        "50-parallel-links", "50-parallel-links-second-cable",
+                        "50-parallel-links-overview", "50-parallel-links-medium"
+                    };
+                    for (var scenarioIndex = 0; scenarioIndex < scenarios.Length; scenarioIndex++)
+                    {
+                        var scenario = scenarios[scenarioIndex];
                         foreach (var dark in new[] { false, true })
                         {
                             var theme = dark ? "dark" : "light";
@@ -528,7 +556,8 @@ namespace NetLoom.Tests.Unit
                                         return map != null && map.Nodes.Any(node => node.Label == "core-sw-01") &&
                                             map.Nodes.Any(node => node.Label == "core-sw-02");
                                     });
-                                    FocusParallelLinksFieldPair(window, selectedCable);
+                                    FocusParallelLinksFieldPair(window, scenarioIndex < 2 ? scenarioIndex : (int?)null,
+                                        scenarioIndex == 3 ? MediumParallelLinksZoom : (double?)null);
                                     PumpDispatcher();
                                     window.UpdateLayout();
                                     CollectTextClipping(window.Content as DependencyObject,
@@ -553,9 +582,12 @@ namespace NetLoom.Tests.Unit
                         findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
                 }
                 Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
-                Assert.AreEqual(4, Directory.GetFiles(output, "*.png").Length);
+                Assert.AreEqual(8, Directory.GetFiles(output, "*.png").Length);
             });
         }
+
+        // Средний масштаб: устройства с именами, подписи связей ещё скрыты (ниже LinkLabelMinZoom).
+        private const double MediumParallelLinksZoom = 0.8;
 
         private static MainWindow CreateParallelLinksFieldWindow(string database, bool dark)
         {
@@ -580,7 +612,7 @@ namespace NetLoom.Tests.Unit
                     UiPollingSettings.Default, MapMotionMode.Off)));
         }
 
-        private static void FocusParallelLinksFieldPair(MainWindow window, int selectedCable)
+        private static void FocusParallelLinksFieldPair(MainWindow window, int? selectedCable, double? fixedZoom)
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
             var snapshot = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags).GetValue(window);
@@ -593,18 +625,21 @@ namespace NetLoom.Tests.Unit
             Assert.AreEqual(2, links.Length, "Field stand must contain both physical core cables.");
             Assert.IsTrue(links.All(link => link.PhysicalLinkId.HasValue));
             var canvas = (Canvas)window.FindName("MapCanvas");
-            var selected = canvas.Children.OfType<Line>()
-                .Single(line => Equals(line.Tag, links[selectedCable].PhysicalLinkId.Value));
-            selected.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,
-                Environment.TickCount, MouseButton.Left)
+            if (selectedCable.HasValue)
             {
-                RoutedEvent = UIElement.MouseLeftButtonDownEvent,
-                Source = selected
-            });
-            PumpDispatcher();
+                var selected = canvas.Children.OfType<Line>()
+                    .Single(line => Equals(line.Tag, links[selectedCable.Value].PhysicalLinkId.Value));
+                selected.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,
+                    Environment.TickCount, MouseButton.Left)
+                {
+                    RoutedEvent = UIElement.MouseLeftButtonDownEvent,
+                    Source = selected
+                });
+                PumpDispatcher();
 
-            var selectedId = (Guid?)typeof(MainWindow).GetField("_selectedPhysicalLinkId", flags).GetValue(window);
-            Assert.AreEqual(links[selectedCable].PhysicalLinkId, selectedId);
+                var selectedId = (Guid?)typeof(MainWindow).GetField("_selectedPhysicalLinkId", flags).GetValue(window);
+                Assert.AreEqual(links[selectedCable.Value].PhysicalLinkId, selectedId);
+            }
             var pairIds = links.Select(link => link.PhysicalLinkId.Value).ToArray();
             var bounds = canvas.Children.OfType<Border>()
                 .Where(border => Equals(border.Tag, first.DeviceId) || Equals(border.Tag, second.DeviceId))
@@ -620,17 +655,45 @@ namespace NetLoom.Tests.Unit
             context.Inflate((double)window.FindResource("NetLoom.Map.NodeWidth"),
                 (double)window.FindResource("NetLoom.Map.NodeHeight"));
             bounds.Add(context);
-            var minimumZoom = Math.Max((double)window.FindResource("NetLoom.Map.ReadableZoomMin"),
+            var minimumZoom = fixedZoom ?? Math.Max((double)window.FindResource("NetLoom.Map.ReadableZoomMin"),
                 (double)window.FindResource("NetLoom.Map.LinkLabelMinZoom"));
+            if (fixedZoom.HasValue)
+            {
+                // Широкий контекст вписывается не мельче заданного масштаба — получается ровно он.
+                context.Inflate(4000, 3000);
+                bounds.Add(context);
+            }
             var fit = typeof(MainWindow).GetMethod("TryFitMapBoundsToViewport", flags, null,
                 new[] { typeof(IReadOnlyList<Rect>), typeof(double?) }, null);
             Assert.IsNotNull(fit);
             Assert.IsTrue((bool)fit.Invoke(window, new object[] { bounds, minimumZoom }));
             PumpDispatcher();
             window.UpdateLayout();
-            Assert.IsTrue((double)typeof(MainWindow).GetField("_zoom", flags).GetValue(window) >= minimumZoom);
-            Assert.AreEqual(2, canvas.Children.OfType<TextBlock>()
-                .Count(label => label.Tag is Guid && pairIds.Contains((Guid)label.Tag) && label.IsVisible));
+            var zoom = (double)typeof(MainWindow).GetField("_zoom", flags).GetValue(window);
+            Assert.IsTrue(zoom >= minimumZoom - 0.001);
+            var pairLines = canvas.Children.OfType<Line>()
+                .Where(line => line.Tag is Guid && pairIds.Contains((Guid)line.Tag)).ToArray();
+            Assert.AreEqual(2, pairLines.Length);
+            // Расстояние между параллельными линиями на экране — не меньше NetLoom.Map.ParallelLinkMinScreenGap.
+            var gap = ParallelLineDistance(pairLines[0], pairLines[1]) * zoom;
+            Assert.IsTrue(gap >= (double)window.FindResource("NetLoom.Map.ParallelLinkMinScreenGap") - 0.5,
+                "Parallel links merge on screen: " + gap.ToString("0.0") + " px at zoom " + zoom.ToString("0.00"));
+            if (!fixedZoom.HasValue)
+            {
+                Assert.AreEqual(2, canvas.Children.OfType<TextBlock>()
+                    .Count(label => label.Tag is Guid && pairIds.Contains((Guid)label.Tag) && label.IsVisible));
+            }
+        }
+
+        private static double ParallelLineDistance(Line first, Line second)
+        {
+            var dx = first.X2 - first.X1;
+            var dy = first.Y2 - first.Y1;
+            var length = Math.Sqrt((dx * dx) + (dy * dy));
+            if (length < 0.001) return 0.0;
+            var midX = (second.X1 + second.X2) / 2.0;
+            var midY = (second.Y1 + second.Y2) / 2.0;
+            return Math.Abs(((midX - first.X1) * dy) - ((midY - first.Y1) * dx)) / length;
         }
 
         private static string FindParallelLinksRepositoryRoot()

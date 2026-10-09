@@ -2404,7 +2404,7 @@ public partial class MainWindow
         ParallelLinkLayout.Offset(
             x1, y1, x2, y2,
             slot.Slot,
-            ParallelLinkLayout.HalfSpacing(slot.GroupSize, _parallelLinkSpacing, 0.75 * _nodeHeight),
+            ParallelLinkLayout.HalfSpacing(slot.GroupSize, ParallelLinkSpacingAtZoom(), 0.75 * _nodeHeight),
             slot.SourceIsCanonicalFirst,
             out x1, out y1, out x2, out y2);
 

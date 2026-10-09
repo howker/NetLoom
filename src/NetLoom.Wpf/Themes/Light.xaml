@@ -7,6 +7,7 @@
     <SolidColorBrush x:Key="NetLoom.Brush.SurfaceMuted" Color="#F8FAFC" />
     <SolidColorBrush x:Key="NetLoom.Brush.SurfaceHover" Color="#EEF3F8" />
     <SolidColorBrush x:Key="NetLoom.Brush.Canvas" Color="#EDF2F6" />
+    <Color x:Key="NetLoom.Color.OverlayShadow">#17212B</Color>
 
     <SolidColorBrush x:Key="NetLoom.Brush.ShellRail" Color="#1F2A38" />
     <SolidColorBrush x:Key="NetLoom.Brush.ShellRailHover" Color="#29384A" />

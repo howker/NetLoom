@@ -59,11 +59,11 @@ namespace NetLoom.Tests.Unit
                 new LocationOverlapFrame(Second, null, "Б", new Rect(20, 20, 100, 100))
             });
             var report = TopologyQualityProjection.Build(null, null, overlaps: overlaps);
-            var gap = report.Gaps.Single();
-            Assert.AreEqual(TopologyQualityGapKind.LocationOverlap, gap.Kind);
-            Assert.AreEqual(First, gap.LocationId);
-            Assert.AreEqual(Second, gap.OtherLocationId);
-            Assert.AreEqual(1, report.Counts[TopologyQualityGapKind.LocationOverlap]);
+            var item = report.Items.Single();
+            Assert.AreEqual(TopologyQualityGapKind.LocationOverlap, item.Reasons.Single().Kind);
+            Assert.AreEqual(First, item.LocationId);
+            Assert.AreEqual(Second, item.OtherLocationId);
+            Assert.AreEqual(1, report.Count);
         }
     }
 }

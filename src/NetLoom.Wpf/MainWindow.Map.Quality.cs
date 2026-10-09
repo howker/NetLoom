@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using NetLoom.Wpf.Localization;
 using NetLoom.Wpf.MapInteraction;
 
@@ -29,11 +30,14 @@ namespace NetLoom.Wpf
             var nextReport = TopologyQualityProjection.Build(_lastDiagnosticSnapshot, _lastMapSnapshot,
                 _topologyConflicts, overlaps);
             var unchanged = _topologyQualityReport.Count == nextReport.Count &&
-                _topologyQualityReport.Gaps.Zip(nextReport.Gaps, (previous, next) =>
-                    previous.Kind == next.Kind && previous.PhysicalLinkId == next.PhysicalLinkId &&
+                _topologyQualityReport.Items.Zip(nextReport.Items, (previous, next) =>
+                    previous.PhysicalLinkId == next.PhysicalLinkId &&
                     previous.DeviceId == next.DeviceId && previous.LocationId == next.LocationId &&
                     previous.OtherLocationId == next.OtherLocationId && previous.Subject == next.Subject &&
-                    previous.Detail == next.Detail).All(equal => equal);
+                    previous.Reasons.Count == next.Reasons.Count &&
+                    previous.Reasons.Zip(next.Reasons, (oldReason, newReason) =>
+                        oldReason.Kind == newReason.Kind && oldReason.Text == newReason.Text)
+                        .All(equal => equal)).All(equal => equal);
             _topologyQualityReport = nextReport;
             var summary = UiText.Format("MapQualitySummary", _topologyQualityReport.Count);
             ApplyOperatorStatus(MapQualityGlyph, MapQualitySummaryText, OperatorStatusSemantic.Unknown, summary);
@@ -45,10 +49,8 @@ namespace NetLoom.Wpf
             MapQualitySummaryText.ToolTip = summary;
             // Неизменившиеся причины не пересоздают кнопки и не снимают фокус при очередном опросе.
             if (!unchanged)
-                MapQualityGroups.ItemsSource = _topologyQualityReport.Gaps.GroupBy(gap => gap.Kind)
-                    .Select(group => new TopologyQualityGroupRow(
-                        UiText.Format(TopologyQualityGroupResourceKey(group.Key), group.Count()),
-                        group.Select(gap => new TopologyQualityGapRow(gap)).ToArray())).ToArray();
+                MapQualityItems.ItemsSource = _topologyQualityReport.Items
+                    .Select(item => new TopologyQualityItemRow(item)).ToArray();
             UpdateTopologyQualityVisibility();
         }
 
@@ -60,75 +62,88 @@ namespace NetLoom.Wpf
             if (!visible) MapQualityToggle.IsChecked = false;
         }
 
-        private static string TopologyQualityGroupResourceKey(TopologyQualityGapKind kind)
+        private void OnMapQualityDetailsLoaded(object sender, RoutedEventArgs e)
         {
-            switch (kind)
-            {
-                case TopologyQualityGapKind.ObservedLink: return "MapQualityObservedGroup";
-                case TopologyQualityGapKind.InferredLink: return "MapQualityInferredGroup";
-                case TopologyQualityGapKind.OneSidedLldp: return "MapQualityOneSidedGroup";
-                case TopologyQualityGapKind.ManualObservedConflict: return "TopologyConflictQualityGroup";
-                case TopologyQualityGapKind.LocationOverlap: return "MapQualityLocationOverlapGroup";
-                default: return "MapQualitySyntheticGroup";
-            }
+            UpdateMapQualityPanelWidth();
+        }
+
+        private void OnMapQualityViewportSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateMapQualityPanelWidth();
+        }
+
+        private void UpdateMapQualityPanelWidth()
+        {
+            if (MapQualityDetails == null || MapScrollViewer == null) return;
+            var margin = MapQualityDetails.Margin;
+            MapQualityDetails.MaxWidth = Math.Max(0, MapScrollViewer.ActualWidth - margin.Left - margin.Right);
+        }
+
+        private void CloseMapQualityDetails(bool restoreFocus)
+        {
+            MapQualityToggle.IsChecked = false;
+            if (restoreFocus) MapQualityToggle.Focus();
+        }
+
+        private void OnMapQualityPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Escape || MapQualityToggle?.IsChecked != true ||
+                MapQualityDetails?.IsKeyboardFocusWithin != true) return;
+
+            // Обработчик окна из XAML вызывается до общего Escape режима правки карты.
+            CloseMapQualityDetails(true);
+            e.Handled = true;
+        }
+
+        private void OnMapQualityMapPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // Щелчок продолжает выбирать объект или перемещать карту после закрытия панели.
+            if (MapQualityToggle.IsChecked == true) CloseMapQualityDetails(false);
+            OnMapPreviewMouseDown(sender, e);
         }
 
         private void OnMapQualityShowClick(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
-            var gap = button?.Tag as TopologyQualityGap;
-            if (gap == null) return;
+            var item = button?.Tag as TopologyQualityItem;
+            if (item == null) return;
 
             // Используем тот же выбор и вписывание объектов, что у действия «Показать на карте».
-            if (gap.LocationId.HasValue && gap.OtherLocationId.HasValue)
+            if (item.LocationId.HasValue && item.OtherLocationId.HasValue)
             {
-                SelectLocation(gap.LocationId.Value);
+                SelectLocation(item.LocationId.Value);
                 Rect first;
                 Rect second;
-                if (TryGetExpandedLocationBounds(gap.LocationId.Value, out first) &&
-                    TryGetExpandedLocationBounds(gap.OtherLocationId.Value, out second))
+                if (TryGetExpandedLocationBounds(item.LocationId.Value, out first) &&
+                    TryGetExpandedLocationBounds(item.OtherLocationId.Value, out second))
                     TryFitMapBoundsToViewport(new[] { first, second });
             }
-            else if (gap.PhysicalLinkId.HasValue)
+            else if (item.PhysicalLinkId.HasValue)
             {
-                SelectAlertPhysicalContext(gap.PhysicalLinkId.Value);
-                FocusAlertContextToViewport(new[] { gap.PhysicalLinkId.Value }, null);
+                SelectAlertPhysicalContext(item.PhysicalLinkId.Value);
+                FocusAlertContextToViewport(new[] { item.PhysicalLinkId.Value }, null);
             }
-            else if (gap.DeviceId.HasValue)
+            else if (item.DeviceId.HasValue)
             {
-                SelectAlertDeviceContext(gap.DeviceId.Value);
-                FocusSelectedMapAtNativeZoom(() => AnimateDiscoveryFocus(gap.DeviceId.Value));
+                SelectAlertDeviceContext(item.DeviceId.Value);
+                FocusSelectedMapAtNativeZoom(() => AnimateDiscoveryFocus(item.DeviceId.Value));
             }
 
-            // Перемещение карты не уводит клавиатурный фокус из списка причин.
-            button.Focus();
+            CloseMapQualityDetails(true);
             e.Handled = true;
         }
 
-        private sealed class TopologyQualityGroupRow
+        private sealed class TopologyQualityItemRow
         {
-            public TopologyQualityGroupRow(string heading, IReadOnlyList<TopologyQualityGapRow> gaps)
+            public TopologyQualityItemRow(TopologyQualityItem item)
             {
-                Heading = heading;
-                Gaps = gaps;
-            }
-            public string Heading { get; }
-            public IReadOnlyList<TopologyQualityGapRow> Gaps { get; }
-        }
-
-        private sealed class TopologyQualityGapRow
-        {
-            public TopologyQualityGapRow(TopologyQualityGap gap)
-            {
-                Gap = gap;
-                Text = string.IsNullOrEmpty(gap.Detail) ? gap.Subject : UiText.Format("MapQualityGapDetail", gap.Subject, gap.Detail);
+                Item = item;
                 ShowText = UiText.Get("MapQualityShow");
-                ShowName = string.IsNullOrEmpty(gap.Detail)
-                    ? UiText.Format("MapQualityShowSubjectName", gap.Subject)
-                    : UiText.Format("MapQualityShowName", gap.Subject, gap.Detail);
+                ShowName = UiText.Format("MapQualityShowSubjectName", item.Subject);
             }
-            public TopologyQualityGap Gap { get; }
-            public string Text { get; }
+            public TopologyQualityItem Item { get; }
+            public string Subject => Item.Subject;
+            public IReadOnlyList<TopologyQualityReason> Reasons => Item.Reasons;
             public string ShowText { get; }
             public string ShowName { get; }
         }
