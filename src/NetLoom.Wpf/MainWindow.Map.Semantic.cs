@@ -196,7 +196,8 @@ public partial class MainWindow
             var centerY = (Canvas.GetTop(label) + size.Height / 2.0) * zoom;
             candidates.Add(new MapLabelCandidate(key, new Rect(centerX - size.Width / 2.0,
                 centerY - size.Height / 2.0, size.Width, size.Height),
-                HasTopologyConflict(pair.Value.Line.Tag as Guid?) ? 2 : 3));
+                // ADR-079: расхождение видно всегда — его подпись первой занимает место и не скрывается.
+                HasTopologyConflict(pair.Value.Line.Tag as Guid?) ? -1 : 3));
         }
 
         var shown = MapLabelDeclutter.SelectVisible(candidates, GetDoubleResource("NetLoom.Map.FarLabelGap"));
@@ -214,7 +215,8 @@ public partial class MainWindow
         }
         foreach (var pair in linkByKey)
         {
-            if (!shown.Contains(pair.Key)) pair.Value.Label.Visibility = Visibility.Collapsed;
+            if (!shown.Contains(pair.Key) && !HasTopologyConflict(pair.Value.Line.Tag as Guid?))
+                pair.Value.Label.Visibility = Visibility.Collapsed;
         }
     }
 

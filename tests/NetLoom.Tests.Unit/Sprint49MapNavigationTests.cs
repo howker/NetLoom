@@ -365,6 +365,12 @@ namespace NetLoom.Tests.Unit
 
                 var pathLinks = S49NavField<HashSet<Guid>>(window, "_pathLinkIds");
                 Assert.AreEqual(3, pathLinks.Count);
+                // Реальный указатель может стоять над окном теста — убираем случайное наведение на связь.
+                typeof(MainWindow).GetField("_hoveredPhysicalLinkId",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(window, null);
+                typeof(MainWindow).GetMethod("ApplyLinkFocusPresentation",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic, null,
+                    Type.EmptyTypes, null).Invoke(window, null);
                 var dimmed = (double)window.FindResource("NetLoom.Map.LinkFocusDimmedOpacity");
                 var lines = canvas.Children.OfType<Line>().Where(line => line.Tag is Guid && line.IsVisible).ToArray();
                 Assert.AreEqual(3, lines.Count(line => pathLinks.Contains((Guid)line.Tag)));
