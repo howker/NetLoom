@@ -37,16 +37,17 @@
 
 ## Последний аудит
 
-Итоговый прогон 2026-10-09 на `18dd39b`, `artifacts\ui-audit-run\run.txt`:
+Итоговый прогон 2026-10-10 на `6bab72f`, `artifacts\ui-audit-run\run.txt`:
 
 ```
-Пройден!   : не пройдено     0, пройдено   130, пропущено     0, всего   130 - NetLoom.Tests.Unit.dll (net48)
+Пройден!   : не пройдено     0, пройдено   130, пропущено     0, всего   130, длительность 5 m 20 s. - NetLoom.Tests.Unit.dll (net48)
 BUILD_EXIT=0
 TEST_EXIT=0
 ```
 
-- `artifacts\ui-audit\findings.txt`: нарушений 0, сведений 10. Проход клавиатурой: нарушений 0, сведений 0 — прежнее сведение K4 заменено настоящей проверкой.
-- Полный набор: Unit 657 из 661 — только 4 известных старых падения (Sprint 39 ×2, Sprint 41, локализация); Integration 150/150; Modern 234/234. `Check-TextEncoding.ps1`: `EXIT 0`.
+- `artifacts\ui-audit\findings.txt`: нарушений 0, сведений 10. Проход клавиатурой: нарушений 0, сведений 0.
+- Полный набор: Unit 657 из 661 — только 4 давних падения, те же падают на `main` (`8a37988`): `OperationalStatesUseExistingSemanticBrushes`, `OperationalStatesUseDistinctExistingSemanticBrushes`, `NodeStateIsAColoredLeftStripeAndSelectionAddsFullBlueOutline`, `RussianUiValuesDoNotStartWithUnexpectedLowercaseCyrillic`; Integration 150/150; Modern 234/234. `Check-TextEncoding.ps1`: `EXIT 0`.
+- Найдено и исправлено в конце: тест `NavigationKeysIgnoreSearchFieldAndPlainKStaysUntouched` зависел от модификаторов клавиатуры, оставленных предыдущими тестами (`6bab72f`).
 
 ## Что посмотреть в первую очередь
 
