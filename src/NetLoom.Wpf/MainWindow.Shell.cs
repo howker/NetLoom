@@ -1410,8 +1410,14 @@ namespace NetLoom.Wpf
                             ))
                     .ToArray();
 
-            EquipmentList.ItemsSource =
-                filtered;
+            // §8: одинаковые строки не пересоздаются — кнопка строки не теряет фокус при опросе.
+            if (!Shell.RowContent.SameRows(
+                    EquipmentList.ItemsSource,
+                    filtered))
+            {
+                EquipmentList.ItemsSource =
+                    filtered;
+            }
 
             UpdateEquipmentFilterLabels();
 

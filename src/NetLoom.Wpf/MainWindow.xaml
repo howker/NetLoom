@@ -2209,7 +2209,9 @@
                         <Style TargetType="{x:Type ScrollBar}"
                                BasedOn="{StaticResource NetLoom.Style.MapScrollBar}" />
                     </ScrollViewer.Resources>
+                    <!-- §8: холст — своя группа обхода Tab; порядок кнопок размещений задаёт окно и не зависит от Z-порядка. -->
                     <Canvas x:Name="MapCanvas"
+                            KeyboardNavigation.TabNavigation="Local"
                             Background="{DynamicResource NetLoom.Brush.Canvas}"
                             MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
                             Width="{DynamicResource NetLoom.Map.CanvasWidth}"

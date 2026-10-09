@@ -793,8 +793,21 @@ public partial class MainWindow
                                     alert))))
                 .ToArray();
 
-        AlertList.ItemsSource =
-            rows;
+        // §8: одинаковые карточки не пересоздаются — кнопки карточки не теряют фокус при опросе.
+        if (Shell.RowContent.SameRows(
+                AlertList.ItemsSource,
+                rows))
+        {
+            rows =
+                AlertList.ItemsSource
+                    .Cast<AlertRow>()
+                    .ToArray();
+        }
+        else
+        {
+            AlertList.ItemsSource =
+                rows;
+        }
 
         ApplyAlertCardSelection(
             rows);

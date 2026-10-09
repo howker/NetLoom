@@ -69,6 +69,10 @@
     <!-- §8: тематическая рамка фокуса вместо системного пунктира — 2 px, снаружи элемента с зазором 1 px. -->
     <Thickness x:Key="NetLoom.Thickness.FocusRing">2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FocusRingOffset">-3</Thickness>
+    <!-- Кольцо фокуса элементов холста карты: окно пересчитывает обе величины как экранные 2 px и -3 px,
+         Делённые на масштаб карты (§8), и кладёт их в ресурсы MapScrollViewer. Здесь — значения при 100 %. -->
+    <Thickness x:Key="NetLoom.Thickness.MapFocusRing">2</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapFocusRingOffset">-3</Thickness>
     <!-- A2: выбранная карточка предупреждения — рамка 2; поле карточки меньше на 1, чтобы содержимое не сдвигалось. -->
     <Thickness x:Key="NetLoom.Thickness.CardSelectedBorder">2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardSelectedPadding">19</Thickness>

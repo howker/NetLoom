@@ -15,6 +15,22 @@
     <!-- §8: тематическая рамка фокуса вместо системного пунктира Windows. Толщина 2, снаружи элемента,
          цвет FocusRing не ниже 3:1 ко всем поверхностям обеих тем (включая рейл). Показывается только
          при работе с клавиатуры — это поведение FocusVisualStyle в WPF. -->
+    <!-- §8: элементы на масштабируемом холсте карты. Толщина и отступ пересчитываются окном при каждом
+         Масштабе, чтобы на экране кольцо оставалось 2 px. -->
+    <Style x:Key="NetLoom.Style.MapFocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border Margin="{DynamicResource NetLoom.Thickness.MapFocusRingOffset}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.FocusRing}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.MapFocusRing}"
+                            CornerRadius="{DynamicResource NetLoom.Radius.FocusRing}"
+                            SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="NetLoom.Style.FocusVisual">
         <Setter Property="Control.Template">
             <Setter.Value>
@@ -2096,9 +2112,15 @@
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="MinWidth" Value="{DynamicResource NetLoom.Map.LocationToggleSize}" />
         <Setter Property="MinHeight" Value="{DynamicResource NetLoom.Map.LocationToggleSize}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.MapLocationToggle}" />
         <Setter Property="Margin" Value="{DynamicResource NetLoom.Thickness.None}" />
         <Style.Triggers>
+            <!-- §8: кольцо внутри кнопки (снаружи его обрезает вкладка); толщина — экранные 2 px при любом масштабе. -->
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource NetLoom.Brush.FocusRing}" />
+                <Setter Property="BorderThickness" Value="{DynamicResource NetLoom.Thickness.MapFocusRing}" />
+            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.SurfaceHover}" />
                 <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextSecondary}" />

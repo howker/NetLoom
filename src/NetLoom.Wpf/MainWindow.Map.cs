@@ -149,7 +149,40 @@ public partial class MainWindow
                 _zoom,
                 _zoom);
 
+        UpdateMapFocusRingScale();
         UpdateSemanticMapVisibility();
+    }
+
+    // §8: кольцо фокуса элементов холста масштабируется вместе с картой; толщина делится на масштаб,
+    // Чтобы на экране кольцо оставалось 2 px при любом масштабе (ресурсы читает NetLoom.Style.MapFocusVisual).
+    private void UpdateMapFocusRingScale()
+    {
+        var zoom =
+            _zoom > 0.0
+                ? _zoom
+                : 1.0;
+
+        var ring =
+            GetThicknessResource(
+                "NetLoom.Thickness.FocusRing");
+
+        var offset =
+            GetThicknessResource(
+                "NetLoom.Thickness.FocusRingOffset");
+
+        MapScrollViewer.Resources["NetLoom.Thickness.MapFocusRing"] =
+            new Thickness(
+                ring.Left / zoom,
+                ring.Top / zoom,
+                ring.Right / zoom,
+                ring.Bottom / zoom);
+
+        MapScrollViewer.Resources["NetLoom.Thickness.MapFocusRingOffset"] =
+            new Thickness(
+                offset.Left / zoom,
+                offset.Top / zoom,
+                offset.Right / zoom,
+                offset.Bottom / zoom);
     }
 
     private void UpdateSemanticMapVisibility()
