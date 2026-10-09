@@ -242,6 +242,7 @@ public partial class MainWindow
         foreach (var visual in _locationVisualsById.Values)
             ApplyLocationSemanticPresentation(visual);
         ApplyNeighborhoodVisibility();
+        ApplyFarLabelDeclutter();
 
         // Вторая строка меняет высоту карточки: обновляем геометрию существующих связей.
         if (changed && _lastMapSnapshot != null)
@@ -1707,6 +1708,7 @@ public partial class MainWindow
             nodes);
 
         RefreshNeighborhoodSnapshot();
+        ApplyFarLabelDeclutter();
         UpdateSelectedLayoutControl();
 
         if (snapshot.Nodes.Count == 0 &&

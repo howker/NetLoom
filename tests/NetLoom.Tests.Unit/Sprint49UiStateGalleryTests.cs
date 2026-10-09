@@ -141,6 +141,11 @@ namespace NetLoom.Tests.Unit
                                 // Критерий владельца: на карте нет текста мельче Caption (кроме раздела предупреждений).
                                 if (scenario != "64-alert-participants")
                                     CollectTinyMapText(window, scenario + "/" + theme + "/" + width, findings);
+                                // Кадры 61–63: подписи не накладываются; в 62 и 63 окрестность видна целиком.
+                                if (scenario != "64-alert-participants")
+                                    CollectOverlappingMapLabels(window, scenario + "/" + theme + "/" + width, findings);
+                                if (scenario == "62-neighborhood" || scenario == "63-neighborhood-expanded-up")
+                                    CollectNeighborhoodOutsideViewport(window, scenario + "/" + theme + "/" + width, findings);
                                 bitmaps.Add(Capture(window.Content as FrameworkElement));
                             }
                             finally
@@ -237,6 +242,88 @@ namespace NetLoom.Tests.Unit
                     " px, например «" + pair.Value[0] + "»");
         }
 
+        // Критерий владельца Sprint 49: видимые подписи холста карты (вкладки размещений, ярлыки устройств,
+        // Подписи связей) не пересекаются на экране (поле 0). Находка — пара пересекающихся подписей.
+        private static void CollectOverlappingMapLabels(MainWindow window, string context, List<string> findings)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+            var labels = new List<KeyValuePair<string, Rect>>();
+            Action<string, FrameworkElement> add = (name, element) =>
+            {
+                if (element == null || !element.IsVisible || element.ActualWidth <= 0.0 || element.ActualHeight <= 0.0)
+                    return;
+                labels.Add(new KeyValuePair<string, Rect>(name,
+                    element.TransformToAncestor(viewer).TransformBounds(new Rect(element.RenderSize))));
+            };
+            Func<object, string, object> property = (visual, name) => visual.GetType().GetProperty(name).GetValue(visual);
+            foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                .GetField("_locationVisualsById", flags).GetValue(window)).Values)
+                add("вкладка «" + ((TextBlock)property(visual, "Title")).Text + "»", (FrameworkElement)property(visual, "Header"));
+            foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                .GetField("_nodeVisualsByIdentity", flags).GetValue(window)).Values)
+            {
+                var label = (Border)property(visual, "SemanticLabel");
+                add("ярлык «" + ((TextBlock)label.Child).Text + "»", label);
+            }
+            foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                .GetField("_linkVisualsByIdentity", flags).GetValue(window)).Values)
+            {
+                var label = (TextBlock)property(visual, "Label");
+                if (!string.IsNullOrWhiteSpace(label.Text)) add("подпись связи «" + label.Text + "»", label);
+            }
+            var reported = 0;
+            for (var i = 0; i < labels.Count; i++)
+                for (var j = i + 1; j < labels.Count; j++)
+                {
+                    var a = labels[i].Value;
+                    var b = labels[j].Value;
+                    if (!(a.Left < b.Right - 0.01 && b.Left < a.Right - 0.01 &&
+                          a.Top < b.Bottom - 0.01 && b.Top < a.Bottom - 0.01)) continue;
+                    // Первые находки называют пары, остальные только считаются, чтобы отчёт оставался читаемым.
+                    if (reported++ < 10)
+                        findings.Add(context + " — Подписи карты накладываются: " + labels[i].Key + " и " + labels[j].Key);
+                }
+            if (reported > 10)
+                findings.Add(context + " — Всего накладывающихся пар подписей карты: " + reported);
+        }
+
+        // В окрестности все её устройства (и видимые ярлыки имён) целиком попадают в видимую область карты.
+        private static void CollectNeighborhoodOutsideViewport(MainWindow window, string context, List<string> findings)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+            var canvas = (Canvas)window.FindName("MapCanvas");
+            var members = (HashSet<Guid>)typeof(MainWindow).GetField("_neighborhoodDeviceIds", flags).GetValue(window);
+            var viewport = new Rect(-1, -1, viewer.ViewportWidth + 2, viewer.ViewportHeight + 2);
+            var checkedCards = 0;
+            foreach (var border in canvas.Children.OfType<Border>().Where(item =>
+                item.Tag is Guid && members.Contains((Guid)item.Tag) && item.IsVisible))
+            {
+                checkedCards++;
+                var bounds = border.TransformToAncestor(viewer).TransformBounds(new Rect(border.RenderSize));
+                if (!viewport.Contains(bounds))
+                    findings.Add(context + " — Устройство окрестности вне видимой области карты: " + bounds +
+                        " при области " + viewer.ViewportWidth.ToString("0") + "×" + viewer.ViewportHeight.ToString("0"));
+                foreach (var label in LogicalTreeLabels(border))
+                {
+                    var labelBounds = label.TransformToAncestor(viewer).TransformBounds(new Rect(label.RenderSize));
+                    if (!viewport.Contains(labelBounds))
+                        findings.Add(context + " — Ярлык устройства окрестности вне видимой области карты: " + labelBounds);
+                }
+            }
+            if (checkedCards != members.Count)
+                findings.Add(context + " — В окрестности " + members.Count + " устройств, на карте видно " + checkedCards);
+        }
+
+        private static IEnumerable<Border> LogicalTreeLabels(Border card)
+        {
+            var root = card.Child as Grid;
+            if (root == null) yield break;
+            foreach (var child in root.Children.OfType<Border>())
+                if (child.IsVisible && child.Child is TextBlock && child.ActualWidth > 0.0) yield return child;
+        }
+
         private sealed class NeighborhoodStartupLayoutStore : IMapLayoutStore
         {
             private readonly IMapLayoutStore _inner;
@@ -290,6 +377,10 @@ namespace NetLoom.Tests.Unit
                                     scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
                                 CollectTinyMapText(window,
                                     scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
+                                // Кадр 57 («Издалека»): подписи карты не накладываются друг на друга.
+                                if (level == 0)
+                                    CollectOverlappingMapLabels(window,
+                                        scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
                                 bitmaps.Add(Capture(window.Content as FrameworkElement));
                             }
                             finally

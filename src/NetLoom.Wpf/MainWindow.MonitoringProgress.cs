@@ -199,6 +199,7 @@ public partial class MainWindow
                         node.DeviceId);
                 }
             }
+            ApplyFarLabelDeclutter();
         }
 
         ShowSelectedDiagnostic();

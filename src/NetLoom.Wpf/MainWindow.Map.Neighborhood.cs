@@ -296,7 +296,27 @@ public partial class MainWindow
         var bounds = _nodeVisualsByIdentity.Values.Where(visual => visual.DeviceId.HasValue &&
             _neighborhoodDeviceIds.Contains(visual.DeviceId.Value) && visual.Border.Visibility == Visibility.Visible)
             .Select(NodeBounds).ToArray();
-        TryFitMapBoundsToViewport(bounds, _readableZoomMin, 1.0);
+        // Окрестность вписывается целиком не мельче ZoomMin и не крупнее 100 %.
+        // Если масштаб ниже порога читаемости, подписи ведёт уровень «Издалека».
+        if (!TryFitMapBoundsToViewport(bounds, _zoomMin, 1.0) || _semanticLevel != MapSemanticLevel.Far) return;
+
+        // На уровне «Издалека» ярлык имени стоит над карточкой и выходит за её границы:
+        // Вписываем заново вместе с подписями, чтобы они не оказались за краем окна.
+        var labelHeight = 0.0;
+        var labelWidth = 0.0;
+        foreach (var visual in _nodeVisualsByIdentity.Values.Where(item => item.DeviceId.HasValue &&
+            _neighborhoodDeviceIds.Contains(item.DeviceId.Value) && item.Border.Visibility == Visibility.Visible &&
+            item.SemanticLabel.DesiredSize.Height > 0.0))
+        {
+            labelHeight = Math.Max(labelHeight, visual.SemanticLabel.DesiredSize.Height);
+            labelWidth = Math.Max(labelWidth, visual.SemanticLabel.DesiredSize.Width);
+        }
+        if (labelHeight <= 0.0) return;
+        var zoom = _zoom > 0.0 ? _zoom : 1.0;
+        var upward = (labelHeight + _linkLabelCollisionMargin) / zoom;
+        var withLabels = bounds.Select(item => new Rect(item.Left, item.Top - upward,
+            Math.Max(item.Width, labelWidth / zoom), item.Height + upward)).ToArray();
+        TryFitMapBoundsToViewport(withLabels, _zoomMin, 1.0);
     }
 
     private void UpdateNeighborhoodMenuState()

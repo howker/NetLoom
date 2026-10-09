@@ -495,6 +495,7 @@ public partial class MainWindow
 
         foreach (var visual in _locationVisualsById.Values)
             ApplyLocationSemanticPresentation(visual);
+        ApplyFarLabelDeclutter();
         ApplyLinkFocusPresentation();
     }
 

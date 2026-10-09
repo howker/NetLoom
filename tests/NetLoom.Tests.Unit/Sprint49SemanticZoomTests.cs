@@ -179,6 +179,124 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        // Критерий владельца: на уровне «Издалека» подписи (ярлыки устройств и вкладки размещений) не накладываются.
+        [TestMethod]
+        [TestCategory("LiveUiAudit")]
+        public void Sprint49FarLabelsDoNotOverlapAndSelectedLabelStaysVisible()
+        {
+            var location = Guid.NewGuid();
+            var first = Guid.NewGuid();
+            var second = Guid.NewGuid();
+            var cable = Guid.NewGuid();
+            // Два устройства стоят рядом: их ярлыки на малом масштабе заведомо пересекаются.
+            var map = new MapSnapshot(Now, new[]
+            {
+                new MapNode("first", "Первый", null, 160, 170, location, deviceId: first),
+                new MapNode("second", "Второй", null, 200, 190, location, deviceId: second)
+            }, new[]
+            {
+                new MapLink("cable", "first", "second", "G1/1", "G1/2", MapConfidence.High,
+                    MapFreshness.Fresh, new MapEvidenceItem[0], cable)
+            }, new[] { new MapLocation(location, null, "Серверная", null) });
+            // Позиции сохранены оператором: карта их не разводит (пункт 5), поэтому ярлыки пересекаются.
+            var store = new LocationFrameLayoutStore(
+                devices: new[]
+                {
+                    new MapDeviceLayout(first, 160, 170, false),
+                    new MapDeviceLayout(second, 200, 190, false)
+                },
+                locations: new[]
+                {
+                    new MapLocationLayout(location, 100, 100, 900, 500, false, false)
+                });
+            WithLocationFrameWindow(map, store, window =>
+            {
+                var diagnostics = new NetworkDiagnosticSnapshot(Now, new[]
+                {
+                    new DeviceDiagnostic(first, "Первый", "MOXA EDS-518A", null, Now, Now,
+                        new InterfaceDiagnostic[0], "10.48.228.14"),
+                    new DeviceDiagnostic(second, "Второй", null, null, Now, Now,
+                        new InterfaceDiagnostic[0], "10.48.228.15", "Модель ЙЁ")
+                }, new[]
+                {
+                    new PhysicalLinkDiagnostic(cable, first, second, null, null, "Первый", "Второй",
+                        "G1/1", "G1/2", DiagnosticLinkStrength.Confirmed, MapFreshness.Fresh,
+                        "Ethernet", 1000000000L, "LLDP", Now, Now, StpTreePortState.Forwarding,
+                        StpTreePortState.Forwarding, new DiagnosticEvidenceItem[0], false, 0, 0, 0L)
+                });
+                typeof(MainWindow).GetField("_lastDiagnosticSnapshot", LocationFrameFlags).SetValue(window, diagnostics);
+                var states = (IDictionary)typeof(MainWindow).GetField("_linkOperationalStates", LocationFrameFlags).GetValue(window);
+                states[cable] = Enum.Parse(states.GetType().GetGenericArguments()[1], "Critical");
+                window.ShowMap(map);
+                var firstVisual = SemanticVisual(window, "_nodeVisualsByIdentity", "device:" + first.ToString("D"));
+                var secondVisual = SemanticVisual(window, "_nodeVisualsByIdentity", "device:" + second.ToString("D"));
+                SemanticZoom(window, 0.5);
+                Assert.AreEqual(Visibility.Visible,
+                    SemanticProperty<System.Windows.Shapes.Path>(firstVisual, "StatusIcon").Visibility);
+                Assert.AreEqual(Visibility.Visible,
+                    SemanticProperty<System.Windows.Shapes.Path>(secondVisual, "StatusIcon").Visibility);
+
+                // Два близких проблемных устройства: виден ровно один ярлык из двух.
+                var firstLabel = SemanticProperty<Border>(firstVisual, "SemanticLabel");
+                var secondLabel = SemanticProperty<Border>(secondVisual, "SemanticLabel");
+                Assert.AreEqual(1, new[] { firstLabel, secondLabel }.Count(item => item.Visibility == Visibility.Visible));
+                AssertNoOverlappingFarLabels(window);
+
+                // Выбранное устройство всегда сохраняет ярлык, даже если раньше проиграло по ключу.
+                foreach (var selected in new[] { first, second, first })
+                {
+                    var border = DeviceBorder(window, selected);
+                    border.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+                    { RoutedEvent = UIElement.MouseLeftButtonDownEvent, Source = border });
+                    SemanticZoom(window, 0.5);
+                    var selectedLabel = selected == first ? firstLabel : secondLabel;
+                    var otherLabel = selected == first ? secondLabel : firstLabel;
+                    Assert.AreEqual(Visibility.Visible, selectedLabel.Visibility);
+                    Assert.AreEqual(Visibility.Collapsed, otherLabel.Visibility);
+                    Assert.AreEqual(0, ((TextBlock)otherLabel.Child).Text.Length);
+                    AssertNoOverlappingFarLabels(window);
+                }
+
+                // Вне уровня «Издалека» ничего не скрывается этим механизмом.
+                SemanticZoom(window, (double)window.FindResource("NetLoom.Map.LinkLabelMinZoom"));
+                Assert.AreEqual(Visibility.Collapsed, firstLabel.Visibility);
+                Assert.AreEqual(Visibility.Visible, SemanticProperty<Border>(
+                    SemanticVisual(window, "_locationVisualsById", location), "Header").Visibility);
+            });
+        }
+
+        // Видимые ярлыки и вкладки размещений не пересекаются на экране (поле 0).
+        private static void AssertNoOverlappingFarLabels(MainWindow window)
+        {
+            var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+            var items = new System.Collections.Generic.List<Tuple<string, Rect>>();
+            foreach (DictionaryEntry pair in (IDictionary)typeof(MainWindow)
+                .GetField("_nodeVisualsByIdentity", LocationFrameFlags).GetValue(window))
+            {
+                var label = SemanticProperty<Border>(pair.Value, "SemanticLabel");
+                if (label.Visibility != Visibility.Visible || label.ActualWidth <= 0.0) continue;
+                items.Add(Tuple.Create("ярлык «" + ((TextBlock)label.Child).Text + "»",
+                    label.TransformToAncestor(viewer).TransformBounds(new Rect(label.RenderSize))));
+            }
+            foreach (DictionaryEntry pair in (IDictionary)typeof(MainWindow)
+                .GetField("_locationVisualsById", LocationFrameFlags).GetValue(window))
+            {
+                var header = SemanticProperty<Border>(pair.Value, "Header");
+                if (header.Visibility != Visibility.Visible || header.ActualWidth <= 0.0) continue;
+                items.Add(Tuple.Create("вкладка «" + SemanticProperty<TextBlock>(pair.Value, "Title").Text + "»",
+                    header.TransformToAncestor(viewer).TransformBounds(new Rect(header.RenderSize))));
+            }
+            for (var i = 0; i < items.Count; i++)
+                for (var j = i + 1; j < items.Count; j++)
+                {
+                    var a = items[i].Item2;
+                    var b = items[j].Item2;
+                    Assert.IsFalse(a.Left < b.Right - 0.01 && b.Left < a.Right - 0.01 &&
+                        a.Top < b.Bottom - 0.01 && b.Top < a.Bottom - 0.01,
+                        items[i].Item1 + " накладывается на " + items[j].Item1 + ": " + a + " и " + b);
+                }
+        }
+
         private static object SemanticVisual(MainWindow window, string field, object key)
         {
             return ((IDictionary)typeof(MainWindow).GetField(field, LocationFrameFlags).GetValue(window))[key];

@@ -43,10 +43,13 @@ public partial class MainWindow
         // Значок не меняет геометрию карточки; на дальнем уровне его размер задан в экранных единицах.
         visual.StatusIcon.RenderTransformOrigin = new Point(0.5, 0.5);
         visual.StatusIcon.RenderTransform = far ? new ScaleTransform(1 / _zoom, 1 / _zoom) : Transform.Identity;
+        // В окрестности ярлык получает каждое видимое устройство: их немного, наложения снимает MapLabelDeclutter.
         var important = visual.StatusIcon.Visibility == Visibility.Visible ||
             (node.DeviceId.HasValue && (node.DeviceId == _selectedDeviceId || node.DeviceId == _highlightedDeviceId ||
-             _operationalFocusDeviceIds.Contains(node.DeviceId.Value)));
-        visual.SemanticLabel.Visibility = far && important ? Visibility.Visible : Visibility.Collapsed;
+             _operationalFocusDeviceIds.Contains(node.DeviceId.Value) ||
+             _neighborhoodDeviceIds.Contains(node.DeviceId.Value)));
+        var showLabel = far && important && !visual.LabelHidden;
+        visual.SemanticLabel.Visibility = showLabel ? Visibility.Visible : Visibility.Collapsed;
         var title = (TextBlock)visual.SemanticLabel.Child;
         // Скрытый ярлык не дублирует имя карточки (в дереве UI Automation и в поиске текста).
         title.Text = visual.SemanticLabel.Visibility == Visibility.Visible
@@ -54,7 +57,7 @@ public partial class MainWindow
             : string.Empty;
         title.ToolTip = title.Text.Length == 0 ? null : title.Text;
         visual.SemanticLabel.ToolTip = title.Text;
-        if (far && important)
+        if (showLabel)
         {
             // RenderTransform сохраняет высоту карточки для связей и вписывания.
             visual.SemanticLabel.MaxWidth = _nodeWidth;
@@ -106,6 +109,101 @@ public partial class MainWindow
             visual.Border.Width = visual.Header.DesiredSize.Width / (far ? _zoom : 1);
             visual.Border.Height = _locationHeaderHeight / (far ? _zoom : 1);
         }
+
+        // Скрытая вкладка не оставляет текста в дереве UI Automation и не получает Tab;
+        // Рамка размещения остаётся и по наведению называет размещение.
+        var hidden = far && visual.LabelHidden;
+        visual.Header.Visibility = hidden ? Visibility.Hidden : Visibility.Visible;
+        if (hidden)
+        {
+            visual.Title.Text = string.Empty;
+            visual.Title.ToolTip = null;
+        }
+    }
+
+    // Уровень «Издалека»: подписи (ярлыки устройств и вкладки размещений) не накладываются друг на друга.
+    // Приоритеты: 0 — выбранное устройство; 1 — участники фокуса и подсвеченное; 2 — устройства с проблемой;
+    // 3 — вкладки верхнего уровня; 3 + глубина — вложенные вкладки; 5 — прочие ярлыки.
+    private void ApplyFarLabelDeclutter()
+    {
+        foreach (var visual in _nodeVisualsByIdentity.Values)
+        {
+            if (!visual.LabelHidden) continue;
+            visual.LabelHidden = false;
+            ApplyNodeSemanticPresentation(visual);
+        }
+        foreach (var visual in _locationVisualsById.Values)
+        {
+            if (!visual.LabelHidden) continue;
+            visual.LabelHidden = false;
+            ApplyLocationSemanticPresentation(visual);
+        }
+        if (_semanticLevel != MapSemanticLevel.Far || _lastMapSnapshot == null) return;
+
+        var zoom = _zoom > 0.0 ? _zoom : 1.0;
+        var locations = _lastMapSnapshot.Locations.ToDictionary(item => item.Id);
+        var candidates = new List<MapLabelCandidate>();
+        var nodeByKey = new Dictionary<string, MapNodeVisual>(StringComparer.Ordinal);
+        var locationByKey = new Dictionary<string, MapLocationVisual>(StringComparer.Ordinal);
+        foreach (var pair in _nodeVisualsByIdentity)
+        {
+            var visual = pair.Value;
+            if (visual.Border.Visibility != Visibility.Visible ||
+                visual.SemanticLabel.Visibility != Visibility.Visible) continue;
+            var key = "N:" + pair.Key;
+            nodeByKey[key] = visual;
+            var inset = new Point(visual.Border.BorderThickness.Left + visual.Border.Padding.Left,
+                visual.Border.BorderThickness.Top + visual.Border.Padding.Top);
+            var size = visual.SemanticLabel.DesiredSize;
+            // Ярлык обратно масштабирован и стоит над карточкой: на экране его размер равен DesiredSize.
+            candidates.Add(new MapLabelCandidate(key, new Rect(
+                (NodeLeft(visual) + inset.X) * zoom,
+                (NodeTop(visual) + inset.Y) * zoom - size.Height - _linkLabelCollisionMargin,
+                size.Width, size.Height), FarNodeLabelPriority(visual)));
+        }
+        foreach (var visual in _locationVisualsById.Values)
+        {
+            if (visual.Border.Visibility != Visibility.Visible) continue;
+            var key = "L:" + visual.LocationId.ToString("N");
+            locationByKey[key] = visual;
+            var depth = 0;
+            MapLocation location;
+            var visited = new HashSet<Guid>();
+            if (locations.TryGetValue(visual.LocationId, out location))
+            {
+                while (location.ParentLocationId.HasValue && visited.Add(location.Id) &&
+                       locations.TryGetValue(location.ParentLocationId.Value, out location))
+                    depth++;
+            }
+            var size = visual.Header.DesiredSize;
+            candidates.Add(new MapLabelCandidate(key, new Rect(LocationLeft(visual) * zoom,
+                LocationTop(visual) * zoom, size.Width, size.Height), 3 + depth));
+        }
+
+        var shown = MapLabelDeclutter.SelectVisible(candidates, GetDoubleResource("NetLoom.Map.FarLabelGap"));
+        foreach (var pair in nodeByKey)
+        {
+            if (shown.Contains(pair.Key)) continue;
+            pair.Value.LabelHidden = true;
+            ApplyNodeSemanticPresentation(pair.Value);
+        }
+        foreach (var pair in locationByKey)
+        {
+            if (shown.Contains(pair.Key)) continue;
+            pair.Value.LabelHidden = true;
+            ApplyLocationSemanticPresentation(pair.Value);
+        }
+    }
+
+    private int FarNodeLabelPriority(MapNodeVisual visual)
+    {
+        var deviceId = visual.DeviceId ?? visual.Node?.DeviceId;
+        if (deviceId.HasValue)
+        {
+            if (deviceId == _selectedDeviceId) return 0;
+            if (deviceId == _highlightedDeviceId || _operationalFocusDeviceIds.Contains(deviceId.Value)) return 1;
+        }
+        return visual.StatusIcon.Visibility == Visibility.Visible ? 2 : 5;
     }
 
     // Кольцо фокуса кнопки вкладки: на «Издалека» вкладка обратно масштабирована и стоит на экране 1:1.

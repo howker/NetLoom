@@ -80,6 +80,9 @@ public partial class MainWindow
         public double ExpandedWidth { get; set; }
 
         public double ExpandedHeight { get; set; }
+
+        // Вкладка скрыта на уровне «Издалека», чтобы не накладываться на более важные подписи.
+        public bool LabelHidden { get; set; }
     }
 
     private sealed class MapNodeVisual
@@ -131,6 +134,9 @@ public partial class MainWindow
         public bool IsManual { get; set; }
 
         public bool IsLocked { get; set; }
+
+        // Ярлык скрыт на уровне «Издалека», чтобы не накладываться на более важные подписи.
+        public bool LabelHidden { get; set; }
     }
 
     private sealed class MapLinkVisual

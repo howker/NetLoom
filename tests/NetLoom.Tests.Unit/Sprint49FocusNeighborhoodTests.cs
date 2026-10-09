@@ -224,7 +224,16 @@ namespace NetLoom.Tests.Unit
                     PumpDispatcher();
                     AssertNeighborhoodDevices(window, 0, 1, 2, 3, 4, 5);
                     var zoom = NeighborhoodZoom(window);
-                    Assert.IsTrue(zoom >= (double)window.FindResource("NetLoom.Map.ReadableZoomMin") && zoom <= 1.0);
+                    Assert.IsTrue(zoom >= (double)window.FindResource("NetLoom.Map.ZoomMin") - 0.0001 && zoom <= 1.0);
+                    // Окрестность видна целиком: каждое её устройство в видимой области карты.
+                    var mapViewer = (ScrollViewer)window.FindName("MapScrollViewer");
+                    var mapViewport = new Rect(0, 0, mapViewer.ViewportWidth, mapViewer.ViewportHeight);
+                    foreach (var index in new[] { 0, 1, 2, 3, 4, 5 })
+                    {
+                        var border = DeviceBorder(window, ids[index]);
+                        Assert.IsTrue(mapViewport.Contains(border.TransformToAncestor(mapViewer)
+                            .TransformBounds(new Rect(border.RenderSize))), "Neighborhood device outside the viewport.");
+                    }
 
                     Click((Button)window.FindName("MapNeighborhoodDownButton"));
                     PumpDispatcher();
