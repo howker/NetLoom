@@ -82,8 +82,8 @@ namespace NetLoom.Tests.Unit
                 "NetLoom.Brush.AccentPressed",
                 BrushForState("Blocked"));
 
-            Assert.AreEqual(
-                "NetLoom.Brush.Success",
+            // ADR-083, правило 6: норма нейтральна, рабочая (Forwarding) связь не окрашивается.
+            Assert.IsNull(
                 BrushForState("Forwarding"));
 
             Assert.IsNull(

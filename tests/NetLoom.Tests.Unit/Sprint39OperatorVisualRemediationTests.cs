@@ -43,7 +43,8 @@ namespace NetLoom.Tests.Unit
         public void OperationalStatesUseDistinctExistingSemanticBrushes()
         {
             Assert.IsNull(BrushKey("Normal"));
-            Assert.AreEqual("NetLoom.Brush.Success", BrushKey("Forwarding"));
+            // ADR-083, правило 6: норма нейтральна, рабочая (Forwarding) связь не окрашивается.
+            Assert.IsNull(BrushKey("Forwarding"));
             Assert.AreEqual("NetLoom.Brush.AccentHover", BrushKey("Transition"));
             Assert.AreEqual("NetLoom.Brush.AccentPressed", BrushKey("Blocked"));
             Assert.AreEqual("NetLoom.Brush.Warning", BrushKey("Degraded"));

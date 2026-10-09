@@ -293,11 +293,12 @@ namespace NetLoom.Tests.Unit
                                 window,
                                 unknownId);
 
+                        // ADR-083, правило 6: норма — серая полоса, цвет только у отклонений.
                         Assert.AreSame(
                             window.FindResource(
-                                "NetLoom.Brush.Success"),
+                                "NetLoom.Brush.BorderStrong"),
                             StateStripe(healthy).Background,
-                            "Only proven healthy diagnostic evidence may render the green state stripe.");
+                            "Healthy evidence renders the neutral state stripe (ADR-083 rule 6).");
 
                         Assert.AreSame(
                             window.FindResource(
@@ -305,11 +306,12 @@ namespace NetLoom.Tests.Unit
                             StateStripe(degraded).Background,
                             "Confirmed degradation must render the warning state stripe.");
 
+                        // ADR-083, правило 6: «Нет данных» не выделяется на каждой карточке.
                         Assert.AreSame(
                             window.FindResource(
-                                "NetLoom.Brush.TextDisabled"),
+                                "NetLoom.Brush.BorderStrong"),
                             StateStripe(unknown).Background,
-                            "Unknown evidence must remain neutral rather than pretending the node is healthy.");
+                            "Unknown evidence stays neutral and is never colored as a problem.");
 
                         SelectDevice(
                             window,

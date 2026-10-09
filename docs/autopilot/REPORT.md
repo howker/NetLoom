@@ -37,16 +37,17 @@
 
 ## Последний аудит
 
-Итоговый прогон 2026-10-10 на `6bab72f`, `artifacts\ui-audit-run\run.txt`:
+Итоговый прогон 2026-10-10: `Run-UiAudit.ps1` на всём наборе Unit без исключений (`-Filter "FullyQualifiedName~NetLoom"`), `artifacts\ui-audit-run\run.txt`:
 
 ```
-Пройден!   : не пройдено     0, пройдено   130, пропущено     0, всего   130, длительность 5 m 20 s. - NetLoom.Tests.Unit.dll (net48)
+Пройден!   : не пройдено     0, пройдено   661, пропущено     0, всего   661, длительность 7 m 10 s. - NetLoom.Tests.Unit.dll (net48)
 BUILD_EXIT=0
 TEST_EXIT=0
 ```
 
 - `artifacts\ui-audit\findings.txt`: нарушений 0, сведений 10. Проход клавиатурой: нарушений 0, сведений 0.
-- Полный набор: Unit 657 из 661 — только 4 давних падения, те же падают на `main` (`8a37988`): `OperationalStatesUseExistingSemanticBrushes`, `OperationalStatesUseDistinctExistingSemanticBrushes`, `NodeStateIsAColoredLeftStripeAndSelectionAddsFullBlueOutline`, `RussianUiValuesDoNotStartWithUnexpectedLowercaseCyrillic`; Integration 150/150; Modern 234/234. `Check-TextEncoding.ps1`: `EXIT 0`.
+- Integration 150/150, Modern 234/234. `Check-TextEncoding.ps1`: `EXIT 0`.
+- Четыре давних падения (они же падали на `main`) сняты: тесты Sprint 39/41 проверяли зелёную «норму», отменённую ADR-083 (правило 6: норма нейтральна, серая полоса; то же уже защищают тесты Sprint 46), — ожидания приведены к ADR-083; `EquipmentAgeNever`/`EquipmentAgeNow` («нет», «сейчас») строчные по принятому решению акта сверки E7 — внесены в список разрешённых строчных значений. Код продукта не менялся.
 - Найдено и исправлено в конце: тест `NavigationKeysIgnoreSearchFieldAndPlainKStaysUntouched` зависел от модификаторов клавиатуры, оставленных предыдущими тестами (`6bab72f`).
 
 ## Что посмотреть в первую очередь

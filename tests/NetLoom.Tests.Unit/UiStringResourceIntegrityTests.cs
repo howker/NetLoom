@@ -24,7 +24,10 @@ namespace NetLoom.Tests.Unit
                     "EvidenceCountOther",
                     // Середина строки результата поиска: «IP · MAC · за портом … · Только что» (P2).
                     "LookupSummaryBehindPort",
-                    "LookupSummaryOnDevice"
+                    "LookupSummaryOnDevice",
+                    // Столбец «Обновлено»: «нет» и «сейчас» строчные, как на макете (акт сверки, E7).
+                    "EquipmentAgeNever",
+                    "EquipmentAgeNow"
                 };
 
         private static readonly Regex
