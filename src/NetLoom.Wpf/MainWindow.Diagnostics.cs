@@ -1691,7 +1691,16 @@ public partial class MainWindow : Window
         string text;
         string brushKey;
 
-        if (_monitoringControl.Current.State ==
+        var mapNode = _lastMapSnapshot?.Nodes.FirstOrDefault(node =>
+            node.DeviceId == device.DeviceId);
+        var pollingDisabledText = PollingDisabledText(device.DeviceId, mapNode);
+
+        if (pollingDisabledText != null)
+        {
+            text = pollingDisabledText;
+            brushKey = "NetLoom.Brush.TextSecondary";
+        }
+        else if (_monitoringControl.Current.State ==
             NetLoom.Application.MonitoringControl.MonitoringControlState.Stopped)
         {
             text =

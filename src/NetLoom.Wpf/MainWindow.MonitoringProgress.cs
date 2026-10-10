@@ -126,7 +126,8 @@ public partial class MainWindow
         var merged =
             NetLoom.Application.Alerts.MonitoringAlertProjection.Merge(
                 _lastTopologyAlertSnapshot,
-                snapshot.TargetOutcomes);
+                snapshot.TargetOutcomes.Where(outcome =>
+                    EffectivePollingPolicy(outcome.DeviceId).ActivePolling));
 
         _unreachableAlertDevicesKey =
             UnreachableDevicesKey(
@@ -165,7 +166,8 @@ public partial class MainWindow
         var candidate =
             NetLoom.Application.Alerts.MonitoringAlertProjection.Merge(
                 _lastTopologyAlertSnapshot,
-                snapshot.TargetOutcomes);
+                snapshot.TargetOutcomes.Where(outcome =>
+                    EffectivePollingPolicy(outcome.DeviceId).ActivePolling));
 
         if (string.Equals(
                 UnreachableDevicesKey(

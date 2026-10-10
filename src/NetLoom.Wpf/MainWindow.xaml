@@ -699,6 +699,14 @@
                                                                        Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
                                                                        TextTrimming="CharacterEllipsis"
                                                                        ToolTip="{Binding UnconfirmedHint}" />
+                                                            <TextBlock x:Name="EquipmentPollingText"
+                                                                       Text="{Binding PollingText}"
+                                                                       Visibility="{Binding PollingVisibility}"
+                                                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                                                       FontSize="{DynamicResource NetLoom.FontSize.Caption}"
+                                                                       Margin="{DynamicResource NetLoom.Thickness.GapXsTop}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       ToolTip="{Binding PollingText}" />
                                                         </StackPanel>
 
                                                         <TextBlock Grid.Column="2"

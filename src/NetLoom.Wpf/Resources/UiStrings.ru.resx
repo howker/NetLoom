@@ -3031,4 +3031,8 @@
   <data name="SpofStripStructural" xml:space="preserve"><value>Единые точки отказа без направления: {0}, {1}. Направление неизвестно: {2}</value></data>
   <data name="SpofStripNone" xml:space="preserve"><value>Единых точек отказа по известной топологии нет</value></data>
   <data name="SpofStripReset" xml:space="preserve"><value>Сбросить показ</value></data>
+  <data name="PollingPolicyDefaultName" xml:space="preserve"><value>По умолчанию</value></data>
+  <data name="PollingDisabledByPolicy" xml:space="preserve"><value>Опрос выключен политикой «{0}»</value></data>
+  <data name="PollingDisabledUnmanaged" xml:space="preserve"><value>Опрос выключен: устройство отмечено как неуправляемое</value></data>
+  <data name="MonitoringValidationAllDisabledByPolicy" xml:space="preserve"><value>Нет устройств для опроса: у всех опрос выключен политикой</value></data>
 </root>

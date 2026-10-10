@@ -3031,4 +3031,8 @@ Poll: {2}</value>
   <data name="SpofStripStructural" xml:space="preserve"><value>Single points of failure without direction: {0}, {1}. Direction unknown: {2}</value></data>
   <data name="SpofStripNone" xml:space="preserve"><value>No single points of failure in the known topology</value></data>
   <data name="SpofStripReset" xml:space="preserve"><value>Clear view</value></data>
+  <data name="PollingPolicyDefaultName" xml:space="preserve"><value>Default</value></data>
+  <data name="PollingDisabledByPolicy" xml:space="preserve"><value>Polling is turned off by policy “{0}”</value></data>
+  <data name="PollingDisabledUnmanaged" xml:space="preserve"><value>Polling is off: the device is marked as unmanaged</value></data>
+  <data name="MonitoringValidationAllDisabledByPolicy" xml:space="preserve"><value>No devices to poll: polling is turned off by policy for all of them</value></data>
 </root>

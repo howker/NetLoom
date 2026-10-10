@@ -890,6 +890,8 @@ public partial class MainWindow : Window
         _lastDiagnosticSnapshot =
             state.Snapshot.DiagnosticSnapshot;
 
+        LoadPollingPolicyResolver();
+
         UpdateTopologyQuality();
 
         // Sprint 47: к предупреждениям схемы добавляются «Устройство не отвечает» из текущего опроса.

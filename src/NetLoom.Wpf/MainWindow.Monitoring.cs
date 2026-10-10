@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using NetLoom.Application.Monitoring;
 using NetLoom.Application.MonitoringControl;
+using NetLoom.Application.PollingPolicies;
 using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Access;
@@ -321,7 +323,8 @@ namespace NetLoom.Wpf
         private async Task RestartMonitoringTargetSetAsync()
         {
             if (!_monitoringTargetSetSessionActive ||
-                _monitoringControl.Current.State != MonitoringControlState.Running)
+                (_monitoringControl.Current.State != MonitoringControlState.Running &&
+                 _monitoringControl.Current.State != MonitoringControlState.Polling))
             {
                 return;
             }
@@ -329,6 +332,8 @@ namespace NetLoom.Wpf
             try
             {
                 await _monitoringControl.StopAsync(_lifetimeCancellation.Token);
+                _monitoringTargetSetSessionActive = false;
+                _monitoringActiveTargetCount = 0;
                 await StartMonitoringTargetSetAsync();
             }
             catch (OperationCanceledException)
@@ -657,7 +662,8 @@ namespace NetLoom.Wpf
                 canEdit &&
                 hasSelectedProfile &&
                 (multiTargetControl != null
-                    ? CurrentMonitoringTargetSetCandidateCount() > 0
+                    ? CurrentMonitoringTargetSetCandidateCount() > 0 ||
+                      CurrentMonitoringTargetSetCandidateCount(false) > 0
                     : hasSelectedDevice);
 
             var profileRequiredHint =
@@ -779,6 +785,7 @@ namespace NetLoom.Wpf
 
             var seenDeviceIds =
                 new HashSet<Guid>();
+            var candidatesBeforePolicy = 0;
 
             if (_lastMapSnapshot != null)
             {
@@ -831,18 +838,26 @@ namespace NetLoom.Wpf
                         return false;
                     }
 
+                    candidatesBeforePolicy++;
+                    var effectivePolicy = EffectivePollingPolicy(node.DeviceId.Value);
+                    var groups = PollingPolicySchedule.BuildGroups(
+                        effectivePolicy, policy.Interval, policy.Kinds);
+                    if (groups.Count == 0) continue;
+
                     result.Add(
                         new MonitoringTarget(
                             node.DeviceId.Value,
-                            address));
+                            address,
+                            pollsOnce: groups.All(group => group.PollsOnce)));
                 }
             }
 
             if (result.Count == 0)
             {
                 validation =
-                    UiText.Get(
-                        "MonitoringValidationNoPollableTargets");
+                    UiText.Get(candidatesBeforePolicy > 0
+                        ? "MonitoringValidationAllDisabledByPolicy"
+                        : "MonitoringValidationNoPollableTargets");
                 return false;
             }
 
@@ -857,7 +872,7 @@ namespace NetLoom.Wpf
             return true;
         }
 
-        private int CurrentMonitoringTargetSetCandidateCount()
+        private int CurrentMonitoringTargetSetCandidateCount(bool applyPolicy = true)
         {
             if (_lastMapSnapshot == null)
             {
@@ -866,6 +881,10 @@ namespace NetLoom.Wpf
 
             var deviceIds =
                 new HashSet<Guid>();
+            int intervalSeconds;
+            var hasInterval = int.TryParse(MonitoringIntervalTextBox.Text,
+                out intervalSeconds) && intervalSeconds > 0;
+            var kinds = SelectedMonitoringKinds();
 
             foreach (var node in
                 _lastMapSnapshot.Nodes)
@@ -885,6 +904,11 @@ namespace NetLoom.Wpf
                     node.ManagementAddress,
                     out address))
                 {
+                    if (applyPolicy && (!hasInterval || kinds.Count == 0 ||
+                        PollingPolicySchedule.BuildGroups(
+                            EffectivePollingPolicy(node.DeviceId.Value),
+                            TimeSpan.FromSeconds(intervalSeconds), kinds).Count == 0))
+                        continue;
                     deviceIds.Add(
                         node.DeviceId.Value);
                 }
@@ -1046,6 +1070,14 @@ namespace NetLoom.Wpf
                 validation =
                     UiText.Get(
                         "MonitoringValidationSelectDevice");
+                return false;
+            }
+
+            var effectivePolicy = EffectivePollingPolicy(_monitoringInputDeviceId.Value);
+            if (!effectivePolicy.ActivePolling)
+            {
+                validation = UiText.Format("PollingDisabledByPolicy",
+                    PollingPolicyDisplayName(effectivePolicy));
                 return false;
             }
 

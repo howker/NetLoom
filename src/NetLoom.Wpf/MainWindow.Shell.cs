@@ -1253,10 +1253,14 @@ namespace NetLoom.Wpf
                 node.Origin ==
                     MapNodeOrigin.Manual;
 
+            var pollingText = node.DeviceId.HasValue
+                ? PollingDisabledText(node.DeviceId.Value, node)
+                : null;
+
             // P6 (полевая проверка Sprint 46): у ручного устройства опроса нет по природе —
             // Оно не попадает в «Нет данных», для него есть фильтр «Ручные».
             var hasNoData =
-                !isManual &&
+                !isManual && pollingText == null &&
                 (diagnostic == null ||
                  !diagnostic.LastSeenUtc.HasValue);
 
@@ -1318,6 +1322,7 @@ namespace NetLoom.Wpf
                     ? UiText.Get(
                         "DeviceUnconfirmedMark")
                     : null;
+            row.PollingText = pollingText;
 
             return row;
         }
@@ -2074,6 +2079,13 @@ namespace NetLoom.Wpf
                 IsWarningProblem;
 
             public string UnconfirmedText { get; set; }
+
+            public string PollingText { get; set; }
+
+            public Visibility PollingVisibility =>
+                string.IsNullOrEmpty(PollingText)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
 
             public string UnconfirmedHint =>
                 string.IsNullOrEmpty(UnconfirmedText)

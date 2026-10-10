@@ -13,6 +13,7 @@ using NetLoom.Persistence.Sqlite.Discovery;
 using NetLoom.Persistence.Sqlite.Locations;
 using NetLoom.Persistence.Sqlite.Lookup;
 using NetLoom.Persistence.Sqlite.MapLayout;
+using NetLoom.Persistence.Sqlite.PollingPolicies;
 using NetLoom.Persistence.Sqlite.Repositories;
 using NetLoom.Persistence.Sqlite.Security;
 using NetLoom.Persistence.Sqlite.Stp;
@@ -182,6 +183,7 @@ namespace NetLoom.Desktop
 
                 mainWindow.DiscoveryInboxActions = inboxActions;
                 mainWindow.TopologyConflictAcknowledgements = new SqliteTopologyConflictAcknowledgementStore(connectionFactory);
+                mainWindow.PollingPolicyStore = new SqlitePollingPolicyStore(connectionFactory);
 
                 mainWindow.DiscoveryProfileCheckRequested +=
                     (sender, request) =>
