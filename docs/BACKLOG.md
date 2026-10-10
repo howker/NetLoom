@@ -417,6 +417,8 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Policies may vary polling cadence for health versus LLDP/CDP/FDB/ARP/STP work.
   - Passwords and community strings are never embedded in templates.
   - Profile exclusion rules editor, by owner decision on 2026-10-08 (Sprint 48 report): rules (`access_profile_exclusions`) are applied by discovery since Sprint 48 (Engine `--exclude`, Excluded rows in the inbox), but no UI creates, edits or removes them.
+  - Implementation record (autopilot, branch `sprint51/polling-policies`, ADR-087):
+    - Item 1, model and storage: a polling policy is operator data in SQLite (migration 028, additive): active polling yes/no; state schedule (Health, interfaces) and topology schedule (LLDP, CDP, FDB, ARP, STP), each «general interval from Settings», «own period» (10 s … 7 days), «once per monitoring start» or «off»; TCP ports for the availability check. Assigned to a device or a placement; the effective policy is own → nearest placement up the parent chain → default (`PollingPolicyResolver`, Application, shared by Desktop and Engine). The default policy always exists, cannot be deleted or renamed and equals the pre-Sprint 51 behaviour (general interval for every kind, TCP 22/80/443). The Settings poll-kind checkboxes still decide which kinds run at all; a policy only narrows them and sets periods. A policy assigned to devices or placements cannot be deleted (FK `RESTRICT` plus a store check).
 
 ### Parallel evidence gathering — not a Sprint
 
