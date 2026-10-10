@@ -23,7 +23,11 @@ namespace NetLoom.Contracts.Rings
             IEnumerable<Guid> forwardingPhysicalLinkIds,
             IEnumerable<Guid> blockingPhysicalLinkIds,
             IEnumerable<Guid> disabledPhysicalLinkIds,
-            IEnumerable<Guid> unresolvedPhysicalLinkIds)
+            IEnumerable<Guid> unresolvedPhysicalLinkIds,
+            PhysicalRedundancyRegionKind ringKind =
+                PhysicalRedundancyRegionKind.SimpleRing,
+            IEnumerable<Guid> deviceIds = null,
+            IEnumerable<Guid> coreDeviceIds = null)
         {
             if (string.IsNullOrWhiteSpace(
                 regionKey))
@@ -79,7 +83,32 @@ namespace NetLoom.Contracts.Rings
                     nameof(unresolvedPhysicalLinkIds));
 
             EnsureNoOverlap();
+
+            RingKind =
+                ringKind;
+
+            DeviceIds =
+                deviceIds == null
+                    ? new Guid[0]
+                    : deviceIds
+                        .Distinct()
+                        .OrderBy(id => id)
+                        .ToArray();
+
+            CoreDeviceIds =
+                coreDeviceIds == null
+                    ? new Guid[0]
+                    : coreDeviceIds
+                        .Distinct()
+                        .OrderBy(id => id)
+                        .ToArray();
         }
+
+        public PhysicalRedundancyRegionKind RingKind { get; }
+
+        public IReadOnlyList<Guid> DeviceIds { get; }
+
+        public IReadOnlyList<Guid> CoreDeviceIds { get; }
 
         public string RegionKey { get; }
 

@@ -80,6 +80,346 @@ namespace NetLoom.Topology.Rings
                 .ToArray();
         }
 
+        // Выделяет кольца, замкнутые через пару связанных ядер, внутри составного региона.
+        // Параллельные связи одной пары устройств сводятся в один «пучок».
+        public IReadOnlyList<PhysicalRedundancyRegion>
+            DetectCorePairRings(
+                PhysicalRedundancyRegion region,
+                IEnumerable<PhysicalLink> links)
+        {
+            if (region == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(region));
+            }
+
+            if (links == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(links));
+            }
+
+            if (region.Kind !=
+                PhysicalRedundancyRegionKind.Composite)
+            {
+                return new PhysicalRedundancyRegion[0];
+            }
+
+            var regionLinkIds =
+                new HashSet<Guid>(
+                    region.PhysicalLinkIds);
+
+            var regionDevices =
+                new HashSet<Guid>(
+                    region.DeviceIds);
+
+            var edges =
+                BuildEligibleEdges(
+                    links)
+                    .Where(
+                        edge =>
+                            regionLinkIds.Contains(
+                                edge.Link.Id) &&
+                            regionDevices.Contains(
+                                edge.Link.DeviceAId) &&
+                            regionDevices.Contains(
+                                edge.Link.DeviceBId))
+                    .ToArray();
+
+            var bundles =
+                new Dictionary<string,List<Guid>>(
+                    StringComparer.Ordinal);
+
+            var neighbors =
+                new Dictionary<Guid,SortedSet<Guid>>();
+
+            foreach (var edge in edges)
+            {
+                var a =
+                    edge.Link.DeviceAId;
+
+                var b =
+                    edge.Link.DeviceBId;
+
+                var pairKey =
+                    BundleKey(
+                        a,
+                        b);
+
+                List<Guid> bundle;
+
+                if (!bundles.TryGetValue(
+                    pairKey,
+                    out bundle))
+                {
+                    bundle =
+                        new List<Guid>();
+
+                    bundles.Add(
+                        pairKey,
+                        bundle);
+                }
+
+                bundle.Add(
+                    edge.Link.Id);
+
+                AddNeighbor(
+                    neighbors,
+                    a,
+                    b);
+
+                AddNeighbor(
+                    neighbors,
+                    b,
+                    a);
+            }
+
+            if (neighbors.Count < 3)
+            {
+                return new PhysicalRedundancyRegion[0];
+            }
+
+            var result =
+                new Dictionary<string,PhysicalRedundancyRegion>(
+                    StringComparer.Ordinal);
+
+            if (neighbors.Values.All(
+                set => set.Count == 2))
+            {
+                // Граф пучков — простой цикл: одно кольцо из всех пучков.
+                var multiBundles =
+                    bundles
+                        .Where(
+                            pair =>
+                                pair.Value.Count >= 2)
+                        .Select(
+                            pair => pair.Key)
+                        .ToArray();
+
+                var cores =
+                    new Guid[0];
+
+                if (multiBundles.Length == 1)
+                {
+                    cores =
+                        BundleDevices(
+                            multiBundles[0]);
+                }
+
+                AddRing(
+                    result,
+                    neighbors.Keys,
+                    bundles.Values.SelectMany(
+                        ids => ids),
+                    cores);
+
+                return result.Values
+                    .OrderBy(
+                        item => item.RegionKey,
+                        StringComparer.Ordinal)
+                    .ToArray();
+            }
+
+            foreach (var anchor in
+                neighbors
+                    .Where(
+                        pair => pair.Value.Count >= 3)
+                    .Select(
+                        pair => pair.Key)
+                    .OrderBy(id => id))
+            {
+                foreach (var first in
+                    neighbors[anchor])
+                {
+                    var chainDevices =
+                        new List<Guid>();
+
+                    var chainBundleKeys =
+                        new List<string>
+                        {
+                            BundleKey(
+                                anchor,
+                                first)
+                        };
+
+                    var previous =
+                        anchor;
+
+                    var current =
+                        first;
+
+                    var steps = 0;
+
+                    while (neighbors[current].Count == 2 &&
+                        steps <= neighbors.Count)
+                    {
+                        steps++;
+
+                        chainDevices.Add(
+                            current);
+
+                        var next =
+                            neighbors[current]
+                                .First(
+                                    id => id != previous);
+
+                        chainBundleKeys.Add(
+                            BundleKey(
+                                current,
+                                next));
+
+                        previous =
+                            current;
+
+                        current =
+                            next;
+                    }
+
+                    if (neighbors[current].Count < 3 ||
+                        current == anchor ||
+                        chainBundleKeys.Count < 2)
+                    {
+                        continue;
+                    }
+
+                    var closingKey =
+                        BundleKey(
+                            anchor,
+                            current);
+
+                    if (!bundles.ContainsKey(
+                        closingKey))
+                    {
+                        // Без прямой связи между концами цепочки кольца нет.
+                        continue;
+                    }
+
+                    var ringBundleKeys =
+                        chainBundleKeys
+                            .Concat(
+                                new[]
+                                {
+                                    closingKey
+                                })
+                            .Distinct(
+                                StringComparer.Ordinal)
+                            .ToArray();
+
+                    AddRing(
+                        result,
+                        chainDevices
+                            .Concat(
+                                new[]
+                                {
+                                    anchor,
+                                    current
+                                }),
+                        ringBundleKeys.SelectMany(
+                            key => bundles[key]),
+                        new[]
+                        {
+                            anchor,
+                            current
+                        });
+                }
+            }
+
+            return result.Values
+                .OrderBy(
+                    item => item.RegionKey,
+                    StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        private static void AddRing(
+            IDictionary<string,PhysicalRedundancyRegion> result,
+            IEnumerable<Guid> deviceIds,
+            IEnumerable<Guid> physicalLinkIds,
+            IEnumerable<Guid> coreDeviceIds)
+        {
+            var linkIds =
+                physicalLinkIds
+                    .Distinct()
+                    .OrderBy(id => id)
+                    .ToArray();
+
+            var devices =
+                deviceIds
+                    .Distinct()
+                    .OrderBy(id => id)
+                    .ToArray();
+
+            if (linkIds.Length < 2 ||
+                devices.Length < 3)
+            {
+                return;
+            }
+
+            var key =
+                BuildKey(
+                    "pring-corepair-v1-",
+                    linkIds);
+
+            if (result.ContainsKey(key))
+            {
+                return;
+            }
+
+            result.Add(
+                key,
+                new PhysicalRedundancyRegion(
+                    key,
+                    PhysicalRedundancyRegionKind.CorePairRing,
+                    devices,
+                    linkIds,
+                    coreDeviceIds));
+        }
+
+        private static void AddNeighbor(
+            IDictionary<Guid,SortedSet<Guid>> neighbors,
+            Guid deviceId,
+            Guid neighborId)
+        {
+            SortedSet<Guid> set;
+
+            if (!neighbors.TryGetValue(
+                deviceId,
+                out set))
+            {
+                set =
+                    new SortedSet<Guid>();
+
+                neighbors.Add(
+                    deviceId,
+                    set);
+            }
+
+            set.Add(
+                neighborId);
+        }
+
+        private static string BundleKey(
+            Guid first,
+            Guid second)
+        {
+            return first.CompareTo(second) <= 0
+                ? first.ToString("N") + "|" + second.ToString("N")
+                : second.ToString("N") + "|" + first.ToString("N");
+        }
+
+        private static Guid[] BundleDevices(
+            string bundleKey)
+        {
+            return bundleKey
+                .Split('|')
+                .Select(
+                    value =>
+                        Guid.ParseExact(
+                            value,
+                            "N"))
+                .ToArray();
+        }
+
         private static GraphEdge[] BuildEligibleEdges(
             IEnumerable<PhysicalLink> links)
         {
@@ -425,6 +765,15 @@ namespace NetLoom.Topology.Rings
         private static string BuildRegionKey(
             IEnumerable<Guid> physicalLinkIds)
         {
+            return BuildKey(
+                "pring-region-v1-",
+                physicalLinkIds);
+        }
+
+        private static string BuildKey(
+            string prefix,
+            IEnumerable<Guid> physicalLinkIds)
+        {
             var payload =
                 string.Join(
                     "|",
@@ -444,8 +793,8 @@ namespace NetLoom.Topology.Rings
 
                 var builder =
                     new StringBuilder(
-                        "pring-region-v1-",
-                        16 + (hash.Length * 2));
+                        prefix,
+                        prefix.Length + (hash.Length * 2));
 
                 foreach (var value in hash)
                 {

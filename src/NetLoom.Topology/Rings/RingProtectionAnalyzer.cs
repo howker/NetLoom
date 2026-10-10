@@ -46,7 +46,9 @@ namespace NetLoom.Topology.Rings
                 instanceId.Trim();
 
             if (region.Kind !=
-                PhysicalRedundancyRegionKind.SimpleRing)
+                    PhysicalRedundancyRegionKind.SimpleRing &&
+                region.Kind !=
+                    PhysicalRedundancyRegionKind.CorePairRing)
             {
                 return new RingProtectionAnalysis(
                     region.RegionKey,
@@ -55,7 +57,10 @@ namespace NetLoom.Topology.Rings
                     new Guid[0],
                     new Guid[0],
                     new Guid[0],
-                    new Guid[0]);
+                    new Guid[0],
+                    region.Kind,
+                    region.DeviceIds,
+                    region.CoreDeviceIds);
             }
 
             var linkInput =
@@ -98,6 +103,13 @@ namespace NetLoom.Topology.Rings
             var unresolved =
                 new List<Guid>();
 
+            // Состояние каждой физической связи региона и пара её устройств для пучков.
+            var stateByLink =
+                new Dictionary<Guid,StpEndpointState>();
+
+            var sectionKeyByLink =
+                new Dictionary<Guid,string>();
+
             foreach (var physicalLinkId in
                 region.PhysicalLinkIds)
             {
@@ -110,6 +122,9 @@ namespace NetLoom.Topology.Rings
                 {
                     unresolved.Add(
                         physicalLinkId);
+
+                    stateByLink[physicalLinkId] =
+                        StpEndpointState.Unresolved;
 
                     continue;
                 }
@@ -126,8 +141,16 @@ namespace NetLoom.Topology.Rings
                     unresolved.Add(
                         physicalLinkId);
 
+                    stateByLink[physicalLinkId] =
+                        StpEndpointState.Unresolved;
+
                     continue;
                 }
+
+                sectionKeyByLink[physicalLinkId] =
+                    SectionKey(
+                        link.DeviceAId,
+                        link.DeviceBId);
 
                 var endpointA =
                     endpointResolver.Resolve(
@@ -143,6 +166,9 @@ namespace NetLoom.Topology.Rings
                     ClassifyLink(
                         endpointA,
                         endpointB);
+
+                stateByLink[physicalLinkId] =
+                    linkState;
 
                 switch (linkState)
                 {
@@ -168,13 +194,74 @@ namespace NetLoom.Topology.Rings
                 }
             }
 
-            var status =
-                DetermineStatus(
-                    region.PhysicalLinkIds.Count,
-                    forwarding.Count,
-                    blocking.Count,
-                    disabled.Count,
-                    unresolved.Count);
+            RingProtectionStatus status;
+
+            if (region.Kind ==
+                PhysicalRedundancyRegionKind.CorePairRing)
+            {
+                // Каждый пучок параллельных связей — один логический участок.
+                var sections =
+                    region.PhysicalLinkIds
+                        .GroupBy(
+                            id =>
+                            {
+                                string key;
+
+                                return sectionKeyByLink.TryGetValue(
+                                    id,
+                                    out key)
+                                    ? key
+                                    : "link:" +
+                                      id.ToString("N");
+                            },
+                            StringComparer.Ordinal)
+                        .Select(
+                            group =>
+                                SectionState(
+                                    group.Select(
+                                        id =>
+                                            stateByLink[id])))
+                        .ToArray();
+
+                status =
+                    DetermineStatus(
+                        sections.Length,
+                        sections.Count(
+                            item =>
+                                item ==
+                                StpEndpointState.Forwarding),
+                        sections.Count(
+                            item =>
+                                item ==
+                                StpEndpointState.Blocking),
+                        sections.Count(
+                            item =>
+                                item ==
+                                StpEndpointState.Disabled),
+                        sections.Count(
+                            item =>
+                                item ==
+                                StpEndpointState.Unresolved));
+            }
+            else
+            {
+                status =
+                    DetermineStatus(
+                        region.PhysicalLinkIds.Count,
+                        forwarding.Count,
+                        blocking.Count,
+                        disabled.Count,
+                        unresolved.Count);
+            }
+
+            // Отсутствие защиты утверждаем только при полностью разрешённых связях.
+            if (status ==
+                    RingProtectionStatus.Unprotected &&
+                unresolved.Count > 0)
+            {
+                status =
+                    RingProtectionStatus.Unresolved;
+            }
 
             return new RingProtectionAnalysis(
                 region.RegionKey,
@@ -183,7 +270,111 @@ namespace NetLoom.Topology.Rings
                 forwarding,
                 blocking,
                 disabled,
-                unresolved);
+                unresolved,
+                region.Kind,
+                region.DeviceIds,
+                region.CoreDeviceIds);
+        }
+
+        // Анализ региона: одно кольцо, несколько колец составного региона или «не применимо».
+        public IReadOnlyList<RingProtectionAnalysis>
+            AnalyzeRegion(
+                PhysicalRedundancyRegion region,
+                IEnumerable<PhysicalLink> links,
+                IEnumerable<StpTreeSnapshot> stpSnapshots,
+                string instanceId)
+        {
+            if (region == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(region));
+            }
+
+            if (links == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(links));
+            }
+
+            if (stpSnapshots == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(stpSnapshots));
+            }
+
+            var linkInput =
+                links.ToArray();
+
+            var snapshotInput =
+                stpSnapshots.ToArray();
+
+            if (region.Kind ==
+                PhysicalRedundancyRegionKind.Composite)
+            {
+                var rings =
+                    new PhysicalRedundancyRegionDetector()
+                        .DetectCorePairRings(
+                            region,
+                            linkInput);
+
+                if (rings.Count > 0)
+                {
+                    return rings
+                        .Select(
+                            ring =>
+                                Analyze(
+                                    ring,
+                                    linkInput,
+                                    snapshotInput,
+                                    instanceId))
+                        .ToArray();
+                }
+            }
+
+            return new[]
+            {
+                Analyze(
+                    region,
+                    linkInput,
+                    snapshotInput,
+                    instanceId)
+            };
+        }
+
+        private static string SectionKey(
+            Guid first,
+            Guid second)
+        {
+            return first.CompareTo(second) <= 0
+                ? first.ToString("N") + "|" + second.ToString("N")
+                : second.ToString("N") + "|" + first.ToString("N");
+        }
+
+        private static StpEndpointState SectionState(
+            IEnumerable<StpEndpointState> states)
+        {
+            var array =
+                states.ToArray();
+
+            if (array.Any(
+                item => item == StpEndpointState.Forwarding))
+            {
+                return StpEndpointState.Forwarding;
+            }
+
+            if (array.Any(
+                item => item == StpEndpointState.Unresolved))
+            {
+                return StpEndpointState.Unresolved;
+            }
+
+            if (array.Any(
+                item => item == StpEndpointState.Blocking))
+            {
+                return StpEndpointState.Blocking;
+            }
+
+            return StpEndpointState.Disabled;
         }
 
         private static StpEndpointState ClassifyLink(

@@ -3,8 +3,11 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Contracts.Rings;
 using NetLoom.Contracts.StpTree;
+using NetLoom.Domain.Observations;
+using NetLoom.Domain.Observations.Stp;
 using NetLoom.Domain.Topology;
 using NetLoom.Topology.Rings;
+using NetLoom.Topology.Stp;
 
 namespace NetLoom.Tests.Unit
 {
@@ -107,6 +110,54 @@ namespace NetLoom.Tests.Unit
                 },
                 result.DisabledPhysicalLinkIds
                     .ToArray());
+        }
+
+        [TestMethod]
+        public void DisabledStpOnUpInterfaceLeavesRingUnresolved()
+        {
+            var topology = Triangle();
+            RingProtectionAnalysis AnalyzeWithStatus(string status)
+            {
+                var snapshots = new[]
+                {
+                    ProjectedSnapshot(topology.A, topology.A1, topology.A2, status, true),
+                    ProjectedSnapshot(topology.B, topology.B1, topology.B2, "up", false),
+                    ProjectedSnapshot(topology.C, topology.C1, topology.C2, "up", false)
+                };
+                return new RingProtectionAnalyzer().Analyze(topology.Region, topology.Links,
+                    snapshots, "cist");
+            }
+
+            Assert.AreEqual(RingProtectionStatus.Unresolved, AnalyzeWithStatus("up").Status);
+            Assert.AreEqual(RingProtectionStatus.Degraded, AnalyzeWithStatus("down").Status);
+        }
+
+        private static StpTreeSnapshot ProjectedSnapshot(Guid deviceId, Guid firstId,
+            Guid secondId, string firstStatus, bool disabledFirst)
+        {
+            var interfaces = new[]
+            {
+                TestInterface(firstId, deviceId, 101, firstStatus),
+                TestInterface(secondId, deviceId, 102, "up")
+            };
+            var ports = new[]
+            {
+                new StpPortState(1, 101, 128, disabledFirst ? 1 : 5, 1, 10,
+                    null, null, null, null, null),
+                new StpPortState(2, 102, 128, 5, 1, 10,
+                    null, null, null, null, null)
+            };
+            var observation = new StpObservation(new Observation(Guid.NewGuid(),
+                ObservationKind.Stp, "192.0.2.50", Now), "cist", 2,
+                "8000.001122334455", 0, null, null, ports);
+            return new StpTreeProjector().Project(deviceId, interfaces, observation);
+        }
+
+        private static DeviceInterface TestInterface(Guid id, Guid deviceId,
+            int ifIndex, string status)
+        {
+            return new DeviceInterface(id, deviceId, ifIndex, "port", null, null,
+                null, null, "up", status, null, null, null, false, false, Now, Now);
         }
 
         [TestMethod]

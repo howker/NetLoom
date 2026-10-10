@@ -75,7 +75,25 @@ namespace NetLoom.Topology.Stp
                 rootInterface != null
                     ? (Guid?)rootInterface.Id
                     : null,
-                projectedPorts);
+                projectedPorts,
+                LastTopologyChange(observation),
+                observation.TopologyChangeCount);
+        }
+
+        private static DateTime? LastTopologyChange(
+            StpObservation observation)
+        {
+            if (!observation.TimeSinceTopologyChangeCentiseconds.HasValue)
+            {
+                return null;
+            }
+
+            // Сотые доли секунды переводятся в миллисекунды.
+            return DateTime.SpecifyKind(
+                observation.Observation.CapturedUtc.AddMilliseconds(
+                    -observation.TimeSinceTopologyChangeCentiseconds.Value *
+                    10d),
+                DateTimeKind.Utc);
         }
 
         private static StpTreePort ProjectPort(
@@ -99,7 +117,11 @@ namespace NetLoom.Topology.Stp
                 networkInterface != null
                     ? InterfaceLabel(networkInterface)
                     : null,
-                MapState(port.State),
+                // ADR-086: disabled на поднятом интерфейсе означает отсутствие данных STP, а не отключённую связь.
+                port.State == 1 && networkInterface != null &&
+                string.Equals(networkInterface.OperStatus, "up", StringComparison.OrdinalIgnoreCase)
+                    ? StpTreePortState.Unknown
+                    : MapState(port.State),
                 observation.RootPortBridgePortIndex.HasValue &&
                 observation.RootPortBridgePortIndex.Value > 0 &&
                 observation.RootPortBridgePortIndex.Value ==

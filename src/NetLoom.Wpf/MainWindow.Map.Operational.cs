@@ -33,10 +33,20 @@ public partial class MainWindow
         DegradedLinks = 3,
         BlockedLinks = 4,
         TransitionLinks = 5,
-        DegradedNodes = 6
+        DegradedNodes = 6,
+        // Sprint 50: вид кольца — цели берутся из диагностики кольца, а не из состояния связей.
+        Ring = 7,
+        FailurePrediction = 8,
+        SinglePointsOfFailure = 9
     }
 
     private const double OperationalFocusDimmedOpacity = 0.12;
+
+    // Sprint 50: выбранное в инспекторе кольцо и кольцо, чьи связи показывает режим «Кольцо».
+    // Режим — выбор оператора и в базу не сохраняется.
+    private string _selectedRingKey;
+
+    private string _operationalFocusRingKey;
 
     private readonly Dictionary<Guid, MapLinkOperationalState>
         _linkOperationalStates =
@@ -278,6 +288,15 @@ public partial class MainWindow
         focusMenu.Items.Add(CreateNeighborhoodMenuItem());
         focusMenu.Items.Add(new Separator());
 
+        // Sprint 50: кольца — подменю существующего меню «Показать», новой панели нет.
+        focusMenu.Items.Add(CreateRingMenuItem());
+
+        focusMenu.Items.Add(CreateOperationalFocusMenuItem(
+            MapOperationalFocusMode.SinglePointsOfFailure,
+            "MapOperationalFocusSinglePoints"));
+
+        focusMenu.Items.Add(new Separator());
+
         focusMenu.Items.Add(
             CreateOperationalFocusMenuItem(
                 MapOperationalFocusMode.AllProblems,
@@ -363,6 +382,9 @@ public partial class MainWindow
         // Sprint 49: смена режима показа — действие, прежний вид которого попадает в историю.
         RecordMapView(false);
 
+        // Sprint 50: режим выбран оператором, выход из «Предупреждений» его не снимает.
+        _ringViewHeldForAlerts = false;
+
         SetOperationalFocusMode(
             (MapOperationalFocusMode)item.Tag);
     }
@@ -370,14 +392,26 @@ public partial class MainWindow
     private void SetOperationalFocusMode(
         MapOperationalFocusMode mode)
     {
+        RestoreNeighborhoodLayout();
         DisableNeighborhood();
         _operationalFocusMode =
             mode;
 
+        // Sprint 50: другой режим показа снимает вид кольца.
+        if (mode != MapOperationalFocusMode.Ring)
+        {
+            _operationalFocusRingKey = null;
+        }
+        if (mode != MapOperationalFocusMode.FailurePrediction)
+            ClearFailurePredictionTarget();
+
         RefreshOperationalFocusTargets();
         UpdateOperationalFocusMenuState();
         ReapplyOperationalFocusPresentation();
-        FitOperationalFocusToViewport();
+        if (mode == MapOperationalFocusMode.FailurePrediction)
+            ApplyFailurePredictionLayout();
+        if (mode != MapOperationalFocusMode.SinglePointsOfFailure)
+            FitOperationalFocusToViewport();
     }
 
     private void UpdateOperationalFocusMenuState()
@@ -401,6 +435,25 @@ public partial class MainWindow
                 MapOperationalFocusMode.None ||
             _lastMapSnapshot == null)
         {
+            return;
+        }
+
+        if (_operationalFocusMode ==
+            MapOperationalFocusMode.Ring)
+        {
+            RefreshRingFocusTargets();
+            return;
+        }
+
+        if (_operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
+        {
+            RefreshFailurePredictionFocusTargets();
+            return;
+        }
+
+        if (_operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure)
+        {
+            RefreshSinglePointsOfFailureTargets();
             return;
         }
 
@@ -500,6 +553,7 @@ public partial class MainWindow
             ApplyLocationSemanticPresentation(visual);
         ApplyFarLabelDeclutter();
         ApplyLinkFocusPresentation();
+        UpdateSinglePointsOfFailureNotice();
     }
 
     private void ApplyNodeOperationalFocusPresentation(
@@ -510,6 +564,8 @@ public partial class MainWindow
             NodeOperationalFocusOpacity(
                 deviceId);
         ApplyNodeSemanticPresentation(visual);
+        ApplyFailurePredictionNodePresentation(visual, deviceId);
+        ApplySinglePointNodePresentation(visual, deviceId);
     }
 
     private double NodeOperationalFocusOpacity(
@@ -562,7 +618,11 @@ public partial class MainWindow
 
         // Sprint 49: пока показан путь, остальные связи приглушены так же, как при фокусной связи.
         var pathActive = _pathLinkIds.Count > 0;
-        var onPath = pathActive && physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value);
+        // Sprint 50: связи показанного кольца оформляются так же, как связи пути.
+        var onPath = (pathActive && physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value)) ||
+            IsRingFocusLink(physicalLinkId) ||
+            (_operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure &&
+             physicalLinkId.HasValue && _operationalFocusPhysicalLinkIds.Contains(physicalLinkId.Value));
         var linkFocusOpacity = !onPath && (pathActive ||
             (FocusedPhysicalLinkId.HasValue && physicalLinkId != FocusedPhysicalLinkId))
                 ? GetDoubleResource("NetLoom.Map.LinkFocusDimmedOpacity")
@@ -626,7 +686,24 @@ public partial class MainWindow
         }
 
         // Участники должны помещаться целиком; мелкий текст убирает семантический масштаб.
-        TryFitMapBoundsToViewport(bounds, _zoomMin);
+        // Sprint 50: кольцо, прогноз и единые точки отказа вписываются не крупнее 100 %, как F и окрестность Sprint 49.
+        var sprint50View =
+            _operationalFocusMode == MapOperationalFocusMode.Ring ||
+            _operationalFocusMode == MapOperationalFocusMode.FailurePrediction ||
+            _operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure;
+        // Прогноз — как фокус-окрестность Sprint 49: читаемый масштаб, если компактная раскладка в нём помещается;
+        // Иначе показываем её целиком мельче, а имена дают ярлыки дальнего уровня.
+        var minimumZoom = _zoomMin;
+        if (_operationalFocusMode == MapOperationalFocusMode.FailurePrediction && bounds.Count > 0)
+        {
+            MapScrollViewer.UpdateLayout();
+            var width = bounds.Max(item => item.Right) - bounds.Min(item => item.Left);
+            var height = bounds.Max(item => item.Bottom) - bounds.Min(item => item.Top);
+            if (width * _readableZoomMin <= MapScrollViewer.ViewportWidth - _fitPadding * 2 &&
+                height * _readableZoomMin <= MapScrollViewer.ViewportHeight - _fitPadding * 2)
+                minimumZoom = _readableZoomMin;
+        }
+        TryFitMapBoundsToViewport(bounds, minimumZoom, sprint50View ? 1.0 : (double?)null);
     }
 
     private static bool OperationalFocusMatchesLink(

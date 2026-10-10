@@ -16,8 +16,25 @@ namespace NetLoom.Contracts.StpTree
             int? rootPortBridgePortIndex,
             int? rootPortIfIndex,
             Guid? rootInterfaceId,
-            IEnumerable<StpTreePort> ports)
+            IEnumerable<StpTreePort> ports,
+            DateTime? lastTopologyChangeUtc = null,
+            long? topologyChangeCount = null)
         {
+            if (lastTopologyChangeUtc.HasValue &&
+                lastTopologyChangeUtc.Value.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "Last topology change time must be UTC.",
+                    nameof(lastTopologyChangeUtc));
+            }
+
+            if (topologyChangeCount.HasValue &&
+                topologyChangeCount.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(topologyChangeCount));
+            }
+
             if (deviceId == Guid.Empty)
             {
                 throw new ArgumentException(
@@ -92,7 +109,13 @@ namespace NetLoom.Contracts.StpTree
             RootPortIfIndex = rootPortIfIndex;
             RootInterfaceId = rootInterfaceId;
             Ports = ports.ToArray();
+            LastTopologyChangeUtc = lastTopologyChangeUtc;
+            TopologyChangeCount = topologyChangeCount;
         }
+
+        public DateTime? LastTopologyChangeUtc { get; }
+
+        public long? TopologyChangeCount { get; }
 
         public Guid DeviceId { get; }
 

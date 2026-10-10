@@ -1717,6 +1717,8 @@ public partial class MainWindow
             nodes);
 
         RefreshNeighborhoodSnapshot();
+        if (IsFailurePredictionLayoutActive)
+            ApplyFailurePredictionLayout();
         ApplyFarLabelDeclutter();
         UpdateSelectedLayoutControl();
 

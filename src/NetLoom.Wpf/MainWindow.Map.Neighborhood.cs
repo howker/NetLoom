@@ -54,9 +54,16 @@ public partial class MainWindow
     {
         RestoreNeighborhoodLayout();
         if (!IsNeighborhoodLayoutActive || _lastMapSnapshot == null) return;
+        ApplyCompactDeviceLayout(_neighborhoodDeviceIds, _neighborhoodSelectedDeviceId.Value);
+    }
+
+    // Ряды компактной раскладки — по расстоянию до точки опроса (ADR-085) или по заданным номерам рядов.
+    private void ApplyCompactDeviceLayout(IReadOnlyCollection<Guid> deviceIds, Guid selected,
+        IReadOnlyDictionary<Guid, int> rows = null)
+    {
         MapScrollViewer.UpdateLayout();
         var nodes = _lastMapSnapshot.Nodes.Where(node => node.DeviceId.HasValue &&
-            _neighborhoodDeviceIds.Contains(node.DeviceId.Value) &&
+            deviceIds.Contains(node.DeviceId.Value) &&
             _nodeVisualsByIdentity.ContainsKey(NodeIdentity(node))).ToArray();
         if (nodes.Length == 0) return;
         // Запас на полосы прокрутки: окно карты может сузиться между раскладкой и вписыванием.
@@ -66,12 +73,12 @@ public partial class MainWindow
             SystemParameters.HorizontalScrollBarHeight) / _readableZoomMin);
         var positions = MapNeighborhoodLayout.Arrange(nodes.Select(node =>
                 new MapNeighborhoodLayoutNode(node.DeviceId.Value, NodeIdentity(node), DisplayNodeLabel(node))).ToArray(),
-            _neighborhoodSelectedDeviceId.Value, NeighborhoodLinks(), PollingDistances(), _nodeWidth,
+            selected, NeighborhoodLinks(), rows ?? PollingDistances(), _nodeWidth,
             nodes.Max(node => NodeVisualHeight(_nodeVisualsByIdentity[NodeIdentity(node)])),
             GetDoubleResource("NetLoom.Map.NeighborhoodColumnGap"),
             GetDoubleResource("NetLoom.Map.NeighborhoodRowGap"), availableWidth, availableHeight,
             GetDoubleResource("NetLoom.Map.NeighborhoodColumnGapMin"),
-            GetDoubleResource("NetLoom.Map.NeighborhoodRowGapMin"));
+            GetDoubleResource("NetLoom.Map.NeighborhoodRowGapMin"), rows != null);
         foreach (var node in nodes)
         {
             var identity = NodeIdentity(node);
@@ -213,6 +220,7 @@ public partial class MainWindow
                 }
                 if (_lifetimeCancellation.IsCancellationRequested) return;
                 _pollingPoint = result;
+                RefreshFailurePredictionAfterPollingPoint();
                 UpdateNeighborhoodMenuState();
                 if (IsNeighborhoodLayoutActive)
                 {
@@ -328,12 +336,15 @@ public partial class MainWindow
 
     private void ApplyNeighborhoodVisibility()
     {
-        if (!IsNeighborhoodLayoutActive || _lastMapSnapshot == null) return;
+        if (_lastMapSnapshot == null) return;
+        var prediction = IsFailurePredictionLayoutActive;
+        if (!IsNeighborhoodLayoutActive && !prediction) return;
+        var visibleIds = prediction ? _operationalFocusDeviceIds : _neighborhoodDeviceIds;
         foreach (var node in _lastMapSnapshot.Nodes)
         {
             MapNodeVisual visual;
             if (!_nodeVisualsByIdentity.TryGetValue(NodeIdentity(node), out visual)) continue;
-            if (!node.DeviceId.HasValue || !_neighborhoodDeviceIds.Contains(node.DeviceId.Value))
+            if (!node.DeviceId.HasValue || !visibleIds.Contains(node.DeviceId.Value))
             {
                 visual.Border.Visibility = Visibility.Collapsed;
                 visual.PulseHalo.Visibility = Visibility.Collapsed;
@@ -349,13 +360,14 @@ public partial class MainWindow
 
     private void ApplyNeighborhoodLinkVisibility(MapLinkVisual visual)
     {
-        if (!IsNeighborhoodLayoutActive || _lastMapSnapshot == null) return;
+        if ((!IsNeighborhoodLayoutActive && !IsFailurePredictionLayoutActive) || _lastMapSnapshot == null) return;
+        var visibleIds = IsFailurePredictionLayoutActive ? _operationalFocusDeviceIds : _neighborhoodDeviceIds;
         var link = visual.Link;
         if (link == null) return;
         var a = _lastMapSnapshot.Nodes.FirstOrDefault(node => node.Key == link.SourceNodeKey);
         var b = _lastMapSnapshot.Nodes.FirstOrDefault(node => node.Key == link.TargetNodeKey);
         if (a?.DeviceId == null || b?.DeviceId == null ||
-            !_neighborhoodDeviceIds.Contains(a.DeviceId.Value) || !_neighborhoodDeviceIds.Contains(b.DeviceId.Value))
+            !visibleIds.Contains(a.DeviceId.Value) || !visibleIds.Contains(b.DeviceId.Value))
         {
             visual.Line.Visibility = Visibility.Collapsed;
             visual.Label.Visibility = Visibility.Collapsed;
@@ -412,7 +424,15 @@ public partial class MainWindow
         }
         var active = _neighborhoodSelectedDeviceId.HasValue;
         if (_neighborhoodMenuItem != null) _neighborhoodMenuItem.IsChecked = active;
-        var caption = UiText.Get(active ? "MapNeighborhoodShow" : "ShellMapFocusAction");
+        var caption = UiText.Get(active
+            ? "MapNeighborhoodShow"
+            : _operationalFocusMode == MapOperationalFocusMode.Ring
+                ? "MapOperationalFocusRingShow"
+                : _operationalFocusMode == MapOperationalFocusMode.FailurePrediction
+                    ? "MapOperationalFocusFailurePredictionShow"
+                : _operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure
+                    ? "MapOperationalFocusSinglePointsShow"
+                : "ShellMapFocusAction");
         MapOperationalFocusButton.Content = caption;
         AutomationProperties.SetName(MapOperationalFocusButton, caption);
         MapNeighborhoodNotice.Visibility = active && _shellSection == ShellSection.Map

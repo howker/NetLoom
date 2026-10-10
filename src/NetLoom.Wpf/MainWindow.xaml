@@ -2197,7 +2197,108 @@
                                     Click="OnMapPathResetClick" />
                         </WrapPanel>
                     </Border>
+                    <Border x:Name="MapFailurePredictionNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <WrapPanel>
+                            <TextBlock x:Name="MapFailurePredictionSummaryText"
+                                       Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+                                       TextWrapping="Wrap"
+                                       Typography.NumeralAlignment="Tabular"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <Button x:Name="MapFailurePredictionResetButton"
+                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                    Click="OnFailurePredictionResetClick" />
+                        </WrapPanel>
+                    </Border>
+                    <Border x:Name="MapSinglePointsNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <WrapPanel>
+                            <ToggleButton x:Name="MapSinglePointsToggle"
+                                          Style="{StaticResource NetLoom.Style.LinkToggleButton}">
+                                <TextBlock x:Name="MapSinglePointsSummaryText"
+                                           Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+                                           TextWrapping="Wrap"
+                                           Typography.NumeralAlignment="Tabular"
+                                           AutomationProperties.LiveSetting="Polite" />
+                            </ToggleButton>
+                            <Button x:Name="MapSinglePointsResetButton"
+                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                    Margin="{DynamicResource NetLoom.Thickness.InlineGap}"
+                                    Click="OnSinglePointsResetClick" />
+                        </WrapPanel>
+                    </Border>
                 </StackPanel>
+
+                <Border x:Name="MapSinglePointsDetails"
+                        Grid.Row="2"
+                        Panel.ZIndex="{DynamicResource NetLoom.Map.OverlayZIndex}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Width="{DynamicResource NetLoom.Map.QualityPanelWidth}"
+                        MaxHeight="{DynamicResource NetLoom.Map.QualityListMaxHeight}"
+                        Margin="{DynamicResource NetLoom.Thickness.MapOverlayMargin}"
+                        Padding="{DynamicResource NetLoom.Thickness.MapOverlayPadding}"
+                        Background="{DynamicResource NetLoom.Brush.Surface}"
+                        BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                        BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                        CornerRadius="{DynamicResource NetLoom.Radius.Panel}"
+                        Loaded="OnMapQualityDetailsLoaded">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="{DynamicResource NetLoom.Map.OverlayShadowBlur}"
+                                          ShadowDepth="{DynamicResource NetLoom.Map.OverlayShadowDepth}"
+                                          Opacity="{DynamicResource NetLoom.Map.OverlayShadowOpacity}"
+                                          Color="{DynamicResource NetLoom.Color.OverlayShadow}" />
+                    </Border.Effect>
+                    <Border.Style>
+                        <Style TargetType="{x:Type Border}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=MapSinglePointsToggle}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <ScrollViewer Style="{StaticResource NetLoom.Style.MapScrollViewer}"
+                                  Background="{DynamicResource NetLoom.Brush.Surface}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="MapSinglePointsItems">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                        <Button DockPanel.Dock="Right"
+                                                Content="{Binding ShowText}"
+                                                Tag="{Binding}"
+                                                AutomationProperties.Name="{Binding ShowName}"
+                                                Style="{StaticResource NetLoom.Style.LinkButton}"
+                                                Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
+                                                Click="OnSinglePointShowClick" />
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding Dependents}"
+                                                       Style="{StaticResource NetLoom.Style.MutedText}"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
 
                 <Border x:Name="MapQualityDetails"
                         Grid.Row="2"
@@ -2349,6 +2450,13 @@
                     Style="{StaticResource NetLoom.Style.Panel}"
                     Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
                     BorderThickness="{DynamicResource NetLoom.Thickness.BorderLeft}">
+                <!-- §6 (Sprint 50): прокрутка инспектора — та же стилизованная полоса, что у карты; в тёмной теме нет белого системного участка. -->
+                <Border.Resources>
+                    <Style TargetType="{x:Type ScrollBar}"
+                           BasedOn="{StaticResource NetLoom.Style.MapScrollBar}">
+                        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
+                    </Style>
+                </Border.Resources>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -2547,6 +2655,27 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
+                                    <!-- Sprint 50: кольца, в которые входит выбранное устройство или связь. -->
+                                    <TextBlock x:Name="InspectorRingsTitleText"
+                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
+                                               Visibility="Collapsed" />
+                                    <ItemsControl x:Name="InspectorRingButtons" Visibility="Collapsed">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                        HorizontalContentAlignment="Left"
+                                                        Tag="{Binding RingKey}"
+                                                        AutomationProperties.Name="{Binding Text}"
+                                                        Click="OnInspectorRingClick">
+                                                    <TextBlock Text="{Binding Text}"
+                                                               TextWrapping="Wrap" />
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
                                     <TextBlock x:Name="DiagnosticSecondaryTitleText"
                                                Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
@@ -2555,7 +2684,47 @@
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Text}"
                                                            Margin="{DynamicResource NetLoom.Thickness.ListRow}"
-                                                           TextWrapping="Wrap" />
+                                                           TextWrapping="Wrap">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSinglePoint}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.Warning}" />
+                                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Button x:Name="InspectorFailurePredictionShowButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                            Visibility="Collapsed"
+                                            Click="OnFailurePredictionShowClick" />
+                                    <ItemsControl x:Name="InspectorFailureImpactGroups">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                                    <TextBlock Text="{Binding Title}"
+                                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                                               shell:AutomationHeading.Level="3" />
+                                                    <ItemsControl ItemsSource="{Binding Devices}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Content="{Binding Name}"
+                                                                        Tag="{Binding Id}"
+                                                                        AutomationProperties.Name="{Binding Name}"
+                                                                        Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                                        Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                                        HorizontalContentAlignment="Left"
+                                                                        Click="OnFailureImpactDeviceClick" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

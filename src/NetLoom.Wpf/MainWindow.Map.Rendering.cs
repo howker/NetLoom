@@ -59,7 +59,9 @@ public partial class MainWindow
         ApplyNeighborhoodLinkVisibility(visual);
         var physicalLinkId = visual.Line.Tag as Guid?;
         // Sprint 49: связи показанного пути оформляются как фокусная связь (подпись, толщина, ореол).
-        var onPath = physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value);
+        // Sprint 50: связи показанного кольца оформляются тем же способом.
+        var onPath = (physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value)) ||
+            IsRingFocusLink(physicalLinkId);
         var focused = (FocusedPhysicalLinkId.HasValue &&
             physicalLinkId == FocusedPhysicalLinkId) || onPath;
         var opacity = LinkPresentationOpacity(
@@ -82,6 +84,7 @@ public partial class MainWindow
             visual.Line.StrokeThickness = LinkSelectedStrokeThickness(
                 LinkOperationalState(physicalLinkId));
         }
+        ApplySinglePointLinkPresentation(visual, physicalLinkId);
         visual.SelectionHalo.Visibility = (selected || onPath) && visual.Line.Visibility == Visibility.Visible
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -2141,6 +2144,18 @@ public partial class MainWindow
                 IsHitTestVisible = false
             };
 
+        var failureImpactIcon = new TextBlock
+        {
+            Style = GetStyleResource("NetLoom.Style.MapNodeTitle"),
+            Margin = GetThicknessResource("NetLoom.Thickness.StatusGlyph"),
+            MinWidth = GetDoubleResource("NetLoom.Status.GlyphMinWidth"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Tag = "NodeFailureImpactIcon",
+            IsHitTestVisible = false,
+            Visibility = Visibility.Collapsed
+        };
+
         var lockBadge =
             new Path
             {
@@ -2188,15 +2203,24 @@ public partial class MainWindow
             title,
             0);
 
+        // Sprint 50: значок прогноза — своя колонка перед значком проблемы, чтобы они не накладывались;
+        // Свёрнутый значок прогноза колонку не занимает.
+        header.ColumnDefinitions.Insert(
+            1,
+            new ColumnDefinition { Width = GridLength.Auto });
+
         Grid.SetColumn(
             statusIcon,
-            1);
+            2);
+
+        Grid.SetColumn(failureImpactIcon, 1);
 
         header.Children.Add(
             title);
 
         header.Children.Add(
             statusIcon);
+        header.Children.Add(failureImpactIcon);
 
         var textContent =
             new StackPanel
@@ -2405,7 +2429,7 @@ public partial class MainWindow
             secondary,
             categoryIcon,
             statusIcon,
-            lockBadge) { SemanticLabel = semanticLabel };
+            lockBadge) { SemanticLabel = semanticLabel, FailureImpactIcon = failureImpactIcon };
     }
 
     private void UpdateNodeVisual(

@@ -2892,4 +2892,143 @@ Poll: {2}</value>
   <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
     <value>Link {0} ↔ {1}</value>
   </data>
+  <data name="RingStatusProtected" xml:space="preserve">
+    <value>Protected</value>
+  </data>
+  <data name="RingStatusUnprotected" xml:space="preserve">
+    <value>Not protected</value>
+  </data>
+  <data name="RingStatusDegraded" xml:space="preserve">
+    <value>Standby lost</value>
+  </data>
+  <data name="RingStatusUnresolved" xml:space="preserve">
+    <value>Undetermined</value>
+  </data>
+  <data name="RingStatusNotApplicable" xml:space="preserve">
+    <value>Not applicable</value>
+  </data>
+  <data name="RingStatusProtectedHint" xml:space="preserve">
+    <value>One ring link is blocked by STP and serves as the standby path.</value>
+  </data>
+  <data name="RingStatusUnprotectedHint" xml:space="preserve">
+    <value>STP blocks no ring link: every link forwards traffic.</value>
+  </data>
+  <data name="RingStatusDegradedDisabledHint" xml:space="preserve">
+    <value>A ring link is disabled or broken: the ring has no standby path.</value>
+  </data>
+  <data name="RingStatusDegradedBlockingHint" xml:space="preserve">
+    <value>STP blocks several ring links: the ring has no standby path.</value>
+  </data>
+  <data name="RingStatusUnresolvedNoStpHint" xml:space="preserve">
+    <value>No STP data: {0}. Protection cannot be determined.</value>
+  </data>
+  <data name="RingStatusUnresolvedPortsHint" xml:space="preserve">
+    <value>The STP state of some ring ports is unknown. Protection cannot be determined.</value>
+  </data>
+  <data name="RingKindSimple" xml:space="preserve">
+    <value>Simple ring</value>
+  </data>
+  <data name="RingKindCorePair" xml:space="preserve">
+    <value>Ring closed through a core pair</value>
+  </data>
+  <data name="RingTitleWithLocation" xml:space="preserve">
+    <value>Ring — {0}</value>
+  </data>
+  <data name="RingTitleWithCount" xml:space="preserve">
+    <value>Ring: {0}</value>
+  </data>
+  <data name="InspectorEntityRing" xml:space="preserve">
+    <value>Ring</value>
+  </data>
+  <data name="InspectorRingsTitle" xml:space="preserve">
+    <value>Rings</value>
+  </data>
+  <data name="RingMenu" xml:space="preserve">
+    <value>Rings</value>
+  </data>
+  <data name="RingMenuNone" xml:space="preserve">
+    <value>No rings</value>
+  </data>
+  <data name="RingMenuItem" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapOperationalFocusRing" xml:space="preserve">
+    <value>Ring</value>
+  </data>
+  <data name="MapOperationalFocusRingShow" xml:space="preserve">
+    <value>Show: ring</value>
+  </data>
+  <data name="RingFieldStatus" xml:space="preserve">
+    <value>Protection</value>
+  </data>
+  <data name="RingFieldMembers" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="RingFieldCores" xml:space="preserve">
+    <value>Core switches</value>
+  </data>
+  <data name="RingFieldRoot" xml:space="preserve">
+    <value>STP root</value>
+  </data>
+  <data name="RingRootOutside" xml:space="preserve">
+    <value>Outside the known topology: {0}</value>
+  </data>
+  <data name="RingFieldBlockedPort" xml:space="preserve">
+    <value>Blocked port</value>
+  </data>
+  <data name="RingBlockedPortNone" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="RingFieldLastTopologyChange" xml:space="preserve">
+    <value>Last topology change</value>
+  </data>
+  <data name="RingMembersTitle" xml:space="preserve">
+    <value>Ring members</value>
+  </data>
+  <data name="RingMemberCore" xml:space="preserve">
+    <value>{0} (core)</value>
+  </data>
+  <data name="RingCoresJoin" xml:space="preserve">
+    <value>{0} and {1}</value>
+  </data>
+  <data name="DiagnosticDeviceImpactTitle" xml:space="preserve"><value>If the device fails</value></data>
+  <data name="ImpactNoneAffected" xml:space="preserve"><value>A bypass exists: by the known topology no device will be cut off.</value></data>
+  <data name="ImpactPredictionNote" xml:space="preserve"><value>A prediction from the known topology, not the current state of devices.</value></data>
+  <data name="ImpactShowOnMap" xml:space="preserve"><value>Show on map</value></data>
+  <data name="ImpactNoDirection" xml:space="preserve"><value>Direction unknown: {0}</value></data>
+  <data name="ImpactNotConnected" xml:space="preserve"><value>Direction unknown: by the known working links (disabled ports excluded) the object is not connected to the Engine polling point.</value></data>
+  <data name="ImpactTargetIsPollingPoint" xml:space="preserve"><value>This is the Engine polling point: if it fails, Engine will not see the other devices.</value></data>
+  <data name="ImpactDeviceParts" xml:space="preserve"><value>The network will split into {0} parts: {1}.</value></data>
+  <data name="ImpactDeviceNoParts" xml:space="preserve"><value>By the known topology the network will not split.</value></data>
+  <data name="MapOperationalFocusFailurePrediction" xml:space="preserve"><value>Failure prediction</value></data>
+  <data name="MapOperationalFocusFailurePredictionShow" xml:space="preserve"><value>Show: failure prediction</value></data>
+  <data name="ImpactStripForDevice" xml:space="preserve"><value>Prediction: if {0} disappears — {1}</value></data>
+  <data name="ImpactStripForLink" xml:space="preserve"><value>Prediction: if link {0} ↔ {1} disappears — {2}</value></data>
+  <data name="ImpactGroupCutOff" xml:space="preserve"><value>Will be cut off · {0}</value></data>
+  <data name="ImpactGroupStandby" xml:space="preserve"><value>Only through the STP standby · {0}</value></data>
+  <data name="ImpactGroupUnconfirmed" xml:space="preserve"><value>Bypass not confirmed by STP data · {0}</value></data>
+  <data name="ImpactStripCutOffOne" xml:space="preserve"><value>{0} device will be cut off (no other path)</value></data>
+  <data name="ImpactStripCutOffOther" xml:space="preserve"><value>{0} devices will be cut off (no other path)</value></data>
+  <data name="ImpactStripCutOffFew" xml:space="preserve"><value>{0} devices will be cut off (no other path)</value></data>
+  <data name="ImpactStripCutOffMany" xml:space="preserve"><value>{0} devices will be cut off (no other path)</value></data>
+  <data name="ImpactStripStandbyOne" xml:space="preserve"><value>{0} device stays connected only through the STP standby</value></data>
+  <data name="ImpactStripStandbyOther" xml:space="preserve"><value>{0} devices stay connected only through the STP standby</value></data>
+  <data name="ImpactStripStandbyFew" xml:space="preserve"><value>{0} devices stay connected only through the STP standby</value></data>
+  <data name="ImpactStripStandbyMany" xml:space="preserve"><value>{0} devices stay connected only through the STP standby</value></data>
+  <data name="ImpactStripUnconfirmedOne" xml:space="preserve"><value>{0} device — bypass not confirmed by STP data</value></data>
+  <data name="ImpactStripUnconfirmedOther" xml:space="preserve"><value>{0} devices — bypass not confirmed by STP data</value></data>
+  <data name="ImpactStripUnconfirmedFew" xml:space="preserve"><value>{0} devices — bypass not confirmed by STP data</value></data>
+  <data name="ImpactStripUnconfirmedMany" xml:space="preserve"><value>{0} devices — bypass not confirmed by STP data</value></data>
+  <data name="RingBlockedPortUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="SpofShow" xml:space="preserve"><value>Show</value></data>
+  <data name="SpofDependentCount" xml:space="preserve"><value>Depend on it: {0}</value></data>
+  <data name="ImpactStripReset" xml:space="preserve"><value>Clear prediction</value></data>
+  <data name="SpofDependents" xml:space="preserve"><value>Single point of failure: {0} depend on it.</value></data>
+  <data name="SpofStructural" xml:space="preserve"><value>Single point of failure: splits the network into parts ({0}). Direction unknown: {1}</value></data>
+  <data name="MapOperationalFocusSinglePoints" xml:space="preserve"><value>Single points of failure</value></data>
+  <data name="MapOperationalFocusSinglePointsShow" xml:space="preserve"><value>Show: single points of failure</value></data>
+  <data name="SpofStrip" xml:space="preserve"><value>Single points of failure: {0}, {1} — predicted from the known topology</value></data>
+  <data name="SpofStripStructural" xml:space="preserve"><value>Single points of failure without direction: {0}, {1}. Direction unknown: {2}</value></data>
+  <data name="SpofStripNone" xml:space="preserve"><value>No single points of failure in the known topology</value></data>
+  <data name="SpofStripReset" xml:space="preserve"><value>Clear view</value></data>
 </root>

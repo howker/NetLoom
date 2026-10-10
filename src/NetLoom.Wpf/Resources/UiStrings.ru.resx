@@ -2892,4 +2892,143 @@
   <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
     <value>Связь {0} ↔ {1}</value>
   </data>
+  <data name="RingStatusProtected" xml:space="preserve">
+    <value>Защищено</value>
+  </data>
+  <data name="RingStatusUnprotected" xml:space="preserve">
+    <value>Не защищено</value>
+  </data>
+  <data name="RingStatusDegraded" xml:space="preserve">
+    <value>Резерв потерян</value>
+  </data>
+  <data name="RingStatusUnresolved" xml:space="preserve">
+    <value>Не определено</value>
+  </data>
+  <data name="RingStatusNotApplicable" xml:space="preserve">
+    <value>Не применимо</value>
+  </data>
+  <data name="RingStatusProtectedHint" xml:space="preserve">
+    <value>Одна связь кольца заблокирована STP и служит резервом.</value>
+  </data>
+  <data name="RingStatusUnprotectedHint" xml:space="preserve">
+    <value>STP не блокирует ни одной связи кольца: все связи пересылают трафик.</value>
+  </data>
+  <data name="RingStatusDegradedDisabledHint" xml:space="preserve">
+    <value>Связь кольца отключена или оборвана: резерва по кольцу нет.</value>
+  </data>
+  <data name="RingStatusDegradedBlockingHint" xml:space="preserve">
+    <value>STP заблокировал несколько связей кольца: резерва по кольцу нет.</value>
+  </data>
+  <data name="RingStatusUnresolvedNoStpHint" xml:space="preserve">
+    <value>Нет данных STP: {0}. Защиту определить нельзя.</value>
+  </data>
+  <data name="RingStatusUnresolvedPortsHint" xml:space="preserve">
+    <value>Состояние STP части портов кольца не определено. Защиту определить нельзя.</value>
+  </data>
+  <data name="RingKindSimple" xml:space="preserve">
+    <value>Простое кольцо</value>
+  </data>
+  <data name="RingKindCorePair" xml:space="preserve">
+    <value>Кольцо через пару ядер</value>
+  </data>
+  <data name="RingTitleWithLocation" xml:space="preserve">
+    <value>Кольцо — {0}</value>
+  </data>
+  <data name="RingTitleWithCount" xml:space="preserve">
+    <value>Кольцо: {0}</value>
+  </data>
+  <data name="InspectorEntityRing" xml:space="preserve">
+    <value>Кольцо</value>
+  </data>
+  <data name="InspectorRingsTitle" xml:space="preserve">
+    <value>Кольца</value>
+  </data>
+  <data name="RingMenu" xml:space="preserve">
+    <value>Кольца</value>
+  </data>
+  <data name="RingMenuNone" xml:space="preserve">
+    <value>Колец нет</value>
+  </data>
+  <data name="RingMenuItem" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapOperationalFocusRing" xml:space="preserve">
+    <value>Кольцо</value>
+  </data>
+  <data name="MapOperationalFocusRingShow" xml:space="preserve">
+    <value>Показать: кольцо</value>
+  </data>
+  <data name="RingFieldStatus" xml:space="preserve">
+    <value>Состояние защиты</value>
+  </data>
+  <data name="RingFieldMembers" xml:space="preserve">
+    <value>Участники</value>
+  </data>
+  <data name="RingFieldCores" xml:space="preserve">
+    <value>Ядра</value>
+  </data>
+  <data name="RingFieldRoot" xml:space="preserve">
+    <value>Корень STP</value>
+  </data>
+  <data name="RingRootOutside" xml:space="preserve">
+    <value>Вне известной топологии: {0}</value>
+  </data>
+  <data name="RingFieldBlockedPort" xml:space="preserve">
+    <value>Заблокированный порт</value>
+  </data>
+  <data name="RingBlockedPortNone" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="RingFieldLastTopologyChange" xml:space="preserve">
+    <value>Последнее изменение топологии</value>
+  </data>
+  <data name="RingMembersTitle" xml:space="preserve">
+    <value>Участники кольца</value>
+  </data>
+  <data name="RingMemberCore" xml:space="preserve">
+    <value>{0} (ядро)</value>
+  </data>
+  <data name="RingCoresJoin" xml:space="preserve">
+    <value>{0} и {1}</value>
+  </data>
+  <data name="DiagnosticDeviceImpactTitle" xml:space="preserve"><value>Если устройство пропадёт</value></data>
+  <data name="ImpactNoneAffected" xml:space="preserve"><value>Есть обходной путь: по известной топологии никто не будет отрезан.</value></data>
+  <data name="ImpactPredictionNote" xml:space="preserve"><value>Прогноз по известной топологии, а не текущее состояние устройств.</value></data>
+  <data name="ImpactShowOnMap" xml:space="preserve"><value>Показать на карте</value></data>
+  <data name="ImpactNoDirection" xml:space="preserve"><value>Направление неизвестно: {0}</value></data>
+  <data name="ImpactNotConnected" xml:space="preserve"><value>Направление неизвестно: по известным рабочим связям (без отключённых портов) объект не связан с точкой опроса Engine.</value></data>
+  <data name="ImpactTargetIsPollingPoint" xml:space="preserve"><value>Это точка опроса Engine: при её отказе Engine не увидит остальные устройства.</value></data>
+  <data name="ImpactDeviceParts" xml:space="preserve"><value>Сеть разделится на {0} части: {1}.</value></data>
+  <data name="ImpactDeviceNoParts" xml:space="preserve"><value>По известной топологии сеть не разделится.</value></data>
+  <data name="MapOperationalFocusFailurePrediction" xml:space="preserve"><value>Прогноз отказа</value></data>
+  <data name="MapOperationalFocusFailurePredictionShow" xml:space="preserve"><value>Показать: прогноз отказа</value></data>
+  <data name="ImpactStripForDevice" xml:space="preserve"><value>Прогноз: если пропадёт {0} — {1}</value></data>
+  <data name="ImpactStripForLink" xml:space="preserve"><value>Прогноз: если пропадёт связь {0} ↔ {1} — {2}</value></data>
+  <data name="ImpactGroupCutOff" xml:space="preserve"><value>Будут отрезаны · {0}</value></data>
+  <data name="ImpactGroupStandby" xml:space="preserve"><value>Только через резерв STP · {0}</value></data>
+  <data name="ImpactGroupUnconfirmed" xml:space="preserve"><value>Обход не подтверждён данными STP · {0}</value></data>
+  <data name="ImpactStripCutOffOne" xml:space="preserve"><value>{0} устройство будет отрезано (другого пути нет)</value></data>
+  <data name="ImpactStripCutOffFew" xml:space="preserve"><value>{0} устройства будут отрезаны (другого пути нет)</value></data>
+  <data name="ImpactStripCutOffMany" xml:space="preserve"><value>{0} устройств будут отрезаны (другого пути нет)</value></data>
+  <data name="ImpactStripCutOffOther" xml:space="preserve"><value>{0} устройств будут отрезаны (другого пути нет)</value></data>
+  <data name="ImpactStripStandbyOne" xml:space="preserve"><value>{0} устройство останется на связи только через резерв STP</value></data>
+  <data name="ImpactStripStandbyFew" xml:space="preserve"><value>{0} устройства останутся на связи только через резерв STP</value></data>
+  <data name="ImpactStripStandbyMany" xml:space="preserve"><value>{0} устройств останутся на связи только через резерв STP</value></data>
+  <data name="ImpactStripStandbyOther" xml:space="preserve"><value>{0} устройств останутся на связи только через резерв STP</value></data>
+  <data name="ImpactStripUnconfirmedOne" xml:space="preserve"><value>{0} устройство — обход не подтверждён данными STP</value></data>
+  <data name="ImpactStripUnconfirmedFew" xml:space="preserve"><value>{0} устройства — обход не подтверждён данными STP</value></data>
+  <data name="ImpactStripUnconfirmedMany" xml:space="preserve"><value>{0} устройств — обход не подтверждён данными STP</value></data>
+  <data name="ImpactStripUnconfirmedOther" xml:space="preserve"><value>{0} устройств — обход не подтверждён данными STP</value></data>
+  <data name="RingBlockedPortUnknown" xml:space="preserve"><value>Неизвестно</value></data>
+  <data name="SpofShow" xml:space="preserve"><value>Показать</value></data>
+  <data name="SpofDependentCount" xml:space="preserve"><value>Зависят {0}</value></data>
+  <data name="ImpactStripReset" xml:space="preserve"><value>Сбросить прогноз</value></data>
+  <data name="SpofDependents" xml:space="preserve"><value>Единая точка отказа: от неё зависят {0}.</value></data>
+  <data name="SpofStructural" xml:space="preserve"><value>Единая точка отказа: разделит сеть на части ({0}). Направление неизвестно: {1}</value></data>
+  <data name="MapOperationalFocusSinglePoints" xml:space="preserve"><value>Единые точки отказа</value></data>
+  <data name="MapOperationalFocusSinglePointsShow" xml:space="preserve"><value>Показать: единые точки отказа</value></data>
+  <data name="SpofStrip" xml:space="preserve"><value>Единые точки отказа: {0}, {1} — прогноз по известной топологии</value></data>
+  <data name="SpofStripStructural" xml:space="preserve"><value>Единые точки отказа без направления: {0}, {1}. Направление неизвестно: {2}</value></data>
+  <data name="SpofStripNone" xml:space="preserve"><value>Единых точек отказа по известной топологии нет</value></data>
+  <data name="SpofStripReset" xml:space="preserve"><value>Сбросить показ</value></data>
 </root>

@@ -781,7 +781,9 @@ SELECT
     designated_root,
     root_cost,
     root_bridge_port_index,
-    root_if_index
+    root_if_index,
+    time_since_topology_change,
+    topology_changes
 FROM stp_observations
 WHERE observation_id = @id
   AND instance_id = @instanceId
@@ -825,7 +827,13 @@ LIMIT 1;";
                             connection,
                             transaction,
                             observationId,
-                            instanceId));
+                            instanceId),
+                        NullableLong(
+                            reader,
+                            5),
+                        NullableLong(
+                            reader,
+                            6));
                 }
             }
         }

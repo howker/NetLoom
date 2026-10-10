@@ -9,7 +9,10 @@ namespace NetLoom.Contracts.Rings
         Unknown = 0,
         SimpleRing = 1,
         ParallelLinks = 2,
-        Composite = 3
+        Composite = 3,
+
+        // Кольцо внутри составного региона, замкнутое через пару связанных ядер.
+        CorePairRing = 4
     }
 
     public sealed class PhysicalRedundancyRegion
@@ -18,7 +21,8 @@ namespace NetLoom.Contracts.Rings
             string regionKey,
             PhysicalRedundancyRegionKind kind,
             IEnumerable<Guid> deviceIds,
-            IEnumerable<Guid> physicalLinkIds)
+            IEnumerable<Guid> physicalLinkIds,
+            IEnumerable<Guid> coreDeviceIds = null)
         {
             if (string.IsNullOrWhiteSpace(
                 regionKey))
@@ -90,11 +94,30 @@ namespace NetLoom.Contracts.Rings
                     nameof(physicalLinkIds));
             }
 
+            var cores =
+                coreDeviceIds == null
+                    ? new Guid[0]
+                    : coreDeviceIds
+                        .Distinct()
+                        .OrderBy(id => id)
+                        .ToArray();
+
+            if (cores.Any(
+                id => id == Guid.Empty))
+            {
+                throw new ArgumentException(
+                    "Physical redundancy region core device ids cannot be empty.",
+                    nameof(coreDeviceIds));
+            }
+
             RegionKey =
                 regionKey.Trim();
 
             Kind =
                 kind;
+
+            CoreDeviceIds =
+                cores;
 
             DeviceIds =
                 devices;
@@ -110,6 +133,9 @@ namespace NetLoom.Contracts.Rings
         public IReadOnlyList<Guid> DeviceIds { get; }
 
         public IReadOnlyList<Guid> PhysicalLinkIds { get; }
+
+        // Устройства-ядра кольца (концы цепочки); пусто, если не определены.
+        public IReadOnlyList<Guid> CoreDeviceIds { get; }
 
         public bool IsNamedRingCandidate =>
             Kind ==

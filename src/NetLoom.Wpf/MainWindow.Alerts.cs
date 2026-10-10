@@ -419,6 +419,10 @@ public partial class MainWindow
             AlertDeviceId(
                 alert);
 
+        row.RingKey =
+            AlertRingKey(
+                alert);
+
         return row;
     }
 
@@ -937,7 +941,13 @@ public partial class MainWindow
 
         var selectedOnMap =
             selected != null &&
-            (selected.DeviceId.HasValue
+            (!string.IsNullOrEmpty(selected.RingKey) &&
+             string.Equals(
+                 selected.RingKey,
+                 _selectedRingKey,
+                 StringComparison.Ordinal)
+                ? true
+                : selected.DeviceId.HasValue
                 ? _selectedDeviceId == selected.DeviceId
                 : _selectedPhysicalLinkId.HasValue &&
                   selected.PhysicalLinkIds.Contains(
@@ -1009,6 +1019,9 @@ public partial class MainWindow
             _neighborhoodBeforeAlertsDevices =
                 new HashSet<Guid>(
                     _neighborhoodDeviceIds);
+
+            // Sprint 50: режим «Кольцо», включённый карточкой, тоже временный.
+            CaptureOperationalFocusBeforeAlerts();
         }
 
         // Автоматический выбор без пульсации: выразительная анимация — только по действию оператора (§7).
@@ -1085,6 +1098,7 @@ public partial class MainWindow
         _mapViewportBeforeAlerts =
             null;
 
+        RestoreOperationalFocusAfterAlerts();
         RestoreNeighborhoodAfterAlerts();
 
         _zoom =
@@ -1147,6 +1161,25 @@ public partial class MainWindow
             false;
         _selectedAlertKey =
             row.ExpansionKey;
+
+        // Sprint 50: предупреждение о кольце выбирает кольцо и включает его вид вместо выбора одной связи.
+        // Прежний вид уже записан вызывающим кодом; при автоматическом выборе вид временный.
+        if (!string.IsNullOrEmpty(row.RingKey) &&
+            RingByKey(row.RingKey) != null)
+        {
+            SelectRing(
+                row.RingKey,
+                false,
+                _mapViewportHeldForAlerts);
+
+            if (pulse)
+            {
+                PulseAlertContext(
+                    row.PhysicalLinkIds);
+            }
+
+            return;
+        }
 
         if (row.DeviceId.HasValue)
         {
@@ -1240,7 +1273,8 @@ public partial class MainWindow
 
         if (row == null ||
             (row.PhysicalLinkIds.Length == 0 &&
-             !row.DeviceId.HasValue))
+             !row.DeviceId.HasValue &&
+             string.IsNullOrEmpty(row.RingKey)))
         {
             return;
         }
@@ -1603,6 +1637,9 @@ public partial class MainWindow
 
         // Sprint 47: предупреждение об устройстве («Устройство не отвечает») — без связей.
         public Guid? DeviceId { get; set; }
+
+        // Sprint 50: ключ кольца, к которому относится предупреждение (пусто, если оно не о кольце).
+        public string RingKey { get; set; }
 
         public bool IsCritical { get; }
 
