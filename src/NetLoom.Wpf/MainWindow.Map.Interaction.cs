@@ -2550,6 +2550,8 @@ public partial class MainWindow
         _selectedInterfaceId = null;
         _selectedPhysicalLinkId = null;
         _selectedLocationId = null;
+        // Sprint 50: щелчок по пустому месту снимает и выбор кольца (режим показа остаётся).
+        _selectedRingKey = null;
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();

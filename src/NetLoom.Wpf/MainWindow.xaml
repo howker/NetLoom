@@ -2547,6 +2547,27 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
+                                    <!-- Sprint 50: кольца, в которые входит выбранное устройство или связь. -->
+                                    <TextBlock x:Name="InspectorRingsTitleText"
+                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}"
+                                               Visibility="Collapsed" />
+                                    <ItemsControl x:Name="InspectorRingButtons" Visibility="Collapsed">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                        Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                                        HorizontalContentAlignment="Left"
+                                                        Tag="{Binding RingKey}"
+                                                        AutomationProperties.Name="{Binding Text}"
+                                                        Click="OnInspectorRingClick">
+                                                    <TextBlock Text="{Binding Text}"
+                                                               TextWrapping="Wrap" />
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
                                     <TextBlock x:Name="DiagnosticSecondaryTitleText"
                                                Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />

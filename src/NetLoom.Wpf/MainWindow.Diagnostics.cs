@@ -44,10 +44,27 @@ public partial class MainWindow : Window
 
     private void ShowSelectedDiagnostic()
     {
+        // Sprint 50: выбор устройства, порта, связи или размещения снимает выбор кольца.
+        if (_selectedLocationId.HasValue ||
+            _selectedDeviceId.HasValue ||
+            _selectedInterfaceId.HasValue ||
+            _selectedPhysicalLinkId.HasValue)
+        {
+            _selectedRingKey = null;
+        }
+
         UpdateShellBreadcrumb();
         SynchronizeAlertCardSelectionWithMap();
         if (!_selectedPhysicalLinkId.HasValue || _selectedDeviceId.HasValue || _selectedLocationId.HasValue)
             ClearTopologyConflictBlocks();
+
+        // Блок «Кольца» есть только в обзоре устройства и связи; повторный опрос его не пересоздаёт.
+        if (_selectedLocationId.HasValue ||
+            _selectedInterfaceId.HasValue ||
+            !(_selectedDeviceId.HasValue || _selectedPhysicalLinkId.HasValue))
+        {
+            ClearInspectorRingBlocks();
+        }
 
         if (_selectedLocationId.HasValue)
         {
@@ -149,6 +166,28 @@ public partial class MainWindow : Window
             }
 
             ShowLinkDiagnostic(link);
+            return;
+        }
+
+        if (_selectedRingKey != null)
+        {
+            SynchronizeMonitoringSelection(
+                null);
+
+            var ring =
+                RingByKey(
+                    _selectedRingKey);
+
+            if (ring == null)
+            {
+                // Кольцо пропало из снимка: выбор снимается, как у пропавшей связи.
+                _selectedRingKey = null;
+                ClearDiagnosticPanel(
+                    "DiagnosticSelectionMissing");
+                return;
+            }
+
+            ShowRingDiagnostic(ring);
             return;
         }
 
@@ -389,6 +428,19 @@ public partial class MainWindow : Window
                    sideB;
         }
 
+        // Sprint 50: у кольца крошка — его заголовок.
+        if (_selectedRingKey != null)
+        {
+            var ring =
+                RingByKey(
+                    _selectedRingKey);
+
+            return ring == null
+                ? null
+                : RingTitleText(
+                    ring);
+        }
+
         return null;
     }
 
@@ -476,6 +528,9 @@ public partial class MainWindow : Window
     private void ClearInspectorEntity()
     {
         ClearTopologyConflictBlocks();
+        ClearInspectorRingBlocks();
+        _inspectorRingKeyShown =
+            null;
         _inspectorEntityId =
             null;
         _inspectorPrimaryAlert =
@@ -800,7 +855,8 @@ public partial class MainWindow : Window
             _selectedDeviceId.HasValue ||
             _selectedInterfaceId.HasValue ||
             _selectedPhysicalLinkId.HasValue ||
-            _selectedLocationId.HasValue)
+            _selectedLocationId.HasValue ||
+            _selectedRingKey != null)
         {
             return;
         }
@@ -1039,6 +1095,10 @@ public partial class MainWindow : Window
 
         DiagnosticFieldsList.ItemsSource =
             stateFields;
+
+        // Sprint 50: кольца, в которые входит устройство.
+        ShowDeviceRingBlocks(
+            device.DeviceId);
 
         DiagnosticSecondaryTitleText.Text =
             string.Empty;
@@ -1431,6 +1491,10 @@ public partial class MainWindow : Window
             });
 
         DiagnosticFieldsList.ItemsSource = fields;
+
+        // Sprint 50: кольца, в которые входит связь (до раздела «Если связь пропадёт»).
+        ShowLinkRingBlocks(
+            link.PhysicalLinkId);
 
         DiagnosticSecondaryTitleText.Text =
             UiText.Get("DiagnosticImpactTitle");

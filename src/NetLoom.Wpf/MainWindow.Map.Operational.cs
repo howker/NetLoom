@@ -33,10 +33,18 @@ public partial class MainWindow
         DegradedLinks = 3,
         BlockedLinks = 4,
         TransitionLinks = 5,
-        DegradedNodes = 6
+        DegradedNodes = 6,
+        // Sprint 50: вид кольца — цели берутся из диагностики кольца, а не из состояния связей.
+        Ring = 7
     }
 
     private const double OperationalFocusDimmedOpacity = 0.12;
+
+    // Sprint 50: выбранное в инспекторе кольцо и кольцо, чьи связи показывает режим «Кольцо».
+    // Режим — выбор оператора и в базу не сохраняется.
+    private string _selectedRingKey;
+
+    private string _operationalFocusRingKey;
 
     private readonly Dictionary<Guid, MapLinkOperationalState>
         _linkOperationalStates =
@@ -278,6 +286,9 @@ public partial class MainWindow
         focusMenu.Items.Add(CreateNeighborhoodMenuItem());
         focusMenu.Items.Add(new Separator());
 
+        // Sprint 50: кольца — подменю существующего меню «Показать», новой панели нет.
+        focusMenu.Items.Add(CreateRingMenuItem());
+
         focusMenu.Items.Add(
             CreateOperationalFocusMenuItem(
                 MapOperationalFocusMode.AllProblems,
@@ -363,6 +374,9 @@ public partial class MainWindow
         // Sprint 49: смена режима показа — действие, прежний вид которого попадает в историю.
         RecordMapView(false);
 
+        // Sprint 50: режим выбран оператором, выход из «Предупреждений» его не снимает.
+        _ringViewHeldForAlerts = false;
+
         SetOperationalFocusMode(
             (MapOperationalFocusMode)item.Tag);
     }
@@ -373,6 +387,12 @@ public partial class MainWindow
         DisableNeighborhood();
         _operationalFocusMode =
             mode;
+
+        // Sprint 50: другой режим показа снимает вид кольца.
+        if (mode != MapOperationalFocusMode.Ring)
+        {
+            _operationalFocusRingKey = null;
+        }
 
         RefreshOperationalFocusTargets();
         UpdateOperationalFocusMenuState();
@@ -401,6 +421,13 @@ public partial class MainWindow
                 MapOperationalFocusMode.None ||
             _lastMapSnapshot == null)
         {
+            return;
+        }
+
+        if (_operationalFocusMode ==
+            MapOperationalFocusMode.Ring)
+        {
+            RefreshRingFocusTargets();
             return;
         }
 
@@ -562,7 +589,9 @@ public partial class MainWindow
 
         // Sprint 49: пока показан путь, остальные связи приглушены так же, как при фокусной связи.
         var pathActive = _pathLinkIds.Count > 0;
-        var onPath = pathActive && physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value);
+        // Sprint 50: связи показанного кольца оформляются так же, как связи пути.
+        var onPath = (pathActive && physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value)) ||
+            IsRingFocusLink(physicalLinkId);
         var linkFocusOpacity = !onPath && (pathActive ||
             (FocusedPhysicalLinkId.HasValue && physicalLinkId != FocusedPhysicalLinkId))
                 ? GetDoubleResource("NetLoom.Map.LinkFocusDimmedOpacity")

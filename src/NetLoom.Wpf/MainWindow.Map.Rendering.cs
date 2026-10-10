@@ -59,7 +59,9 @@ public partial class MainWindow
         ApplyNeighborhoodLinkVisibility(visual);
         var physicalLinkId = visual.Line.Tag as Guid?;
         // Sprint 49: связи показанного пути оформляются как фокусная связь (подпись, толщина, ореол).
-        var onPath = physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value);
+        // Sprint 50: связи показанного кольца оформляются тем же способом.
+        var onPath = (physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value)) ||
+            IsRingFocusLink(physicalLinkId);
         var focused = (FocusedPhysicalLinkId.HasValue &&
             physicalLinkId == FocusedPhysicalLinkId) || onPath;
         var opacity = LinkPresentationOpacity(

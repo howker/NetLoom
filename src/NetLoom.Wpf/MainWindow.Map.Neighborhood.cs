@@ -412,7 +412,11 @@ public partial class MainWindow
         }
         var active = _neighborhoodSelectedDeviceId.HasValue;
         if (_neighborhoodMenuItem != null) _neighborhoodMenuItem.IsChecked = active;
-        var caption = UiText.Get(active ? "MapNeighborhoodShow" : "ShellMapFocusAction");
+        var caption = UiText.Get(active
+            ? "MapNeighborhoodShow"
+            : _operationalFocusMode == MapOperationalFocusMode.Ring
+                ? "MapOperationalFocusRingShow"
+                : "ShellMapFocusAction");
         MapOperationalFocusButton.Content = caption;
         AutomationProperties.SetName(MapOperationalFocusButton, caption);
         MapNeighborhoodNotice.Visibility = active && _shellSection == ShellSection.Map

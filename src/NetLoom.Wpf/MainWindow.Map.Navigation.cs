@@ -47,6 +47,11 @@ public partial class MainWindow
 
         public Guid? SelectedLocationId { get; set; }
 
+        // Sprint 50: выбранное кольцо и кольцо режима «Кольцо».
+        public string SelectedRingKey { get; set; }
+
+        public string OperationalFocusRingKey { get; set; }
+
         // Вид, из которого был сделан первый вход в «фокусный» вид (null — вид сам не фокусный).
         public MapViewState ViewBeforeFocus { get; set; }
     }
@@ -255,6 +260,8 @@ public partial class MainWindow
             SelectedDeviceId = _selectedDeviceId,
             SelectedPhysicalLinkId = _selectedPhysicalLinkId,
             SelectedLocationId = _selectedLocationId,
+            SelectedRingKey = _selectedRingKey,
+            OperationalFocusRingKey = _operationalFocusRingKey,
             ViewBeforeFocus = _mapViewBeforeFocus
         };
     }
@@ -307,6 +314,7 @@ public partial class MainWindow
             _lastMapSnapshot.Locations.Any(location => location.Id == state.SelectedLocationId.Value)
                 ? state.SelectedLocationId
                 : null;
+        _selectedRingKey = RingByKey(state.SelectedRingKey) != null ? state.SelectedRingKey : null;
 
         if (state.Mode == MapViewDisplayMode.Neighborhood && MapDeviceExists(state.NeighborhoodAnchor))
         {
@@ -319,6 +327,8 @@ public partial class MainWindow
         }
         else if (state.Mode == MapViewDisplayMode.OperationalFocus)
         {
+            // Sprint 50: режим кольца возвращается вместе с ключом кольца.
+            _operationalFocusRingKey = state.OperationalFocusRingKey;
             SetOperationalFocusMode(state.OperationalFocus);
         }
         else

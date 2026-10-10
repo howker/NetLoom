@@ -2937,4 +2937,58 @@
   <data name="RingTitleWithCount" xml:space="preserve">
     <value>Кольцо: {0}</value>
   </data>
+  <data name="InspectorEntityRing" xml:space="preserve">
+    <value>Кольцо</value>
+  </data>
+  <data name="InspectorRingsTitle" xml:space="preserve">
+    <value>Кольца</value>
+  </data>
+  <data name="RingMenu" xml:space="preserve">
+    <value>Кольца</value>
+  </data>
+  <data name="RingMenuNone" xml:space="preserve">
+    <value>Колец нет</value>
+  </data>
+  <data name="RingMenuItem" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapOperationalFocusRing" xml:space="preserve">
+    <value>Кольцо</value>
+  </data>
+  <data name="MapOperationalFocusRingShow" xml:space="preserve">
+    <value>Показать: кольцо</value>
+  </data>
+  <data name="RingFieldStatus" xml:space="preserve">
+    <value>Состояние защиты</value>
+  </data>
+  <data name="RingFieldMembers" xml:space="preserve">
+    <value>Участники</value>
+  </data>
+  <data name="RingFieldCores" xml:space="preserve">
+    <value>Ядра</value>
+  </data>
+  <data name="RingFieldRoot" xml:space="preserve">
+    <value>Корень STP</value>
+  </data>
+  <data name="RingRootOutside" xml:space="preserve">
+    <value>Вне известной топологии: {0}</value>
+  </data>
+  <data name="RingFieldBlockedPort" xml:space="preserve">
+    <value>Заблокированный порт</value>
+  </data>
+  <data name="RingBlockedPortNone" xml:space="preserve">
+    <value>Нет</value>
+  </data>
+  <data name="RingFieldLastTopologyChange" xml:space="preserve">
+    <value>Последнее изменение топологии</value>
+  </data>
+  <data name="RingMembersTitle" xml:space="preserve">
+    <value>Участники кольца</value>
+  </data>
+  <data name="RingMemberCore" xml:space="preserve">
+    <value>{0} (ядро)</value>
+  </data>
+  <data name="RingCoresJoin" xml:space="preserve">
+    <value>{0} и {1}</value>
+  </data>
 </root>

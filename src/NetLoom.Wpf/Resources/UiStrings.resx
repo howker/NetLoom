@@ -2937,4 +2937,58 @@ Poll: {2}</value>
   <data name="RingTitleWithCount" xml:space="preserve">
     <value>Ring: {0}</value>
   </data>
+  <data name="InspectorEntityRing" xml:space="preserve">
+    <value>Ring</value>
+  </data>
+  <data name="InspectorRingsTitle" xml:space="preserve">
+    <value>Rings</value>
+  </data>
+  <data name="RingMenu" xml:space="preserve">
+    <value>Rings</value>
+  </data>
+  <data name="RingMenuNone" xml:space="preserve">
+    <value>No rings</value>
+  </data>
+  <data name="RingMenuItem" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapOperationalFocusRing" xml:space="preserve">
+    <value>Ring</value>
+  </data>
+  <data name="MapOperationalFocusRingShow" xml:space="preserve">
+    <value>Show: ring</value>
+  </data>
+  <data name="RingFieldStatus" xml:space="preserve">
+    <value>Protection</value>
+  </data>
+  <data name="RingFieldMembers" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="RingFieldCores" xml:space="preserve">
+    <value>Core switches</value>
+  </data>
+  <data name="RingFieldRoot" xml:space="preserve">
+    <value>STP root</value>
+  </data>
+  <data name="RingRootOutside" xml:space="preserve">
+    <value>Outside the known topology: {0}</value>
+  </data>
+  <data name="RingFieldBlockedPort" xml:space="preserve">
+    <value>Blocked port</value>
+  </data>
+  <data name="RingBlockedPortNone" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="RingFieldLastTopologyChange" xml:space="preserve">
+    <value>Last topology change</value>
+  </data>
+  <data name="RingMembersTitle" xml:space="preserve">
+    <value>Ring members</value>
+  </data>
+  <data name="RingMemberCore" xml:space="preserve">
+    <value>{0} (core)</value>
+  </data>
+  <data name="RingCoresJoin" xml:space="preserve">
+    <value>{0} and {1}</value>
+  </data>
 </root>
