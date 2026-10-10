@@ -238,6 +238,23 @@ namespace NetLoom.Tests.Unit
                 first.Ports[1].State);
         }
 
+        [TestMethod]
+        public void DisabledPortIsUnknownOnlyOnUniquelyResolvedUpInterface()
+        {
+            var deviceId = Guid.NewGuid();
+            var observation = Observation(0, null, new[] { Port(7, 201, 1, 100) });
+            var projector = new StpTreeProjector();
+            var up = projector.Project(deviceId,
+                new[] { Interface(Guid.NewGuid(), deviceId, 201, "up-port", "UP") }, observation);
+            var down = projector.Project(deviceId,
+                new[] { Interface(Guid.NewGuid(), deviceId, 201, "down-port", "down") }, observation);
+            var missing = projector.Project(deviceId, new DeviceInterface[0], observation);
+
+            Assert.AreEqual(StpTreePortState.Unknown, up.Ports[0].State);
+            Assert.AreEqual(StpTreePortState.Disabled, down.Ports[0].State);
+            Assert.AreEqual(StpTreePortState.Disabled, missing.Ports[0].State);
+        }
+
         private static StpObservation Observation(
             int? rootBridgePort,
             int? rootIfIndex,
@@ -282,7 +299,8 @@ namespace NetLoom.Tests.Unit
             Guid id,
             Guid deviceId,
             int ifIndex,
-            string ifName)
+            string ifName,
+            string operStatus = null)
         {
             var constructor =
                 typeof(DeviceInterface)
@@ -318,6 +336,10 @@ namespace NetLoom.Tests.Unit
 
                     case "ifName":
                         arguments[index] = ifName;
+                        break;
+
+                    case "operStatus":
+                        arguments[index] = operStatus;
                         break;
 
                     case "firstSeenUtc":

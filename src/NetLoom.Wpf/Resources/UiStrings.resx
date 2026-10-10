@@ -3005,8 +3005,26 @@ Poll: {2}</value>
   <data name="ImpactDeviceNoParts" xml:space="preserve"><value>By the known topology the network will not split.</value></data>
   <data name="MapOperationalFocusFailurePrediction" xml:space="preserve"><value>Failure prediction</value></data>
   <data name="MapOperationalFocusFailurePredictionShow" xml:space="preserve"><value>Show: failure prediction</value></data>
-  <data name="ImpactStripForDevice" xml:space="preserve"><value>Prediction: if {0} fails — {1}</value></data>
-  <data name="ImpactStripForLink" xml:space="preserve"><value>Prediction: if link {0} ↔ {1} fails — {2}</value></data>
+  <data name="ImpactStripForDevice" xml:space="preserve"><value>Prediction: if {0} disappears — {1}</value></data>
+  <data name="ImpactStripForLink" xml:space="preserve"><value>Prediction: if link {0} ↔ {1} disappears — {2}</value></data>
+  <data name="ImpactGroupCutOff" xml:space="preserve"><value>Will be cut off · {0}</value></data>
+  <data name="ImpactGroupStandby" xml:space="preserve"><value>Only through the STP standby · {0}</value></data>
+  <data name="ImpactGroupUnconfirmed" xml:space="preserve"><value>Bypass not confirmed by STP data · {0}</value></data>
+  <data name="ImpactStripCutOffOne" xml:space="preserve"><value>{0} device will be cut off (no other path)</value></data>
+  <data name="ImpactStripCutOffOther" xml:space="preserve"><value>{0} devices will be cut off (no other path)</value></data>
+  <data name="ImpactStripCutOffFew" xml:space="preserve"><value>{0} devices will be cut off (no other path)</value></data>
+  <data name="ImpactStripCutOffMany" xml:space="preserve"><value>{0} devices will be cut off (no other path)</value></data>
+  <data name="ImpactStripStandbyOne" xml:space="preserve"><value>{0} device stays connected only through the STP standby</value></data>
+  <data name="ImpactStripStandbyOther" xml:space="preserve"><value>{0} devices stay connected only through the STP standby</value></data>
+  <data name="ImpactStripStandbyFew" xml:space="preserve"><value>{0} devices stay connected only through the STP standby</value></data>
+  <data name="ImpactStripStandbyMany" xml:space="preserve"><value>{0} devices stay connected only through the STP standby</value></data>
+  <data name="ImpactStripUnconfirmedOne" xml:space="preserve"><value>{0} device — bypass not confirmed by STP data</value></data>
+  <data name="ImpactStripUnconfirmedOther" xml:space="preserve"><value>{0} devices — bypass not confirmed by STP data</value></data>
+  <data name="ImpactStripUnconfirmedFew" xml:space="preserve"><value>{0} devices — bypass not confirmed by STP data</value></data>
+  <data name="ImpactStripUnconfirmedMany" xml:space="preserve"><value>{0} devices — bypass not confirmed by STP data</value></data>
+  <data name="RingBlockedPortUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="SpofShow" xml:space="preserve"><value>Show</value></data>
+  <data name="SpofDependentCount" xml:space="preserve"><value>Depend on it: {0}</value></data>
   <data name="ImpactStripReset" xml:space="preserve"><value>Clear prediction</value></data>
   <data name="SpofDependents" xml:space="preserve"><value>Single point of failure: {0} depend on it.</value></data>
   <data name="SpofStructural" xml:space="preserve"><value>Single point of failure: splits the network into parts ({0}). Direction unknown: {1}</value></data>

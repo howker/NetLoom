@@ -86,7 +86,11 @@ public partial class MainWindow
         var active = _operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure &&
             _shellSection == ShellSection.Map;
         MapSinglePointsNotice.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
-        if (!active) return;
+        if (!active)
+        {
+            MapSinglePointsToggle.IsChecked = false;
+            return;
+        }
         var devices = UiText.FormatCount("DiagnosticDeviceCount", _operationalFocusDeviceIds.Count);
         var links = UiText.FormatCount("MapLinkCount", _operationalFocusPhysicalLinkIds.Count);
         var summary = FailurePollingPointId.HasValue
@@ -96,11 +100,78 @@ public partial class MainWindow
             : UiText.Format("SpofStripStructural", devices, links,
                 UiText.Get(PollingReasonKey() ?? "MapNeighborhoodPollingNotFound"));
         MapSinglePointsSummaryText.Text = summary;
+        AutomationProperties.SetName(MapSinglePointsToggle, summary);
+        var rows = SinglePointRows();
+        var previous = MapSinglePointsItems.ItemsSource as IReadOnlyList<SinglePointRow>;
+        if (previous == null || previous.Count != rows.Count ||
+            !previous.Zip(rows, (oldItem, newItem) =>
+                oldItem.DeviceId == newItem.DeviceId && oldItem.LinkId == newItem.LinkId &&
+                oldItem.Count == newItem.Count && oldItem.Name == newItem.Name).All(equal => equal))
+            MapSinglePointsItems.ItemsSource = rows;
         AutomationProperties.SetName(MapSinglePointsNotice,
             UiText.Get("MapOperationalFocusSinglePoints"));
         var reset = UiText.Get("SpofStripReset");
         MapSinglePointsResetButton.Content = reset;
         AutomationProperties.SetName(MapSinglePointsResetButton, reset);
+    }
+
+    private IReadOnlyList<SinglePointRow> SinglePointRows()
+    {
+        if (_lastDiagnosticSnapshot == null) return new SinglePointRow[0];
+        var rows = new List<SinglePointRow>();
+        foreach (var id in _operationalFocusDeviceIds)
+        {
+            var device = _lastDiagnosticSnapshot.Devices.FirstOrDefault(item => item.DeviceId == id);
+            if (device == null) continue;
+            var count = FailurePollingPointId.HasValue ? PredictDevice(id).CutOffCount :
+                device.FailurePartDeviceCounts.DefaultIfEmpty(0).Max();
+            rows.Add(new SinglePointRow(id, null, DisplayDeviceName(device.DisplayName), count));
+        }
+        foreach (var id in _operationalFocusPhysicalLinkIds)
+        {
+            var link = _lastDiagnosticSnapshot.Links.FirstOrDefault(item => item.PhysicalLinkId == id);
+            if (link == null) continue;
+            var count = FailurePollingPointId.HasValue ? PredictLink(id).CutOffCount :
+                Math.Min(link.SideADeviceCount, link.SideBDeviceCount);
+            rows.Add(new SinglePointRow(null, id,
+                DisplayDeviceName(link.DeviceAName) + " ↔ " + DisplayDeviceName(link.DeviceBName), count));
+        }
+        return rows.OrderByDescending(item => item.Count)
+            .ThenBy(item => item.Name, StringComparer.CurrentCulture).ToArray();
+    }
+
+    private void OnSinglePointShowClick(object sender, RoutedEventArgs e)
+    {
+        var row = (sender as Button)?.Tag as SinglePointRow;
+        if (row == null) return;
+        if (row.DeviceId.HasValue) SelectAlertDeviceContext(row.DeviceId.Value);
+        else if (row.LinkId.HasValue) SelectAlertPhysicalContext(row.LinkId.Value);
+        if (FailurePollingPointId.HasValue) OnFailurePredictionShowClick(sender, e);
+        else if (row.DeviceId.HasValue)
+            FocusSelectedMapAtNativeZoom(() => AnimateDiscoveryFocus(row.DeviceId.Value));
+        else if (row.LinkId.HasValue)
+            FocusAlertContextToViewport(new[] { row.LinkId.Value }, null);
+        MapSinglePointsToggle.IsChecked = false;
+        e.Handled = true;
+    }
+
+    private sealed class SinglePointRow
+    {
+        public SinglePointRow(Guid? deviceId, Guid? linkId, string name, int count)
+        {
+            DeviceId = deviceId; LinkId = linkId; Name = name; Count = count;
+            ShowText = UiText.Get("SpofShow");
+            ShowName = ShowText + " " + name;
+            Dependents = UiText.Format("SpofDependentCount",
+                UiText.FormatCount("DiagnosticDeviceCount", count));
+        }
+        public Guid? DeviceId { get; }
+        public Guid? LinkId { get; }
+        public string Name { get; }
+        public int Count { get; }
+        public string ShowText { get; }
+        public string ShowName { get; }
+        public string Dependents { get; }
     }
 
     private void OnSinglePointsResetClick(object sender, RoutedEventArgs e)

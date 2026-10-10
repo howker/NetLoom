@@ -45,6 +45,7 @@ public partial class MainWindow : Window
     private void ShowSelectedDiagnostic()
     {
         InspectorFailurePredictionShowButton.Visibility = Visibility.Collapsed;
+        InspectorFailureImpactGroups.ItemsSource = null;
         // Sprint 50: выбор устройства, порта, связи или размещения снимает выбор кольца.
         if (_selectedLocationId.HasValue ||
             _selectedDeviceId.HasValue ||

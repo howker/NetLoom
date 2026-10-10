@@ -16,12 +16,13 @@ namespace NetLoom.Tests.Unit
         private static Guid Id(int value) => new Guid("00000000-0000-0000-0000-" + value.ToString("D12"));
 
         private static PhysicalLinkDiagnostic Link(int id, int a, int b,
-            StpTreePortState state = StpTreePortState.Forwarding)
+            StpTreePortState state = StpTreePortState.Forwarding,
+            StpTreePortState? stateB = null)
         {
             return new PhysicalLinkDiagnostic(Id(id), Id(a), Id(b), null, null,
                 null, null, null, null, DiagnosticLinkStrength.Confirmed,
                 MapFreshness.Fresh, null, null, null, Now, Now,
-                state, state, new DiagnosticEvidenceItem[0], false, 0, 0, 0);
+                state, stateB ?? state, new DiagnosticEvidenceItem[0], false, 0, 0, 0);
         }
 
         private static void Expect(FailurePredictionResult result,
@@ -82,6 +83,11 @@ namespace NetLoom.Tests.Unit
             var oneUnknown = new[] { Link(101, 1, 2), Link(102, 2, 3),
                 Link(103, 3, 4), Link(104, 4, 1, StpTreePortState.Unknown) };
             Expect(FailurePrediction.PredictDeviceFailure(oneUnknown, Id(1), Id(2)),
+                FailureImpactCategory.Unconfirmed, 3, 4);
+            var oneUnknownEnd = new[] { Link(101, 1, 2), Link(102, 2, 3),
+                Link(103, 3, 4), Link(104, 4, 1, StpTreePortState.Forwarding,
+                    StpTreePortState.Unknown) };
+            Expect(FailurePrediction.PredictDeviceFailure(oneUnknownEnd, Id(1), Id(2)),
                 FailureImpactCategory.Unconfirmed, 3, 4);
         }
 

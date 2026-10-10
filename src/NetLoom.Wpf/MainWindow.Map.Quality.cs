@@ -77,6 +77,12 @@ namespace NetLoom.Wpf
             if (MapQualityDetails == null || MapScrollViewer == null) return;
             var margin = MapQualityDetails.Margin;
             MapQualityDetails.MaxWidth = Math.Max(0, MapScrollViewer.ActualWidth - margin.Left - margin.Right);
+            if (MapSinglePointsDetails != null)
+            {
+                var singlePointsMargin = MapSinglePointsDetails.Margin;
+                MapSinglePointsDetails.MaxWidth = Math.Max(0,
+                    MapScrollViewer.ActualWidth - singlePointsMargin.Left - singlePointsMargin.Right);
+            }
         }
 
         private void CloseMapQualityDetails(bool restoreFocus)
@@ -87,6 +93,14 @@ namespace NetLoom.Wpf
 
         private void OnMapQualityPreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Key == Key.Escape && MapSinglePointsToggle?.IsChecked == true &&
+                MapSinglePointsDetails?.IsKeyboardFocusWithin == true)
+            {
+                MapSinglePointsToggle.IsChecked = false;
+                MapSinglePointsToggle.Focus();
+                e.Handled = true;
+                return;
+            }
             if (e.Key != Key.Escape || MapQualityToggle?.IsChecked != true ||
                 MapQualityDetails?.IsKeyboardFocusWithin != true) return;
 
@@ -99,6 +113,7 @@ namespace NetLoom.Wpf
         {
             // Щелчок продолжает выбирать объект или перемещать карту после закрытия панели.
             if (MapQualityToggle.IsChecked == true) CloseMapQualityDetails(false);
+            if (MapSinglePointsToggle.IsChecked == true) MapSinglePointsToggle.IsChecked = false;
             OnMapPreviewMouseDown(sender, e);
         }
 

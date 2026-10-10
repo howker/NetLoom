@@ -392,6 +392,7 @@ public partial class MainWindow
     private void SetOperationalFocusMode(
         MapOperationalFocusMode mode)
     {
+        RestoreNeighborhoodLayout();
         DisableNeighborhood();
         _operationalFocusMode =
             mode;
@@ -407,6 +408,8 @@ public partial class MainWindow
         RefreshOperationalFocusTargets();
         UpdateOperationalFocusMenuState();
         ReapplyOperationalFocusPresentation();
+        if (mode == MapOperationalFocusMode.FailurePrediction)
+            ApplyFailurePredictionLayout();
         if (mode != MapOperationalFocusMode.SinglePointsOfFailure)
             FitOperationalFocusToViewport();
     }
@@ -688,7 +691,19 @@ public partial class MainWindow
             _operationalFocusMode == MapOperationalFocusMode.Ring ||
             _operationalFocusMode == MapOperationalFocusMode.FailurePrediction ||
             _operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure;
-        TryFitMapBoundsToViewport(bounds, _zoomMin, sprint50View ? 1.0 : (double?)null);
+        // Прогноз — как фокус-окрестность Sprint 49: читаемый масштаб, если компактная раскладка в нём помещается;
+        // Иначе показываем её целиком мельче, а имена дают ярлыки дальнего уровня.
+        var minimumZoom = _zoomMin;
+        if (_operationalFocusMode == MapOperationalFocusMode.FailurePrediction && bounds.Count > 0)
+        {
+            MapScrollViewer.UpdateLayout();
+            var width = bounds.Max(item => item.Right) - bounds.Min(item => item.Left);
+            var height = bounds.Max(item => item.Bottom) - bounds.Min(item => item.Top);
+            if (width * _readableZoomMin <= MapScrollViewer.ViewportWidth - _fitPadding * 2 &&
+                height * _readableZoomMin <= MapScrollViewer.ViewportHeight - _fitPadding * 2)
+                minimumZoom = _readableZoomMin;
+        }
+        TryFitMapBoundsToViewport(bounds, minimumZoom, sprint50View ? 1.0 : (double?)null);
     }
 
     private static bool OperationalFocusMatchesLink(

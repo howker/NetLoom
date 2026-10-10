@@ -76,6 +76,7 @@ namespace NetLoom.Tests.Unit
                         SelectDevice(window, selected.DeviceId);
                         PumpDispatcher();
                         window.UpdateLayout();
+                        ScrollInspectorToImpact(window);
                         var inspector = (FrameworkElement)window.FindName("ShellInspectorPanel");
                         SaveRingPng(CaptureScaledRing(inspector, 2.0), System.IO.Path.Combine(output,
                             scenario + "-inspector-" + width + "-" + (dark ? "dark" : "light") + ".png"));
@@ -176,11 +177,20 @@ namespace NetLoom.Tests.Unit
                             SelectDevice(window, selected.DeviceId);
                             PumpDispatcher();
                             window.UpdateLayout();
+                            ScrollInspectorToImpact(window);
                             CollectTextClipping((DependencyObject)window.FindName("ShellInspectorPanel"),
                                 "spof-inspector/" + theme, findings);
                             SaveRingPng(CaptureScaledRing((FrameworkElement)window.FindName("ShellInspectorPanel"), 2.0),
                                 System.IO.Path.Combine(output,
                                     "79-spof-inspector-" + width + "-" + theme + ".png"));
+                            var toggle = (System.Windows.Controls.Primitives.ToggleButton)window.FindName("MapSinglePointsToggle");
+                            toggle.IsChecked = true;
+                            PumpDispatcher();
+                            window.UpdateLayout();
+                            CollectTextClipping(window.Content as DependencyObject,
+                                "spof-list/" + theme, findings);
+                            SaveRingPng(Capture(window.Content as FrameworkElement), System.IO.Path.Combine(output,
+                                "80-spof-list-" + width + "-" + theme + ".png"));
                         }
                         finally
                         {
@@ -196,7 +206,7 @@ namespace NetLoom.Tests.Unit
                         findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
                 }
                 Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
-                Assert.AreEqual(8, Directory.GetFiles(output, "*.png").Length);
+                Assert.AreEqual(12, Directory.GetFiles(output, "*.png").Length);
             });
         }
 
@@ -330,6 +340,21 @@ namespace NetLoom.Tests.Unit
         }
 
         // Снимок элемента в увеличенном масштабе: инспектор кольца крупно.
+        // Кадр инспектора крупно показывает раздел прогноза: обзор прокручивается так, чтобы его заголовок был сверху.
+        private static void ScrollInspectorToImpact(MainWindow window)
+        {
+            var title = (FrameworkElement)window.FindName("DiagnosticSecondaryTitleText");
+            DependencyObject parent = title;
+            while (parent != null && !(parent is ScrollViewer))
+                parent = VisualTreeHelper.GetParent(parent);
+            var viewer = parent as ScrollViewer;
+            if (viewer == null) return;
+            var offset = title.TransformToAncestor(viewer).Transform(new Point(0, 0)).Y + viewer.VerticalOffset;
+            viewer.ScrollToVerticalOffset(offset);
+            viewer.UpdateLayout();
+            PumpDispatcher();
+        }
+
         private static BitmapSource CaptureScaledRing(FrameworkElement element, double scale)
         {
             Assert.IsNotNull(element, "Gallery visual is unavailable.");

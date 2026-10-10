@@ -248,6 +248,7 @@ namespace NetLoom.Tests.Unit
                 var fields = Fields(window);
                 Assert.AreEqual(UiText.Get("RingStatusUnresolved"), fields[UiText.Get("RingFieldStatus")]);
                 Assert.AreEqual(UiText.Get("RingStatusUnresolved"), fields[UiText.Get("RingFieldRoot")]);
+                Assert.AreEqual(UiText.Get("RingBlockedPortUnknown"), fields[UiText.Get("RingFieldBlockedPort")]);
                 AssertNoUnprotectedText(window);
 
                 SelectRingFromMenu(window, CorePairLabel());

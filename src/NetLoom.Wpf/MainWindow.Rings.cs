@@ -463,7 +463,9 @@ public partial class MainWindow
             Field(
                 "RingFieldBlockedPort",
                 ring.BlockedPorts.Count == 0
-                    ? UiText.Get("RingBlockedPortNone")
+                    ? UiText.Get(ring.Status == RingProtectionStatus.Unresolved ||
+                        ring.UnresolvedPhysicalLinkIds.Count > 0 || ring.DevicesWithoutStpIds.Count > 0
+                            ? "RingBlockedPortUnknown" : "RingBlockedPortNone")
                     : string.Join(
                         Environment.NewLine,
                         ring.BlockedPorts

@@ -16,6 +16,48 @@ public partial class MainWindow
     private Guid? _failurePredictionDeviceId;
     private Guid? _failurePredictionLinkId;
     private FailurePredictionResult _failurePredictionResult;
+    private bool IsFailurePredictionLayoutActive =>
+        _operationalFocusMode == MapOperationalFocusMode.FailurePrediction &&
+        _shellSection == ShellSection.Map && !IsMapEditMode && _failurePredictionResult != null;
+
+    private void ApplyFailurePredictionLayout()
+    {
+        RestoreNeighborhoodLayout();
+        if (!IsFailurePredictionLayoutActive || _lastMapSnapshot == null) return;
+        var selected = _failurePredictionDeviceId;
+        if (!selected.HasValue && _failurePredictionLinkId.HasValue)
+        {
+            var link = _lastDiagnosticSnapshot.Links.FirstOrDefault(item =>
+                item.PhysicalLinkId == _failurePredictionLinkId.Value);
+            if (link != null)
+            {
+                var distances = PollingDistances();
+                int a;
+                int b;
+                selected = distances != null && distances.TryGetValue(link.DeviceAId, out a) &&
+                    distances.TryGetValue(link.DeviceBId, out b) && b < a
+                    ? link.DeviceBId : link.DeviceAId;
+            }
+        }
+        if (selected.HasValue)
+        {
+            // Ряды прогноза — как группы инспектора: цель, «будут отрезаны», «только через резерв STP»,
+            // «Обход не подтверждён». Так пострадавшие помещаются в читаемый масштаб чаще, чем рядами по расстоянию.
+            var rows = new Dictionary<Guid, int>();
+            foreach (var id in _operationalFocusDeviceIds)
+            {
+                FailureImpactCategory category;
+                rows[id] = !_failurePredictionResult.AffectedDevices.TryGetValue(id, out category) ? 0
+                    : category == FailureImpactCategory.CutOff ? 1
+                    : category == FailureImpactCategory.StandbyOnly ? 2 : 3;
+            }
+            ApplyCompactDeviceLayout(_operationalFocusDeviceIds, selected.Value, rows);
+        }
+        UpdateLocationHierarchyVisibility();
+        ApplyNeighborhoodVisibility();
+        ReconcileLinks(_lastMapSnapshot.Links,
+            _lastMapSnapshot.Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal));
+    }
 
     private Guid? FailurePollingPointId => _pollingPoint != null &&
         _pollingPoint.Status == EnginePollingPointStatus.Determined &&
@@ -110,6 +152,7 @@ public partial class MainWindow
     private void UpdateFailurePredictionInspectorAction(Guid? deviceId, Guid? linkId)
     {
         var result = deviceId.HasValue ? PredictDevice(deviceId.Value) : PredictLink(linkId.Value);
+        InspectorFailureImpactGroups.ItemsSource = FailureImpactGroups(result);
         var show = result.IsDirectional && result.AffectedDevices.Count > 0;
         InspectorFailurePredictionShowButton.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         var label = UiText.Get("ImpactShowOnMap");
@@ -117,6 +160,50 @@ public partial class MainWindow
         AutomationProperties.SetName(InspectorFailurePredictionShowButton, label);
         InspectorFailurePredictionShowButton.Tag = show
             ? (object)(deviceId ?? linkId.Value) : null;
+    }
+
+    private IReadOnlyList<FailureImpactGroupRow> FailureImpactGroups(FailurePredictionResult result)
+    {
+        var groups = new List<FailureImpactGroupRow>();
+        AddFailureImpactGroup(groups, result, FailureImpactCategory.CutOff, "ImpactGroupCutOff");
+        AddFailureImpactGroup(groups, result, FailureImpactCategory.StandbyOnly, "ImpactGroupStandby");
+        AddFailureImpactGroup(groups, result, FailureImpactCategory.Unconfirmed, "ImpactGroupUnconfirmed");
+        return groups;
+    }
+
+    private void AddFailureImpactGroup(List<FailureImpactGroupRow> groups,
+        FailurePredictionResult result, FailureImpactCategory category, string titleKey)
+    {
+        var devices = result.AffectedDevices.Where(pair => pair.Value == category)
+            .Select(pair => new FailureImpactDeviceRow(pair.Key,
+                DisplayDeviceName(_lastDiagnosticSnapshot.Devices.FirstOrDefault(
+                    device => device.DeviceId == pair.Key)?.DisplayName)))
+            .OrderBy(item => item.Name, StringComparer.CurrentCulture)
+            .ThenBy(item => item.Id).ToArray();
+        if (devices.Length > 0)
+            groups.Add(new FailureImpactGroupRow(UiText.Format(titleKey, devices.Length), devices));
+    }
+
+    private void OnFailureImpactDeviceClick(object sender, RoutedEventArgs e)
+    {
+        if (!(sender is Button button) || !(button.Tag is Guid id)) return;
+        SelectAlertDeviceContext(id);
+        e.Handled = true;
+    }
+
+    private sealed class FailureImpactGroupRow
+    {
+        public FailureImpactGroupRow(string title, IReadOnlyList<FailureImpactDeviceRow> devices)
+        { Title = title; Devices = devices; }
+        public string Title { get; }
+        public IReadOnlyList<FailureImpactDeviceRow> Devices { get; }
+    }
+
+    private sealed class FailureImpactDeviceRow
+    {
+        public FailureImpactDeviceRow(Guid id, string name) { Id = id; Name = name; }
+        public Guid Id { get; }
+        public string Name { get; }
     }
 
     private void OnFailurePredictionShowClick(object sender, RoutedEventArgs e)
@@ -155,6 +242,7 @@ public partial class MainWindow
             _lastMapSnapshot.Links.Any(item => item.PhysicalLinkId == _failurePredictionLinkId.Value);
         if (!device && !link)
         {
+            RestoreNeighborhoodLayout();
             _operationalFocusMode = MapOperationalFocusMode.None;
             ClearFailurePredictionTarget();
             UpdateOperationalFocusMenuState();
@@ -165,13 +253,21 @@ public partial class MainWindow
             : PredictLink(_failurePredictionLinkId.Value);
         if (!_failurePredictionResult.IsDirectional)
         {
+            RestoreNeighborhoodLayout();
             _operationalFocusMode = MapOperationalFocusMode.None;
             ClearFailurePredictionTarget();
             UpdateOperationalFocusMenuState();
             return;
         }
         if (device) _operationalFocusDeviceIds.Add(_failurePredictionDeviceId.Value);
-        if (link) _operationalFocusPhysicalLinkIds.Add(_failurePredictionLinkId.Value);
+        if (link)
+        {
+            _operationalFocusPhysicalLinkIds.Add(_failurePredictionLinkId.Value);
+            var failedLink = _lastDiagnosticSnapshot.Links.First(item =>
+                item.PhysicalLinkId == _failurePredictionLinkId.Value);
+            _operationalFocusDeviceIds.Add(failedLink.DeviceAId);
+            _operationalFocusDeviceIds.Add(failedLink.DeviceBId);
+        }
         foreach (var affected in _failurePredictionResult.AffectedDevices.Keys)
             _operationalFocusDeviceIds.Add(affected);
         var nodes = _lastMapSnapshot.Nodes.ToDictionary(item => item.Key, StringComparer.Ordinal);
@@ -183,8 +279,8 @@ public partial class MainWindow
                 !nodes.TryGetValue(mapLink.SourceNodeKey, out a) ||
                 !nodes.TryGetValue(mapLink.TargetNodeKey, out b)) continue;
             if (a.DeviceId.HasValue && b.DeviceId.HasValue &&
-                _failurePredictionResult.AffectedDevices.ContainsKey(a.DeviceId.Value) &&
-                _failurePredictionResult.AffectedDevices.ContainsKey(b.DeviceId.Value))
+                _operationalFocusDeviceIds.Contains(a.DeviceId.Value) &&
+                _operationalFocusDeviceIds.Contains(b.DeviceId.Value))
                 _operationalFocusPhysicalLinkIds.Add(mapLink.PhysicalLinkId.Value);
         }
         UpdateFailurePredictionNotice();
@@ -198,6 +294,11 @@ public partial class MainWindow
             RefreshOperationalFocusTargets();
             ReapplyOperationalFocusPresentation();
             UpdateNeighborhoodMenuState();
+            if (IsFailurePredictionLayoutActive)
+            {
+                ApplyFailurePredictionLayout();
+                FitOperationalFocusToViewport();
+            }
         }
         if (_selectedDeviceId.HasValue || _selectedPhysicalLinkId.HasValue)
             ShowSelectedDiagnostic();
@@ -239,9 +340,14 @@ public partial class MainWindow
         string summary = null;
         if (active)
         {
-            var parts = FailureCategoryLines(_failurePredictionResult)
-                .Select(line => line.TrimEnd('.')).ToArray();
-            var categories = parts.Length == 0 ? UiText.Get("ImpactNoneAffected").TrimEnd('.')
+            var parts = new List<string>();
+            if (_failurePredictionResult.CutOffCount > 0)
+                parts.Add(UiText.FormatCount("ImpactStripCutOff", _failurePredictionResult.CutOffCount));
+            if (_failurePredictionResult.StandbyOnlyCount > 0)
+                parts.Add(UiText.FormatCount("ImpactStripStandby", _failurePredictionResult.StandbyOnlyCount));
+            if (_failurePredictionResult.UnconfirmedCount > 0)
+                parts.Add(UiText.FormatCount("ImpactStripUnconfirmed", _failurePredictionResult.UnconfirmedCount));
+            var categories = parts.Count == 0 ? UiText.Get("ImpactNoneAffected").TrimEnd('.')
                 : string.Join("; ", parts);
             if (_failurePredictionDeviceId.HasValue)
                 summary = UiText.Format("ImpactStripForDevice",

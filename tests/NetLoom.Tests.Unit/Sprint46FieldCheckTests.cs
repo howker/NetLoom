@@ -127,6 +127,9 @@ namespace NetLoom.Tests.Unit
 
                 TryDelete(database);
             }
+
+            // Sprint 50: ошибка в отчёте — провал теста, а не только строка в реестре.
+            Assert.AreEqual(0, report.Errors, report.ToString());
         }
 
         private static void Step(FieldReport report, string id, Action action)

@@ -1027,6 +1027,18 @@ namespace NetLoom.Wpf
             _shellSection =
                 section;
 
+            if (previousSection == ShellSection.Map && section != ShellSection.Map &&
+                _operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
+            {
+                RestoreNeighborhoodLayout();
+                if (_lastMapSnapshot != null)
+                {
+                    UpdateLocationHierarchyVisibility();
+                    ReconcileLinks(_lastMapSnapshot.Links,
+                        _lastMapSnapshot.Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal));
+                }
+            }
+
             ShellMapSidebarPanel.Visibility =
                 SectionVisibility(
                     section,
@@ -1090,6 +1102,13 @@ namespace NetLoom.Wpf
 
             UpdateTopologyQualityVisibility();
             RefreshNeighborhoodForSection();
+            if (section == ShellSection.Map && previousSection != ShellSection.Map &&
+                previousSection != ShellSection.Alerts &&
+                _operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
+            {
+                ApplyFailurePredictionLayout();
+                FitOperationalFocusToViewport();
+            }
 
             // Sprint 49: путь относится к рабочему виду «Карты» и в других разделах не показывается.
             if (section != ShellSection.Map)
@@ -1118,6 +1137,12 @@ namespace NetLoom.Wpf
                 if (previousSection == ShellSection.Alerts)
                 {
                     RestoreMapViewportAfterAlerts();
+                    if (section == ShellSection.Map &&
+                        _operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
+                    {
+                        ApplyFailurePredictionLayout();
+                        FitOperationalFocusToViewport();
+                    }
                 }
             }
         }
@@ -1702,6 +1727,10 @@ namespace NetLoom.Wpf
 
             _mapInteractionMode =
                 mode;
+
+            if (mode == MapInteractionMode.Edit &&
+                _operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
+                SetOperationalFocusMode(MapOperationalFocusMode.None);
 
             UpdateMapInteractionModePresentation();
             RefreshMapInteractionModeVisuals();

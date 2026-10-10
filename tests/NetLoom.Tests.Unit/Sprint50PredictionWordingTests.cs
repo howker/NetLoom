@@ -1,15 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetLoom.Wpf.Localization;
 
 namespace NetLoom.Tests.Unit
 {
     [TestClass]
     public sealed class Sprint50PredictionWordingTests
     {
+        [TestMethod]
+        public void PredictionStripUsesCountForms()
+        {
+            var originalCulture = Thread.CurrentThread.CurrentCulture;
+            var originalUiCulture = Thread.CurrentThread.CurrentUICulture;
+            try
+            {
+                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("ru-RU");
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("ru-RU");
+                StringAssert.Contains(UiText.FormatCount("ImpactStripCutOff", 1), "1 устройство будет");
+                StringAssert.Contains(UiText.FormatCount("ImpactStripCutOff", 2), "2 устройства будут");
+                StringAssert.Contains(UiText.FormatCount("ImpactStripCutOff", 5), "5 устройств будут");
+                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+                StringAssert.Contains(UiText.FormatCount("ImpactStripStandby", 1), "1 device stays");
+                StringAssert.Contains(UiText.FormatCount("ImpactStripStandby", 2), "2 devices stay");
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = originalCulture;
+                Thread.CurrentThread.CurrentUICulture = originalUiCulture;
+            }
+        }
+
         [TestMethod]
         public void ImpactAndSinglePointWordingDescribesPrediction()
         {

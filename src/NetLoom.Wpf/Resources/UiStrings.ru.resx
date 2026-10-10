@@ -3007,6 +3007,24 @@
   <data name="MapOperationalFocusFailurePredictionShow" xml:space="preserve"><value>Показать: прогноз отказа</value></data>
   <data name="ImpactStripForDevice" xml:space="preserve"><value>Прогноз: если пропадёт {0} — {1}</value></data>
   <data name="ImpactStripForLink" xml:space="preserve"><value>Прогноз: если пропадёт связь {0} ↔ {1} — {2}</value></data>
+  <data name="ImpactGroupCutOff" xml:space="preserve"><value>Будут отрезаны · {0}</value></data>
+  <data name="ImpactGroupStandby" xml:space="preserve"><value>Только через резерв STP · {0}</value></data>
+  <data name="ImpactGroupUnconfirmed" xml:space="preserve"><value>Обход не подтверждён данными STP · {0}</value></data>
+  <data name="ImpactStripCutOffOne" xml:space="preserve"><value>{0} устройство будет отрезано (другого пути нет)</value></data>
+  <data name="ImpactStripCutOffFew" xml:space="preserve"><value>{0} устройства будут отрезаны (другого пути нет)</value></data>
+  <data name="ImpactStripCutOffMany" xml:space="preserve"><value>{0} устройств будут отрезаны (другого пути нет)</value></data>
+  <data name="ImpactStripCutOffOther" xml:space="preserve"><value>{0} устройств будут отрезаны (другого пути нет)</value></data>
+  <data name="ImpactStripStandbyOne" xml:space="preserve"><value>{0} устройство останется на связи только через резерв STP</value></data>
+  <data name="ImpactStripStandbyFew" xml:space="preserve"><value>{0} устройства останутся на связи только через резерв STP</value></data>
+  <data name="ImpactStripStandbyMany" xml:space="preserve"><value>{0} устройств останутся на связи только через резерв STP</value></data>
+  <data name="ImpactStripStandbyOther" xml:space="preserve"><value>{0} устройств останутся на связи только через резерв STP</value></data>
+  <data name="ImpactStripUnconfirmedOne" xml:space="preserve"><value>{0} устройство — обход не подтверждён данными STP</value></data>
+  <data name="ImpactStripUnconfirmedFew" xml:space="preserve"><value>{0} устройства — обход не подтверждён данными STP</value></data>
+  <data name="ImpactStripUnconfirmedMany" xml:space="preserve"><value>{0} устройств — обход не подтверждён данными STP</value></data>
+  <data name="ImpactStripUnconfirmedOther" xml:space="preserve"><value>{0} устройств — обход не подтверждён данными STP</value></data>
+  <data name="RingBlockedPortUnknown" xml:space="preserve"><value>Неизвестно</value></data>
+  <data name="SpofShow" xml:space="preserve"><value>Показать</value></data>
+  <data name="SpofDependentCount" xml:space="preserve"><value>Зависят {0}</value></data>
   <data name="ImpactStripReset" xml:space="preserve"><value>Сбросить прогноз</value></data>
   <data name="SpofDependents" xml:space="preserve"><value>Единая точка отказа: от неё зависят {0}.</value></data>
   <data name="SpofStructural" xml:space="preserve"><value>Единая точка отказа: разделит сеть на части ({0}). Направление неизвестно: {1}</value></data>

@@ -636,7 +636,7 @@ namespace NetLoom.Tests.Unit
 
                 kb[3].Scenario = DeviceScenario.LldpDisabled;
                 kb[5].Scenario = DeviceScenario.UnreachableNow;
-                n.ScenarioNotes.Add("kb-sw-04 с отключённым LLDP: kb-sw-03 видит его, обратной стороны нет");
+                n.ScenarioNotes.Add("kb-sw-04 с отключённым приёмом LLDP: kb-sw-03 и kb-sw-05 видят его, обратной стороны нет");
                 n.ScenarioNotes.Add("kb-sw-06 недоступен: последние данные три дня назад, сейчас таймаут");
 
                 // Оптическая трасса ядро → корпус Б через ручные медиаконвертеры.
@@ -934,12 +934,12 @@ namespace NetLoom.Tests.Unit
                        port.PeerDevice.Reachable;
             }
 
+            // Sprint 50: у kb-sw-04 (LldpDisabled) выключен приём LLDP: он рассылает LLDP и отдаёт локальную часть
+            // LLDP-MIB, но его таблица соседей пуста. Сосед видит его всегда, обратной стороны нет — F15 не зависит
+            // От вывода по FDB и случайных идентификаторов.
             private static void Lldp(Dictionary<string, SnmpVariable> t, SimDevice device)
             {
-                if (device.Scenario == DeviceScenario.LldpDisabled)
-                {
-                    return;
-                }
+                var receiveDisabled = device.Scenario == DeviceScenario.LldpDisabled;
 
                 Num(t, "1.0.8802.1.1.2.1.3.1.0", 2, "4");
                 Bytes(t, "1.0.8802.1.1.2.1.3.2.0", device.Mac);
@@ -956,9 +956,9 @@ namespace NetLoom.Tests.Unit
 
                     var peer = port.PeerDevice;
 
-                    if (peer == null ||
+                    if (receiveDisabled ||
+                        peer == null ||
                         !LinkUp(port) ||
-                        peer.Scenario == DeviceScenario.LldpDisabled ||
                         !(peer.IsSwitch || peer.IsRouter))
                     {
                         continue;

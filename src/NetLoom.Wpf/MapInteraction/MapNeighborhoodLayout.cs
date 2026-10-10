@@ -26,7 +26,7 @@ namespace NetLoom.Wpf.MapInteraction
             IReadOnlyList<MapNeighborhoodLayoutNode> nodes, Guid selected,
             IReadOnlyList<MapNeighborhoodLink> links, IReadOnlyDictionary<Guid, int> pollingDistances,
             double nodeWidth, double nodeHeight, double columnGap, double rowGap, double availableWidth,
-            double availableHeight, double columnGapMin, double rowGapMin)
+            double availableHeight, double columnGapMin, double rowGapMin, bool fullRowGapOnOverflow = false)
         {
             if (nodes == null) throw new ArgumentNullException(nameof(nodes));
             if (links == null) throw new ArgumentNullException(nameof(links));
@@ -70,6 +70,31 @@ namespace NetLoom.Wpf.MapInteraction
             var actualRowGap = lineCount > 1
                 ? Math.Max(rowGapMin, Math.Min(rowGap, (availableHeight - lineCount * nodeHeight) / (lineCount - 1)))
                 : rowGap;
+            // Sprint 50 (прогноз отказа): если ряды не помещаются даже с минимальным промежутком, карта уйдёт
+            // На дальний уровень с ярлыками имён над карточками — тогда нужен полный промежуток, иначе ярлык ложится на ряд выше.
+            if (fullRowGapOnOverflow && lineCount > 1 &&
+                lineCount * nodeHeight + (lineCount - 1) * rowGapMin > availableHeight)
+            {
+                // Число столбцов — по пропорциям окна: так раскладка вписывается крупнее, чем при ширине,
+                // Рассчитанной на читаемый масштаб. Промежутки полные: ярлыки имён не ложатся на соседей.
+                var maxRow = rows.Max(row => row.Count());
+                var bestScale = 0.0;
+                for (var candidate = 1; candidate <= maxRow; candidate++)
+                {
+                    var lines = rows.Max(row => row.Key) + 1 +
+                        rows.Sum(row => (row.Count() + candidate - 1) / candidate - 1);
+                    var candidateWidth = candidate * nodeWidth + (candidate - 1) * columnGap;
+                    var candidateHeight = lines * nodeHeight + (lines - 1) * rowGap;
+                    var scale = Math.Min(availableWidth / candidateWidth, availableHeight / candidateHeight);
+                    if (scale <= bestScale) continue;
+                    bestScale = scale;
+                    columns = candidate;
+                }
+                widest = Math.Min(columns, maxRow);
+                actualRowGap = rowGap;
+                actualColumnGap = columnGap;
+                fullWidth = widest * nodeWidth + (widest - 1) * actualColumnGap;
+            }
             var wrappedRows = 0;
             foreach (var row in rows)
             {

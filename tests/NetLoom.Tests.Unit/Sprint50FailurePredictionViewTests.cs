@@ -199,6 +199,19 @@ namespace NetLoom.Tests.Unit
                     CollectionAssert.Contains(rows, UiText.Format("ImpactCutOff",
                         UiText.FormatCount("DiagnosticDeviceCount", 2)));
                     CollectionAssert.Contains(rows, UiText.Get("ImpactPredictionNote"));
+                    var groups = (ItemsControl)window.FindName("InspectorFailureImpactGroups");
+                    Assert.AreEqual(1, groups.Items.Count);
+                    var group = groups.Items[0];
+                    Assert.AreEqual(UiText.Format("ImpactGroupCutOff", 2),
+                        group.GetType().GetProperty("Title").GetValue(group));
+                    window.UpdateLayout();
+                    var affectedButton = TopologyQualityVisualButtons(groups)
+                        .Single(button => Equals(button.Tag, ids[2]));
+                    Assert.AreEqual((string)affectedButton.Content,
+                        AutomationProperties.GetName(affectedButton));
+                    Click(affectedButton);
+                    Assert.AreEqual(ids[2], FailureField(window, "_selectedDeviceId"));
+                    SelectDevice(window, ids[1]);
                     var show = (Button)window.FindName("InspectorFailurePredictionShowButton");
                     Assert.AreEqual(UiText.Get("ImpactShowOnMap"), AutomationProperties.GetName(show));
                     Click(show);
@@ -213,8 +226,17 @@ namespace NetLoom.Tests.Unit
                     var impacted = (System.Collections.Generic.HashSet<Guid>)FailureField(window, "_operationalFocusDeviceIds");
                     Assert.IsTrue(impacted.Contains(ids[2]) && impacted.Contains(ids[3]));
                     Assert.IsTrue(((Border)window.FindName("MapFailurePredictionNotice")).IsVisible);
+                    var summary = ((TextBlock)window.FindName("MapFailurePredictionSummaryText")).Text;
+                    Assert.IsTrue(summary.StartsWith("Прогноз: если пропадёт ", StringComparison.Ordinal));
+                    StringAssert.Contains(summary, UiText.FormatCount("ImpactStripCutOff", 2));
+                    Assert.IsTrue(((System.Collections.Generic.Dictionary<string, Point>)
+                        FailureField(window, "_neighborhoodWorkingPositions")).Count > 0);
+                    var zoom = (double)FailureField(window, "_zoom");
+                    Assert.IsTrue(zoom >= (double)FailureField(window, "_readableZoomMin") && zoom <= 1.0);
                     Assert.IsTrue(window.HandleMapNavigationKey(Key.Escape, ModifierKeys.None, false, window));
                     Assert.AreEqual("None", FailureField(window, "_operationalFocusMode").ToString());
+                    Assert.AreEqual(0, ((System.Collections.Generic.Dictionary<string, Point>)
+                        FailureField(window, "_neighborhoodWorkingPositions")).Count);
 
                     Click(show);
                     Click((Button)window.FindName("MapFailurePredictionResetButton"));

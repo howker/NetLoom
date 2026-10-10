@@ -117,7 +117,11 @@ namespace NetLoom.Topology.Stp
                 networkInterface != null
                     ? InterfaceLabel(networkInterface)
                     : null,
-                MapState(port.State),
+                // ADR-086: disabled на поднятом интерфейсе означает отсутствие данных STP, а не отключённую связь.
+                port.State == 1 && networkInterface != null &&
+                string.Equals(networkInterface.OperStatus, "up", StringComparison.OrdinalIgnoreCase)
+                    ? StpTreePortState.Unknown
+                    : MapState(port.State),
                 observation.RootPortBridgePortIndex.HasValue &&
                 observation.RootPortBridgePortIndex.Value > 0 &&
                 observation.RootPortBridgePortIndex.Value ==

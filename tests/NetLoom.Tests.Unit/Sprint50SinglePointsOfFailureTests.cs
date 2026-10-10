@@ -142,6 +142,46 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        [TestMethod]
+        public void SinglePointsListShowsTargetsAndShowSelectsOne()
+        {
+            RunOnSta(() =>
+            {
+                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("ru-RU");
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("ru-RU");
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var ids = Sprint49NeighborhoodFixture.Devices;
+                var window = new MainWindow(new FixedRefreshProvider(SinglePointsSnapshot()),
+                    new Sprint49PollingPointLookupReader(Sprint49NeighborhoodFixture.PollingMac, ids[0]))
+                {
+                    EngineHostAddresses = new Sprint49FixedHostAddresses(Sprint49NeighborhoodFixture.PollingMac)
+                };
+                try
+                {
+                    window.Show();
+                    WaitForCondition(() => DeviceBorder(window, ids[6]) != null &&
+                        window.PollingPoint?.Status == EnginePollingPointStatus.Determined);
+                    SelectSinglePointsMode(window);
+                    var toggle = (System.Windows.Controls.Primitives.ToggleButton)
+                        window.FindName("MapSinglePointsToggle");
+                    toggle.IsChecked = true;
+                    window.UpdateLayout();
+                    Assert.IsTrue(((Border)window.FindName("MapSinglePointsDetails")).IsVisible);
+                    var items = (ItemsControl)window.FindName("MapSinglePointsItems");
+                    Assert.IsTrue(items.Items.Count > 0);
+                    var button = TopologyQualityVisualButtons(items).First();
+                    var target = button.Tag;
+                    Click(button);
+                    Assert.AreEqual("FailurePrediction", FailureField(window, "_operationalFocusMode").ToString());
+                    Assert.IsTrue(Equals(target.GetType().GetProperty("DeviceId").GetValue(target),
+                        FailureField(window, "_selectedDeviceId")) ||
+                        Equals(target.GetType().GetProperty("LinkId").GetValue(target),
+                            FailureField(window, "_selectedPhysicalLinkId")));
+                }
+                finally { window.Close(); PumpDispatcher(); }
+            });
+        }
+
         private static void SelectSinglePointsMode(MainWindow window)
         {
             var show = (Button)window.FindName("MapOperationalFocusButton");
