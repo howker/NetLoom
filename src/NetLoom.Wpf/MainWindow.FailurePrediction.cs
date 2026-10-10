@@ -75,14 +75,23 @@ public partial class MainWindow
         FailurePrediction.PredictLinkFailure(_lastDiagnosticSnapshot.Links,
             FailurePollingPointId, linkId);
 
+    // Одна строка итога в той же формулировке, что полоса прогноза (замечание владельца перед слиянием Sprint 50).
     private IEnumerable<string> FailureCategoryLines(FailurePredictionResult result)
     {
+        var parts = FailureSummaryParts(result);
+        if (parts.Count > 0) yield return string.Join("; ", parts) + ".";
+    }
+
+    private static List<string> FailureSummaryParts(FailurePredictionResult result)
+    {
+        var parts = new List<string>();
         if (result.CutOffCount > 0)
-            yield return UiText.Format("ImpactCutOff", UiText.FormatCount("DiagnosticDeviceCount", result.CutOffCount));
+            parts.Add(UiText.FormatCount("ImpactStripCutOff", result.CutOffCount));
         if (result.StandbyOnlyCount > 0)
-            yield return UiText.Format("ImpactStandbyOnly", UiText.FormatCount("DiagnosticDeviceCount", result.StandbyOnlyCount));
+            parts.Add(UiText.FormatCount("ImpactStripStandby", result.StandbyOnlyCount));
         if (result.UnconfirmedCount > 0)
-            yield return UiText.Format("ImpactUnconfirmed", UiText.FormatCount("DiagnosticDeviceCount", result.UnconfirmedCount));
+            parts.Add(UiText.FormatCount("ImpactStripUnconfirmed", result.UnconfirmedCount));
+        return parts;
     }
 
     private DiagnosticTextRow[] DeviceFailurePredictionRows(DeviceDiagnostic device)
@@ -340,13 +349,7 @@ public partial class MainWindow
         string summary = null;
         if (active)
         {
-            var parts = new List<string>();
-            if (_failurePredictionResult.CutOffCount > 0)
-                parts.Add(UiText.FormatCount("ImpactStripCutOff", _failurePredictionResult.CutOffCount));
-            if (_failurePredictionResult.StandbyOnlyCount > 0)
-                parts.Add(UiText.FormatCount("ImpactStripStandby", _failurePredictionResult.StandbyOnlyCount));
-            if (_failurePredictionResult.UnconfirmedCount > 0)
-                parts.Add(UiText.FormatCount("ImpactStripUnconfirmed", _failurePredictionResult.UnconfirmedCount));
+            var parts = FailureSummaryParts(_failurePredictionResult);
             var categories = parts.Count == 0 ? UiText.Get("ImpactNoneAffected").TrimEnd('.')
                 : string.Join("; ", parts);
             if (_failurePredictionDeviceId.HasValue)

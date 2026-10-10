@@ -448,8 +448,8 @@ namespace NetLoom.Tests.Unit
                     SelectEquipmentRow(window, "ps1-sw-03");
                     var inspector = FieldInspectorText(window);
                     Check(report, "F18 Резерв STP", ContainsIgnoreCase(inspector, "Если устройство пропадёт") &&
-                        ContainsIgnoreCase(inspector, "Только через резерв STP: 2 устройства") &&
-                        !ContainsIgnoreCase(inspector, "Единственный путь"),
+                        ContainsIgnoreCase(inspector, "2 устройства останутся на связи только через резерв STP") &&
+                        !ContainsIgnoreCase(inspector, "будут отрезаны"),
                         "ps1-sw-03: «" + Shorten(inspector) + "»");
                     var show = (Button)window.FindName("InspectorFailurePredictionShowButton");
                     Check(report, "F18 Показать на карте", show.IsVisible,
@@ -469,7 +469,7 @@ namespace NetLoom.Tests.Unit
                     SelectEquipmentRow(window, "core-sw-01");
                     var inspector = FieldInspectorText(window);
                     var match = Regex.Match(inspector,
-                        @"Единственный путь: по известной топологии будут отрезаны\s+(\d+)", RegexOptions.IgnoreCase);
+                        @"(\d+)\s+устройств\w*\s+будут отрезаны \(другого пути нет\)", RegexOptions.IgnoreCase);
                     Check(report, "F19 Отказ ядра", match.Success,
                         "core-sw-01: «" + Shorten(inspector) + "»");
                     report.Note("F19 Число отрезанных", "core-sw-01: " +
@@ -486,7 +486,7 @@ namespace NetLoom.Tests.Unit
                     SelectEquipmentRow(window, "МК-1 Серверная");
                     inspector = FieldInspectorText(window);
                     Check(report, "F19 Медиаконвертер", ContainsIgnoreCase(inspector,
-                        "Единственный путь: по известной топологии будут отрезаны"),
+                        "будут отрезаны (другого пути нет)"),
                         "МК-1 Серверная: «" + Shorten(inspector) + "»");
                 });
 

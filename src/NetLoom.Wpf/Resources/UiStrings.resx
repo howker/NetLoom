@@ -2993,9 +2993,6 @@ Poll: {2}</value>
   </data>
   <data name="DiagnosticDeviceImpactTitle" xml:space="preserve"><value>If the device fails</value></data>
   <data name="ImpactNoneAffected" xml:space="preserve"><value>A bypass exists: by the known topology no device will be cut off.</value></data>
-  <data name="ImpactCutOff" xml:space="preserve"><value>Single path: by the known topology {0} will be cut off.</value></data>
-  <data name="ImpactStandbyOnly" xml:space="preserve"><value>Only through the STP standby: {0}. This path is blocked by STP now.</value></data>
-  <data name="ImpactUnconfirmed" xml:space="preserve"><value>Bypass not confirmed by STP data: {0}.</value></data>
   <data name="ImpactPredictionNote" xml:space="preserve"><value>A prediction from the known topology, not the current state of devices.</value></data>
   <data name="ImpactShowOnMap" xml:space="preserve"><value>Show on map</value></data>
   <data name="ImpactNoDirection" xml:space="preserve"><value>Direction unknown: {0}</value></data>

@@ -196,8 +196,8 @@ namespace NetLoom.Tests.Unit
                     Assert.AreEqual(UiText.Get("DiagnosticDeviceImpactTitle").ToUpper(CultureInfo.CurrentCulture),
                         ((TextBlock)window.FindName("DiagnosticSecondaryTitleText")).Text.ToUpper(CultureInfo.CurrentCulture));
                     var rows = FailureRows(window);
-                    CollectionAssert.Contains(rows, UiText.Format("ImpactCutOff",
-                        UiText.FormatCount("DiagnosticDeviceCount", 2)));
+                    // Одна строка итога в формулировке полосы прогноза.
+                    CollectionAssert.Contains(rows, UiText.FormatCount("ImpactStripCutOff", 2) + ".");
                     CollectionAssert.Contains(rows, UiText.Get("ImpactPredictionNote"));
                     var groups = (ItemsControl)window.FindName("InspectorFailureImpactGroups");
                     Assert.AreEqual(1, groups.Items.Count);
@@ -350,8 +350,7 @@ namespace NetLoom.Tests.Unit
                     FailureSelectLink(window, linkId);
                     Assert.AreEqual(UiText.Get("DiagnosticImpactTitle").ToUpper(CultureInfo.CurrentCulture),
                         ((TextBlock)window.FindName("DiagnosticSecondaryTitleText")).Text.ToUpper(CultureInfo.CurrentCulture));
-                    CollectionAssert.Contains(FailureRows(window), UiText.Format("ImpactCutOff",
-                        UiText.FormatCount("DiagnosticDeviceCount", 2)));
+                    CollectionAssert.Contains(FailureRows(window), UiText.FormatCount("ImpactStripCutOff", 2) + ".");
                     Click((Button)window.FindName("InspectorFailurePredictionShowButton"));
                     Assert.IsTrue(((Border)window.FindName("MapFailurePredictionNotice")).IsVisible);
                     Assert.IsTrue(((TextBlock)window.FindName("MapFailurePredictionSummaryText")).Text
@@ -393,7 +392,8 @@ namespace NetLoom.Tests.Unit
                         window.PollingPoint?.Status == EnginePollingPointStatus.Determined);
                     SelectDevice(window, ids[2]);
                     var rows = FailureRows(window);
-                    Assert.IsTrue(rows.Any(row => row.StartsWith("Только через резерв STP:", StringComparison.Ordinal)));
+                    // Итог в формулировке полосы: «… останутся на связи только через резерв STP», не «есть обходной путь».
+                    Assert.IsTrue(rows.Any(row => row.Contains("только через резерв STP")));
                     Assert.IsFalse(rows.Contains(UiText.Get("ImpactNoneAffected")));
                 }
                 finally { window.Close(); PumpDispatcher(); }

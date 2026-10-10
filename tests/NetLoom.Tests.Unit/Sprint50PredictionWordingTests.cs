@@ -52,7 +52,7 @@ namespace NetLoom.Tests.Unit
                 "unavailable", "are down", "is down", "went down", "failed"
             });
 
-            foreach (var key in new[] { "ImpactCutOff", "ImpactNoneAffected" })
+            foreach (var key in new[] { "ImpactNoneAffected" })
             {
                 AssertContains(russian, key, "по известной топологии");
                 AssertContains(english, key, "known topology");
