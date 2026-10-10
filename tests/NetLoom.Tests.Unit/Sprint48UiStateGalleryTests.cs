@@ -1037,7 +1037,7 @@ namespace NetLoom.Tests.Unit
                         ((TextBox)window.FindName("DiscoveryStartAddressTextBox")).Text = "10.48.228.14";
                         Sprint48ProfileCheckDialogFixture.Open(window, null, dialog =>
                         {
-                            Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<PasswordBox>().Single().Password =
+                            Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<PasswordBox>().Single(box => box.IsVisible).Password =
                                 Sprint48ProfileCheckDialogFixture.Community;
                             // Правдоподобное имя нового профиля в кадре.
                             Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<TextBox>().First().Text = "АГПЗ-v2c";

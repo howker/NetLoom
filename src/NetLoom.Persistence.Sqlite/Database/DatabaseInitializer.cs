@@ -44,7 +44,8 @@ namespace NetLoom.Persistence.Sqlite.Database
                     new Migration025DeviceIgnore(),
                     new Migration026TopologyConflictAcknowledgements(),
                     new Migration027StpTopologyChange(),
-                    new Migration028PollingPolicies()
+                    new Migration028PollingPolicies(),
+                    new Migration029AccessProfileSnmpParameters()
                 });
         }
 

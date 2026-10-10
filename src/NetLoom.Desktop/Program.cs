@@ -7,6 +7,7 @@ using NetLoom.Application.Locations;
 using NetLoom.Application.Topology;
 using NetLoom.Desktop.Discovery;
 using NetLoom.Desktop.Monitoring;
+using NetLoom.Domain.Access;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Discovery;
@@ -196,12 +197,14 @@ namespace NetLoom.Desktop
                     {
                         try
                         {
-                            request.CreatedProfile =
-                                accessProfileProvisioningService
-                                    .CreateCommunityProfile(
-                                        request.Name,
-                                        request.SnmpVersion,
-                                        request.CommunityUtf8);
+                            request.CreatedProfile = request.SnmpVersion == SnmpVersion.V3
+                                ? accessProfileProvisioningService.CreateV3Profile(
+                                    request.Name, request.Username, request.AuthenticationProtocol,
+                                    request.AuthenticationPasswordUtf8, request.PrivacyProtocol,
+                                    request.PrivacyPasswordUtf8, request.TimeoutMilliseconds, request.RetryCount)
+                                : accessProfileProvisioningService.CreateCommunityProfile(
+                                    request.Name, request.SnmpVersion, request.CommunityUtf8,
+                                    request.TimeoutMilliseconds, request.RetryCount);
                         }
                         catch (Exception error)
                         {
@@ -215,13 +218,15 @@ namespace NetLoom.Desktop
                     {
                         try
                         {
-                            request.UpdatedProfile =
-                                accessProfileProvisioningService
-                                    .UpdateCommunityProfile(
-                                        request.ProfileId,
-                                        request.Name,
-                                        request.SnmpVersion,
-                                        request.CommunityUtf8);
+                            request.UpdatedProfile = request.SnmpVersion == SnmpVersion.V3
+                                ? accessProfileProvisioningService.UpdateV3Profile(
+                                    request.ProfileId, request.Name, request.Username,
+                                    request.AuthenticationProtocol, request.AuthenticationPasswordUtf8,
+                                    request.PrivacyProtocol, request.PrivacyPasswordUtf8,
+                                    request.TimeoutMilliseconds, request.RetryCount)
+                                : accessProfileProvisioningService.UpdateCommunityProfile(
+                                    request.ProfileId, request.Name, request.SnmpVersion,
+                                    request.CommunityUtf8, request.TimeoutMilliseconds, request.RetryCount);
                         }
                         catch (Exception error)
                         {

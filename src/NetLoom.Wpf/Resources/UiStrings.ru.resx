@@ -3035,4 +3035,103 @@
   <data name="PollingDisabledByPolicy" xml:space="preserve"><value>Опрос выключен политикой «{0}»</value></data>
   <data name="PollingDisabledUnmanaged" xml:space="preserve"><value>Опрос выключен: устройство отмечено как неуправляемое</value></data>
   <data name="MonitoringValidationAllDisabledByPolicy" xml:space="preserve"><value>Нет устройств для опроса: у всех опрос выключен политикой</value></data>
+  <data name="ProfileTemplateLabel" xml:space="preserve">
+    <value>Шаблон</value>
+  </data>
+  <data name="ProfileTemplateNone" xml:space="preserve">
+    <value>Без шаблона</value>
+  </data>
+  <data name="ProfileTemplateSecureSnmpV3" xml:space="preserve">
+    <value>Защищённый SNMPv3</value>
+  </data>
+  <data name="ProfileTemplateIndustrialV2c" xml:space="preserve">
+    <value>Промышленный v2c</value>
+  </data>
+  <data name="PollingTemplateOneTimeAudit" xml:space="preserve">
+    <value>Разовый аудит</value>
+  </data>
+  <data name="PollingTemplateScheduledTopology" xml:space="preserve">
+    <value>Топология по расписанию</value>
+  </data>
+  <data name="PollingTemplateNoActivePolling" xml:space="preserve">
+    <value>Без активного опроса</value>
+  </data>
+  <data name="DiscoveryProfileV3Username" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="DiscoveryProfileV3SecurityLevel" xml:space="preserve">
+    <value>Уровень защиты</value>
+  </data>
+  <data name="DiscoveryProfileV3NoAuthNoPriv" xml:space="preserve">
+    <value>Без аутентификации и шифрования</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthNoPriv" xml:space="preserve">
+    <value>Аутентификация</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthPriv" xml:space="preserve">
+    <value>Аутентификация и шифрование</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthProtocol" xml:space="preserve">
+    <value>Протокол аутентификации</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthPassword" xml:space="preserve">
+    <value>Пароль аутентификации</value>
+  </data>
+  <data name="DiscoveryProfileV3PrivacyProtocol" xml:space="preserve">
+    <value>Протокол шифрования</value>
+  </data>
+  <data name="DiscoveryProfileV3PrivacyPassword" xml:space="preserve">
+    <value>Пароль шифрования</value>
+  </data>
+  <data name="DiscoveryProfileV3Timeout" xml:space="preserve">
+    <value>Тайм-аут SNMP, мс</value>
+  </data>
+  <data name="DiscoveryProfileV3Retries" xml:space="preserve">
+    <value>Повторы</value>
+  </data>
+  <data name="DiscoveryProfileV3ParameterHint" xml:space="preserve">
+    <value>Пустые поля используют общие значения Настроек.</value>
+  </data>
+  <data name="DiscoveryProfileV3CheckUnavailable" xml:space="preserve">
+    <value>Проверка доступна для v1 и v2c</value>
+  </data>
+  <data name="DiscoveryProfileV3TimeoutInvalid" xml:space="preserve">
+    <value>Введите положительный тайм-аут SNMP.</value>
+  </data>
+  <data name="DiscoveryProfileV3RetriesInvalid" xml:space="preserve">
+    <value>Введите целое число повторов от 0.</value>
+  </data>
+  <data name="DiscoveryProfileV3UsernameRequired" xml:space="preserve">
+    <value>Введите имя пользователя.</value>
+  </data>
+  <data name="DiscoveryProfileV3PasswordShort" xml:space="preserve">
+    <value>Пароль должен содержать не менее 8 байт.</value>
+  </data>
+  <data name="DiscoveryProfileV3Md5" xml:space="preserve">
+    <value>MD5</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha1" xml:space="preserve">
+    <value>SHA-1</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha256" xml:space="preserve">
+    <value>SHA-256</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha384" xml:space="preserve">
+    <value>SHA-384</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha512" xml:space="preserve">
+    <value>SHA-512</value>
+  </data>
+  <data name="DiscoveryProfileV3Des" xml:space="preserve">
+    <value>DES</value>
+  </data>
+  <data name="DiscoveryProfileV3Aes" xml:space="preserve">
+    <value>AES-128</value>
+  </data>
+  <data name="DiscoveryProfileV3Aes192" xml:space="preserve">
+    <value>AES-192</value>
+  </data>
+  <data name="DiscoveryProfileV3Aes256" xml:space="preserve">
+    <value>AES-256</value>
+  </data>
 </root>

@@ -141,8 +141,10 @@ namespace NetLoom.Desktop.Discovery
 
             try
             {
-                if (HasSecret(authenticationPassword) ||
-                    HasSecret(privacyPassword))
+                if ((HasSecret(authenticationPassword) &&
+                        string.IsNullOrWhiteSpace(profile.SnmpAuthenticationProtocol)) ||
+                    (HasSecret(privacyPassword) &&
+                        string.IsNullOrWhiteSpace(profile.SnmpPrivacyProtocol)))
                 {
                     throw new InvalidOperationException(
                         "DISCOVERY_SNMP_V3_SECURITY_PROTOCOLS_NOT_STORED");
@@ -154,9 +156,13 @@ namespace NetLoom.Desktop.Discovery
                         profile.SnmpUsername.Trim());
 
                 environment[AuthenticationProtocol] =
-                    "None";
+                    profile.SnmpAuthenticationProtocol ?? "None";
                 environment[PrivacyProtocol] =
-                    "None";
+                    profile.SnmpPrivacyProtocol ?? "None";
+                if (environment[AuthenticationProtocol] != "None" && HasSecret(authenticationPassword))
+                    environment[AuthenticationPassword] = Encoding.UTF8.GetString(authenticationPassword);
+                if (environment[PrivacyProtocol] != "None" && HasSecret(privacyPassword))
+                    environment[PrivacyPassword] = Encoding.UTF8.GetString(privacyPassword);
 
                 return environment;
             }

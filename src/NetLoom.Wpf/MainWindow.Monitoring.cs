@@ -1355,6 +1355,10 @@ namespace NetLoom.Wpf
                 return false;
             }
 
+            // Параметры профиля важнее общих настроек; пустые значения берутся из настроек (ADR-087).
+            timeoutMilliseconds = selectedProfile.Profile.SnmpTimeoutMilliseconds ?? timeoutMilliseconds;
+            retryCount = selectedProfile.Profile.SnmpRetryCount ?? retryCount;
+
             policy =
                 new MonitoringSessionPolicy(
                     TimeSpan.FromSeconds(

@@ -44,7 +44,7 @@ namespace NetLoom.Tests.Unit
                     {
                         var address = Sprint48ProfileCheckDialogFixture.Named<TextBox>(dialog, "DiscoveryProfileCheckAddress");
                         Assert.AreEqual("192.0.2.1", address.Text);
-                        Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<PasswordBox>().Single().Password =
+                        Sprint48ProfileCheckDialogFixture.Visuals(dialog).OfType<PasswordBox>().Single(box => box.IsVisible).Password =
                             Sprint48ProfileCheckDialogFixture.Community;
                         var check = Sprint48ProfileCheckDialogFixture.Named<Button>(dialog, "DiscoveryProfileCheckButton");
                         Click(check);

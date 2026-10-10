@@ -190,6 +190,28 @@ namespace NetLoom.Tests.Modern
         }
 
         [TestMethod]
+        public void PersistedV3ProtocolsAndPasswordsReachDiscoveryEnvironment()
+        {
+            WithDatabase((profiles, secrets) =>
+            {
+                var profile = new AccessProfile(Guid.NewGuid(), "Secured", true,
+                    SnmpVersion.V3, "operator", "Sha256", "Aes", 3000, 1);
+                profiles.Save(profile);
+                secrets.SetSecret(profile.Id, AccessProfileSecretKind.SnmpAuthenticationPassword,
+                    Encoding.UTF8.GetBytes("authpassword"));
+                secrets.SetSecret(profile.Id, AccessProfileSecretKind.SnmpPrivacyPassword,
+                    Encoding.UTF8.GetBytes("privpassword"));
+                var environment = new DesktopDiscoveryProcessEnvironmentProvider(profiles, secrets)
+                    .CreateEnvironment(profile.Id, SnmpVersion.V3);
+                Assert.AreEqual("Sha256", environment["NETLOOM_SNMP_AUTH_PROTOCOL"]);
+                Assert.AreEqual("authpassword", environment["NETLOOM_SNMP_AUTH_PASSWORD"]);
+                Assert.AreEqual("Aes", environment["NETLOOM_SNMP_PRIVACY_PROTOCOL"]);
+                Assert.AreEqual("privpassword", environment["NETLOOM_SNMP_PRIVACY_PASSWORD"]);
+                Assert.AreEqual(string.Empty, environment["NETLOOM_SNMP_COMMUNITY"]);
+            });
+        }
+
+        [TestMethod]
         public void EnabledProfilesAreReturnedInStableNameOrder()
         {
             WithDatabase(

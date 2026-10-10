@@ -14,6 +14,7 @@ using NetLoom.Application.Discovery;
 using NetLoom.Application.DiscoveryControl;
 using NetLoom.Application.DiscoveryInbox;
 using NetLoom.Application.MonitoringControl;
+using NetLoom.Application.PollingPolicies;
 using NetLoom.Application.Snmp;
 using NetLoom.Application.Topology;
 using NetLoom.Domain.Access;
@@ -528,7 +529,10 @@ namespace NetLoom.Wpf
                         "v1"),
                     new DiscoverySnmpVersionOption(
                         SnmpVersion.V2C,
-                        "v2c")
+                        "v2c"),
+                    new DiscoverySnmpVersionOption(
+                        SnmpVersion.V3,
+                        "v3")
                 };
 
             var versionComboBox =
@@ -556,6 +560,50 @@ namespace NetLoom.Wpf
 
             var communityPasswordBox =
                 new PasswordBox();
+            var templateLabel = new TextBlock { Text = UiText.Get("ProfileTemplateLabel") };
+            var templateComboBox = new ComboBox { Name = "DiscoveryProfileTemplateComboBox" };
+            templateComboBox.Items.Add(UiText.Get("ProfileTemplateNone"));
+            templateComboBox.Items.Add(UiText.Get("ProfileTemplateSecureSnmpV3"));
+            templateComboBox.Items.Add(UiText.Get("ProfileTemplateIndustrialV2c"));
+            templateComboBox.SelectedIndex = 0;
+            var usernameLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3Username") };
+            var usernameTextBox = new TextBox { Name = "DiscoveryProfileV3Username", Text = editingProfile?.SnmpUsername ?? string.Empty };
+            var securityLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3SecurityLevel") };
+            var securityComboBox = new ComboBox { Name = "DiscoveryProfileV3SecurityLevel" };
+            securityComboBox.Items.Add(UiText.Get("DiscoveryProfileV3NoAuthNoPriv"));
+            securityComboBox.Items.Add(UiText.Get("DiscoveryProfileV3AuthNoPriv"));
+            securityComboBox.Items.Add(UiText.Get("DiscoveryProfileV3AuthPriv"));
+            securityComboBox.SelectedIndex = editingProfile?.SnmpPrivacyProtocol != null &&
+                editingProfile.SnmpPrivacyProtocol != "None" ? 2 :
+                editingProfile?.SnmpAuthenticationProtocol != null &&
+                editingProfile.SnmpAuthenticationProtocol != "None" ? 1 : 0;
+            var authLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3AuthProtocol") };
+            var authValues = new[] { "Md5", "Sha1", "Sha256", "Sha384", "Sha512" };
+            var authComboBox = new ComboBox { Name = "DiscoveryProfileV3AuthProtocol",
+                ItemsSource = new[] { UiText.Get("DiscoveryProfileV3Md5"), UiText.Get("DiscoveryProfileV3Sha1"),
+                    UiText.Get("DiscoveryProfileV3Sha256"), UiText.Get("DiscoveryProfileV3Sha384"),
+                    UiText.Get("DiscoveryProfileV3Sha512") },
+                SelectedIndex = Math.Max(0, Array.IndexOf(authValues,
+                    editingProfile?.SnmpAuthenticationProtocol ?? "Sha256")) };
+            var authPasswordLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3AuthPassword") };
+            var authPasswordBox = new PasswordBox { Name = "DiscoveryProfileV3AuthPassword" };
+            var privacyLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3PrivacyProtocol") };
+            var privacyValues = new[] { "Des", "Aes", "Aes192", "Aes256" };
+            var privacyComboBox = new ComboBox { Name = "DiscoveryProfileV3PrivacyProtocol",
+                ItemsSource = new[] { UiText.Get("DiscoveryProfileV3Des"), UiText.Get("DiscoveryProfileV3Aes"),
+                    UiText.Get("DiscoveryProfileV3Aes192"), UiText.Get("DiscoveryProfileV3Aes256") },
+                SelectedIndex = Math.Max(0, Array.IndexOf(privacyValues,
+                    editingProfile?.SnmpPrivacyProtocol ?? "Aes")) };
+            var privacyPasswordLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3PrivacyPassword") };
+            var privacyPasswordBox = new PasswordBox { Name = "DiscoveryProfileV3PrivacyPassword" };
+            var timeoutLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3Timeout") };
+            var timeoutTextBox = new TextBox { Name = "DiscoveryProfileV3Timeout",
+                Text = editingProfile?.SnmpTimeoutMilliseconds?.ToString() ?? string.Empty };
+            var retriesLabel = new TextBlock { Text = UiText.Get("DiscoveryProfileV3Retries") };
+            var retriesTextBox = new TextBox { Name = "DiscoveryProfileV3Retries",
+                Text = editingProfile?.SnmpRetryCount?.ToString() ?? string.Empty };
+            var parameterHint = new TextBlock { Text = UiText.Get("DiscoveryProfileV3ParameterHint") };
+            var checkV3Hint = new TextBlock { Text = UiText.Get("DiscoveryProfileV3CheckUnavailable") };
 
             var nameLabel =
                 new TextBlock
@@ -616,6 +664,15 @@ namespace NetLoom.Wpf
             };
             var checkProgress = new TextBlock { TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
             var checkRows = new StackPanel { Name = "DiscoveryProfileCheckRows" };
+            AutomationProperties.SetLabeledBy(templateComboBox, templateLabel);
+            AutomationProperties.SetLabeledBy(usernameTextBox, usernameLabel);
+            AutomationProperties.SetLabeledBy(securityComboBox, securityLabel);
+            AutomationProperties.SetLabeledBy(authComboBox, authLabel);
+            AutomationProperties.SetLabeledBy(authPasswordBox, authPasswordLabel);
+            AutomationProperties.SetLabeledBy(privacyComboBox, privacyLabel);
+            AutomationProperties.SetLabeledBy(privacyPasswordBox, privacyPasswordLabel);
+            AutomationProperties.SetLabeledBy(timeoutTextBox, timeoutLabel);
+            AutomationProperties.SetLabeledBy(retriesTextBox, retriesLabel);
             AutomationProperties.SetLabeledBy(checkAddress, checkTitle);
             AutomationProperties.SetName(checkAddress, checkTitle.Text);
             LiveRegion.SetIsPolite(checkProgress, true);
@@ -664,6 +721,7 @@ namespace NetLoom.Wpf
                 nameLabel);
             content.Children.Add(
                 nameTextBox);
+            if (creating) { content.Children.Add(templateLabel); content.Children.Add(templateComboBox); }
             content.Children.Add(
                 versionLabel);
             content.Children.Add(
@@ -674,6 +732,11 @@ namespace NetLoom.Wpf
                 communityPasswordBox);
             content.Children.Add(
                 communityHint);
+            foreach (var field in new UIElement[] { usernameLabel, usernameTextBox, securityLabel,
+                securityComboBox, authLabel, authComboBox, authPasswordLabel, authPasswordBox,
+                privacyLabel, privacyComboBox, privacyPasswordLabel, privacyPasswordBox,
+                timeoutLabel, timeoutTextBox, retriesLabel, retriesTextBox, parameterHint })
+                content.Children.Add(field);
             content.Children.Add(
                 errorText);
             content.Children.Add(checkTitle);
@@ -681,6 +744,7 @@ namespace NetLoom.Wpf
             content.Children.Add(checkAddressHint);
             content.Children.Add(checkError);
             content.Children.Add(checkButton);
+            content.Children.Add(checkV3Hint);
             content.Children.Add(checkProgress);
             content.Children.Add(checkRows);
             content.Children.Add(
@@ -747,6 +811,50 @@ namespace NetLoom.Wpf
             checkButton.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
             checkProgress.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
             checkProgress.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.GapSmTop");
+            foreach (var label in new[] { templateLabel, usernameLabel, securityLabel, authLabel,
+                authPasswordLabel, privacyLabel, privacyPasswordLabel, timeoutLabel, retriesLabel })
+            {
+                label.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.FieldLabel");
+                label.SetResourceReference(FrameworkElement.MarginProperty, "NetLoom.Thickness.FieldLabel");
+            }
+            parameterHint.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            checkV3Hint.SetResourceReference(FrameworkElement.StyleProperty, "NetLoom.Style.MutedText");
+            Action updateFields = () =>
+            {
+                var v3 = (versionComboBox.SelectedItem as DiscoverySnmpVersionOption)?.Version == SnmpVersion.V3;
+                var auth = v3 && securityComboBox.SelectedIndex >= 1;
+                var privacy = v3 && securityComboBox.SelectedIndex == 2;
+                foreach (var field in new UIElement[] { communityLabel, communityPasswordBox, communityHint })
+                    field.Visibility = v3 ? Visibility.Collapsed : Visibility.Visible;
+                communityHint.Visibility = v3 || creating ? Visibility.Collapsed : Visibility.Visible;
+                foreach (var field in new UIElement[] { usernameLabel, usernameTextBox, securityLabel, securityComboBox })
+                    field.Visibility = v3 ? Visibility.Visible : Visibility.Collapsed;
+                foreach (var field in new UIElement[] { authLabel, authComboBox, authPasswordLabel, authPasswordBox })
+                    field.Visibility = auth ? Visibility.Visible : Visibility.Collapsed;
+                foreach (var field in new UIElement[] { privacyLabel, privacyComboBox, privacyPasswordLabel, privacyPasswordBox })
+                    field.Visibility = privacy ? Visibility.Visible : Visibility.Collapsed;
+                checkButton.IsEnabled = !v3;
+                checkV3Hint.Visibility = v3 ? Visibility.Visible : Visibility.Collapsed;
+            };
+            versionComboBox.SelectionChanged += (sender, args) => updateFields();
+            securityComboBox.SelectionChanged += (sender, args) => updateFields();
+            templateComboBox.SelectionChanged += (sender, args) =>
+            {
+                var template = templateComboBox.SelectedIndex == 1 ? PollingTemplates.SecureSnmpV3 :
+                    templateComboBox.SelectedIndex == 2 ? PollingTemplates.IndustrialV2c : null;
+                if (template == null) return;
+                versionComboBox.SelectedIndex = Array.FindIndex(versionOptions, option => option.Version == template.Version);
+                securityComboBox.SelectedIndex = template.SecurityLevel == SnmpSecurityLevel.AuthPriv ? 2 :
+                    template.SecurityLevel == SnmpSecurityLevel.AuthNoPriv ? 1 : 0;
+                if (template.Version == SnmpVersion.V3)
+                {
+                    authComboBox.SelectedIndex = Array.IndexOf(authValues, template.AuthenticationProtocol.ToString());
+                    privacyComboBox.SelectedIndex = Array.IndexOf(privacyValues, template.PrivacyProtocol.ToString());
+                }
+                timeoutTextBox.Text = template.TimeoutMilliseconds.ToString();
+                retriesTextBox.Text = template.RetryCount.ToString();
+            };
+            updateFields();
             var dialogClosed = false;
             dialog.Closed += (sender, args) => dialogClosed = true;
             System.Windows.Input.KeyboardNavigation.SetTabNavigation(dialog,
@@ -874,7 +982,8 @@ namespace NetLoom.Wpf
                         communityPasswordBox.Password ??
                         string.Empty;
 
-                    if (creating &&
+                    var isV3 = selectedVersion.Version == SnmpVersion.V3;
+                    if ((creating || editingProfile.SnmpVersion == SnmpVersion.V3) && !isV3 &&
                         community.Length == 0)
                     {
                         showError(
@@ -885,10 +994,48 @@ namespace NetLoom.Wpf
                     }
 
                     byte[] communityUtf8 =
-                        community.Length == 0
+                        isV3 || community.Length == 0
                             ? null
                             : Encoding.UTF8.GetBytes(
                                 community);
+                    int? timeoutMs = null;
+                    int? retries = null;
+                    if (!string.IsNullOrWhiteSpace(timeoutTextBox.Text))
+                    {
+                        if (!int.TryParse(timeoutTextBox.Text, out var value) || value <= 0)
+                        { showError(UiText.Get("DiscoveryProfileV3TimeoutInvalid")); return; }
+                        timeoutMs = value;
+                    }
+                    if (!string.IsNullOrWhiteSpace(retriesTextBox.Text))
+                    {
+                        if (!int.TryParse(retriesTextBox.Text, out var value) || value < 0)
+                        { showError(UiText.Get("DiscoveryProfileV3RetriesInvalid")); return; }
+                        retries = value;
+                    }
+                    if (isV3 && string.IsNullOrWhiteSpace(usernameTextBox.Text))
+                    { showError(UiText.Get("DiscoveryProfileV3UsernameRequired")); return; }
+                    var needsAuth = isV3 && securityComboBox.SelectedIndex >= 1;
+                    var needsPrivacy = isV3 && securityComboBox.SelectedIndex == 2;
+                    var authBytes = needsAuth && authPasswordBox.Password.Length > 0
+                        ? Encoding.UTF8.GetBytes(authPasswordBox.Password) : null;
+                    var privacyBytes = needsPrivacy && privacyPasswordBox.Password.Length > 0
+                        ? Encoding.UTF8.GetBytes(privacyPasswordBox.Password) : null;
+                    if (needsAuth && ((authPasswordBox.Password.Length > 0 && authPasswordBox.Password.Length < 8) ||
+                        (authBytes == null && (creating || (editingProfile.SnmpAuthenticationProtocol ?? "None") == "None"))))
+                    {
+                        if (authBytes != null) Array.Clear(authBytes, 0, authBytes.Length);
+                        if (privacyBytes != null) Array.Clear(privacyBytes, 0, privacyBytes.Length);
+                        showError(UiText.Get("DiscoveryProfileV3PasswordShort")); return;
+                    }
+                    if (needsPrivacy && ((privacyPasswordBox.Password.Length > 0 && privacyPasswordBox.Password.Length < 8) ||
+                        (privacyBytes == null && (creating || (editingProfile.SnmpPrivacyProtocol ?? "None") == "None"))))
+                    {
+                        if (authBytes != null) Array.Clear(authBytes, 0, authBytes.Length);
+                        if (privacyBytes != null) Array.Clear(privacyBytes, 0, privacyBytes.Length);
+                        showError(UiText.Get("DiscoveryProfileV3PasswordShort")); return;
+                    }
+                    var authProtocol = needsAuth ? authValues[authComboBox.SelectedIndex] : "None";
+                    var privacyProtocol = needsPrivacy ? privacyValues[privacyComboBox.SelectedIndex] : "None";
 
                     try
                     {
@@ -901,7 +1048,8 @@ namespace NetLoom.Wpf
                                 new DiscoveryProfileCreateRequestedEventArgs(
                                     name,
                                     selectedVersion.Version,
-                                    communityUtf8);
+                                    communityUtf8, usernameTextBox.Text, authProtocol, authBytes,
+                                    privacyProtocol, privacyBytes, timeoutMs, retries);
 
                             createRequestHandler(
                                 this,
@@ -919,7 +1067,8 @@ namespace NetLoom.Wpf
                                     editingProfile.Id,
                                     name,
                                     selectedVersion.Version,
-                                    communityUtf8);
+                                    communityUtf8, usernameTextBox.Text, authProtocol, authBytes,
+                                    privacyProtocol, privacyBytes, timeoutMs, retries);
 
                             updateRequestHandler(
                                 this,
@@ -998,6 +1147,10 @@ namespace NetLoom.Wpf
 
                         communityPasswordBox.Password =
                             string.Empty;
+                        if (authBytes != null) Array.Clear(authBytes, 0, authBytes.Length);
+                        if (privacyBytes != null) Array.Clear(privacyBytes, 0, privacyBytes.Length);
+                        authPasswordBox.Password = string.Empty;
+                        privacyPasswordBox.Password = string.Empty;
                     }
                 };
 
@@ -1793,13 +1946,15 @@ namespace NetLoom.Wpf
                 return false;
             }
 
-            request =
-                new DiscoveryControlRequest(
-                    startAddress,
-                    endAddress,
-                    subnetMask,
-                    selected.Profile.Id,
-                    selected.Profile.SnmpVersion);
+            var settings = _persistedPollingSettings;
+            // Параметры профиля важнее общих настроек; пустые значения берутся из настроек (ADR-087).
+            request = new DiscoveryControlRequest(
+                startAddress, endAddress, subnetMask,
+                selected.Profile.Id, selected.Profile.SnmpVersion,
+                161,
+                selected.Profile.SnmpTimeoutMilliseconds ?? settings.TimeoutMilliseconds,
+                selected.Profile.SnmpRetryCount ?? settings.RetryCount,
+                10, 500, 500, new[] { 22, 80, 443 }, 50, 4096);
 
             return true;
         }
@@ -2186,8 +2341,12 @@ namespace NetLoom.Wpf
             DiscoveryMessageText.Text = string.Empty;
             try
             {
+                // Параметры профиля важнее общих настроек; пустые значения берутся из настроек (ADR-087).
                 var request = new DiscoveryControlRequest(row.Address, row.Address,
-                    "255.255.255.255", profile.Id, profile.SnmpVersion);
+                    "255.255.255.255", profile.Id, profile.SnmpVersion, 161,
+                    profile.SnmpTimeoutMilliseconds ?? _persistedPollingSettings.TimeoutMilliseconds,
+                    profile.SnmpRetryCount ?? _persistedPollingSettings.RetryCount,
+                    10, 500, 500, new[] { 22, 80, 443 }, 50, 4096);
                 _discoveryRunJournal.BeginRetry(row.RunId, row.Address, DiscoveryRunClock());
                 _activeDiscoveryRunId = row.RunId;
                 _discoveryRetryActive = true;
@@ -2392,7 +2551,10 @@ namespace NetLoom.Wpf
             public DiscoveryProfileCreateRequestedEventArgs(
                 string name,
                 SnmpVersion snmpVersion,
-                byte[] communityUtf8)
+                byte[] communityUtf8, string username = null,
+                string authProtocol = null, byte[] authPasswordUtf8 = null,
+                string privacyProtocol = null, byte[] privacyPasswordUtf8 = null,
+                int? timeoutMs = null, int? retries = null)
             {
                 Name =
                     name ??
@@ -2402,10 +2564,14 @@ namespace NetLoom.Wpf
                 SnmpVersion =
                     snmpVersion;
 
-                CommunityUtf8 =
-                    communityUtf8 ??
-                    throw new ArgumentNullException(
-                        nameof(communityUtf8));
+                CommunityUtf8 = communityUtf8;
+                Username = username;
+                AuthenticationProtocol = authProtocol;
+                AuthenticationPasswordUtf8 = authPasswordUtf8;
+                PrivacyProtocol = privacyProtocol;
+                PrivacyPasswordUtf8 = privacyPasswordUtf8;
+                TimeoutMilliseconds = timeoutMs;
+                RetryCount = retries;
             }
 
             public string Name { get; }
@@ -2413,6 +2579,13 @@ namespace NetLoom.Wpf
             public SnmpVersion SnmpVersion { get; }
 
             public byte[] CommunityUtf8 { get; }
+            public string Username { get; }
+            public string AuthenticationProtocol { get; }
+            public byte[] AuthenticationPasswordUtf8 { get; }
+            public string PrivacyProtocol { get; }
+            public byte[] PrivacyPasswordUtf8 { get; }
+            public int? TimeoutMilliseconds { get; }
+            public int? RetryCount { get; }
 
             public AccessProfile CreatedProfile { get; set; }
 
@@ -2426,7 +2599,10 @@ namespace NetLoom.Wpf
                 Guid profileId,
                 string name,
                 SnmpVersion snmpVersion,
-                byte[] communityUtf8)
+                byte[] communityUtf8, string username = null,
+                string authProtocol = null, byte[] authPasswordUtf8 = null,
+                string privacyProtocol = null, byte[] privacyPasswordUtf8 = null,
+                int? timeoutMs = null, int? retries = null)
             {
                 if (profileId == Guid.Empty)
                 {
@@ -2445,6 +2621,13 @@ namespace NetLoom.Wpf
                     snmpVersion;
                 CommunityUtf8 =
                     communityUtf8;
+                Username = username;
+                AuthenticationProtocol = authProtocol;
+                AuthenticationPasswordUtf8 = authPasswordUtf8;
+                PrivacyProtocol = privacyProtocol;
+                PrivacyPasswordUtf8 = privacyPasswordUtf8;
+                TimeoutMilliseconds = timeoutMs;
+                RetryCount = retries;
             }
 
             public Guid ProfileId { get; }
@@ -2454,6 +2637,13 @@ namespace NetLoom.Wpf
             public SnmpVersion SnmpVersion { get; }
 
             public byte[] CommunityUtf8 { get; }
+            public string Username { get; }
+            public string AuthenticationProtocol { get; }
+            public byte[] AuthenticationPasswordUtf8 { get; }
+            public string PrivacyProtocol { get; }
+            public byte[] PrivacyPasswordUtf8 { get; }
+            public int? TimeoutMilliseconds { get; }
+            public int? RetryCount { get; }
 
             public AccessProfile UpdatedProfile { get; set; }
 

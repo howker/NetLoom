@@ -3035,4 +3035,103 @@ Poll: {2}</value>
   <data name="PollingDisabledByPolicy" xml:space="preserve"><value>Polling is turned off by policy “{0}”</value></data>
   <data name="PollingDisabledUnmanaged" xml:space="preserve"><value>Polling is off: the device is marked as unmanaged</value></data>
   <data name="MonitoringValidationAllDisabledByPolicy" xml:space="preserve"><value>No devices to poll: polling is turned off by policy for all of them</value></data>
+  <data name="ProfileTemplateLabel" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="ProfileTemplateNone" xml:space="preserve">
+    <value>No template</value>
+  </data>
+  <data name="ProfileTemplateSecureSnmpV3" xml:space="preserve">
+    <value>Secure SNMPv3</value>
+  </data>
+  <data name="ProfileTemplateIndustrialV2c" xml:space="preserve">
+    <value>Industrial v2c</value>
+  </data>
+  <data name="PollingTemplateOneTimeAudit" xml:space="preserve">
+    <value>One-time audit</value>
+  </data>
+  <data name="PollingTemplateScheduledTopology" xml:space="preserve">
+    <value>Scheduled topology</value>
+  </data>
+  <data name="PollingTemplateNoActivePolling" xml:space="preserve">
+    <value>No active polling</value>
+  </data>
+  <data name="DiscoveryProfileV3Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="DiscoveryProfileV3SecurityLevel" xml:space="preserve">
+    <value>Security level</value>
+  </data>
+  <data name="DiscoveryProfileV3NoAuthNoPriv" xml:space="preserve">
+    <value>No authentication or privacy</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthNoPriv" xml:space="preserve">
+    <value>Authentication</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthPriv" xml:space="preserve">
+    <value>Authentication and privacy</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthProtocol" xml:space="preserve">
+    <value>Authentication protocol</value>
+  </data>
+  <data name="DiscoveryProfileV3AuthPassword" xml:space="preserve">
+    <value>Authentication password</value>
+  </data>
+  <data name="DiscoveryProfileV3PrivacyProtocol" xml:space="preserve">
+    <value>Privacy protocol</value>
+  </data>
+  <data name="DiscoveryProfileV3PrivacyPassword" xml:space="preserve">
+    <value>Privacy password</value>
+  </data>
+  <data name="DiscoveryProfileV3Timeout" xml:space="preserve">
+    <value>SNMP timeout, ms</value>
+  </data>
+  <data name="DiscoveryProfileV3Retries" xml:space="preserve">
+    <value>Retries</value>
+  </data>
+  <data name="DiscoveryProfileV3ParameterHint" xml:space="preserve">
+    <value>Empty fields use the general Settings values.</value>
+  </data>
+  <data name="DiscoveryProfileV3CheckUnavailable" xml:space="preserve">
+    <value>Check is available for v1 and v2c</value>
+  </data>
+  <data name="DiscoveryProfileV3TimeoutInvalid" xml:space="preserve">
+    <value>Enter a positive SNMP timeout.</value>
+  </data>
+  <data name="DiscoveryProfileV3RetriesInvalid" xml:space="preserve">
+    <value>Enter a retry count of 0 or more.</value>
+  </data>
+  <data name="DiscoveryProfileV3UsernameRequired" xml:space="preserve">
+    <value>Enter a username.</value>
+  </data>
+  <data name="DiscoveryProfileV3PasswordShort" xml:space="preserve">
+    <value>Password must contain at least 8 bytes.</value>
+  </data>
+  <data name="DiscoveryProfileV3Md5" xml:space="preserve">
+    <value>MD5</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha1" xml:space="preserve">
+    <value>SHA-1</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha256" xml:space="preserve">
+    <value>SHA-256</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha384" xml:space="preserve">
+    <value>SHA-384</value>
+  </data>
+  <data name="DiscoveryProfileV3Sha512" xml:space="preserve">
+    <value>SHA-512</value>
+  </data>
+  <data name="DiscoveryProfileV3Des" xml:space="preserve">
+    <value>DES</value>
+  </data>
+  <data name="DiscoveryProfileV3Aes" xml:space="preserve">
+    <value>AES-128</value>
+  </data>
+  <data name="DiscoveryProfileV3Aes192" xml:space="preserve">
+    <value>AES-192</value>
+  </data>
+  <data name="DiscoveryProfileV3Aes256" xml:space="preserve">
+    <value>AES-256</value>
+  </data>
 </root>

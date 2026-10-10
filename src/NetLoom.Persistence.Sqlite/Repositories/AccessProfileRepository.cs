@@ -38,6 +38,10 @@ INSERT INTO access_profiles
     is_enabled,
     snmp_version,
     snmp_username,
+    snmp_auth_protocol,
+    snmp_privacy_protocol,
+    snmp_timeout_ms,
+    snmp_retry_count,
     created_utc,
     updated_utc
 )
@@ -48,6 +52,10 @@ VALUES
     @isEnabled,
     @snmpVersion,
     @snmpUsername,
+    @snmpAuthProtocol,
+    @snmpPrivacyProtocol,
+    @snmpTimeoutMs,
+    @snmpRetryCount,
     @createdUtc,
     @updatedUtc
 )
@@ -56,6 +64,10 @@ ON CONFLICT(access_profile_id) DO UPDATE SET
     is_enabled = excluded.is_enabled,
     snmp_version = excluded.snmp_version,
     snmp_username = excluded.snmp_username,
+    snmp_auth_protocol = excluded.snmp_auth_protocol,
+    snmp_privacy_protocol = excluded.snmp_privacy_protocol,
+    snmp_timeout_ms = excluded.snmp_timeout_ms,
+    snmp_retry_count = excluded.snmp_retry_count,
     updated_utc = excluded.updated_utc;";
 
                 command.Parameters.AddWithValue("@id", profile.Id.ToString("D"));
@@ -69,6 +81,10 @@ ON CONFLICT(access_profile_id) DO UPDATE SET
                 command.Parameters.AddWithValue(
                     "@snmpUsername",
                     (object)profile.SnmpUsername ?? DBNull.Value);
+                command.Parameters.AddWithValue("@snmpAuthProtocol", (object)profile.SnmpAuthenticationProtocol ?? DBNull.Value);
+                command.Parameters.AddWithValue("@snmpPrivacyProtocol", (object)profile.SnmpPrivacyProtocol ?? DBNull.Value);
+                command.Parameters.AddWithValue("@snmpTimeoutMs", (object)profile.SnmpTimeoutMilliseconds ?? DBNull.Value);
+                command.Parameters.AddWithValue("@snmpRetryCount", (object)profile.SnmpRetryCount ?? DBNull.Value);
                 command.Parameters.AddWithValue("@createdUtc", now);
                 command.Parameters.AddWithValue("@updatedUtc", now);
 
@@ -103,7 +119,11 @@ SELECT
     access_profile_id,
     name,
     snmp_version,
-    snmp_username
+    snmp_username,
+    snmp_auth_protocol,
+    snmp_privacy_protocol,
+    snmp_timeout_ms,
+    snmp_retry_count
 FROM access_profiles
 WHERE is_enabled = 1
 ORDER BY name COLLATE NOCASE, access_profile_id;";
@@ -123,7 +143,11 @@ ORDER BY name COLLATE NOCASE, access_profile_id;";
                                     reader.GetString(2)),
                                 reader.IsDBNull(3)
                                     ? null
-                                    : reader.GetString(3)));
+                                    : reader.GetString(3),
+                                reader.IsDBNull(4) ? null : reader.GetString(4),
+                                reader.IsDBNull(5) ? null : reader.GetString(5),
+                                reader.IsDBNull(6) ? (int?)null : reader.GetInt32(6),
+                                reader.IsDBNull(7) ? (int?)null : reader.GetInt32(7)));
                     }
                 }
             }
@@ -141,7 +165,11 @@ SELECT
     name,
     is_enabled,
     snmp_version,
-    snmp_username
+    snmp_username,
+    snmp_auth_protocol,
+    snmp_privacy_protocol,
+    snmp_timeout_ms,
+    snmp_retry_count
 FROM access_profiles
 WHERE access_profile_id = @id;";
 
@@ -163,7 +191,11 @@ WHERE access_profile_id = @id;";
                             reader.GetString(2)),
                         reader.IsDBNull(3)
                             ? null
-                            : reader.GetString(3));
+                            : reader.GetString(3),
+                        reader.IsDBNull(4) ? null : reader.GetString(4),
+                        reader.IsDBNull(5) ? null : reader.GetString(5),
+                        reader.IsDBNull(6) ? (int?)null : reader.GetInt32(6),
+                        reader.IsDBNull(7) ? (int?)null : reader.GetInt32(7));
                 }
             }
         }
