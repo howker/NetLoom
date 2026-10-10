@@ -213,6 +213,7 @@ public partial class MainWindow
                 }
                 if (_lifetimeCancellation.IsCancellationRequested) return;
                 _pollingPoint = result;
+                RefreshFailurePredictionAfterPollingPoint();
                 UpdateNeighborhoodMenuState();
                 if (IsNeighborhoodLayoutActive)
                 {
@@ -416,6 +417,8 @@ public partial class MainWindow
             ? "MapNeighborhoodShow"
             : _operationalFocusMode == MapOperationalFocusMode.Ring
                 ? "MapOperationalFocusRingShow"
+                : _operationalFocusMode == MapOperationalFocusMode.FailurePrediction
+                    ? "MapOperationalFocusFailurePredictionShow"
                 : "ShellMapFocusAction");
         MapOperationalFocusButton.Content = caption;
         AutomationProperties.SetName(MapOperationalFocusButton, caption);

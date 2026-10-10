@@ -52,6 +52,10 @@ public partial class MainWindow
 
         public string OperationalFocusRingKey { get; set; }
 
+        public Guid? FailurePredictionDeviceId { get; set; }
+
+        public Guid? FailurePredictionLinkId { get; set; }
+
         // Вид, из которого был сделан первый вход в «фокусный» вид (null — вид сам не фокусный).
         public MapViewState ViewBeforeFocus { get; set; }
     }
@@ -262,6 +266,8 @@ public partial class MainWindow
             SelectedLocationId = _selectedLocationId,
             SelectedRingKey = _selectedRingKey,
             OperationalFocusRingKey = _operationalFocusRingKey,
+            FailurePredictionDeviceId = _failurePredictionDeviceId,
+            FailurePredictionLinkId = _failurePredictionLinkId,
             ViewBeforeFocus = _mapViewBeforeFocus
         };
     }
@@ -329,6 +335,8 @@ public partial class MainWindow
         {
             // Sprint 50: режим кольца возвращается вместе с ключом кольца.
             _operationalFocusRingKey = state.OperationalFocusRingKey;
+            _failurePredictionDeviceId = state.FailurePredictionDeviceId;
+            _failurePredictionLinkId = state.FailurePredictionLinkId;
             SetOperationalFocusMode(state.OperationalFocus);
         }
         else

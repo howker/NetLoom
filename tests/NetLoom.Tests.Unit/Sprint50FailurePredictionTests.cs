@@ -110,5 +110,21 @@ namespace NetLoom.Tests.Unit
             Assert.IsFalse(failedOrigin.IsDirectional);
             Assert.AreEqual(FailurePredictionReason.TargetIsPollingPoint, failedOrigin.Reason);
         }
+
+        [TestMethod]
+        public void DisconnectedIslandHasNoDirectionalPredictionOrSinglePointOfFailure()
+        {
+            var links = new[] { Link(101, 1, 2), Link(102, 3, 4), Link(103, 4, 5) };
+            var device = FailurePrediction.PredictDeviceFailure(links, Id(1), Id(4));
+            Assert.IsFalse(device.IsDirectional);
+            Assert.AreEqual(FailurePredictionReason.TargetNotConnectedToPollingPoint, device.Reason);
+            Assert.AreEqual(0, device.AffectedDevices.Count);
+
+            var link = FailurePrediction.PredictLinkFailure(links, Id(1), Id(102));
+            Assert.IsFalse(link.IsDirectional);
+            Assert.AreEqual(FailurePredictionReason.TargetNotConnectedToPollingPoint, link.Reason);
+            Assert.AreEqual(0, link.AffectedDevices.Count);
+            Assert.IsFalse(FailurePrediction.SinglePointsOfFailureDevices(links, Id(1)).Contains(Id(4)));
+        }
     }
 }

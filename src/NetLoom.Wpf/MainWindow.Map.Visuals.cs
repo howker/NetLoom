@@ -121,6 +121,8 @@ public partial class MainWindow
 
         public Path StatusIcon { get; }
 
+        public TextBlock FailureImpactIcon { get; set; }
+
         public Path LockBadge { get; }
 
         public Guid? DeviceId { get; set; }

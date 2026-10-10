@@ -2991,4 +2991,21 @@
   <data name="RingCoresJoin" xml:space="preserve">
     <value>{0} и {1}</value>
   </data>
+  <data name="DiagnosticDeviceImpactTitle" xml:space="preserve"><value>Если устройство пропадёт</value></data>
+  <data name="ImpactNoneAffected" xml:space="preserve"><value>Есть обходной путь: по известной топологии никто не будет отрезан.</value></data>
+  <data name="ImpactCutOff" xml:space="preserve"><value>Единственный путь: по известной топологии будут отрезаны {0}.</value></data>
+  <data name="ImpactStandbyOnly" xml:space="preserve"><value>Только через резерв STP: {0}. Сейчас этот путь заблокирован STP.</value></data>
+  <data name="ImpactUnconfirmed" xml:space="preserve"><value>Обходной путь не подтверждён данными STP: {0}.</value></data>
+  <data name="ImpactPredictionNote" xml:space="preserve"><value>Прогноз по известной топологии, а не текущее состояние устройств.</value></data>
+  <data name="ImpactShowOnMap" xml:space="preserve"><value>Показать на карте</value></data>
+  <data name="ImpactNoDirection" xml:space="preserve"><value>Направление неизвестно: {0}</value></data>
+  <data name="ImpactNotConnected" xml:space="preserve"><value>Направление неизвестно: по известным рабочим связям (без отключённых портов) объект не связан с точкой опроса Engine.</value></data>
+  <data name="ImpactTargetIsPollingPoint" xml:space="preserve"><value>Это точка опроса Engine: при её отказе Engine не увидит остальные устройства.</value></data>
+  <data name="ImpactDeviceParts" xml:space="preserve"><value>Сеть разделится на {0} части: {1}.</value></data>
+  <data name="ImpactDeviceNoParts" xml:space="preserve"><value>По известной топологии сеть не разделится.</value></data>
+  <data name="MapOperationalFocusFailurePrediction" xml:space="preserve"><value>Прогноз отказа</value></data>
+  <data name="MapOperationalFocusFailurePredictionShow" xml:space="preserve"><value>Показать: прогноз отказа</value></data>
+  <data name="ImpactStripForDevice" xml:space="preserve"><value>Прогноз: если пропадёт {0} — {1}</value></data>
+  <data name="ImpactStripForLink" xml:space="preserve"><value>Прогноз: если пропадёт связь {0} ↔ {1} — {2}</value></data>
+  <data name="ImpactStripReset" xml:space="preserve"><value>Сбросить прогноз</value></data>
 </root>

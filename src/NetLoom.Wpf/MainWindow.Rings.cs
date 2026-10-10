@@ -24,6 +24,9 @@ public partial class MainWindow
 
     private string _operationalFocusRingKeyBeforeAlerts;
 
+    private Guid? _failurePredictionDeviceIdBeforeAlerts;
+    private Guid? _failurePredictionLinkIdBeforeAlerts;
+
     private sealed class InspectorRingRow
     {
         public InspectorRingRow(string ringKey, string text)
@@ -243,6 +246,8 @@ public partial class MainWindow
     {
         _operationalFocusModeBeforeAlerts = _operationalFocusMode;
         _operationalFocusRingKeyBeforeAlerts = _operationalFocusRingKey;
+        _failurePredictionDeviceIdBeforeAlerts = _failurePredictionDeviceId;
+        _failurePredictionLinkIdBeforeAlerts = _failurePredictionLinkId;
         _ringViewHeldForAlerts = false;
     }
 
@@ -256,6 +261,8 @@ public partial class MainWindow
         _ringViewHeldForAlerts = false;
         _operationalFocusMode = _operationalFocusModeBeforeAlerts;
         _operationalFocusRingKey = _operationalFocusRingKeyBeforeAlerts;
+        _failurePredictionDeviceId = _failurePredictionDeviceIdBeforeAlerts;
+        _failurePredictionLinkId = _failurePredictionLinkIdBeforeAlerts;
 
         RefreshOperationalFocusTargets();
         UpdateOperationalFocusMenuState();

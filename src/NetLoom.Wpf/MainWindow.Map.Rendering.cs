@@ -2143,6 +2143,18 @@ public partial class MainWindow
                 IsHitTestVisible = false
             };
 
+        var failureImpactIcon = new TextBlock
+        {
+            Style = GetStyleResource("NetLoom.Style.MapNodeTitle"),
+            Margin = GetThicknessResource("NetLoom.Thickness.StatusGlyph"),
+            MinWidth = GetDoubleResource("NetLoom.Status.GlyphMinWidth"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Tag = "NodeFailureImpactIcon",
+            IsHitTestVisible = false,
+            Visibility = Visibility.Collapsed
+        };
+
         var lockBadge =
             new Path
             {
@@ -2194,11 +2206,14 @@ public partial class MainWindow
             statusIcon,
             1);
 
+        Grid.SetColumn(failureImpactIcon, 1);
+
         header.Children.Add(
             title);
 
         header.Children.Add(
             statusIcon);
+        header.Children.Add(failureImpactIcon);
 
         var textContent =
             new StackPanel
@@ -2407,7 +2422,7 @@ public partial class MainWindow
             secondary,
             categoryIcon,
             statusIcon,
-            lockBadge) { SemanticLabel = semanticLabel };
+            lockBadge) { SemanticLabel = semanticLabel, FailureImpactIcon = failureImpactIcon };
     }
 
     private void UpdateNodeVisual(

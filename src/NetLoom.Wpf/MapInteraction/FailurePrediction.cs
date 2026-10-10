@@ -10,7 +10,8 @@ namespace NetLoom.Wpf.MapInteraction
     {
         None,
         PollingPointUnknown,
-        TargetIsPollingPoint
+        TargetIsPollingPoint,
+        TargetNotConnectedToPollingPoint
     }
 
     public enum FailureImpactCategory
@@ -109,6 +110,15 @@ namespace NetLoom.Wpf.MapInteraction
                 return Empty(FailurePredictionReason.TargetIsPollingPoint);
 
             var before = Qualities(links, pollingPointDeviceId.Value, null, null);
+            if (failedDeviceId.HasValue && !before.ContainsKey(failedDeviceId.Value))
+                return Empty(FailurePredictionReason.TargetNotConnectedToPollingPoint);
+            if (failedPhysicalLinkId.HasValue)
+            {
+                var target = links.FirstOrDefault(link => link.PhysicalLinkId == failedPhysicalLinkId.Value);
+                if (target != null && !before.ContainsKey(target.DeviceAId) &&
+                    !before.ContainsKey(target.DeviceBId))
+                    return Empty(FailurePredictionReason.TargetNotConnectedToPollingPoint);
+            }
             var after = Qualities(links, pollingPointDeviceId.Value, failedDeviceId, failedPhysicalLinkId);
             var affected = new Dictionary<Guid, FailureImpactCategory>();
             foreach (var pair in before)

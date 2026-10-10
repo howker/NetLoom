@@ -35,7 +35,8 @@ public partial class MainWindow
         TransitionLinks = 5,
         DegradedNodes = 6,
         // Sprint 50: вид кольца — цели берутся из диагностики кольца, а не из состояния связей.
-        Ring = 7
+        Ring = 7,
+        FailurePrediction = 8
     }
 
     private const double OperationalFocusDimmedOpacity = 0.12;
@@ -393,6 +394,8 @@ public partial class MainWindow
         {
             _operationalFocusRingKey = null;
         }
+        if (mode != MapOperationalFocusMode.FailurePrediction)
+            ClearFailurePredictionTarget();
 
         RefreshOperationalFocusTargets();
         UpdateOperationalFocusMenuState();
@@ -428,6 +431,12 @@ public partial class MainWindow
             MapOperationalFocusMode.Ring)
         {
             RefreshRingFocusTargets();
+            return;
+        }
+
+        if (_operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
+        {
+            RefreshFailurePredictionFocusTargets();
             return;
         }
 
@@ -537,6 +546,7 @@ public partial class MainWindow
             NodeOperationalFocusOpacity(
                 deviceId);
         ApplyNodeSemanticPresentation(visual);
+        ApplyFailurePredictionNodePresentation(visual, deviceId);
     }
 
     private double NodeOperationalFocusOpacity(

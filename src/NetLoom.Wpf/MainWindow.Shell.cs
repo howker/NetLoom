@@ -1098,6 +1098,7 @@ namespace NetLoom.Wpf
             }
 
             UpdateMapPathNotice();
+            UpdateFailurePredictionNotice();
 
             // G2: без выбранного объекта крошки называют открытый раздел.
             UpdateShellBreadcrumb();

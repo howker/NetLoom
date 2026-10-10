@@ -44,6 +44,7 @@ public partial class MainWindow : Window
 
     private void ShowSelectedDiagnostic()
     {
+        InspectorFailurePredictionShowButton.Visibility = Visibility.Collapsed;
         // Sprint 50: выбор устройства, порта, связи или размещения снимает выбор кольца.
         if (_selectedLocationId.HasValue ||
             _selectedDeviceId.HasValue ||
@@ -1101,10 +1102,11 @@ public partial class MainWindow : Window
             device.DeviceId);
 
         DiagnosticSecondaryTitleText.Text =
-            string.Empty;
+            UiText.Get("DiagnosticDeviceImpactTitle");
 
         DiagnosticSecondaryList.ItemsSource =
-            new DiagnosticTextRow[0];
+            DeviceFailurePredictionRows(device);
+        UpdateFailurePredictionInspectorAction(device.DeviceId, null);
 
         DiagnosticInterfaceList.ItemsSource =
             device.Interfaces.Count == 0
@@ -1500,36 +1502,8 @@ public partial class MainWindow : Window
             UiText.Get("DiagnosticImpactTitle");
 
         DiagnosticSecondaryList.ItemsSource =
-            link.IsBridge
-                ? new[]
-                {
-                    Row(
-                        "DiagnosticImpactSinglePath"),
-                    new DiagnosticTextRow(
-                        UiText.Format(
-                            "DiagnosticImpactSideA",
-                            DisplayDeviceName(
-                                link.DeviceAName),
-                            UiText.FormatCount(
-                                "DiagnosticDeviceCount",
-                                link.SideADeviceCount))),
-                    new DiagnosticTextRow(
-                        UiText.Format(
-                            "DiagnosticImpactSideB",
-                            DisplayDeviceName(
-                                link.DeviceBName),
-                            UiText.FormatCount(
-                                "DiagnosticDeviceCount",
-                                link.SideBDeviceCount))),
-                    new DiagnosticTextRow(
-                        UiText.Format(
-                            "DiagnosticImpactPairs",
-                            link.SeparatedDevicePairCount))
-                }
-                : new[]
-                {
-                    Row("DiagnosticImpactAlternativePath")
-                };
+            LinkFailurePredictionRows(link);
+        UpdateFailurePredictionInspectorAction(null, link.PhysicalLinkId);
 
         DiagnosticTertiaryTitleText.Text =
             UiText.Get("DiagnosticEvidenceTitle");

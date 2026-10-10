@@ -2197,6 +2197,25 @@
                                     Click="OnMapPathResetClick" />
                         </WrapPanel>
                     </Border>
+                    <Border x:Name="MapFailurePredictionNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <WrapPanel>
+                            <TextBlock x:Name="MapFailurePredictionSummaryText"
+                                       Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+                                       TextWrapping="Wrap"
+                                       Typography.NumeralAlignment="Tabular"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <Button x:Name="MapFailurePredictionResetButton"
+                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                    Click="OnFailurePredictionResetClick" />
+                        </WrapPanel>
+                    </Border>
                 </StackPanel>
 
                 <Border x:Name="MapQualityDetails"
@@ -2580,6 +2599,11 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+                                    <Button x:Name="InspectorFailurePredictionShowButton"
+                                            Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                            Margin="{DynamicResource NetLoom.Thickness.ListRow}"
+                                            Visibility="Collapsed"
+                                            Click="OnFailurePredictionShowClick" />
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
