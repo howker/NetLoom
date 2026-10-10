@@ -2203,9 +2203,15 @@ public partial class MainWindow
             title,
             0);
 
+        // Sprint 50: значок прогноза — своя колонка перед значком проблемы, чтобы они не накладывались;
+        // Свёрнутый значок прогноза колонку не занимает.
+        header.ColumnDefinitions.Insert(
+            1,
+            new ColumnDefinition { Width = GridLength.Auto });
+
         Grid.SetColumn(
             statusIcon,
-            1);
+            2);
 
         Grid.SetColumn(failureImpactIcon, 1);
 

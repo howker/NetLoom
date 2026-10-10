@@ -68,7 +68,6 @@ public partial class MainWindow
         icon.Text = "⊘";
         icon.SetResourceReference(TextBlock.ForegroundProperty, "NetLoom.Brush.Warning");
         icon.Visibility = Visibility.Visible;
-        visual.StatusIcon.Visibility = Visibility.Collapsed;
     }
 
     private void ApplySinglePointLinkPresentation(MapLinkVisual visual, Guid? physicalLinkId)

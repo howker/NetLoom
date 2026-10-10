@@ -210,11 +210,6 @@ public partial class MainWindow
             deviceId.HasValue && _failurePredictionResult != null &&
             _failurePredictionResult.AffectedDevices.TryGetValue(deviceId.Value, out category);
         icon.Visibility = affected ? Visibility.Visible : Visibility.Collapsed;
-        var degradation = NodeDegradationState(deviceId);
-        var hasProblem = degradation == MapNodeDegradationState.Degraded ||
-            degradation == MapNodeDegradationState.Critical;
-        visual.StatusIcon.Visibility = !affected && hasProblem
-            ? Visibility.Visible : Visibility.Collapsed;
         if (!affected)
         {
             if (deviceId.HasValue && deviceId != _selectedDeviceId && deviceId != _highlightedDeviceId &&

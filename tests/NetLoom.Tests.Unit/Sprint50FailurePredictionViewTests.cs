@@ -11,6 +11,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Application.TopologyRefresh;
+using NetLoom.Contracts.Alerts;
 using NetLoom.Contracts.Diagnostics;
 using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
@@ -23,6 +24,92 @@ namespace NetLoom.Tests.Unit
     public sealed partial class Sprint46ShellFoundationTests
     {
         private const BindingFlags FailureFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+        [TestMethod]
+        public void PredictionModesPreserveAlertsEventsAndObservedDeviceStatus()
+        {
+            RunOnSta(() =>
+            {
+                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("ru-RU");
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("ru-RU");
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var ids = Sprint49NeighborhoodFixture.Devices;
+                var source = FailureChainSnapshot();
+                // Предупреждение «Устройство не отвечает» — ровно об одном устройстве, поэтому их два.
+                var alerts = new[] { ids[1], ids[2] }.Select((id, index) => new TopologyAlert(
+                    "sprint50-observed-device-" + index,
+                    TopologyAlertKind.DeviceUnreachable, TopologyAlertSeverity.Warning,
+                    "cist", new string[0], new Guid[0],
+                    new[] { TopologyAlertReason.NoPollResponse }, new[] { id })).ToArray();
+                var snapshot = new TopologyRefreshSnapshot(source.MapSnapshot,
+                    new TopologyAlertSnapshot(DateTime.UtcNow, "cist", alerts),
+                    source.DiagnosticSnapshot);
+                var window = new MainWindow(new FixedRefreshProvider(snapshot),
+                    new Sprint49PollingPointLookupReader(Sprint49NeighborhoodFixture.PollingMac, ids[0]))
+                {
+                    EngineHostAddresses = new Sprint49FixedHostAddresses(Sprint49NeighborhoodFixture.PollingMac)
+                };
+                try
+                {
+                    window.Show();
+                    WaitForCondition(() => DeviceBorder(window, ids[3]) != null &&
+                        window.PollingPoint?.Status == EnginePollingPointStatus.Determined &&
+                        ((ItemsControl)window.FindName("AlertList")).Items.Count > 0);
+                    typeof(MainWindow).GetField("_hoveredPhysicalLinkId", FailureFlags).SetValue(window, null);
+                    typeof(MainWindow).GetMethod("ReapplyOperationalFocusPresentation", FailureFlags).Invoke(window, null);
+                    var alertsBefore = ((ItemsControl)window.FindName("AlertList")).Items.Count;
+                    var eventsBefore = FailureEventTitles(window);
+                    var singlePointStatusBefore = FailureStatusIcon(window, ids[1]).Visibility;
+                    var statusBefore = FailureStatusIcon(window, ids[2]).Visibility;
+                    Assert.AreEqual(Visibility.Visible, singlePointStatusBefore);
+                    Assert.AreEqual(Visibility.Visible, statusBefore);
+
+                    SelectDevice(window, ids[1]);
+                    Click((Button)window.FindName("InspectorFailurePredictionShowButton"));
+                    Assert.AreEqual("FailurePrediction", FailureField(window, "_operationalFocusMode").ToString());
+                    Assert.IsTrue(((System.Collections.Generic.HashSet<Guid>)FailureField(window,
+                        "_operationalFocusDeviceIds")).Contains(ids[2]));
+                    AssertPredictionDoesNotChangeObservation(window, ids[2], alertsBefore,
+                        eventsBefore, statusBefore);
+                    Assert.AreEqual(singlePointStatusBefore, FailureStatusIcon(window, ids[1]).Visibility);
+
+                    SelectSinglePointsMode(window);
+                    Assert.AreEqual("SinglePointsOfFailure", FailureField(window,
+                        "_operationalFocusMode").ToString());
+                    Assert.IsTrue(((System.Collections.Generic.HashSet<Guid>)FailureField(window,
+                        "_operationalFocusDeviceIds")).Contains(ids[1]));
+                    AssertPredictionDoesNotChangeObservation(window, ids[1], alertsBefore,
+                        eventsBefore, singlePointStatusBefore);
+                    Assert.AreEqual(statusBefore, FailureStatusIcon(window, ids[2]).Visibility);
+                }
+                finally { window.Close(); PumpDispatcher(); }
+            });
+        }
+
+        private static void AssertPredictionDoesNotChangeObservation(MainWindow window,
+            Guid deviceId, int alertCount, string[] eventTitles, Visibility statusVisibility)
+        {
+            typeof(MainWindow).GetField("_hoveredPhysicalLinkId", FailureFlags).SetValue(window, null);
+            typeof(MainWindow).GetMethod("ReapplyOperationalFocusPresentation", FailureFlags).Invoke(window, null);
+            Assert.AreEqual(alertCount, ((ItemsControl)window.FindName("AlertList")).Items.Count);
+            CollectionAssert.AreEqual(eventTitles, FailureEventTitles(window));
+            Assert.AreEqual(statusVisibility, FailureStatusIcon(window, deviceId).Visibility);
+        }
+
+        private static string[] FailureEventTitles(MainWindow window)
+        {
+            var rows = (System.Collections.IEnumerable)FailureField(window, "_shellEventRows");
+            return rows.Cast<object>().Select(row =>
+                (string)row.GetType().GetProperty("Title").GetValue(row)).ToArray();
+        }
+
+        private static UIElement FailureStatusIcon(MainWindow window, Guid deviceId)
+        {
+            var visuals = (System.Collections.IDictionary)FailureField(window, "_nodeVisualsByIdentity");
+            var visual = visuals.Values.Cast<object>().Single(item =>
+                (Guid?)item.GetType().GetProperty("DeviceId").GetValue(item) == deviceId);
+            return (UIElement)visual.GetType().GetProperty("StatusIcon").GetValue(visual);
+        }
 
         // Цепочка P–A–B–C и отдельное устройство D проверяют направление и приглушение.
         private static TopologyRefreshSnapshot FailureChainSnapshot()
