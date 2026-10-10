@@ -5,9 +5,11 @@ using System.Linq;
 using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Topology;
 using NetLoom.Contracts.Diagnostics;
+using NetLoom.Contracts.Rings;
 using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 using NetLoom.Domain.Topology;
+using NetLoom.Topology.Rings;
 using NetLoom.Topology.Safety;
 using NetLoom.Topology.Stp;
 
@@ -142,10 +144,222 @@ namespace NetLoom.Topology.Diagnostics
                     .Where(item => item != null)
                     .ToArray();
 
+            var rings =
+                BuildRings(
+                    readSet.PhysicalLinks,
+                    stpByDevice,
+                    normalizedInstanceId);
+
             return new NetworkDiagnosticSnapshot(
                 mapSnapshot.GeneratedUtc,
                 devices,
-                links);
+                links,
+                rings);
+        }
+
+        // Кольца строятся тем же путём, что предупреждения: регионы, затем анализ защиты.
+        public static IReadOnlyList<RingDiagnostic> BuildRings(
+            IEnumerable<PhysicalLink> physicalLinks,
+            IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice,
+            string instanceId)
+        {
+            var links =
+                physicalLinks.ToArray();
+
+            var snapshots =
+                stpByDevice.Values.ToArray();
+
+            var analyzer =
+                new RingProtectionAnalyzer();
+
+            var linksById =
+                links
+                    .GroupBy(item => item.Id)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.First());
+
+            return new PhysicalRedundancyRegionDetector()
+                .Detect(links)
+                .SelectMany(
+                    region =>
+                        analyzer.AnalyzeRegion(
+                            region,
+                            links,
+                            snapshots,
+                            instanceId))
+                .Where(
+                    analysis =>
+                        analysis.Status !=
+                        RingProtectionStatus.NotApplicable)
+                .Select(
+                    analysis =>
+                        BuildRingDiagnostic(
+                            analysis,
+                            linksById,
+                            stpByDevice))
+                .OrderBy(
+                    item => item.RingKey,
+                    StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        public static RingDiagnostic BuildRingDiagnostic(
+            RingProtectionAnalysis analysis,
+            IReadOnlyDictionary<Guid, PhysicalLink> linksById,
+            IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice)
+        {
+            var physicalLinkIds =
+                analysis.ForwardingPhysicalLinkIds
+                    .Concat(analysis.BlockingPhysicalLinkIds)
+                    .Concat(analysis.DisabledPhysicalLinkIds)
+                    .Concat(analysis.UnresolvedPhysicalLinkIds)
+                    .Distinct()
+                    .OrderBy(id => id)
+                    .ToArray();
+
+            var blockedPorts =
+                new List<RingBlockedPort>();
+
+            foreach (var linkId in physicalLinkIds)
+            {
+                PhysicalLink link;
+
+                if (!linksById.TryGetValue(
+                    linkId,
+                    out link))
+                {
+                    continue;
+                }
+
+                AddBlockedPort(
+                    blockedPorts,
+                    link.DeviceAId,
+                    link.InterfaceAId,
+                    link.Id,
+                    stpByDevice);
+
+                AddBlockedPort(
+                    blockedPorts,
+                    link.DeviceBId,
+                    link.InterfaceBId,
+                    link.Id,
+                    stpByDevice);
+            }
+
+            var memberSnapshots =
+                analysis.DeviceIds
+                    .Where(stpByDevice.ContainsKey)
+                    .Select(id => stpByDevice[id])
+                    .ToArray();
+
+            var withoutStp =
+                analysis.DeviceIds
+                    .Where(id => !stpByDevice.ContainsKey(id))
+                    .ToArray();
+
+            var roots =
+                memberSnapshots
+                    .Select(item => item.DesignatedRoot)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+
+            var designatedRoot =
+                roots.Length == 1 &&
+                roots[0] != null
+                    ? roots[0]
+                    : null;
+
+            Guid? rootDeviceId = null;
+
+            if (designatedRoot != null)
+            {
+                var candidates =
+                    stpByDevice.Values
+                        .Where(
+                            item =>
+                                item.RootCost == 0 &&
+                                (!item.RootPortBridgePortIndex.HasValue ||
+                                 item.RootPortBridgePortIndex.Value == 0) &&
+                                string.Equals(
+                                    item.DesignatedRoot,
+                                    designatedRoot,
+                                    StringComparison.Ordinal))
+                        .ToArray();
+
+                if (candidates.Length == 1)
+                {
+                    rootDeviceId =
+                        candidates[0].DeviceId;
+                }
+            }
+
+            DateTime? lastChange = null;
+
+            foreach (var item in memberSnapshots)
+            {
+                if (item.LastTopologyChangeUtc.HasValue &&
+                    (!lastChange.HasValue ||
+                     item.LastTopologyChangeUtc.Value > lastChange.Value))
+                {
+                    lastChange =
+                        item.LastTopologyChangeUtc;
+                }
+            }
+
+            return new RingDiagnostic(
+                analysis.RegionKey,
+                analysis.RingKind,
+                analysis.Status,
+                analysis.DeviceIds,
+                physicalLinkIds,
+                analysis.CoreDeviceIds,
+                analysis.BlockingPhysicalLinkIds,
+                analysis.DisabledPhysicalLinkIds,
+                analysis.UnresolvedPhysicalLinkIds,
+                blockedPorts
+                    .OrderBy(item => item.PhysicalLinkId)
+                    .ThenBy(item => item.DeviceId)
+                    .ToArray(),
+                rootDeviceId,
+                designatedRoot,
+                withoutStp,
+                lastChange);
+        }
+
+        private static void AddBlockedPort(
+            ICollection<RingBlockedPort> target,
+            Guid deviceId,
+            Guid? interfaceId,
+            Guid physicalLinkId,
+            IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice)
+        {
+            StpTreeSnapshot stp;
+
+            if (!interfaceId.HasValue ||
+                !stpByDevice.TryGetValue(
+                    deviceId,
+                    out stp))
+            {
+                return;
+            }
+
+            var port =
+                stp.Ports.FirstOrDefault(
+                    item =>
+                        item.InterfaceId.HasValue &&
+                        item.InterfaceId.Value ==
+                            interfaceId.Value);
+
+            if (port != null &&
+                port.State == StpTreePortState.Blocking)
+            {
+                target.Add(
+                    new RingBlockedPort(
+                        deviceId,
+                        interfaceId,
+                        physicalLinkId));
+            }
         }
 
         private static DeviceDiagnostic ProjectDevice(

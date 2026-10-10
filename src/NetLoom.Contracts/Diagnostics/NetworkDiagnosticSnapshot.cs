@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetLoom.Contracts.Rings;
 using NetLoom.Contracts.StpTree;
 using NetLoom.Contracts.TopologyMap;
 
@@ -128,7 +129,8 @@ namespace NetLoom.Contracts.Diagnostics
         public NetworkDiagnosticSnapshot(
             DateTime generatedUtc,
             IEnumerable<DeviceDiagnostic> devices,
-            IEnumerable<PhysicalLinkDiagnostic> links)
+            IEnumerable<PhysicalLinkDiagnostic> links,
+            IEnumerable<RingDiagnostic> rings = null)
         {
             if (generatedUtc.Kind != DateTimeKind.Utc)
             {
@@ -177,9 +179,22 @@ namespace NetLoom.Contracts.Diagnostics
                     nameof(links));
             }
 
+            var ringSnapshot =
+                rings == null
+                    ? new RingDiagnostic[0]
+                    : rings.ToArray();
+
+            if (ringSnapshot.Any(item => item == null))
+            {
+                throw new ArgumentException(
+                    "Diagnostic rings cannot contain null items.",
+                    nameof(rings));
+            }
+
             GeneratedUtc = generatedUtc;
             Devices = deviceSnapshot;
             Links = linkSnapshot;
+            Rings = ringSnapshot;
         }
 
         public DateTime GeneratedUtc { get; }
@@ -187,6 +202,176 @@ namespace NetLoom.Contracts.Diagnostics
         public IReadOnlyList<DeviceDiagnostic> Devices { get; }
 
         public IReadOnlyList<PhysicalLinkDiagnostic> Links { get; }
+
+        public IReadOnlyList<RingDiagnostic> Rings { get; }
+    }
+
+    // Порт в состоянии STP Blocking на связи кольца.
+    public sealed class RingBlockedPort
+    {
+        public RingBlockedPort(
+            Guid deviceId,
+            Guid? interfaceId,
+            Guid physicalLinkId)
+        {
+            if (deviceId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Device id is required.",
+                    nameof(deviceId));
+            }
+
+            if (interfaceId.HasValue &&
+                interfaceId.Value == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Interface id cannot be empty.",
+                    nameof(interfaceId));
+            }
+
+            if (physicalLinkId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Physical link id is required.",
+                    nameof(physicalLinkId));
+            }
+
+            DeviceId = deviceId;
+            InterfaceId = interfaceId;
+            PhysicalLinkId = physicalLinkId;
+        }
+
+        public Guid DeviceId { get; }
+
+        public Guid? InterfaceId { get; }
+
+        public Guid PhysicalLinkId { get; }
+    }
+
+    // Кольцо защиты для диагностики: состав, статус, заблокированные порты и данные STP.
+    public sealed class RingDiagnostic
+    {
+        public RingDiagnostic(
+            string ringKey,
+            PhysicalRedundancyRegionKind kind,
+            RingProtectionStatus status,
+            IEnumerable<Guid> deviceIds,
+            IEnumerable<Guid> physicalLinkIds,
+            IEnumerable<Guid> coreDeviceIds,
+            IEnumerable<Guid> blockingPhysicalLinkIds,
+            IEnumerable<Guid> disabledPhysicalLinkIds,
+            IEnumerable<Guid> unresolvedPhysicalLinkIds,
+            IEnumerable<RingBlockedPort> blockedPorts,
+            Guid? rootDeviceId,
+            string designatedRoot,
+            IEnumerable<Guid> devicesWithoutStpIds,
+            DateTime? lastTopologyChangeUtc)
+        {
+            if (string.IsNullOrWhiteSpace(ringKey))
+            {
+                throw new ArgumentException(
+                    "Ring key is required.",
+                    nameof(ringKey));
+            }
+
+            if (lastTopologyChangeUtc.HasValue &&
+                lastTopologyChangeUtc.Value.Kind != DateTimeKind.Utc)
+            {
+                throw new ArgumentException(
+                    "Last topology change time must be UTC.",
+                    nameof(lastTopologyChangeUtc));
+            }
+
+            if (blockedPorts == null)
+            {
+                throw new ArgumentNullException(
+                    nameof(blockedPorts));
+            }
+
+            var ports =
+                blockedPorts.ToArray();
+
+            if (ports.Any(item => item == null))
+            {
+                throw new ArgumentException(
+                    "Blocked ports cannot contain null items.",
+                    nameof(blockedPorts));
+            }
+
+            RingKey = ringKey.Trim();
+            Kind = kind;
+            Status = status;
+            DeviceIds = NormalizeIds(deviceIds, nameof(deviceIds));
+            PhysicalLinkIds = NormalizeIds(physicalLinkIds, nameof(physicalLinkIds));
+            CoreDeviceIds = NormalizeIds(coreDeviceIds, nameof(coreDeviceIds));
+            BlockingPhysicalLinkIds =
+                NormalizeIds(
+                    blockingPhysicalLinkIds,
+                    nameof(blockingPhysicalLinkIds));
+            DisabledPhysicalLinkIds =
+                NormalizeIds(
+                    disabledPhysicalLinkIds,
+                    nameof(disabledPhysicalLinkIds));
+            UnresolvedPhysicalLinkIds =
+                NormalizeIds(
+                    unresolvedPhysicalLinkIds,
+                    nameof(unresolvedPhysicalLinkIds));
+            BlockedPorts = ports;
+            RootDeviceId = rootDeviceId;
+            DesignatedRoot =
+                string.IsNullOrWhiteSpace(designatedRoot)
+                    ? null
+                    : designatedRoot.Trim();
+            DevicesWithoutStpIds =
+                NormalizeIds(
+                    devicesWithoutStpIds,
+                    nameof(devicesWithoutStpIds));
+            LastTopologyChangeUtc = lastTopologyChangeUtc;
+        }
+
+        public string RingKey { get; }
+
+        public PhysicalRedundancyRegionKind Kind { get; }
+
+        public RingProtectionStatus Status { get; }
+
+        public IReadOnlyList<Guid> DeviceIds { get; }
+
+        public IReadOnlyList<Guid> PhysicalLinkIds { get; }
+
+        public IReadOnlyList<Guid> CoreDeviceIds { get; }
+
+        public IReadOnlyList<Guid> BlockingPhysicalLinkIds { get; }
+
+        public IReadOnlyList<Guid> DisabledPhysicalLinkIds { get; }
+
+        public IReadOnlyList<Guid> UnresolvedPhysicalLinkIds { get; }
+
+        public IReadOnlyList<RingBlockedPort> BlockedPorts { get; }
+
+        public Guid? RootDeviceId { get; }
+
+        public string DesignatedRoot { get; }
+
+        public IReadOnlyList<Guid> DevicesWithoutStpIds { get; }
+
+        public DateTime? LastTopologyChangeUtc { get; }
+
+        private static Guid[] NormalizeIds(
+            IEnumerable<Guid> ids,
+            string parameterName)
+        {
+            if (ids == null)
+            {
+                throw new ArgumentNullException(
+                    parameterName);
+            }
+
+            return ids
+                .Distinct()
+                .OrderBy(id => id)
+                .ToArray();
+        }
     }
 
     public sealed class DeviceDiagnostic

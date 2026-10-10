@@ -137,9 +137,9 @@ namespace NetLoom.Topology.Alerts
                 regionDetector
                     .Detect(
                         links)
-                    .Select(
+                    .SelectMany(
                         region =>
-                            ringAnalyzer.Analyze(
+                            ringAnalyzer.AnalyzeRegion(
                                 region,
                                 links,
                                 stpSnapshots,
