@@ -71,11 +71,10 @@ public partial class MainWindow
                 return;
             }
 
+            // Сохранённый вид «Вся площадка» может быть мельче порога читаемости (Sprint 49): восстанавливаем как есть.
             _zoom =
-                Math.Max(
-                    _readableZoomMin,
-                    ClampZoom(
-                        snapshot.Viewport.Zoom));
+                ClampZoom(
+                    snapshot.Viewport.Zoom);
 
             _pendingPanX =
                 snapshot.Viewport.PanX;
@@ -83,7 +82,9 @@ public partial class MainWindow
             _pendingPanY =
                 snapshot.Viewport.PanY;
 
-            _hasPersistedViewport = true;
+            // Вид без сохранения (новый объект) — стартовое вписывание всей площадки (M3).
+            _hasPersistedViewport =
+                snapshot.Viewport.IsSaved;
 
             _persistedDeviceLayouts.Clear();
 
@@ -149,32 +150,109 @@ public partial class MainWindow
                 _zoom,
                 _zoom);
 
+        UpdateMapFocusRingScale();
         UpdateSemanticMapVisibility();
+        UpdateParallelLinksForZoom();
+    }
+
+    // Замечание владельца (Sprint 49): на средних и мелких масштабах связи одной пары не сливаются в одну
+    // Полосу — расстояние между полосами не меньше NetLoom.Map.ParallelLinkMinScreenGap экранных пикселей.
+    private double ParallelLinkSpacingAtZoom()
+    {
+        var zoom =
+            _zoom > 0.0
+                ? _zoom
+                : 1.0;
+
+        return Math.Max(
+            _parallelLinkSpacing,
+            GetDoubleResource(
+                "NetLoom.Map.ParallelLinkMinScreenGap") /
+            zoom);
+    }
+
+    private void UpdateParallelLinksForZoom()
+    {
+        var spacing =
+            ParallelLinkSpacingAtZoom();
+
+        if (Math.Abs(spacing - _lastParallelLinkSpacing) < 0.01)
+        {
+            return;
+        }
+
+        _lastParallelLinkSpacing =
+            spacing;
+
+        if (_lastMapSnapshot == null ||
+            !_lastMapSnapshot.Links
+                .GroupBy(link => string.CompareOrdinal(link.SourceNodeKey, link.TargetNodeKey) <= 0
+                    ? link.SourceNodeKey + "|" + link.TargetNodeKey
+                    : link.TargetNodeKey + "|" + link.SourceNodeKey)
+                .Any(group => group.Count() > 1))
+        {
+            return;
+        }
+
+        UpdateLinksForCurrentNodePositions();
+    }
+
+    private double _lastParallelLinkSpacing;
+
+    // §8: кольцо фокуса элементов холста масштабируется вместе с картой; толщина делится на масштаб,
+    // Чтобы на экране кольцо оставалось 2 px при любом масштабе (ресурсы читает NetLoom.Style.MapFocusVisual).
+    private void UpdateMapFocusRingScale()
+    {
+        var zoom =
+            _zoom > 0.0
+                ? _zoom
+                : 1.0;
+
+        var ring =
+            GetThicknessResource(
+                "NetLoom.Thickness.FocusRing");
+
+        var offset =
+            GetThicknessResource(
+                "NetLoom.Thickness.FocusRingOffset");
+
+        MapScrollViewer.Resources["NetLoom.Thickness.MapFocusRing"] =
+            new Thickness(
+                ring.Left / zoom,
+                ring.Top / zoom,
+                ring.Right / zoom,
+                ring.Bottom / zoom);
+
+        MapScrollViewer.Resources["NetLoom.Thickness.MapFocusRingOffset"] =
+            new Thickness(
+                offset.Left / zoom,
+                offset.Top / zoom,
+                offset.Right / zoom,
+                offset.Bottom / zoom);
     }
 
     private void UpdateSemanticMapVisibility()
     {
-        var showLinkLabels =
-            _zoom >=
-                _linkLabelMinZoom;
+        var next = MapSemanticLevels.For(_zoom, _readableZoomMin,
+            _linkLabelMinZoom, _semanticDetailMinZoom);
+        var changed = next != _semanticLevel;
+        _semanticLevel = next;
+        foreach (var visual in _nodeVisualsByIdentity.Values)
+            ApplyNodeSemanticPresentation(visual);
+        foreach (var visual in _locationVisualsById.Values)
+            ApplyLocationSemanticPresentation(visual);
+        ApplyNeighborhoodVisibility();
+        ApplyFarLabelDeclutter();
 
-        foreach (var visual in
-                 _linkVisualsByIdentity.Values)
-        {
-            if (visual == null)
-            {
-                continue;
-            }
+        // Вторая строка меняет высоту карточки: обновляем геометрию существующих связей.
+        if (changed && _lastMapSnapshot != null)
+            ReconcileLinks(_lastMapSnapshot.Links,
+                _lastMapSnapshot.Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal));
+        else
+            ApplyLinkFocusPresentation();
 
-            visual.Label.Visibility =
-                showLinkLabels &&
-                visual.Line.Visibility ==
-                    Visibility.Visible &&
-                !string.IsNullOrWhiteSpace(
-                    visual.Label.Text)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-        }
+        System.Windows.Automation.AutomationProperties.SetHelpText(MapZoomValueText,
+            UiText.Get("MapSemantic" + _semanticLevel + "Help"));
     }
 
     private double ClampZoom(
@@ -556,9 +634,7 @@ public partial class MainWindow
                 .Select(
                     LocationVisibleBounds));
 
-        // Explicit operator action means exactly what it says:
-        // fit every visible object, even when that requires going below
-        // the automatic startup readability floor.
+        // Явное действие вписывает всю площадку до ZoomMin; текст меняется по уровню детализации.
         TryFitMapBoundsToViewport(
             bounds);
     }
@@ -588,9 +664,12 @@ public partial class MainWindow
                 .Select(
                     LocationVisibleBounds));
 
+        // Без сохранённого вида показываем всю площадку; читаемость задаёт детализация.
+        // Вписывание всей площадки не увеличивает выше 100 %: маленький объект не раздувается.
         return TryFitMapBoundsToViewport(
             bounds,
-            _readableZoomMin);
+            _zoomMin,
+            1.0);
     }
 
     private void FitMapBoundsToViewport(
@@ -611,6 +690,14 @@ public partial class MainWindow
     private bool TryFitMapBoundsToViewport(
         IReadOnlyList<Rect> bounds,
         double? minimumZoom)
+    {
+        return TryFitMapBoundsToViewport(bounds, minimumZoom, null);
+    }
+
+    private bool TryFitMapBoundsToViewport(
+        IReadOnlyList<Rect> bounds,
+        double? minimumZoom,
+        double? maximumZoom)
     {
         if (bounds == null)
         {
@@ -679,12 +766,10 @@ public partial class MainWindow
                 (_fitPadding * 2.0));
 
         var fitZoom =
-            ClampZoom(
+            ClampZoom(Math.Min(maximumZoom ?? _zoomMax,
                 Math.Min(
-                    availableWidth /
-                    contentWidth,
-                    availableHeight /
-                    contentHeight));
+                    availableWidth / contentWidth,
+                    availableHeight / contentHeight)));
 
         var minimumReadableZoom =
             minimumZoom.HasValue
@@ -791,6 +876,9 @@ public partial class MainWindow
     private void TrySaveDeviceLayout(
         MapNodeVisual visual)
     {
+        // Временная раскладка не попадает в хранилище ни из одного обработчика карты.
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         if (visual == null ||
             !visual.DeviceId.HasValue)
         {
@@ -836,6 +924,9 @@ public partial class MainWindow
     private void TrySaveLocationLayout(
         MapLocationVisual visual)
     {
+        // Рамки скрыты в окрестности; отложенный обработчик также не сохраняет этот вид.
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         if (visual == null ||
             visual.LocationId == Guid.Empty)
         {
@@ -1488,20 +1579,9 @@ public partial class MainWindow
 
             StopMotion(
                 visual.Label);
-
-            if (visual.LastFreshness.HasValue)
-            {
-                var opacity =
-                    LinkFreshnessOpacity(
-                        visual.LastFreshness.Value);
-
-                visual.Line.Opacity =
-                    opacity;
-
-                visual.Label.Opacity =
-                    opacity;
-            }
         }
+
+        ApplyLinkFocusPresentation();
 
         StopMotion(
             AlertTransitionText);
@@ -1597,6 +1677,9 @@ public partial class MainWindow
             throw new ArgumentNullException(nameof(snapshot));
         }
 
+        // Обычная раскладка и обновление данных всегда работают с настоящими координатами.
+        RestoreNeighborhoodLayout();
+
         _lastMapSnapshot =
             snapshot;
 
@@ -1627,11 +1710,14 @@ public partial class MainWindow
             snapshot.Nodes);
 
         UpdateLocationHierarchyVisibility();
+        UpdateTopologyQuality();
 
         ReconcileLinks(
             snapshot.Links,
             nodes);
 
+        RefreshNeighborhoodSnapshot();
+        ApplyFarLabelDeclutter();
         UpdateSelectedLayoutControl();
 
         if (snapshot.Nodes.Count == 0 &&

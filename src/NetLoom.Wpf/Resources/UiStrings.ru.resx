@@ -2745,4 +2745,151 @@
   <data name="OperatorStatusGlyphProfileFailed" xml:space="preserve">
     <value>✕</value>
   </data>
+  <data name="MapQualitySummary" xml:space="preserve">
+    <value>Топология неполная: {0}</value>
+  </data>
+  <data name="MapQualityLinkSubject" xml:space="preserve">
+    <value>{0} ↔ {1}</value>
+  </data>
+  <data name="MapQualityLldpReporter" xml:space="preserve">
+    <value>LLDP сообщает только {0}</value>
+  </data>
+  <data name="MapQualitySyntheticPort" xml:space="preserve">
+    <value>Порт {0} без ifIndex</value>
+  </data>
+  <data name="MapQualityShow" xml:space="preserve">
+    <value>Показать</value>
+  </data>
+  <data name="TopologyConflictLabelPrefix" xml:space="preserve">
+    <value>⚠ </value>
+  </data>
+  <data name="TopologyConflictHeading" xml:space="preserve">
+    <value>Расхождение со схемой</value>
+  </data>
+  <data name="TopologyConflictEndpoints" xml:space="preserve">
+    <value>{0} {1} ↔ {2} {3}</value>
+  </data>
+  <data name="TopologyConflictManual" xml:space="preserve">
+    <value>Ручная: {0}</value>
+  </data>
+  <data name="TopologyConflictObserved" xml:space="preserve">
+    <value>Наблюдается: {0} · {1} · {2}</value>
+  </data>
+  <data name="TopologyConflictOpenEvidence" xml:space="preserve">
+    <value>Открыть основания</value>
+  </data>
+  <data name="TopologyConflictKeepManual" xml:space="preserve">
+    <value>Оставить ручную</value>
+  </data>
+  <data name="TopologyConflictChangeManual" xml:space="preserve">
+    <value>Изменить ручную</value>
+  </data>
+  <data name="TopologyConflictSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить решение. Повторите попытку.</value>
+  </data>
+  <data name="MapLocationCollapseName" xml:space="preserve">
+    <value>Свернуть размещение «{0}»</value>
+  </data>
+  <data name="MapLocationExpandName" xml:space="preserve">
+    <value>Развернуть размещение «{0}»</value>
+  </data>
+  <data name="MapQualityShowSubjectName" xml:space="preserve">
+    <value>Показать на карте: {0}</value>
+  </data>
+  <data name="MapSemanticCloseHelp" xml:space="preserve">
+    <value>Вблизи: порты и подписи связей</value>
+  </data>
+  <data name="MapSemanticDetailedHelp" xml:space="preserve">
+    <value>Подробно: адреса и скорости</value>
+  </data>
+  <data name="MapSemanticFarHelp" xml:space="preserve">
+    <value>Издалека: размещения</value>
+  </data>
+  <data name="MapSemanticLocationSummary" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapSemanticMediumHelp" xml:space="preserve">
+    <value>Средний: устройства</value>
+  </data>
+  <data name="MapNeighborhoodMenu" xml:space="preserve">
+    <value>Окрестность выбранного устройства</value>
+  </data>
+  <data name="MapNeighborhoodSelectDevice" xml:space="preserve">
+    <value>Выберите устройство на карте</value>
+  </data>
+  <data name="MapNeighborhoodShow" xml:space="preserve">
+    <value>Показать: окрестность</value>
+  </data>
+  <data name="MapNeighborhoodSummary" xml:space="preserve">
+    <value>Окрестность «{0}»: {1} из {2} устройств</value>
+  </data>
+  <data name="MapNeighborhoodExpandUp" xml:space="preserve">
+    <value>Раскрыть вверх</value>
+  </data>
+  <data name="MapNeighborhoodExpandDown" xml:space="preserve">
+    <value>Раскрыть вниз</value>
+  </data>
+  <data name="MapNeighborhoodExpandOther" xml:space="preserve">
+    <value>Раскрыть остальные связи</value>
+  </data>
+  <data name="MapNeighborhoodWholeSite" xml:space="preserve">
+    <value>Вся площадка</value>
+  </data>
+  <data name="MapNeighborhoodPollingNotFound" xml:space="preserve">
+    <value>Точка опроса Engine не найдена: MAC этой машины не виден на портах коммутаторов</value>
+  </data>
+  <data name="MapNeighborhoodPollingAmbiguous" xml:space="preserve">
+    <value>Точка опроса Engine неоднозначна: MAC этой машины виден на портах доступа нескольких устройств</value>
+  </data>
+  <data name="MapNeighborhoodPollingNoAccessPort" xml:space="preserve">
+    <value>Точка опроса Engine не определена: MAC этой машины виден только на портах связей между устройствами</value>
+  </data>
+  <data name="MapNeighborhoodPollingPending" xml:space="preserve">
+    <value>Точка опроса Engine определяется</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreUp" xml:space="preserve">
+    <value>Вверх некуда: все известные устройства выше уже показаны</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreDown" xml:space="preserve">
+    <value>Вниз некуда: нет известных устройств ниже</value>
+  </data>
+  <data name="MapQualityObservedReason" xml:space="preserve">
+    <value>Наблюдается без подтверждения LLDP</value>
+  </data>
+  <data name="MapQualityInferredReason" xml:space="preserve">
+    <value>Выведена косвенно (ARP/FDB)</value>
+  </data>
+  <data name="TopologyConflictQualityReason" xml:space="preserve">
+    <value>Ручная схема: {0}; наблюдается: {1}</value>
+  </data>
+  <data name="MapQualityLocationOverlapReason" xml:space="preserve">
+    <value>Накладывается на размещение «{0}»</value>
+  </data>
+  <data name="MapQualityLocationOutsideParentReason" xml:space="preserve">
+    <value>Выходит за рамку «{0}»</value>
+  </data>
+  <data name="MapPathSummary" xml:space="preserve">
+    <value>Путь {0} → {1}: {2}</value>
+  </data>
+  <data name="MapPathNone" xml:space="preserve">
+    <value>Известного физического пути между {0} и {1} нет</value>
+  </data>
+  <data name="MapPathStart" xml:space="preserve">
+    <value>Начало пути: {0}. Щёлкните с Shift по второму устройству</value>
+  </data>
+  <data name="MapPathReset" xml:space="preserve">
+    <value>Сбросить путь</value>
+  </data>
+  <data name="MapKeyboardHelp" xml:space="preserve">
+    <value>Стрелки — переход между элементами, Enter — выбрать, F — фокус на выбранном</value>
+  </data>
+  <data name="MapNodeAutomationName" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="MapLinkAutomationName" xml:space="preserve">
+    <value>Связь {0} ↔ {1}, порты {2}</value>
+  </data>
+  <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
+    <value>Связь {0} ↔ {1}</value>
+  </data>
 </root>

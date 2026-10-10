@@ -35,17 +35,17 @@ public partial class MainWindow
     {
         public MapLocationVisual(
             Border border,
-            FrameworkElement header,
+            Border frame,
+            Border header,
             TextBlock title,
-            TextBlock description,
             Button collapseButton,
             TextBlock lockBadge,
             Thumb resizeThumb)
         {
             Border = border;
+            Frame = frame;
             Header = header;
             Title = title;
-            Description = description;
             CollapseButton = collapseButton;
             LockBadge = lockBadge;
             ResizeThumb = resizeThumb;
@@ -53,11 +53,11 @@ public partial class MainWindow
 
         public Border Border { get; }
 
-        public FrameworkElement Header { get; }
+        public Border Frame { get; }
+
+        public Border Header { get; }
 
         public TextBlock Title { get; }
-
-        public TextBlock Description { get; }
 
         public Button CollapseButton { get; }
 
@@ -66,6 +66,10 @@ public partial class MainWindow
         public Thumb ResizeThumb { get; }
 
         public Guid LocationId { get; set; }
+
+        public string LocationName { get; set; }
+
+        public Path StatusIcon { get; set; }
 
         public Guid? ParentLocationId { get; set; }
 
@@ -76,6 +80,9 @@ public partial class MainWindow
         public double ExpandedWidth { get; set; }
 
         public double ExpandedHeight { get; set; }
+
+        // Вкладка скрыта на уровне «Издалека», чтобы не накладываться на более важные подписи.
+        public bool LabelHidden { get; set; }
     }
 
     private sealed class MapNodeVisual
@@ -118,11 +125,18 @@ public partial class MainWindow
 
         public Guid? DeviceId { get; set; }
 
+        public MapNode Node { get; set; }
+
+        public Border SemanticLabel { get; set; }
+
         public Guid? LocationId { get; set; }
 
         public bool IsManual { get; set; }
 
         public bool IsLocked { get; set; }
+
+        // Ярлык скрыт на уровне «Издалека», чтобы не накладываться на более важные подписи.
+        public bool LabelHidden { get; set; }
     }
 
     private sealed class MapLinkVisual
@@ -148,6 +162,10 @@ public partial class MainWindow
         public TextBlock Label { get; }
 
         public MapFreshness? LastFreshness { get; set; }
+
+        public MapLink Link { get; set; }
+
+        public double? LastPresentationOpacity { get; set; }
     }
 
 }

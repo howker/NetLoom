@@ -50,6 +50,23 @@ public partial class MainWindow
 
         StopStartupTopologyFit();
 
+        // Sprint 49: Shift+щелчок в режиме просмотра отмечает начало или конец кратчайшего пути.
+        if (!IsMapEditMode &&
+            e.ClickCount == 1 &&
+            (Keyboard.Modifiers & ModifierKeys.Shift) ==
+                ModifierKeys.Shift)
+        {
+            e.Handled = true;
+
+            HandleMapDeviceShiftClick(
+                deviceId);
+
+            return;
+        }
+
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(false);
+
         _highlightedDeviceId = null;
 
         _selectedDeviceId =
@@ -235,6 +252,29 @@ public partial class MainWindow
             return;
         }
 
+        // Sprint 49, K4: Tab снаружи карты входит на выбранный или центральный элемент. На элементе карты
+        // Стрелки, Enter, пробел, Shift+F10 и Ctrl+стрелка действуют раньше общей навигации по карте.
+        var mapElementKey =
+            e.Key == Key.System
+                ? e.SystemKey
+                : e.Key;
+
+        if (mapElementKey == Key.Tab)
+        {
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.None)
+            {
+                PrepareMapTabEntry();
+            }
+        }
+        else if (HandleMapElementKey(
+                     mapElementKey,
+                     Keyboard.Modifiers,
+                     e.IsRepeat))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // §8: Esc закрывает всплывающее окно, диалог или редактор; ADR-083: «Режим правки · Esc — выйти».
         // Esc не переключает разделы и не перехватывается у поиска и выпадающих списков — они закрываются сами.
         if (e.Key == Key.Escape)
@@ -257,6 +297,40 @@ public partial class MainWindow
 
                 SetMapInteractionMode(
                     MapInteractionMode.View);
+
+                return;
+            }
+
+            // Sprint 49: вне редактора и режима правки Esc возвращает карту к виду до фокусного показа.
+            if (HandleMapNavigationKey(
+                    e.Key,
+                    Keyboard.Modifiers,
+                    e.IsRepeat,
+                    e.OriginalSource))
+            {
+                e.Handled = true;
+            }
+
+            return;
+        }
+
+        // Sprint 49: F, Alt+← и пробел; Alt-сочетания приходят как Key.System.
+        var navigationKey =
+            e.Key == Key.System
+                ? e.SystemKey
+                : e.Key;
+
+        if (navigationKey == Key.F ||
+            navigationKey == Key.Left ||
+            navigationKey == Key.Space)
+        {
+            if (HandleMapNavigationKey(
+                    navigationKey,
+                    Keyboard.Modifiers,
+                    e.IsRepeat,
+                    e.OriginalSource))
+            {
+                e.Handled = true;
             }
 
             return;
@@ -516,8 +590,7 @@ public partial class MainWindow
         object sender,
         RoutedEventArgs e)
     {
-        StopStartupTopologyFit();
-        FitTopologyToViewport();
+        ShowWholeSite();
     }
 
     private async void OnManualTopologyClick(
@@ -626,6 +699,9 @@ public partial class MainWindow
     {
         StopStartupTopologyFit();
 
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(true);
+
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
         _selectedInterfaceId = null;
@@ -634,6 +710,7 @@ public partial class MainWindow
             locationId;
 
         UpdateLocationSelectionPresentation();
+        ApplyLinkFocusPresentation();
         ShowSelectedDiagnostic();
         UpdateSelectedLayoutControl();
         RevealInspectorForExplicitSelection();
@@ -678,6 +755,18 @@ public partial class MainWindow
             e.Handled = true;
 
             await OpenLocationTopologyEditorAsync(
+                locationId.Value);
+
+            return;
+        }
+
+        // Sprint 49: в режиме просмотра двойной щелчок вписывает поддерево размещения в экран.
+        if (!IsMapEditMode &&
+            e.ClickCount >= 2)
+        {
+            e.Handled = true;
+
+            FitLocationSubtree(
                 locationId.Value);
 
             return;
@@ -740,6 +829,12 @@ public partial class MainWindow
             e.ClickCount >= 2)
         {
             await OpenLocationTopologyEditorAsync(
+                locationId.Value);
+        }
+        else if (!IsMapEditMode &&
+                 e.ClickCount >= 2)
+        {
+            FitLocationSubtree(
                 locationId.Value);
         }
 
@@ -1033,6 +1128,7 @@ public partial class MainWindow
         }
 
         UpdateLinksForCurrentNodePositions();
+        UpdateTopologyQuality();
     }
 
     private void CaptureLocationSubtreeStarts(
@@ -1459,6 +1555,8 @@ public partial class MainWindow
     private void ToggleLocationCollapsed(
         Guid locationId)
     {
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         var visual =
             LocationVisual(
                 locationId);
@@ -1485,6 +1583,8 @@ public partial class MainWindow
         Guid locationId,
         bool? locked = null)
     {
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         var visual =
             LocationVisual(
                 locationId);
@@ -2130,13 +2230,23 @@ public partial class MainWindow
         object sender,
         MouseButtonEventArgs e)
     {
+        // Sprint 49: при зажатом пробеле левая кнопка панорамирует карту, даже над узлом.
+        var panWithLeftButton =
+            _mapSpacePanActive &&
+            e.ChangedButton ==
+                MouseButton.Left;
+
         if (e.ChangedButton !=
-            MouseButton.Middle)
+                MouseButton.Middle &&
+            !panWithLeftButton)
         {
             return;
         }
 
         StopStartupTopologyFit();
+
+        _panWithLeftButton =
+            panWithLeftButton;
 
         _isPanning = true;
         _panStartPoint =
@@ -2161,7 +2271,9 @@ public partial class MainWindow
         MouseEventArgs e)
     {
         if (!_isPanning ||
-            e.MiddleButton !=
+            (_panWithLeftButton
+                ? e.LeftButton
+                : e.MiddleButton) !=
                 MouseButtonState.Pressed)
         {
             return;
@@ -2196,19 +2308,29 @@ public partial class MainWindow
     {
         if (!_isPanning ||
             e.ChangedButton !=
-                MouseButton.Middle)
+                (_panWithLeftButton
+                    ? MouseButton.Left
+                    : MouseButton.Middle))
         {
             return;
         }
 
         _isPanning = false;
+        _panWithLeftButton = false;
 
         if (MapScrollViewer.IsMouseCaptured)
         {
             MapScrollViewer.ReleaseMouseCapture();
         }
 
-        MapScrollViewer.Cursor = null;
+        // Пока пробел зажат, карта остаётся в режиме панорамирования с рукой вместо стрелки.
+        MapScrollViewer.Cursor =
+            _mapSpacePanActive
+                ? Cursors.Hand
+                : null;
+
+        MapScrollViewer.ForceCursor =
+            _mapSpacePanActive;
 
         TrySaveViewportLayout();
         e.Handled = true;
@@ -2232,6 +2354,9 @@ public partial class MainWindow
 
         StopStartupTopologyFit();
 
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(false);
+
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
         _selectedInterfaceId = null;
@@ -2242,6 +2367,7 @@ public partial class MainWindow
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        ApplyLinkFocusPresentation();
         UpdateSelectedLayoutControl();
         RevealInspectorForExplicitSelection();
 
@@ -2287,6 +2413,7 @@ public partial class MainWindow
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        ApplyLinkFocusPresentation();
         UpdateSelectedLayoutControl();
     }
 
@@ -2397,7 +2524,26 @@ public partial class MainWindow
             return;
         }
 
+        var point = e.GetPosition(MapCanvas);
+        if (_semanticLevel == MapSemanticLevel.Far && IsMapEditMode && e.ClickCount >= 2)
+        {
+            var location = FarLocationAtPoint(point);
+            if (location != null)
+            {
+                OnMapLocationBodyMouseLeftButtonDown(location.Border, e);
+                return;
+            }
+        }
+        if (TryHandleFarLocationCanvasClick(point, e.ClickCount))
+        {
+            e.Handled = true;
+            return;
+        }
+
         StopStartupTopologyFit();
+
+        // Обычный щелчок сбрасывает показанный путь.
+        ClearMapPathState(false);
 
         _highlightedDeviceId = null;
         _selectedDeviceId = null;
@@ -2407,7 +2553,32 @@ public partial class MainWindow
 
         RedrawCurrentMap();
         ShowSelectedDiagnostic();
+        ApplyLinkFocusPresentation();
         UpdateSelectedLayoutControl();
+    }
+
+    private MapLocationVisual FarLocationAtPoint(Point canvasPoint)
+    {
+        if (_semanticLevel != MapSemanticLevel.Far || _lastMapSnapshot == null) return null;
+        var locations = _lastMapSnapshot.Locations.ToDictionary(item => item.Id);
+        // Контур не перехватывает мышь; пустое место выбирает самое глубокое видимое размещение.
+        return _locationVisualsById.Values
+            .Where(visual => visual.Border.Visibility == Visibility.Visible &&
+                locations.ContainsKey(visual.LocationId) &&
+                new Rect(LocationLeft(visual), LocationTop(visual),
+                    visual.Border.Width, visual.Border.Height).Contains(canvasPoint))
+            .OrderByDescending(visual => LocationDepth(locations[visual.LocationId], locations))
+            .ThenBy(visual => visual.LocationId)
+            .FirstOrDefault();
+    }
+
+    private bool TryHandleFarLocationCanvasClick(Point canvasPoint, int clickCount)
+    {
+        var visual = FarLocationAtPoint(canvasPoint);
+        if (visual == null) return false;
+        SelectLocation(visual.LocationId);
+        if (!IsMapEditMode && clickCount >= 2) FitLocationSubtree(visual.LocationId);
+        return true;
     }
 
 }

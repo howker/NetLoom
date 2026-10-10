@@ -40,6 +40,18 @@
     <Thickness x:Key="NetLoom.Thickness.ButtonPadding">14,7</Thickness>
     <Thickness x:Key="NetLoom.Thickness.ListItemPadding">8,6</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodePadding">8</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapNoticePadding">12,6</Thickness>
+    <sys:Double x:Key="NetLoom.Map.QualityListMaxHeight">240</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.QualityPanelWidth">520</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.OverlayShadowBlur">16</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.OverlayShadowDepth">4</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.OverlayShadowOpacity">0.18</sys:Double>
+    <sys:Int32 x:Key="NetLoom.Map.OverlayZIndex">10</sys:Int32>
+    <Thickness x:Key="NetLoom.Thickness.MapOverlayMargin">12</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapOverlayPadding">12</Thickness>
+    <sys:Double x:Key="NetLoom.Expander.ArrowStrokeThickness">1.5</sys:Double>
+    <Geometry x:Key="NetLoom.Geometry.ExpanderCollapsed">M 0,0 L 4,4 L 0,8</Geometry>
+    <Geometry x:Key="NetLoom.Geometry.ExpanderExpanded">M 0,0 L 4,4 L 8,0</Geometry>
     <Thickness x:Key="NetLoom.Thickness.MapNodeIcon">0,0,8,0</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapNodeStateStripe">1,1,0,1</Thickness>
     <Thickness x:Key="NetLoom.Thickness.MapLinkLabelPadding">4,2</Thickness>
@@ -64,6 +76,10 @@
     <!-- §8: тематическая рамка фокуса вместо системного пунктира — 2 px, снаружи элемента с зазором 1 px. -->
     <Thickness x:Key="NetLoom.Thickness.FocusRing">2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.FocusRingOffset">-3</Thickness>
+    <!-- Кольцо фокуса элементов холста карты: окно пересчитывает обе величины как экранные 2 px и -3 px,
+         Делённые на масштаб карты (§8), и кладёт их в ресурсы MapScrollViewer. Здесь — значения при 100 %. -->
+    <Thickness x:Key="NetLoom.Thickness.MapFocusRing">2</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapFocusRingOffset">-3</Thickness>
     <!-- A2: выбранная карточка предупреждения — рамка 2; поле карточки меньше на 1, чтобы содержимое не сдвигалось. -->
     <Thickness x:Key="NetLoom.Thickness.CardSelectedBorder">2</Thickness>
     <Thickness x:Key="NetLoom.Thickness.CardSelectedPadding">19</Thickness>
@@ -229,19 +245,53 @@
     <sys:Double x:Key="NetLoom.Map.LocationHeaderHeight">32</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationContentPadding">48</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LocationResizeThumbSize">16</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.ReadableZoomMin">0.75</sys:Double>
-    <sys:Double x:Key="NetLoom.Map.LinkLabelMinZoom">0.95</sys:Double>
+    <!-- Критерий владельца (Sprint 49): экранный размер текста карты не меньше NetLoom.FontSize.Caption (12).
+         Заголовок карточки 13 px достигает 12 px при масштабе 12/13 ≈ 0,923, подпись связи (Caption) — при 1,0. -->
+    <sys:Double x:Key="NetLoom.Map.ReadableZoomMin">0.93</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkLabelMinZoom">1.0</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.SemanticDetailMinZoom">1.6</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.MapSemanticLabelPadding">8,4</Thickness>
+    <!-- Поле между подписями уровня «Издалека» в экранных пикселях: ближе подписи не показываются вместе. -->
+    <sys:Double x:Key="NetLoom.Map.FarLabelGap">4</sys:Double>
+    <!-- Вкладки дальнего уровня выше карточек; предки и фокус поднимаются относительно этого слоя. -->
+    <sys:Double x:Key="NetLoom.Map.FarLocationZIndex">20</sys:Double>
+    <!-- Временная окрестность оставляет место для подписей портов между карточками. -->
+    <sys:Double x:Key="NetLoom.Map.NeighborhoodColumnGap">180</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NeighborhoodRowGap">96</sys:Double>
+    <!-- Ниже этих промежутков линии связей между рядами и подписи портов неразличимы. -->
+    <sys:Double x:Key="NetLoom.Map.NeighborhoodRowGapMin">32</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NeighborhoodColumnGapMin">32</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomMin">0.01</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomMax">5.0</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ZoomStep">0.1</sys:Double>
+    <!-- Глубина истории видов карты (Alt+←): сколько предыдущих видов помнит окно. -->
+    <sys:Double x:Key="NetLoom.Map.ViewHistoryLimit">20</sys:Double>
     <sys:Double x:Key="NetLoom.Map.FitPadding">48</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkStrokeThickness">3</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.ParallelLinkSpacing">14</sys:Double>
+    <!-- Наименьшее экранное расстояние между параллельными связями пары при любом масштабе. -->
+    <sys:Double x:Key="NetLoom.Map.ParallelLinkMinScreenGap">8</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectedStrokeThickness">5</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloThickness">18</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkSelectionHaloOpacity">0.42</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LinkFocusDimmedOpacity">0.3</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelPlacementStep">24</sys:Double>
     <sys:Double x:Key="NetLoom.Map.LinkLabelCollisionMargin">8</sys:Double>
     <sys:Double x:Key="NetLoom.Map.ScrollBarThickness">12</sys:Double>
     <Thickness x:Key="NetLoom.Thickness.MapScrollBarThumbInset">2</Thickness>
 
+    <!-- Sprint 49: вкладка размещения и поиск места только для новых элементов. -->
+    <sys:Double x:Key="NetLoom.Map.NewNodePlacementStep">24</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.NewLocationPlacementStep">48</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationFillOpacity">0.68</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.LocationToggleSize">24</sys:Double>
+    <!-- Sprint 49, K4: шаг сдвига узла или вкладки Ctrl+стрелкой и мелкий шаг Ctrl+Shift+стрелкой (единицы холста).
+         Запас у края области карты нужен, когда прокрутка выводит элемент в видимую часть. -->
+    <sys:Double x:Key="NetLoom.Map.KeyboardMoveStep">24</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.KeyboardMoveFineStep">4</sys:Double>
+    <sys:Double x:Key="NetLoom.Map.KeyboardScrollMargin">24</sys:Double>
+    <Thickness x:Key="NetLoom.Thickness.MapLocationTab">12,3</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapLocationTabBorder">1,1,1,0</Thickness>
+    <Thickness x:Key="NetLoom.Thickness.MapLocationToggle">4,0</Thickness>
+    <CornerRadius x:Key="NetLoom.Radius.MapLocationTab">8,8,0,0</CornerRadius>
 </ResourceDictionary>

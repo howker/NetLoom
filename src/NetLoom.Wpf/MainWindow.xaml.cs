@@ -43,6 +43,7 @@ public partial class MainWindow : Window
     private readonly double _nodeWidth;
     private readonly double _nodeHeight;
     private readonly double _linkLabelPlacementStep;
+    private readonly double _parallelLinkSpacing;
     private readonly double _linkLabelCollisionMargin;
     private readonly double _zoomMin;
     private readonly double _zoomMax;
@@ -50,6 +51,8 @@ public partial class MainWindow : Window
     private readonly double _fitPadding;
     private readonly double _readableZoomMin;
     private readonly double _linkLabelMinZoom;
+    private readonly double _semanticDetailMinZoom;
+    private MapSemanticLevel _semanticLevel;
     private readonly double _virtualOriginX;
     private readonly double _virtualOriginY;
     private readonly double _locationDefaultWidth;
@@ -477,6 +480,10 @@ public partial class MainWindow : Window
             GetDoubleResource(
                 "NetLoom.Map.NodeHeight");
 
+        _parallelLinkSpacing =
+            GetDoubleResource(
+                "NetLoom.Map.ParallelLinkSpacing");
+
         _linkLabelPlacementStep =
             GetDoubleResource(
                 "NetLoom.Map.LinkLabelPlacementStep");
@@ -508,6 +515,9 @@ public partial class MainWindow : Window
         _linkLabelMinZoom =
             GetDoubleResource(
                 "NetLoom.Map.LinkLabelMinZoom");
+
+        _semanticDetailMinZoom =
+            GetDoubleResource("NetLoom.Map.SemanticDetailMinZoom");
 
         _virtualOriginX =
             GetDoubleResource(
@@ -610,6 +620,8 @@ public partial class MainWindow : Window
         Loaded += OnWindowLoaded;
         Closed += OnWindowClosed;
         PreviewKeyDown += OnMainWindowPreviewKeyDown;
+        PreviewKeyUp += OnMainWindowPreviewKeyUp;
+        Deactivated += OnMainWindowDeactivated;
 
         Title = UiText.Get("WindowTitle");
         MapTitleText.Text = UiText.Get("MapTitle");
@@ -651,6 +663,7 @@ public partial class MainWindow : Window
             UiText.Get("MapSettingsAction");
 
         InitializeMapSettingsMenu();
+        InitializeMapKeyboard();
 
         UpdateZoomText();
         UpdateMotionModeText();
@@ -758,6 +771,8 @@ public partial class MainWindow : Window
 
         _lastDiagnosticSnapshot =
             EmptyDiagnosticSnapshot();
+
+        UpdateTopologyQuality();
 
         ShowMap(
             _lastMapSnapshot);
@@ -875,6 +890,8 @@ public partial class MainWindow : Window
         _lastDiagnosticSnapshot =
             state.Snapshot.DiagnosticSnapshot;
 
+        UpdateTopologyQuality();
+
         // Sprint 47: к предупреждениям схемы добавляются «Устройство не отвечает» из текущего опроса.
         _lastTopologyAlertSnapshot =
             state.Snapshot.AlertSnapshot;
@@ -894,6 +911,10 @@ public partial class MainWindow : Window
             state.Snapshot.MapSnapshot);
 
         ShowSelectedDiagnostic();
+
+        // ADR-085: точка опроса пересчитывается один раз за обновление снимков.
+        RefreshEnginePollingPoint();
+
         UpdateMonitoringPresentation(
             _monitoringControl.Current);
 
@@ -1182,7 +1203,8 @@ public partial class MainWindow : Window
                 new MapViewportLayout(
                     1.0,
                     0.0,
-                    0.0),
+                    0.0,
+                    false),
                 new MapDeviceLayout[0]);
         }
 

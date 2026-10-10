@@ -793,8 +793,21 @@ public partial class MainWindow
                                     alert))))
                 .ToArray();
 
-        AlertList.ItemsSource =
-            rows;
+        // §8: одинаковые карточки не пересоздаются — кнопки карточки не теряют фокус при опросе.
+        if (Shell.RowContent.SameRows(
+                AlertList.ItemsSource,
+                rows))
+        {
+            rows =
+                AlertList.ItemsSource
+                    .Cast<AlertRow>()
+                    .ToArray();
+        }
+        else
+        {
+            AlertList.ItemsSource =
+                rows;
+        }
 
         ApplyAlertCardSelection(
             rows);
@@ -988,12 +1001,50 @@ public partial class MainWindow
                 CurrentMapViewport();
             _mapViewportHeldForAlerts =
                 true;
+
+            // Режим окрестности — часть рабочего вида «Карты»: фокус предупреждения его выключает,
+            // А выход из раздела возвращает (Sprint 49).
+            _neighborhoodBeforeAlertsAnchor =
+                _neighborhoodSelectedDeviceId;
+            _neighborhoodBeforeAlertsDevices =
+                new HashSet<Guid>(
+                    _neighborhoodDeviceIds);
         }
 
         // Автоматический выбор без пульсации: выразительная анимация — только по действию оператора (§7).
         ShowAlertRowOnMap(
             first,
             false);
+    }
+
+    private Guid? _neighborhoodBeforeAlertsAnchor;
+    private HashSet<Guid> _neighborhoodBeforeAlertsDevices = new HashSet<Guid>();
+
+    private void RestoreNeighborhoodAfterAlerts()
+    {
+        var anchor =
+            _neighborhoodBeforeAlertsAnchor;
+
+        _neighborhoodBeforeAlertsAnchor =
+            null;
+
+        if (!anchor.HasValue ||
+            _lastMapSnapshot == null ||
+            !_lastMapSnapshot.Nodes.Any(
+                node => node.DeviceId == anchor))
+        {
+            return;
+        }
+
+        _operationalFocusMode =
+            MapOperationalFocusMode.None;
+        RefreshOperationalFocusTargets();
+        _neighborhoodSelectedDeviceId =
+            anchor;
+        _neighborhoodDeviceIds =
+            new HashSet<Guid>(
+                _neighborhoodBeforeAlertsDevices);
+        RefreshNeighborhoodPresentation();
     }
 
     private MapViewportLayout CurrentMapViewport()
@@ -1033,6 +1084,8 @@ public partial class MainWindow
             false;
         _mapViewportBeforeAlerts =
             null;
+
+        RestoreNeighborhoodAfterAlerts();
 
         _zoom =
             viewport.Zoom;
@@ -1196,6 +1249,9 @@ public partial class MainWindow
             false;
         _mapViewportBeforeAlerts =
             null;
+
+        // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+        RecordMapView(false);
 
         ShowAlertRowOnMap(
             row,

@@ -46,6 +46,8 @@ public partial class MainWindow : Window
     {
         UpdateShellBreadcrumb();
         SynchronizeAlertCardSelectionWithMap();
+        if (!_selectedPhysicalLinkId.HasValue || _selectedDeviceId.HasValue || _selectedLocationId.HasValue)
+            ClearTopologyConflictBlocks();
 
         if (_selectedLocationId.HasValue)
         {
@@ -473,6 +475,7 @@ public partial class MainWindow : Window
 
     private void ClearInspectorEntity()
     {
+        ClearTopologyConflictBlocks();
         _inspectorEntityId =
             null;
         _inspectorPrimaryAlert =
@@ -1303,6 +1306,7 @@ public partial class MainWindow : Window
     private void ShowLinkDiagnostic(
         PhysicalLinkDiagnostic link)
     {
+        ShowTopologyConflictBlocks(link);
         SetInspectorEntity(
             "InspectorEntityLink",
             link.PhysicalLinkId);
@@ -2040,6 +2044,9 @@ public partial class MainWindow : Window
                 var deviceId =
                     _selectedDeviceId.Value;
 
+                // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+                RecordMapView(false);
+
                 FocusSelectedMapAtNativeZoom(
                     () =>
                         AnimateDiscoveryFocus(
@@ -2052,6 +2059,9 @@ public partial class MainWindow : Window
         var linkIds =
             _inspectorPrimaryAlert.PhysicalLinkIds
                 .ToArray();
+
+        // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+        RecordMapView(false);
 
         SelectAlertPhysicalContext(
             linkIds[0]);

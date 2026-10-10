@@ -2745,4 +2745,151 @@ Poll: {2}</value>
   <data name="OperatorStatusGlyphProfileFailed" xml:space="preserve">
     <value>✕</value>
   </data>
+  <data name="MapQualitySummary" xml:space="preserve">
+    <value>Topology incomplete: {0}</value>
+  </data>
+  <data name="MapQualityLinkSubject" xml:space="preserve">
+    <value>{0} ↔ {1}</value>
+  </data>
+  <data name="MapQualityLldpReporter" xml:space="preserve">
+    <value>LLDP reported only by {0}</value>
+  </data>
+  <data name="MapQualitySyntheticPort" xml:space="preserve">
+    <value>Port {0} has no ifIndex</value>
+  </data>
+  <data name="MapQualityShow" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="TopologyConflictLabelPrefix" xml:space="preserve">
+    <value>⚠ </value>
+  </data>
+  <data name="TopologyConflictHeading" xml:space="preserve">
+    <value>Topology conflict</value>
+  </data>
+  <data name="TopologyConflictEndpoints" xml:space="preserve">
+    <value>{0} {1} ↔ {2} {3}</value>
+  </data>
+  <data name="TopologyConflictManual" xml:space="preserve">
+    <value>Manual: {0}</value>
+  </data>
+  <data name="TopologyConflictObserved" xml:space="preserve">
+    <value>Observed: {0} · {1} · {2}</value>
+  </data>
+  <data name="TopologyConflictOpenEvidence" xml:space="preserve">
+    <value>Open evidence</value>
+  </data>
+  <data name="TopologyConflictKeepManual" xml:space="preserve">
+    <value>Keep manual</value>
+  </data>
+  <data name="TopologyConflictChangeManual" xml:space="preserve">
+    <value>Change manual</value>
+  </data>
+  <data name="TopologyConflictSaveFailed" xml:space="preserve">
+    <value>Could not save the decision. Try again.</value>
+  </data>
+  <data name="MapLocationCollapseName" xml:space="preserve">
+    <value>Collapse location “{0}”</value>
+  </data>
+  <data name="MapLocationExpandName" xml:space="preserve">
+    <value>Expand location “{0}”</value>
+  </data>
+  <data name="MapQualityShowSubjectName" xml:space="preserve">
+    <value>Show on map: {0}</value>
+  </data>
+  <data name="MapSemanticCloseHelp" xml:space="preserve">
+    <value>Close: ports and link labels</value>
+  </data>
+  <data name="MapSemanticDetailedHelp" xml:space="preserve">
+    <value>Detailed: addresses and speeds</value>
+  </data>
+  <data name="MapSemanticFarHelp" xml:space="preserve">
+    <value>Far: locations</value>
+  </data>
+  <data name="MapSemanticLocationSummary" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="MapSemanticMediumHelp" xml:space="preserve">
+    <value>Medium: devices</value>
+  </data>
+  <data name="MapNeighborhoodMenu" xml:space="preserve">
+    <value>Selected device neighborhood</value>
+  </data>
+  <data name="MapNeighborhoodSelectDevice" xml:space="preserve">
+    <value>Select a device on the map</value>
+  </data>
+  <data name="MapNeighborhoodShow" xml:space="preserve">
+    <value>Show: neighborhood</value>
+  </data>
+  <data name="MapNeighborhoodSummary" xml:space="preserve">
+    <value>Neighborhood of “{0}”: {1} of {2} devices</value>
+  </data>
+  <data name="MapNeighborhoodExpandUp" xml:space="preserve">
+    <value>Expand upstream</value>
+  </data>
+  <data name="MapNeighborhoodExpandDown" xml:space="preserve">
+    <value>Expand downstream</value>
+  </data>
+  <data name="MapNeighborhoodExpandOther" xml:space="preserve">
+    <value>Expand other links</value>
+  </data>
+  <data name="MapNeighborhoodWholeSite" xml:space="preserve">
+    <value>Whole site</value>
+  </data>
+  <data name="MapNeighborhoodPollingNotFound" xml:space="preserve">
+    <value>Engine polling point not found: this machine’s MAC is not seen on any switch port</value>
+  </data>
+  <data name="MapNeighborhoodPollingAmbiguous" xml:space="preserve">
+    <value>Engine polling point is ambiguous: this machine’s MAC is seen on access ports of several devices</value>
+  </data>
+  <data name="MapNeighborhoodPollingNoAccessPort" xml:space="preserve">
+    <value>Engine polling point not determined: this machine’s MAC is seen only on ports that link devices</value>
+  </data>
+  <data name="MapNeighborhoodPollingPending" xml:space="preserve">
+    <value>Engine polling point is being determined</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreUp" xml:space="preserve">
+    <value>Cannot expand upstream: all known upstream devices are shown</value>
+  </data>
+  <data name="MapNeighborhoodNoMoreDown" xml:space="preserve">
+    <value>Cannot expand downstream: no known devices below</value>
+  </data>
+  <data name="MapQualityObservedReason" xml:space="preserve">
+    <value>Observed without LLDP confirmation</value>
+  </data>
+  <data name="MapQualityInferredReason" xml:space="preserve">
+    <value>Inferred indirectly (ARP/FDB)</value>
+  </data>
+  <data name="TopologyConflictQualityReason" xml:space="preserve">
+    <value>Manual topology: {0}; observed: {1}</value>
+  </data>
+  <data name="MapQualityLocationOverlapReason" xml:space="preserve">
+    <value>Overlaps location “{0}”</value>
+  </data>
+  <data name="MapQualityLocationOutsideParentReason" xml:space="preserve">
+    <value>Extends outside “{0}”</value>
+  </data>
+  <data name="MapPathSummary" xml:space="preserve">
+    <value>Path {0} → {1}: {2}</value>
+  </data>
+  <data name="MapPathNone" xml:space="preserve">
+    <value>There is no known physical path between {0} and {1}</value>
+  </data>
+  <data name="MapPathStart" xml:space="preserve">
+    <value>Path start: {0}. Shift+click a second device</value>
+  </data>
+  <data name="MapPathReset" xml:space="preserve">
+    <value>Clear path</value>
+  </data>
+  <data name="MapKeyboardHelp" xml:space="preserve">
+    <value>Arrow keys move between elements, Enter selects, F focuses the selection</value>
+  </data>
+  <data name="MapNodeAutomationName" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="MapLinkAutomationName" xml:space="preserve">
+    <value>Link {0} ↔ {1}, ports {2}</value>
+  </data>
+  <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
+    <value>Link {0} ↔ {1}</value>
+  </data>
 </root>

@@ -5297,8 +5297,10 @@ namespace NetLoom.Tests.Unit
                             "−",
                             UiText.Get(
                                 "MapZoomOutAction"));
+                        // Sprint 49: порог читаемости — масштаб, при котором заголовок карточки (13 px)
+                        // Достигает NetLoom.FontSize.Caption (12 px): 12 / 13, округлено вверх.
                         Assert.AreEqual(
-                            0.75,
+                            0.93,
                             (double)window.FindResource(
                                 "NetLoom.Map.ReadableZoomMin"),
                             0.001);
@@ -6379,7 +6381,39 @@ namespace NetLoom.Tests.Unit
                             new InterfaceDiagnostic[0],
                             "192.0.2.163")
                     },
-                    new PhysicalLinkDiagnostic[0]));
+                    // Карта и диагностика строятся из одного набора: у связи карты есть диагностика,
+                    // Иначе выбор связи снимается как «выбранный объект пропал» (Sprint 49).
+                    new[]
+                    {
+                        new PhysicalLinkDiagnostic(
+                            physicalLinkId,
+                            firstId,
+                            secondId,
+                            null,
+                            null,
+                            "Switch critical A",
+                            "Switch critical B",
+                            null,
+                            null,
+                            DiagnosticLinkStrength.Confirmed,
+                            MapFreshness.Fresh,
+                            "Ethernet",
+                            1000000000L,
+                            "LLDP",
+                            Now,
+                            Now,
+                            NetLoom.Contracts.StpTree
+                                .StpTreePortState
+                                .Forwarding,
+                            NetLoom.Contracts.StpTree
+                                .StpTreePortState
+                                .Forwarding,
+                            new DiagnosticEvidenceItem[0],
+                            false,
+                            0,
+                            0,
+                            0L)
+                    }));
         }
 
         private static T FindVisualDescendantByTag<T>(

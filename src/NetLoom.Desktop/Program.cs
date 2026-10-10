@@ -181,6 +181,7 @@ namespace NetLoom.Desktop
                             .CreateDefault());
 
                 mainWindow.DiscoveryInboxActions = inboxActions;
+                mainWindow.TopologyConflictAcknowledgements = new SqliteTopologyConflictAcknowledgementStore(connectionFactory);
 
                 mainWindow.DiscoveryProfileCheckRequested +=
                     (sender, request) =>

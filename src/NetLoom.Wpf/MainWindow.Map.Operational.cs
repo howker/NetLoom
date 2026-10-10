@@ -274,6 +274,10 @@ public partial class MainWindow
                         "MapOperationalFocusSettings")
             };
 
+        // Окрестность — режим существующего меню «Показать», без новой верхней панели.
+        focusMenu.Items.Add(CreateNeighborhoodMenuItem());
+        focusMenu.Items.Add(new Separator());
+
         focusMenu.Items.Add(
             CreateOperationalFocusMenuItem(
                 MapOperationalFocusMode.AllProblems,
@@ -356,6 +360,9 @@ public partial class MainWindow
             return;
         }
 
+        // Sprint 49: смена режима показа — действие, прежний вид которого попадает в историю.
+        RecordMapView(false);
+
         SetOperationalFocusMode(
             (MapOperationalFocusMode)item.Tag);
     }
@@ -363,6 +370,7 @@ public partial class MainWindow
     private void SetOperationalFocusMode(
         MapOperationalFocusMode mode)
     {
+        DisableNeighborhood();
         _operationalFocusMode =
             mode;
 
@@ -379,8 +387,9 @@ public partial class MainWindow
         {
             pair.Value.IsChecked =
                 pair.Key ==
-                _operationalFocusMode;
+                _operationalFocusMode && !_neighborhoodSelectedDeviceId.HasValue;
         }
+        UpdateNeighborhoodMenuState();
     }
 
     private void RefreshOperationalFocusTargets()
@@ -487,27 +496,10 @@ public partial class MainWindow
             }
         }
 
-        foreach (var link in
-            _lastMapSnapshot.Links)
-        {
-            MapLinkVisual visual;
-
-            if (_linkVisualsByIdentity.TryGetValue(
-                    LinkIdentity(link),
-                    out visual))
-            {
-                var opacity =
-                    LinkPresentationOpacity(
-                        link.PhysicalLinkId,
-                        link.Freshness);
-
-                visual.Line.Opacity =
-                    opacity;
-
-                visual.Label.Opacity =
-                    opacity;
-            }
-        }
+        foreach (var visual in _locationVisualsById.Values)
+            ApplyLocationSemanticPresentation(visual);
+        ApplyFarLabelDeclutter();
+        ApplyLinkFocusPresentation();
     }
 
     private void ApplyNodeOperationalFocusPresentation(
@@ -517,6 +509,7 @@ public partial class MainWindow
         visual.Border.Opacity =
             NodeOperationalFocusOpacity(
                 deviceId);
+        ApplyNodeSemanticPresentation(visual);
     }
 
     private double NodeOperationalFocusOpacity(
@@ -567,9 +560,18 @@ public partial class MainWindow
             }
         }
 
+        // Sprint 49: пока показан путь, остальные связи приглушены так же, как при фокусной связи.
+        var pathActive = _pathLinkIds.Count > 0;
+        var onPath = pathActive && physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value);
+        var linkFocusOpacity = !onPath && (pathActive ||
+            (FocusedPhysicalLinkId.HasValue && physicalLinkId != FocusedPhysicalLinkId))
+                ? GetDoubleResource("NetLoom.Map.LinkFocusDimmedOpacity")
+                : 1.0;
+
         return LinkFreshnessOpacity(
                    freshness) *
-               focusOpacity;
+               focusOpacity *
+               linkFocusOpacity;
     }
 
     private void FitOperationalFocusToViewport()
@@ -623,8 +625,8 @@ public partial class MainWindow
                             visual.Line.Y2))));
         }
 
-        FitMapBoundsToViewport(
-            bounds);
+        // Участники должны помещаться целиком; мелкий текст убирает семантический масштаб.
+        TryFitMapBoundsToViewport(bounds, _zoomMin);
     }
 
     private static bool OperationalFocusMatchesLink(
@@ -746,6 +748,23 @@ public partial class MainWindow
             visual.StatusIcon.ClearValue(
                 Path.StrokeProperty);
         }
+        // Sprint 49, K4: имя карточки для UI Automation — подпись и состояние, как в «Оборудовании».
+        if (visual.Node != null)
+        {
+            System.Windows.Automation.AutomationProperties.SetName(
+                visual.Border,
+                UiText.Format(
+                    "MapNodeAutomationName",
+                    DisplayNodeLabel(
+                        visual.Node),
+                    OperatorStatusLabel(
+                        semantic)));
+        }
+
+        ApplyNodeSemanticPresentation(visual);
+        // Изменение проблемы вне обновления схемы должно сразу попасть в сводку размещения.
+        foreach (var location in _locationVisualsById.Values)
+            ApplyLocationSemanticPresentation(location);
     }
 
     private MapNodeDegradationState

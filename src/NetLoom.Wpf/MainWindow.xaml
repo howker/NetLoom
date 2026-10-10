@@ -10,7 +10,8 @@
         FontSize="{DynamicResource NetLoom.FontSize.Body}"
         TextOptions.TextFormattingMode="Display"
         Background="{DynamicResource NetLoom.Brush.Window}"
-        Foreground="{DynamicResource NetLoom.Brush.TextPrimary}">
+        Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+        PreviewKeyDown="OnMapQualityPreviewKeyDown">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -2105,16 +2106,178 @@
                     </Grid>
                 </Border>
 
-                <Border x:Name="Adr083MapMonitoringNotice"
-                        Grid.Row="1"
-                        Padding="12,6"
-                        Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                <StackPanel Grid.Row="1">
+                    <Border x:Name="Adr083MapMonitoringNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="Adr083MapMonitoringNoticeText"
+                                   Style="{StaticResource NetLoom.Style.MutedText}"
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <Border x:Name="MapQualityNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="MapQualityGlyph"
+                                           Margin="{DynamicResource NetLoom.Thickness.StatusGlyph}"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False" />
+                                <ToggleButton x:Name="MapQualityToggle"
+                                              Style="{StaticResource NetLoom.Style.LinkToggleButton}"
+                                              IsChecked="False">
+                                    <TextBlock x:Name="MapQualitySummaryText"
+                                               shell:LiveRegion.IsPolite="True"
+                                               Typography.NumeralAlignment="Tabular" />
+                                </ToggleButton>
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="MapNeighborhoodNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock x:Name="MapNeighborhoodSummaryText"
+                                       Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+                                       TextWrapping="Wrap"
+                                       Typography.NumeralAlignment="Tabular"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <WrapPanel Margin="{DynamicResource NetLoom.Thickness.FieldGapTop}">
+                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}">
+                                    <Button x:Name="MapNeighborhoodUpButton"
+                                            Style="{StaticResource NetLoom.Style.LinkButton}"
+                                            Click="OnMapNeighborhoodExpandClick" />
+                                    <TextBlock x:Name="MapNeighborhoodUpReason"
+                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}">
+                                    <Button x:Name="MapNeighborhoodDownButton"
+                                            Style="{StaticResource NetLoom.Style.LinkButton}"
+                                            Click="OnMapNeighborhoodExpandClick" />
+                                    <TextBlock x:Name="MapNeighborhoodDownReason"
+                                               Style="{StaticResource NetLoom.Style.MutedText}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button x:Name="MapNeighborhoodOtherButton"
+                                        Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                        Style="{StaticResource NetLoom.Style.LinkButton}"
+                                        Click="OnMapNeighborhoodExpandClick" />
+                                <Button x:Name="MapNeighborhoodWholeSiteButton"
+                                        Style="{StaticResource NetLoom.Style.LinkButton}"
+                                        Click="OnMapNeighborhoodWholeSiteClick" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    <!-- Sprint 49: полоса кратчайшего известного физического пути (Shift+щелчок по двум устройствам). -->
+                    <Border x:Name="MapPathNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <WrapPanel>
+                            <TextBlock x:Name="MapPathSummaryText"
+                                       Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+                                       TextWrapping="Wrap"
+                                       Typography.NumeralAlignment="Tabular"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <Button x:Name="MapPathResetButton"
+                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                    Click="OnMapPathResetClick" />
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border x:Name="MapQualityDetails"
+                        Grid.Row="2"
+                        Panel.ZIndex="{DynamicResource NetLoom.Map.OverlayZIndex}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Width="{DynamicResource NetLoom.Map.QualityPanelWidth}"
+                        MaxHeight="{DynamicResource NetLoom.Map.QualityListMaxHeight}"
+                        Margin="{DynamicResource NetLoom.Thickness.MapOverlayMargin}"
+                        Padding="{DynamicResource NetLoom.Thickness.MapOverlayPadding}"
+                        Background="{DynamicResource NetLoom.Brush.Surface}"
                         BorderBrush="{DynamicResource NetLoom.Brush.Border}"
-                        BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
-                        Visibility="Collapsed">
-                    <TextBlock x:Name="Adr083MapMonitoringNoticeText"
-                               Style="{StaticResource NetLoom.Style.MutedText}"
-                               TextWrapping="Wrap" />
+                        BorderThickness="{DynamicResource NetLoom.Thickness.BorderThin}"
+                        CornerRadius="{DynamicResource NetLoom.Radius.Panel}"
+                        Loaded="OnMapQualityDetailsLoaded">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="{DynamicResource NetLoom.Map.OverlayShadowBlur}"
+                                          ShadowDepth="{DynamicResource NetLoom.Map.OverlayShadowDepth}"
+                                          Opacity="{DynamicResource NetLoom.Map.OverlayShadowOpacity}"
+                                          Color="{DynamicResource NetLoom.Color.OverlayShadow}" />
+                    </Border.Effect>
+                    <Border.Style>
+                        <Style TargetType="{x:Type Border}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=MapQualityToggle}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <ScrollViewer Style="{StaticResource NetLoom.Style.MapScrollViewer}"
+                                  Background="{DynamicResource NetLoom.Brush.Surface}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="{x:Type ScrollBar}"
+                                   BasedOn="{StaticResource NetLoom.Style.MapScrollBar}">
+                                <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
+                            </Style>
+                        </ScrollViewer.Resources>
+                        <ItemsControl x:Name="MapQualityItems">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                        <DockPanel Margin="{DynamicResource NetLoom.Thickness.FieldLabelCompact}">
+                                            <Button DockPanel.Dock="Right"
+                                                    Content="{Binding ShowText}"
+                                                    Tag="{Binding Item}"
+                                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                                    Margin="{DynamicResource NetLoom.Thickness.FieldGapLeft}"
+                                                    VerticalAlignment="Top"
+                                                    AutomationProperties.Name="{Binding ShowName}"
+                                                    Click="OnMapQualityShowClick" />
+                                            <TextBlock Text="{Binding Subject}"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap"
+                                                       VerticalAlignment="Center"
+                                                       shell:AutomationHeading.Level="2" />
+                                        </DockPanel>
+                                        <ItemsControl ItemsSource="{Binding Reasons}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="{DynamicResource NetLoom.Thickness.ListRow}">
+                                                        <TextBlock Text="•"
+                                                                   Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                                                   Foreground="{DynamicResource NetLoom.Brush.TextSecondary}"
+                                                                   IsHitTestVisible="False" />
+                                                        <TextBlock Text="{Binding Text}"
+                                                                   TextWrapping="Wrap"
+                                                                   Foreground="{DynamicResource NetLoom.Brush.TextSecondary}" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Border>
 
                 <ScrollViewer x:Name="MapScrollViewer"
@@ -2124,14 +2287,23 @@
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
                               PreviewMouseWheel="OnMapPreviewMouseWheel"
-                              PreviewMouseDown="OnMapPreviewMouseDown"
+                              SizeChanged="OnMapQualityViewportSizeChanged"
+                              PreviewMouseDown="OnMapQualityMapPreviewMouseDown"
                               PreviewMouseMove="OnMapPreviewMouseMove"
                               PreviewMouseUp="OnMapPreviewMouseUp">
                     <ScrollViewer.Resources>
                         <Style TargetType="{x:Type ScrollBar}"
                                BasedOn="{StaticResource NetLoom.Style.MapScrollBar}" />
                     </ScrollViewer.Resources>
+                    <!-- §8, K4: карта — составной элемент и одна остановка Tab (Once). Внутри ходят стрелки,
+                         Их обрабатывает окно (MapSpatialNavigation), поэтому направленная навигация WPF отключена.
+                         Остановку Tab и порядок вкладок задаёт окно, он не зависит от Z-порядка. -->
                     <Canvas x:Name="MapCanvas"
+                            KeyboardNavigation.TabNavigation="Once"
+                            KeyboardNavigation.DirectionalNavigation="None"
+                            PreviewGotKeyboardFocus="OnMapCanvasPreviewGotKeyboardFocus"
+                            GotKeyboardFocus="OnMapCanvasGotKeyboardFocus"
+                            LostKeyboardFocus="OnMapCanvasLostKeyboardFocus"
                             Background="{DynamicResource NetLoom.Brush.Canvas}"
                             MouseLeftButtonDown="OnMapCanvasMouseLeftButtonDown"
                             Width="{DynamicResource NetLoom.Map.CanvasWidth}"
@@ -2251,6 +2423,75 @@
                                  Style="{StaticResource NetLoom.Style.InspectorTab}">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
+                                    <ItemsControl x:Name="InspectorTopologyConflicts" Visibility="Collapsed">
+                                        <ItemsControl.Resources>
+                                            <Style x:Key="TopologyConflictCopyableText" TargetType="TextBox">
+                                                <Setter Property="IsReadOnly" Value="True" />
+                                                <Setter Property="TextWrapping" Value="Wrap" />
+                                                <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.TextPrimary}" />
+                                                <Setter Property="Background" Value="{x:Null}" />
+                                                <Setter Property="BorderThickness" Value="{DynamicResource NetLoom.Thickness.None}" />
+                                                <Setter Property="Padding" Value="{DynamicResource NetLoom.Thickness.None}" />
+                                                <Setter Property="Margin" Value="{DynamicResource NetLoom.Thickness.GapSmTop}" />
+                                                <Setter Property="SelectionBrush" Value="{DynamicResource NetLoom.Brush.AccentSoft}" />
+                                                <Setter Property="FocusVisualStyle" Value="{StaticResource NetLoom.Style.FocusVisual}" />
+                                            </Style>
+                                        </ItemsControl.Resources>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="{DynamicResource NetLoom.Thickness.GroupGap}">
+                                                    <TextBlock Text="{Binding Heading}"
+                                                               Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
+                                                    <TextBox Text="{Binding ManualText, Mode=OneWay}"
+                                                             AutomationProperties.Name="{Binding ManualText}"
+                                                             Style="{StaticResource TopologyConflictCopyableText}" />
+                                                    <TextBox Text="{Binding ObservedText, Mode=OneWay}"
+                                                             AutomationProperties.Name="{Binding ObservedText}"
+                                                             Style="{StaticResource TopologyConflictCopyableText}" />
+                                                    <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource NetLoom.Brush.Warning}"
+                                                               Margin="{DynamicResource NetLoom.Thickness.GapSmTop}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding ErrorText}" Value="">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <WrapPanel Margin="{DynamicResource NetLoom.Thickness.ButtonRowGap}">
+                                                        <Button Content="{Binding EvidenceText}"
+                                                                AutomationProperties.Name="{Binding EvidenceText}"
+                                                                Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                                Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                                Click="OnTopologyConflictEvidenceClick" />
+                                                        <Button Content="{Binding KeepManualText}"
+                                                                AutomationProperties.Name="{Binding KeepManualText}"
+                                                                Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                                Click="OnTopologyConflictKeepManualClick">
+                                                            <Button.Style>
+                                                                <Style TargetType="Button" BasedOn="{StaticResource NetLoom.Style.SecondaryButton}">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding CanAcknowledge}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Button.Style>
+                                                        </Button>
+                                                        <Button Content="{Binding ChangeManualText}"
+                                                                AutomationProperties.Name="{Binding ChangeManualText}"
+                                                                Style="{StaticResource NetLoom.Style.SecondaryButton}"
+                                                                Margin="{DynamicResource NetLoom.Thickness.DiscoveryInboxAction}"
+                                                                Click="OnTopologyConflictChangeManualClick" />
+                                                    </WrapPanel>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                     <TextBlock x:Name="DiagnosticPrimaryTitleText"
                                                Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
@@ -2432,7 +2673,9 @@
                                     <TextBlock x:Name="DiagnosticTertiaryTitleText"
                                                Style="{StaticResource NetLoom.Style.SidebarSectionLabel}"
                                                Margin="{DynamicResource NetLoom.Thickness.SubsectionLabel}" />
-                                    <ItemsControl x:Name="DiagnosticTertiaryList">
+                                    <!-- Список оснований — текст для чтения: сам фокус не принимает (§8, кольцо у пустого контейнера не видно). -->
+                                    <ItemsControl x:Name="DiagnosticTertiaryList"
+                                                  Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Text}"

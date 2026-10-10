@@ -1088,6 +1088,17 @@ namespace NetLoom.Wpf
             UpdateAdr083SectionPresentation(
                 section);
 
+            UpdateTopologyQualityVisibility();
+            RefreshNeighborhoodForSection();
+
+            // Sprint 49: путь относится к рабочему виду «Карты» и в других разделах не показывается.
+            if (section != ShellSection.Map)
+            {
+                ClearMapPathState(true);
+            }
+
+            UpdateMapPathNotice();
+
             // G2: без выбранного объекта крошки называют открытый раздел.
             UpdateShellBreadcrumb();
             RefreshEmptyInspectorPrompt();
@@ -1408,8 +1419,14 @@ namespace NetLoom.Wpf
                             ))
                     .ToArray();
 
-            EquipmentList.ItemsSource =
-                filtered;
+            // §8: одинаковые строки не пересоздаются — кнопка строки не теряет фокус при опросе.
+            if (!Shell.RowContent.SameRows(
+                    EquipmentList.ItemsSource,
+                    filtered))
+            {
+                EquipmentList.ItemsSource =
+                    filtered;
+            }
 
             UpdateEquipmentFilterLabels();
 
@@ -1629,6 +1646,9 @@ namespace NetLoom.Wpf
             var deviceId =
                 (Guid)button.Tag;
 
+            // Sprint 49: «Показать на карте» — действие, прежний вид которого попадает в историю.
+            RecordMapView(false);
+
             _highlightedDeviceId =
                 null;
             _selectedDeviceId =
@@ -1669,6 +1689,9 @@ namespace NetLoom.Wpf
         private void SetMapInteractionMode(
             MapInteractionMode mode)
         {
+            // Правка начинается на рабочих позициях, а окрестность сохраняется как режим просмотра.
+            RestoreNeighborhoodLayout();
+
             if (mode ==
                 MapInteractionMode.View)
             {
@@ -1680,6 +1703,11 @@ namespace NetLoom.Wpf
 
             UpdateMapInteractionModePresentation();
             RefreshMapInteractionModeVisuals();
+            if (_neighborhoodSelectedDeviceId.HasValue)
+            {
+                RefreshNeighborhoodPresentation();
+                if (!IsMapEditMode) FitNeighborhoodToViewport();
+            }
         }
 
         private void UpdateMapInteractionModePresentation()
