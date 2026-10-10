@@ -2892,4 +2892,49 @@ Poll: {2}</value>
   <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
     <value>Link {0} ↔ {1}</value>
   </data>
+  <data name="RingStatusProtected" xml:space="preserve">
+    <value>Protected</value>
+  </data>
+  <data name="RingStatusUnprotected" xml:space="preserve">
+    <value>Not protected</value>
+  </data>
+  <data name="RingStatusDegraded" xml:space="preserve">
+    <value>Standby lost</value>
+  </data>
+  <data name="RingStatusUnresolved" xml:space="preserve">
+    <value>Undetermined</value>
+  </data>
+  <data name="RingStatusNotApplicable" xml:space="preserve">
+    <value>Not applicable</value>
+  </data>
+  <data name="RingStatusProtectedHint" xml:space="preserve">
+    <value>One ring link is blocked by STP and serves as the standby path.</value>
+  </data>
+  <data name="RingStatusUnprotectedHint" xml:space="preserve">
+    <value>STP blocks no ring link: every link forwards traffic.</value>
+  </data>
+  <data name="RingStatusDegradedDisabledHint" xml:space="preserve">
+    <value>A ring link is disabled or broken: the ring has no standby path.</value>
+  </data>
+  <data name="RingStatusDegradedBlockingHint" xml:space="preserve">
+    <value>STP blocks several ring links: the ring has no standby path.</value>
+  </data>
+  <data name="RingStatusUnresolvedNoStpHint" xml:space="preserve">
+    <value>No STP data: {0}. Protection cannot be determined.</value>
+  </data>
+  <data name="RingStatusUnresolvedPortsHint" xml:space="preserve">
+    <value>The STP state of some ring ports is unknown. Protection cannot be determined.</value>
+  </data>
+  <data name="RingKindSimple" xml:space="preserve">
+    <value>Simple ring</value>
+  </data>
+  <data name="RingKindCorePair" xml:space="preserve">
+    <value>Ring closed through a core pair</value>
+  </data>
+  <data name="RingTitleWithLocation" xml:space="preserve">
+    <value>Ring — {0}</value>
+  </data>
+  <data name="RingTitleWithCount" xml:space="preserve">
+    <value>Ring: {0}</value>
+  </data>
 </root>

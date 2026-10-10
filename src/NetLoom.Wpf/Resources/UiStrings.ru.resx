@@ -2892,4 +2892,49 @@
   <data name="MapLinkAutomationNameNoPorts" xml:space="preserve">
     <value>Связь {0} ↔ {1}</value>
   </data>
+  <data name="RingStatusProtected" xml:space="preserve">
+    <value>Защищено</value>
+  </data>
+  <data name="RingStatusUnprotected" xml:space="preserve">
+    <value>Не защищено</value>
+  </data>
+  <data name="RingStatusDegraded" xml:space="preserve">
+    <value>Резерв потерян</value>
+  </data>
+  <data name="RingStatusUnresolved" xml:space="preserve">
+    <value>Не определено</value>
+  </data>
+  <data name="RingStatusNotApplicable" xml:space="preserve">
+    <value>Не применимо</value>
+  </data>
+  <data name="RingStatusProtectedHint" xml:space="preserve">
+    <value>Одна связь кольца заблокирована STP и служит резервом.</value>
+  </data>
+  <data name="RingStatusUnprotectedHint" xml:space="preserve">
+    <value>STP не блокирует ни одной связи кольца: все связи пересылают трафик.</value>
+  </data>
+  <data name="RingStatusDegradedDisabledHint" xml:space="preserve">
+    <value>Связь кольца отключена или оборвана: резерва по кольцу нет.</value>
+  </data>
+  <data name="RingStatusDegradedBlockingHint" xml:space="preserve">
+    <value>STP заблокировал несколько связей кольца: резерва по кольцу нет.</value>
+  </data>
+  <data name="RingStatusUnresolvedNoStpHint" xml:space="preserve">
+    <value>Нет данных STP: {0}. Защиту определить нельзя.</value>
+  </data>
+  <data name="RingStatusUnresolvedPortsHint" xml:space="preserve">
+    <value>Состояние STP части портов кольца не определено. Защиту определить нельзя.</value>
+  </data>
+  <data name="RingKindSimple" xml:space="preserve">
+    <value>Простое кольцо</value>
+  </data>
+  <data name="RingKindCorePair" xml:space="preserve">
+    <value>Кольцо через пару ядер</value>
+  </data>
+  <data name="RingTitleWithLocation" xml:space="preserve">
+    <value>Кольцо — {0}</value>
+  </data>
+  <data name="RingTitleWithCount" xml:space="preserve">
+    <value>Кольцо: {0}</value>
+  </data>
 </root>
