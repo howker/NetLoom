@@ -8,7 +8,9 @@
 
 Sprint 45 is closed and pushed. Field acceptance exercised discovery, topology materialization, multi-target monitoring, diagnostics and export on the author's real network; the field baseline was 55 devices, 275 interfaces and 10 physical links, including Windows Server 2012 R2 in the actual site state. Closure evidence is in `docs/sprint45-field-acceptance.md`, and the closure baseline is `f475fec`.
 
-Sprint 48 is accepted and closed by the owner on 2026-10-08 (closure section below). Sprint 49 is next.
+Sprint 49 is accepted and closed by the owner on 2026-10-10 (closure section below). Sprint 50 is next.
+
+Sprint 48 is accepted and closed by the owner on 2026-10-08 (closure section below).
 
 Sprint 47 is accepted and closed by the owner on 2026-10-07 (closure section below).
 
@@ -25,11 +27,27 @@ The committed product sequence is now:
   2. Sprint 46 - application shell/navigation and shared operator context - complete (closed 2026-10-07; on-site check outside the Sprint).
   3. Sprint 47 - visible monitoring progress - complete (accepted 2026-10-07).
   4. Sprint 48 - explainable discovery and inbox - complete (accepted 2026-10-08).
-  5. Sprint 49 - readable large-site map - next.
-  6. Sprint 50 - network redundancy: rings and single points of failure.
+  5. Sprint 49 - readable large-site map - complete (accepted 2026-10-10).
+  6. Sprint 50 - network redundancy: rings and single points of failure - next.
   7. Sprint 51 - polling policies and profile templates.
 
 Optical degradation remains parallel evidence gathering rather than committed product work. MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on the known current-site devices.
+
+## Sprint 49 closure — 2026-10-10
+
+Sprint 49 - readable large-site map - is accepted and closed by the owner.
+  - Completed operator surface: parallel physical links between one pair of devices are drawn separately and never merge (at least `NetLoom.Map.ParallelLinkMinScreenGap` on screen); link focus on hover or selection shows the label «порт ↔ порт» and dims the other links; the topology quality line above the map («Топология неполная: N», neutral) counts each object once with its reasons and opens as an overlay with a border and a shadow; manual-versus-observed conflicts (ADR-079) are always labelled with «⚠» and show both versions in the Inspector with explicit actions.
+  - Locations (M2): one frame with a tab caption as on the mockup; saved manual geometry is never repaired silently (ADR-084), its overlaps are reported in the quality line; locations without saved geometry are laid out by the map itself and nested, so automatic frames no longer intersect.
+  - Semantic zoom: four levels (far, medium, close, detailed) by `ReadableZoomMin` 0.93, `LinkLabelMinZoom` 1.0 and `SemanticDetailMinZoom` 1.6. The far level labels locations, not devices: location tabs with a device count and the worst state, device name tags only for the selection, alert or path focus and the neighborhood; tabs never stand on a nested frame or over a problem icon, and no frame line crosses a tab.
+  - Focus neighborhood, «Вся площадка», M3 and the A4 remainder: «Показать: окрестность» in the map menu with «Раскрыть вверх / вниз / другие» and «Вся площадка»; «up» means closer to the Engine polling point (ADR-085), found as the access port where the MAC of this machine is seen. The neighborhood is a temporary compact layout in rows by distance to the polling point, fitted at a readable zoom (93–98 % on the field stand at 1100 and 1440) with every name visible; location frames are hidden while it is shown and it is never saved. A map without a saved view starts as the whole site.
+  - Navigation: F, Esc, Alt+←, Space, double click on a location fits it, Shift+click shows the shortest known physical path.
+  - Keyboard on the map (K4): the map is one Tab stop; arrows move between objects in space, Enter selects, Shift+F10 opens the menu, Ctrl+arrow moves in edit mode; the focus ring is 2 px on screen at any zoom.
+  - Fixed on the way: Equipment rows and alert cards were recreated on every refresh (intermittent keyboard-audit failure), lists now reuse rows with the same content; the 4 older unit failures (Sprint 39 ×2, Sprint 41, localization) were aligned with ADR-083 rule 6 and mockup-gap row E7 — the full unit suite is green.
+  - Commits: `b180823` (parallel links), `280dc63` (link focus), `ad25a5d` (quality line), `b3c5e82` and `6c6a68a` (conflicts), `8f22df9` and `a79a0a2` (locations), `0cccfc6` (focus ring), `3621ac9` (owner remarks: quality line, parallel links), `3f40147`, `15e17c2`, `b5f6d88` (semantic zoom, neighborhood), `c43d4c4` and `73d7863` (navigation), `18dd39b` (keyboard on the map), `6bab72f`, `99becc7` (tests), `04b23ba` (owner remarks on frames 57–63); merge `7705ecf`.
+  - Regression at closure: `tools/Run-UiAudit.ps1` over the full unit suite 681/681 with no violations (10 informational notes) and the keyboard-only pass clean; Integration 150/150, Modern 234/234; `Check-TextEncoding` EXIT 0.
+  - ADR: ADR-084 (saved location geometry is not repaired silently; amendment to the Sprint 38 rule), ADR-085 (upstream means closer to the Engine polling point, one definition for the whole product).
+  - Known limits: НИЗКАЯ (§3) — on «Вся площадка» a location tab that has no place without covering a problem icon is not shown: on the field stand 7 of 8 locations are labelled at 1440 (32 %) and 3 of 8 at 1100 (20 %) (recorded in `BACKLOG.md`); НИЗКАЯ (§1, since Sprint 46) — «данные Только что» in the Inspector headline; the polling point was not checked on the real site (virtual Ethernet adapters are not told apart from physical ones); the interface-without-ifIndex quality reason is covered by unit tests only.
+  - Outside the Sprint: check with the real Engine on the field network, together with the Sprint 46–48 on-site checks.
 
 ## Sprint 48 closure — 2026-10-08
 

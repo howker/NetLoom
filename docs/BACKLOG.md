@@ -348,7 +348,8 @@ This sequence is authoritative for the next product/UI work. The assistant does 
     - Found while preparing the inbox: profile exclusion rules (`access_profile_exclusions`) were never read — Engine discovery always passed an empty exclusion list, and no UI creates rules. The inbox reads them and Engine skips them (`--exclude`); a rules editor is not in Sprint 48.
     - Fixed (§8, keyboard focus lost on refresh): the keyboard-only pass intermittently reported two event-strip buttons in «Настройки», dark theme, as unreachable by Tab, and once «focus lands on an invisible element: MainWindow». Cause: every 5 s refresh tick re-assigned `ShellEventList.ItemsSource` with a new array even when the events were unchanged, so the strip buttons were recreated and the focused one vanished (focus fell to the window); a walk spanning a tick saw old buttons, the reachability check new ones. `RenderShellEventList` now keeps the strip when the rows are the same objects and, when they change, keeps focus on the same event or moves it to «Все события». Deterministic reproduction: `Sprint48EventStripFocusTests` (fails before the fix). The `FitStackPanel` suspicion was wrong: it only sets tab navigation on hidden items.
 
-- [ ] Sprint 49 — readable large-site map.
+- [x] Sprint 49 — readable large-site map.
+  - Accepted and closed by the owner on 2026-10-10; closure record in `docs/PROJECT_STATE.md` («Sprint 49 closure»). Merge `7705ecf`.
   - Operator outcome: on 55+ devices the map remains readable without mass overlap, and the operator can see incomplete evidence and manual-versus-observed conflicts.
   - Primary principle: show less instead of building a universal layout engine.
   - Focus neighborhood around the selected node, with explicit `Expand up`, `Expand down` and `Whole site` actions.
