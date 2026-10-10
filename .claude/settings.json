@@ -35,6 +35,25 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/tools/Hook-AnnounceSubagent.ps1"
+            ],
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }
