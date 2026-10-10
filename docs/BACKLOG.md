@@ -428,6 +428,35 @@ This sequence is authoritative for the next product/UI work. The assistant does 
 
 The evidence-first demonstration/sales candidate strategy is recorded in `docs/NETLOOM_WOW_FEATURES.md`. It does not change the committed Sprints 46–51 sequence. Candidate ordering remains subordinate to Sprint 45 `FRICTION_LOG.md` evidence, explicit user approval, and the existing priority rule.
 
+#### Порядок после Sprint 51 — решение владельца 2026-10-10
+
+Основание: полевой случай 2026-10-09 (`FRICTION_LOG.md`), внешнее исследование болей и разбор внешних предложений 2026-10-10 (`MARKET_AND_POSITIONING.md`). Рыночное основание пунктов 2 и 4 записано в ADR-088 (по ADR-078). Этот список стоит впереди «Priority after Sprint 51»; каждый пункт становится спринтом, когда владелец его открывает.
+
+1. **Поддерживаемая платформа — до 10 ноября 2026 года.** Поддержка .NET 8 заканчивается 10.11.2026. Перевести цели `net8.0` и `net8.0-windows` на .NET 10 LTS; ветка `net48` не меняется.
+   - Microsoft включает Windows Server 2012 R2 в список ОС .NET 10 с оговоркой об Extended Security Updates. Фактический запуск без ESU проверить на настоящем полевом сервере: поставляемый комплект Desktop+Engine, SQLite и остальные native-зависимости, первый запуск, опрос, перезапуск.
+   - Если .NET 10 на полевом сервере не работает, решение владельца записывается явно (например, временно остаться на .NET 8 с известными ограничениями) и попадает в описание поставки. Молча оставаться на неподдерживаемой платформе нельзя.
+   - Источник: https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md
+2. **Паспорт объекта v1 — передаваемый результат обследования.**
+   - Результат для оператора: одной командой получить файл, который подрядчик сдаёт заказчику, а эксплуатация кладёт в документацию объекта.
+   - Excel (.xlsx), три листа:
+     - «Соединения»: устройство А / порт А — устройство Б / порт Б, основание связи, свежесть данных;
+     - «Оборудование»: имя, модель или описание, MAC, адрес управления, размещение; серийный номер и версия ПО — только если реально собираются;
+     - «Непроверенные участки»: то же, что показывает строка качества карты (односторонние связи, неразрешённые порты, расхождения ручного и наблюдаемого по ADR-079, устройства без ответа SNMP).
+   - Схема в формате draw.io (.drawio); такой файл открывается и в Visio. Закрывает кандидат 8 «Visio export» ниже; прямая генерация `.vsdx` по-прежнему вне задачи.
+   - Источник данных — тот же снимок, что у нынешнего экспорта PNG/CSV (`TopologyExportSnapshot`), а не холст карты.
+   - Границы: то, что не наблюдается (тип кабеля, VLAN и т. п.), не выдумывается — пустая ячейка или ручные данные; достоверность словами, без процентов (ADR-075); слова «по ГОСТ» и конкретная форма документа — только после того, как будет видна реальная форма, которую сдают подрядчики.
+   - До начала: выбрать способ записи .xlsx, который работает на net48 и в закрытой сети без интернета (библиотека как новая production-зависимость или собственная запись Office Open XML), и записать решение.
+3. **Предпросмотр работ v1 с PDF-бланком** (`NETLOOM_WOW_FEATURES.md`, C2).
+   - Шаги работ применяются по очереди к копии известного графа; расчёт — прогноз отказа Sprint 50 (`FailurePrediction`, ADR-085), без предсказания STP.
+   - PDF для печати и подписи с полями трассируемости из C2: время снимка, версия NetLoom, исходное состояние, список непокрытых и неподтверждённых элементов. Тот же механизм PDF затем используется для печатной формы паспорта объекта.
+   - Приёмка включает полевой случай 2026-10-09 (`FRICTION_LOG.md`): тот самый порт, который проверяли выездом.
+4. **Первый запуск без автора.**
+   - Маршрут: получил комплект → открыл → выбрал шаблон профиля (Sprint 51) и ввёл свои учётные данные → диапазон подставлен по подсети локального сетевого адаптера и редактируется → «Старт» → сохранил паспорт объекта.
+   - Подбор учётных данных запрещён и остаётся запрещённым (`DECISIONS.md`: «Credential guessing запрещён»; решение Sprint 42); встроенных списков community нет.
+   - Приёмка: независимый инженер, не автор, проходит маршрут на своей сети; считаются обращения к автору и минуты его участия.
+
+Что из внешних предложений 2026-10-10 не взято и почему — `MARKET_AND_POSITIONING.md`, «Разбор внешних предложений 2026-10-10».
+
 #### Priority after Sprint 51
 
 This ordering is the next-candidate priority only; it does not become a committed sequence until the user explicitly commits it.
@@ -441,7 +470,7 @@ After Sprint 47, keep `Что отвалилось сейчас` as a candidate 
 5. **Merge discovered device with manual object** as an explicit operator action.
 6. **Topology change journal → time machine**. Capture before/after atomically in the same topology mutation transaction; audit all mutation paths before implementation.
 7. **Logical tags** over the physical hierarchy.
-8. **Visio export** as simple data plus a template; direct `.vsdx` generation remains out of scope.
+8. **Visio export** as simple data plus a template; direct `.vsdx` generation remains out of scope. Закрывается экспортом draw.io в паспорте объекта (пункт 2 «Порядок после Sprint 51»).
 9. **Fullscreen operator mode**.
 10. **Maintenance / alert suppression** with a required reason and expiry.
 11. **Deterministic demo stand with seeded failures**, also used as regression evidence.
