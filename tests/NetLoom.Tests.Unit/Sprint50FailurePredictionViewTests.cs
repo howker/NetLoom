@@ -26,6 +26,39 @@ namespace NetLoom.Tests.Unit
         private const BindingFlags FailureFlags = BindingFlags.Instance | BindingFlags.NonPublic;
 
         [TestMethod]
+        public void PredictionFromEquipmentOpensMapAndShowsNotice()
+        {
+            RunOnSta(() =>
+            {
+                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("ru-RU");
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("ru-RU");
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var ids = Sprint49NeighborhoodFixture.Devices;
+                var window = new MainWindow(new FixedRefreshProvider(FailureChainSnapshot()),
+                    new Sprint49PollingPointLookupReader(Sprint49NeighborhoodFixture.PollingMac, ids[0]))
+                {
+                    EngineHostAddresses = new Sprint49FixedHostAddresses(Sprint49NeighborhoodFixture.PollingMac)
+                };
+                try
+                {
+                    window.Show();
+                    WaitForCondition(() => DeviceBorder(window, ids[1]) != null &&
+                        window.PollingPoint?.Status == EnginePollingPointStatus.Determined);
+                    Click((Button)window.FindName("ShellEquipmentButton"));
+                    var list = (ItemsControl)window.FindName("EquipmentList");
+                    WaitForCondition(() => FindVisualDescendantByTag<Button>(list, ids[1]) != null);
+                    Click(FindVisualDescendantByTag<Button>(list, ids[1]));
+                    Assert.AreEqual("Equipment", FailureField(window, "_shellSection").ToString());
+                    Assert.IsTrue(((Button)window.FindName("InspectorFailurePredictionShowButton")).IsVisible);
+                    Click((Button)window.FindName("InspectorFailurePredictionShowButton"));
+                    Assert.AreEqual("Map", FailureField(window, "_shellSection").ToString());
+                    Assert.IsTrue(((Border)window.FindName("MapFailurePredictionNotice")).IsVisible);
+                }
+                finally { window.Close(); PumpDispatcher(); }
+            });
+        }
+
+        [TestMethod]
         public void PredictionModesPreserveAlertsEventsAndObservedDeviceStatus()
         {
             RunOnSta(() =>

@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NetLoom.Contracts.Diagnostics;
+using NetLoom.Application.Lookup;
+using NetLoom.Persistence.Sqlite.Database;
+using NetLoom.Persistence.Sqlite.Lookup;
 using NetLoom.Wpf;
 using NetLoom.Wpf.Export;
 
@@ -145,6 +149,7 @@ namespace NetLoom.Tests.Unit
         {
             var window =
                 CreateLiveWindow(database, false);
+            window.EngineHostAddresses = FieldCheckEngineHost(database);
 
             try
             {
@@ -376,6 +381,136 @@ namespace NetLoom.Tests.Unit
                         alertsCaptured && !alertCardTexts.Any(text =>
                             text.Contains("kb-sw-04") && text.Contains("LLDP")),
                         "в списке F07 нет предупреждения об одностороннем LLDP для kb-sw-04");
+                });
+
+                // F16–F20. Кольца и прогноз отказа на том же полевом стенде.
+                Step(report, "F16 Кольцо через пару ядер", () =>
+                {
+                    var entries = OpenFieldRingMenu(window);
+                    var item = entries.FirstOrDefault(candidate => ContainsIgnoreCase(candidate.Header as string,
+                        "Кольцо — Щитовая · Защищено"));
+                    Check(report, "F16 Пункт кольца", item != null,
+                        "в меню «Кольца» ожидается «Кольцо — Щитовая · Защищено»");
+                    if (item == null) return;
+                    item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                    Settle(500);
+                    var inspector = FieldInspectorText(window);
+                    Check(report, "F16 Тип кольца", ContainsIgnoreCase(inspector, "Кольцо через пару ядер"),
+                        "инспектор: «" + Shorten(inspector) + "»");
+                    Check(report, "F16 Ядра", ContainsIgnoreCase(inspector, "Ядра") &&
+                        ContainsIgnoreCase(inspector, "core-sw-01 и core-sw-02"),
+                        "ожидаются оба ядра; «" + Shorten(inspector) + "»");
+                    Check(report, "F16 Корень STP", ContainsIgnoreCase(inspector, "Корень STP") &&
+                        ContainsIgnoreCase(inspector, "core-sw-01"),
+                        "ожидается корень core-sw-01; «" + Shorten(inspector) + "»");
+                    Check(report, "F16 Заблокированный порт", ContainsIgnoreCase(inspector, "Заблокированный порт") &&
+                        ContainsIgnoreCase(inspector, "ps1-sw-05 F2"),
+                        "ожидается ps1-sw-05 F2; «" + Shorten(inspector) + "»");
+                    SaveCapture(window, Path.Combine(output, "F16-core-pair-ring.png"));
+                });
+
+                Step(report, "F17 Единая точка отказа", () =>
+                {
+                    RaiseClick((ButtonBase)window.FindName("ShellMapButton"));
+                    var show = (Button)window.FindName("MapOperationalFocusButton");
+                    RaiseClick(show);
+                    var item = show.ContextMenu.Items.OfType<MenuItem>().FirstOrDefault(candidate =>
+                        ContainsIgnoreCase(candidate.Header as string, "Единые точки отказа"));
+                    Check(report, "F17 Пункт меню", item != null,
+                        "в меню «Показать» ожидаются «Единые точки отказа»");
+                    if (item == null) return;
+                    show.ContextMenu.IsOpen = false;
+                    item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                    Settle(500);
+                    var strip = (FrameworkElement)window.FindName("MapSinglePointsNotice");
+                    var summary = Text(window, "MapSinglePointsSummaryText");
+                    Check(report, "F17 Полоса и счётчики", strip.IsVisible &&
+                        Regex.Matches(summary, @"\d+").Count >= 2 &&
+                        ContainsIgnoreCase(summary, "устрой") && ContainsIgnoreCase(summary, "связ"),
+                        "полоса: «" + summary + "»");
+                    SelectEquipmentRow(window, "core-sw-01");
+                    var inspector = FieldInspectorText(window);
+                    var match = Regex.Match(inspector, @"Единая точка отказа: от неё зависят\s+(\d+)", RegexOptions.IgnoreCase);
+                    var count = match.Success ? int.Parse(match.Groups[1].Value) : 0;
+                    Check(report, "F17 Зависимые устройства", count >= 9,
+                        "core-sw-01: " + count + " зависимых устройств; «" + Shorten(inspector) + "»");
+                    report.Note("F17 Зависимые устройства", "core-sw-01: " + count);
+                    RaiseClick((ButtonBase)window.FindName("ShellMapButton"));
+                    Settle(300);
+                    SaveCapture(window, Path.Combine(output, "F17-single-points.png"));
+                });
+
+                Step(report, "F18 Обходной путь", () =>
+                {
+                    SelectEquipmentRow(window, "ps1-sw-03");
+                    var inspector = FieldInspectorText(window);
+                    Check(report, "F18 Резерв STP", ContainsIgnoreCase(inspector, "Если устройство пропадёт") &&
+                        ContainsIgnoreCase(inspector, "Только через резерв STP: 2 устройства") &&
+                        !ContainsIgnoreCase(inspector, "Единственный путь"),
+                        "ps1-sw-03: «" + Shorten(inspector) + "»");
+                    var show = (Button)window.FindName("InspectorFailurePredictionShowButton");
+                    Check(report, "F18 Показать на карте", show.IsVisible,
+                        "кнопка прогноза для ps1-sw-03 видна");
+                    if (show.IsVisible) RaiseClick(show);
+                    Settle(400);
+                    SaveCapture(window, Path.Combine(output, "F18-bypass.png"));
+                    SelectEquipmentRow(window, "ps1-sw-05");
+                    inspector = FieldInspectorText(window);
+                    Check(report, "F18 Обход ps1-sw-05", ContainsIgnoreCase(inspector,
+                        "Есть обходной путь: по известной топологии никто не будет отрезан."),
+                        "ps1-sw-05: «" + Shorten(inspector) + "»");
+                });
+
+                Step(report, "F19 Единственный путь", () =>
+                {
+                    SelectEquipmentRow(window, "core-sw-01");
+                    var inspector = FieldInspectorText(window);
+                    var match = Regex.Match(inspector,
+                        @"Единственный путь: по известной топологии будут отрезаны\s+(\d+)", RegexOptions.IgnoreCase);
+                    Check(report, "F19 Отказ ядра", match.Success,
+                        "core-sw-01: «" + Shorten(inspector) + "»");
+                    report.Note("F19 Число отрезанных", "core-sw-01: " +
+                        (match.Success ? match.Groups[1].Value : "не найдено"));
+                    var show = (Button)window.FindName("InspectorFailurePredictionShowButton");
+                    Check(report, "F19 Кнопка прогноза", show.IsVisible,
+                        "у core-sw-01 видна кнопка «Показать на карте»");
+                    if (show.IsVisible) RaiseClick(show);
+                    Settle(400);
+                    Check(report, "F19 Полоса прогноза",
+                        ((FrameworkElement)window.FindName("MapFailurePredictionNotice")).IsVisible,
+                        "после выбора прогноза видна полоса над картой");
+                    SaveCapture(window, Path.Combine(output, "F19-single-path.png"));
+                    SelectEquipmentRow(window, "МК-1 Серверная");
+                    inspector = FieldInspectorText(window);
+                    Check(report, "F19 Медиаконвертер", ContainsIgnoreCase(inspector,
+                        "Единственный путь: по известной топологии будут отрезаны"),
+                        "МК-1 Серверная: «" + Shorten(inspector) + "»");
+                });
+
+                Step(report, "F20 Кольцо без STP", () =>
+                {
+                    var entries = OpenFieldRingMenu(window);
+                    var item = entries.FirstOrDefault(candidate =>
+                        ContainsIgnoreCase(candidate.Header as string, "Кольцо — Узел связи") &&
+                        ContainsIgnoreCase(candidate.Header as string, "Не определено"));
+                    Check(report, "F20 Пункт кольца", item != null,
+                        "в меню «Кольца» ожидается кольцо «Узел связи · Не определено»");
+                    if (item == null) return;
+                    item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                    Settle(500);
+                    var inspector = FieldInspectorText(window);
+                    Check(report, "F20 Состояние", ContainsIgnoreCase(inspector, "Не определено") &&
+                        !ContainsIgnoreCase(inspector, "Не защищено"),
+                        "инспектор: «" + Shorten(inspector) + "»");
+                    Check(report, "F20 Пояснение", ContainsIgnoreCase(inspector,
+                        "Нет данных STP: 2 устройства. Защиту определить нельзя."),
+                        "инспектор: «" + Shorten(inspector) + "»");
+                    SaveCapture(window, Path.Combine(output, "F20-ring-without-stp.png"));
+                    RaiseClick((ButtonBase)window.FindName("ShellAlertsButton"));
+                    Settle(400);
+                    var alerts = string.Join(" | ", VisibleTexts((DependencyObject)window.FindName("AlertList")));
+                    Check(report, "F20 Без предупреждения о цикле", !ContainsIgnoreCase(alerts, "Цикл пересылки"),
+                        "предупреждения: «" + Shorten(alerts) + "»");
                 });
 
                 // F08. Глобальный поиск: имя, IP и MAC оконечного устройства.
@@ -622,6 +757,35 @@ namespace NetLoom.Tests.Unit
             {
                 report.Error(id, details);
             }
+        }
+
+        private static bool ContainsIgnoreCase(string text, string value)
+        {
+            return text != null && text.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string FieldInspectorText(Window window)
+        {
+            return string.Join(" | ", VisibleTexts((DependencyObject)window.FindName("ShellInspectorPanel")));
+        }
+
+        private static MenuItem[] OpenFieldRingMenu(Window window)
+        {
+            RaiseClick((ButtonBase)window.FindName("ShellMapButton"));
+            var show = (Button)window.FindName("MapOperationalFocusButton");
+            RaiseClick(show);
+            var rings = show.ContextMenu.Items.OfType<MenuItem>().First(item =>
+                ContainsIgnoreCase(item.Header as string, "Кольца"));
+            show.ContextMenu.IsOpen = false;
+            return rings.Items.OfType<MenuItem>().ToArray();
+        }
+
+        private static Sprint49FixedHostAddresses FieldCheckEngineHost(string database)
+        {
+            var reader = new SqliteMacIpLookupReader(new SqliteConnectionFactory(database));
+            var found = reader.FindByIp("198.51.100.101", 10).Candidates
+                .FirstOrDefault(candidate => candidate.Status == MacIpLookupCandidateStatus.ResolvedInterface);
+            return new Sprint49FixedHostAddresses(found == null ? new string[0] : new[] { found.MacAddress });
         }
 
         private static string ButtonText(Window window, string name)

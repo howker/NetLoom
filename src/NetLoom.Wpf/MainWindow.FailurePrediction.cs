@@ -126,6 +126,8 @@ public partial class MainWindow
         if (!deviceId.HasValue && !linkId.HasValue) return;
         var result = deviceId.HasValue ? PredictDevice(deviceId.Value) : PredictLink(linkId.Value);
         if (!result.IsDirectional || result.AffectedDevices.Count == 0) return;
+        if (_shellSection != ShellSection.Map && _shellSection != ShellSection.Alerts)
+            ShowShellSection(ShellSection.Map);
         StopStartupTopologyFit();
         RecordMapView(true);
         ClearMapPathState(false);

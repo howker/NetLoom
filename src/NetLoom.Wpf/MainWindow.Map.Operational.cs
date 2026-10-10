@@ -683,7 +683,12 @@ public partial class MainWindow
         }
 
         // Участники должны помещаться целиком; мелкий текст убирает семантический масштаб.
-        TryFitMapBoundsToViewport(bounds, _zoomMin);
+        // Sprint 50: кольцо, прогноз и единые точки отказа вписываются не крупнее 100 %, как F и окрестность Sprint 49.
+        var sprint50View =
+            _operationalFocusMode == MapOperationalFocusMode.Ring ||
+            _operationalFocusMode == MapOperationalFocusMode.FailurePrediction ||
+            _operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure;
+        TryFitMapBoundsToViewport(bounds, _zoomMin, sprint50View ? 1.0 : (double?)null);
     }
 
     private static bool OperationalFocusMatchesLink(

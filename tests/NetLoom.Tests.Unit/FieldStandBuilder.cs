@@ -479,6 +479,7 @@ namespace NetLoom.Tests.Unit
             public string Description;
             public string Alias;
             public bool Fiber;
+            public bool ManualCable;
             public bool Up = true;
             public bool AdminUp = true;
             public int StpState = 5;
@@ -631,6 +632,8 @@ namespace NetLoom.Tests.Unit
                     n.Cable(kb[i], 17, kb[i + 1], 18);
                 }
 
+                n.ScenarioNotes.Add("Кольцо корпуса Б: kb-sw-02 – неуправляемый коммутатор поста охраны – МК-3; у двух ручных участников нет данных STP");
+
                 kb[3].Scenario = DeviceScenario.LldpDisabled;
                 kb[5].Scenario = DeviceScenario.UnreachableNow;
                 n.ScenarioNotes.Add("kb-sw-04 с отключённым LLDP: kb-sw-03 видит его, обратной стороны нет");
@@ -639,7 +642,7 @@ namespace NetLoom.Tests.Unit
                 // Оптическая трасса ядро → корпус Б через ручные медиаконвертеры.
                 n.ManualDevices.Add(new SimManualDevice { Name = "МК-1 Серверная", Category = ManualTopologyDeviceCategory.MediaConverter, Notes = "Медиаконвертер 1000BASE-LX, кросс ШКОС-1", PlaceKey = "ps1-srv" });
                 n.ManualDevices.Add(new SimManualDevice { Name = "МК-2 Корпус Б", Category = ManualTopologyDeviceCategory.MediaConverter, Notes = "Медиаконвертер 1000BASE-LX, кросс ШКОС-7", PlaceKey = "kb-uz" });
-                n.ManualDevices.Add(new SimManualDevice { Name = "МК-3 Корпус Б", Category = ManualTopologyDeviceCategory.MediaConverter, Notes = "Резервный, не подключён", PlaceKey = "kb-uz" });
+                n.ManualDevices.Add(new SimManualDevice { Name = "МК-3 Корпус Б", Category = ManualTopologyDeviceCategory.MediaConverter, Notes = "Резервный канал поста охраны", PlaceKey = "kb-uz" });
                 n.ManualDevices.Add(new SimManualDevice { Name = "МК-4 ПС-2", Category = ManualTopologyDeviceCategory.OpticalConverter, Notes = "Оптический конвертер для видеонаблюдения", PlaceKey = "ps2-app" });
                 n.ManualDevices.Add(new SimManualDevice { Name = "Неуправляемый 8 портов, пост охраны", Category = ManualTopologyDeviceCategory.UnmanagedSwitch, Notes = "D-Link DES-1008, камеры КПП", PlaceKey = "kb-uz" });
                 n.ManualDevices.Add(new SimManualDevice { Name = "Неуправляемый 5 портов, щитовая", Category = ManualTopologyDeviceCategory.UnmanagedSwitch, Notes = "Временный, демонтировать", PlaceKey = "ps1-sh" });
@@ -648,8 +651,21 @@ namespace NetLoom.Tests.Unit
                 n.ManualLinks.Add(new SimManualLink { DeviceA = "МК-1 Серверная", PortA = "LX", DeviceB = "МК-2 Корпус Б", PortB = "LX", MediaType = "Fiber", Notes = "Магистраль 1.2 км" });
                 n.ManualLinks.Add(new SimManualLink { DeviceA = "МК-2 Корпус Б", PortA = "TX", DeviceB = "kb-sw-01", PortB = "Port 18", MediaType = "Copper", Notes = null });
                 n.ManualLinks.Add(new SimManualLink { DeviceA = "kb-sw-02", PortA = "Port 1", DeviceB = "Неуправляемый 8 портов, пост охраны", PortB = "Uplink", MediaType = "Copper", Notes = "Камеры КПП" });
+                n.ManualLinks.Add(new SimManualLink { DeviceA = "Неуправляемый 8 портов, пост охраны", PortA = "Port 8", DeviceB = "МК-3 Корпус Б", PortB = "TX", MediaType = "Copper", Notes = "Резервный канал поста охраны" });
+                n.ManualLinks.Add(new SimManualLink { DeviceA = "МК-3 Корпус Б", PortA = "LX", DeviceB = "kb-sw-02", PortB = "Port 6", MediaType = "Copper", Notes = "Резервный канал поста охраны" });
                 n.ManualLinks.Add(new SimManualLink { DeviceA = "ps2-sw-08", PortA = "Port 1", DeviceB = "МК-4 ПС-2", PortB = "TX", MediaType = "Copper", Notes = null });
-                n.ScenarioNotes.Add("Ручные элементы: 4 медиаконвертера и 2 неуправляемых коммутатора, 5 ручных связей");
+                // Порт без имени среди портов имитатора (kb-sw-01 «Port 18») — ручной интерфейс, его не поднимаем.
+                foreach (var link in n.ManualLinks)
+                {
+                    foreach (var device in n.Devices.Where(item => item.Name == link.DeviceA))
+                        foreach (var port in device.Ports.Where(port => port.Name == link.PortA))
+                            port.ManualCable = true;
+                    foreach (var device in n.Devices.Where(item => item.Name == link.DeviceB))
+                        foreach (var port in device.Ports.Where(port => port.Name == link.PortB))
+                            port.ManualCable = true;
+                }
+                n.ScenarioNotes.Add("Порты ручных кабелей подняты: пять управляемых портов отвечают up и Forwarding без соседа LLDP");
+                n.ScenarioNotes.Add("Ручные элементы: 4 медиаконвертера и 2 неуправляемых коммутатора, 7 ручных связей");
 
                 // Оконечные устройства: камеры и ПЛК на портах доступа; MAC в FDB, IP в ARP маршрутизатора.
                 var access =
@@ -875,7 +891,7 @@ namespace NetLoom.Tests.Unit
                     Num(t, "1.3.6.1.2.1.2.2.1.3." + i, 2, "6");
                     Bytes(t, "1.3.6.1.2.1.2.2.1.6." + i, PortMac(device, port));
                     Num(t, "1.3.6.1.2.1.2.2.1.7." + i, 2, port.AdminUp ? "1" : "2");
-                    Num(t, "1.3.6.1.2.1.2.2.1.8." + i, 2, up && (port.PeerPort != null || port.LearnedMacs.Count > 0 || !device.IsSwitch) ? "1" : "2");
+                    Num(t, "1.3.6.1.2.1.2.2.1.8." + i, 2, up && (port.PeerPort != null || port.ManualCable || port.LearnedMacs.Count > 0 || !device.IsSwitch) ? "1" : "2");
                     Num(t, "1.3.6.1.2.1.2.2.1.13." + i, 65, "0");
                     Num(t, "1.3.6.1.2.1.2.2.1.14." + i, 65, "0");
                     Num(t, "1.3.6.1.2.1.2.2.1.19." + i, 65, "0");
@@ -987,7 +1003,7 @@ namespace NetLoom.Tests.Unit
                 foreach (var port in device.Ports)
                 {
                     var bp = port.IfIndex.ToString(CultureInfo.InvariantCulture);
-                    var up = port.PeerPort == null ? port.Up && port.LearnedMacs.Count > 0 : LinkUp(port);
+                    var up = port.PeerPort == null ? port.Up && (port.ManualCable || port.LearnedMacs.Count > 0) : LinkUp(port);
                     Num(t, "1.3.6.1.2.1.17.1.4.1.2." + bp, 2, bp);
                     Num(t, "1.3.6.1.2.1.17.2.15.1.1." + bp, 2, bp);
                     Num(t, "1.3.6.1.2.1.17.2.15.1.2." + bp, 2, "128");

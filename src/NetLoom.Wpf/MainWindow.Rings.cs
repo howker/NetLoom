@@ -177,6 +177,8 @@ public partial class MainWindow
             return;
         }
 
+        if (_shellSection != ShellSection.Map && _shellSection != ShellSection.Alerts)
+            ShowShellSection(ShellSection.Map);
         SelectRing(ringKey, true, false);
     }
 
@@ -191,7 +193,7 @@ public partial class MainWindow
         }
 
         // Вид кольца показывается на карте: из раздела без карты сначала открывается «Карта».
-        if (ShellMapSurface.Visibility != Visibility.Visible)
+        if (_shellSection != ShellSection.Map && _shellSection != ShellSection.Alerts)
         {
             ShowShellSection(ShellSection.Map);
         }

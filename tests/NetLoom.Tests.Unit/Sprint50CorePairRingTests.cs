@@ -315,6 +315,26 @@ namespace NetLoom.Tests.Unit
             Assert.AreEqual(RingProtectionStatus.Unresolved, ring.Status);
         }
 
+        [TestMethod]
+        public void RingDiagnosticTreatsEmptyStpObservationAsNoStpData()
+        {
+            var net = CorePairNet(3, 2);
+            net.Cables[1].Block();
+            net.Chain[1].Block();
+            var stpByDevice = net.Snapshots("A").ToDictionary(item => item.DeviceId);
+            var missingId = net.Id("r2");
+            stpByDevice[missingId] = new StpTreeSnapshot(
+                missingId, Guid.NewGuid(), Now, Instance, null, null,
+                null, null, null, new StpTreePort[0]);
+
+            var ring = MaterializedTopologyDiagnosticSnapshotProjector.BuildRings(
+                net.PhysicalLinks, stpByDevice, Instance).Single();
+
+            CollectionAssert.AreEqual(new[] { missingId }, ring.DevicesWithoutStpIds.ToArray());
+            Assert.AreEqual(RingProtectionStatus.Unresolved, ring.Status);
+            Assert.AreEqual(net.Id("A"), ring.RootDeviceId);
+        }
+
         // 10. Предупреждение о разорванном кольце через пару ядер — с ключом региона кольца.
         [TestMethod]
         public void BrokenCorePairRingRaisesDegradedAlertWithRingKey()

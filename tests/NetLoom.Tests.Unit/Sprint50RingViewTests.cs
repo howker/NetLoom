@@ -55,6 +55,30 @@ namespace NetLoom.Tests.Unit
         }
 
         [TestMethod]
+        public void RingFromEquipmentOpensMap()
+        {
+            WithWindow(Snapshot(), window =>
+            {
+                Click((Button)window.FindName("ShellEquipmentButton"));
+                var list = (ItemsControl)window.FindName("EquipmentList");
+                WaitForCondition(() => VisualButtons(list).Any(button => Equals(button.Tag, R1)));
+                Click(VisualButtons(list).Single(button => Equals(button.Tag, R1)));
+                Assert.AreEqual("Equipment", GetField(window, "_shellSection").ToString());
+                var blocks = (ItemsControl)window.FindName("InspectorRingButtons");
+                window.UpdateLayout();
+                Click(VisualButtons(blocks).Single(button => Equals(button.Tag, SimpleRingKey)));
+                Assert.AreEqual("Map", GetField(window, "_shellSection").ToString());
+                Assert.IsTrue(((FrameworkElement)window.FindName("ShellMapSurface")).IsVisible);
+                Assert.AreEqual(SimpleRingKey, GetField(window, "_selectedRingKey"));
+                typeof(MainWindow).GetField("_hoveredPhysicalLinkId", PrivateInstance).SetValue(window, null);
+                typeof(MainWindow).GetMethod("ReapplyOperationalFocusPresentation", PrivateInstance)
+                    .Invoke(window, null);
+                Assert.AreEqual(UiText.Get("InspectorEntityRing").ToUpper(CultureInfo.CurrentCulture),
+                    Text(window, "InspectorEntityTypeText").ToUpper(CultureInfo.CurrentCulture));
+            });
+        }
+
+        [TestMethod]
         public void RingMenuSelectsRingShowsInspectorDimsOutsideAndEscapeRestoresView()
         {
             WithWindow(Snapshot(), window =>

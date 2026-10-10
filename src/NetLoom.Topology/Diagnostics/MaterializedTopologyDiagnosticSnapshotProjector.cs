@@ -253,15 +253,17 @@ namespace NetLoom.Topology.Diagnostics
                     stpByDevice);
             }
 
-            var memberSnapshots =
-                analysis.DeviceIds
-                    .Where(stpByDevice.ContainsKey)
-                    .Select(id => stpByDevice[id])
-                    .ToArray();
-
             var withoutStp =
                 analysis.DeviceIds
-                    .Where(id => !stpByDevice.ContainsKey(id))
+                    .Where(id => !stpByDevice.ContainsKey(id) ||
+                        (stpByDevice[id].Ports.Count == 0 &&
+                         string.IsNullOrWhiteSpace(stpByDevice[id].DesignatedRoot)))
+                    .ToArray();
+
+            var memberSnapshots =
+                analysis.DeviceIds
+                    .Except(withoutStp)
+                    .Select(id => stpByDevice[id])
                     .ToArray();
 
             var roots =

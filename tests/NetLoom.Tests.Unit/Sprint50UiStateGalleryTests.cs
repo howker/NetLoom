@@ -219,7 +219,7 @@ namespace NetLoom.Tests.Unit
                 foreach (var file in Directory.GetFiles(output, "*.png")) File.Delete(file);
                 var findings = new List<string>();
                 const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-                var scenarios = new[] { "70-ring-simple", "71-ring-core-pair", "72-ring-inspector" };
+                var scenarios = new[] { "70-ring-simple", "71-ring-core-pair", "72-ring-inspector", "73-ring-unresolved" };
 
                 try
                 {
@@ -247,14 +247,17 @@ namespace NetLoom.Tests.Unit
                             PumpDispatcher();
 
                             var wantCore = scenario == "71-ring-core-pair";
-                            var ring = FindFieldRing(window, wantCore);
+                            var unresolved = scenario == "73-ring-unresolved";
+                            var ring = unresolved ? FindUnresolvedFieldRing(window) : FindFieldRing(window, wantCore);
                             if (ring == null)
                             {
                                 findings.Add(context + " — На стенде нет " +
-                                    (wantCore ? "кольца ПС-1 через пару ядер" : "простого кольца ПС-2"));
+                                    (unresolved ? "кольца корпуса Б" :
+                                        wantCore ? "кольца ПС-1 через пару ядер" : "простого кольца ПС-2"));
                                 continue;
                             }
-                            var expectedStatus = wantCore ? RingProtectionStatus.Protected : RingProtectionStatus.Degraded;
+                            var expectedStatus = unresolved ? RingProtectionStatus.Unresolved :
+                                wantCore ? RingProtectionStatus.Protected : RingProtectionStatus.Degraded;
                             if (ring.Status != expectedStatus)
                                 findings.Add(context + " — Состояние кольца " + ring.Status + ", ожидалось " + expectedStatus);
 
@@ -278,7 +281,12 @@ namespace NetLoom.Tests.Unit
                                 ? CaptureScaledRing((FrameworkElement)window.FindName("ShellInspectorPanel"), 2.0)
                                 : Capture(window.Content as FrameworkElement);
                             SaveRingPng(bitmap, System.IO.Path.Combine(output,
-                                scenario + "-" + width + "-" + theme + ".png"));
+                                scenario + (unresolved ? "-map" : string.Empty) + "-" + width + "-" + theme + ".png"));
+                            if (unresolved)
+                            {
+                                SaveRingPng(CaptureScaledRing((FrameworkElement)window.FindName("ShellInspectorPanel"), 2.0),
+                                    System.IO.Path.Combine(output, scenario + "-inspector-" + width + "-" + theme + ".png"));
+                            }
                         }
                         finally
                         {
@@ -294,7 +302,7 @@ namespace NetLoom.Tests.Unit
                         findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
                 }
                 Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
-                Assert.AreEqual(12, Directory.GetFiles(output, "*.png").Length);
+                Assert.AreEqual(20, Directory.GetFiles(output, "*.png").Length);
             });
         }
 
@@ -308,6 +316,17 @@ namespace NetLoom.Tests.Unit
                 ring.Kind == (corePair ? PhysicalRedundancyRegionKind.CorePairRing : PhysicalRedundancyRegionKind.SimpleRing) &&
                 ring.DeviceIds.Any(id => names.ContainsKey(id) &&
                     names[id].StartsWith(corePair ? "ps1-sw" : "ps2-sw", StringComparison.Ordinal)));
+        }
+
+        private static RingDiagnostic FindUnresolvedFieldRing(MainWindow window)
+        {
+            var diagnostics = (NetworkDiagnosticSnapshot)typeof(MainWindow)
+                .GetField("_lastDiagnosticSnapshot", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(window);
+            var names = diagnostics.Devices.ToDictionary(device => device.DeviceId, device => device.DisplayName ?? string.Empty);
+            return diagnostics.Rings.FirstOrDefault(ring =>
+                ring.Status == RingProtectionStatus.Unresolved &&
+                ring.DeviceIds.Any(id => names.ContainsKey(id) &&
+                    names[id].StartsWith("kb-sw-", StringComparison.OrdinalIgnoreCase)));
         }
 
         // Снимок элемента в увеличенном масштабе: инспектор кольца крупно.
