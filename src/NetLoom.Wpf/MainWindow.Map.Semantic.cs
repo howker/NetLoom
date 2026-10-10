@@ -44,12 +44,11 @@ public partial class MainWindow
         visual.StatusIcon.RenderTransformOrigin = new Point(0.5, 0.5);
         visual.StatusIcon.RenderTransform = far ? new ScaleTransform(1 / _zoom, 1 / _zoom) : Transform.Identity;
         // В окрестности ярлык получает каждое видимое устройство: их немного, наложения снимает MapLabelDeclutter.
-        var important = visual.StatusIcon.Visibility == Visibility.Visible ||
-            (node.DeviceId.HasValue && (node.DeviceId == _selectedDeviceId || node.DeviceId == _highlightedDeviceId ||
+        var important = node.DeviceId.HasValue && (node.DeviceId == _selectedDeviceId || node.DeviceId == _highlightedDeviceId ||
              _operationalFocusDeviceIds.Contains(node.DeviceId.Value) ||
              _neighborhoodDeviceIds.Contains(node.DeviceId.Value) ||
              // Устройства показанного пути: без имён путь на дальнем уровне не прочитать.
-             _pathDeviceIds.Contains(node.DeviceId.Value)));
+             _pathDeviceIds.Contains(node.DeviceId.Value));
         var showLabel = far && important && !visual.LabelHidden;
         visual.SemanticLabel.Visibility = showLabel ? Visibility.Visible : Visibility.Collapsed;
         var title = (TextBlock)visual.SemanticLabel.Child;
@@ -76,6 +75,7 @@ public partial class MainWindow
 
     private void ApplyLocationSemanticPresentation(MapLocationVisual visual)
     {
+        ApplyLocationSemanticLayer(visual);
         var far = _semanticLevel == MapSemanticLevel.Far;
         visual.Title.Text = visual.LocationName;
         visual.StatusIcon.Visibility = Visibility.Collapsed;
@@ -123,49 +123,88 @@ public partial class MainWindow
         }
     }
 
-    // Уровень «Издалека»: подписи (ярлыки устройств и вкладки размещений) не накладываются друг на друга.
-    // Приоритеты: 0 — выбранное устройство; 1 — участники фокуса и подсвеченное; 2 — устройства с проблемой;
-    // 3 — вкладки верхнего уровня; 3 + глубина — вложенные вкладки; 5 — прочие ярлыки.
+    // Уровень «Издалека»: дальний уровень подписывает размещения (замечание владельца 2026-10-10).
+    // Приоритеты: -1 — расхождение; 0 — выбранное устройство; 1 — подсвеченное, фокус, путь и окрестность;
+    // 2 + глубина — вкладки размещений; остальные подписи связей уступают всем вкладкам.
+    // Положения вкладки по порядку, первое свободное выигрывает: угол рамки; над верхним краем рамки;
+    // Сетка внутри рамки построчно (шаг по строкам — высота вкладки плюс FarLabelGap, по столбцам —
+    // Четверть экранной ширины рамки); у вкладки шире рамки — левый край рамки на каждой строке сетки.
     private void ApplyFarLabelDeclutter()
     {
         foreach (var visual in _nodeVisualsByIdentity.Values)
         {
-            if (!visual.LabelHidden) continue;
             visual.LabelHidden = false;
             ApplyNodeSemanticPresentation(visual);
         }
         foreach (var visual in _locationVisualsById.Values)
         {
-            if (!visual.LabelHidden) continue;
+            // Каждый проход начинается с основного положения, а не с прошлого запасного сдвига.
             visual.LabelHidden = false;
             ApplyLocationSemanticPresentation(visual);
         }
         if (_semanticLevel != MapSemanticLevel.Far || _lastMapSnapshot == null) return;
 
+        // Положение значка зависит от свёрнутого заголовка карточки; нужны уже пересчитанные размеры WPF.
+        MapCanvas.UpdateLayout();
         var zoom = _zoom > 0.0 ? _zoom : 1.0;
+        var gap = GetDoubleResource("NetLoom.Map.FarLabelGap");
         var locations = _lastMapSnapshot.Locations.ToDictionary(item => item.Id);
         var candidates = new List<MapLabelCandidate>();
+        var obstacles = new List<Rect>();
         var nodeByKey = new Dictionary<string, MapNodeVisual>(StringComparer.Ordinal);
         var locationByKey = new Dictionary<string, MapLocationVisual>(StringComparer.Ordinal);
         foreach (var pair in _nodeVisualsByIdentity)
         {
             var visual = pair.Value;
-            if (visual.Border.Visibility != Visibility.Visible ||
-                visual.SemanticLabel.Visibility != Visibility.Visible) continue;
+            if (visual.Border.Visibility != Visibility.Visible) continue;
+            var deviceId = visual.DeviceId ?? visual.Node?.DeviceId;
+            if (deviceId.HasValue && (deviceId == _selectedDeviceId ||
+                deviceId == _highlightedDeviceId || _operationalFocusDeviceIds.Contains(deviceId.Value) ||
+                _pathDeviceIds.Contains(deviceId.Value) || _neighborhoodDeviceIds.Contains(deviceId.Value)))
+                obstacles.Add(new Rect(NodeLeft(visual) * zoom, NodeTop(visual) * zoom,
+                    visual.Border.ActualWidth * zoom, visual.Border.ActualHeight * zoom));
+            if (visual.StatusIcon.Visibility == Visibility.Visible)
+            {
+                var icon = visual.StatusIcon.TransformToAncestor(MapCanvas)
+                    .TransformBounds(new Rect(visual.StatusIcon.RenderSize));
+                obstacles.Add(new Rect(icon.X * zoom, icon.Y * zoom, icon.Width * zoom, icon.Height * zoom));
+            }
+            if (visual.SemanticLabel.Visibility != Visibility.Visible) continue;
             var key = "N:" + pair.Key;
             nodeByKey[key] = visual;
             var inset = new Point(visual.Border.BorderThickness.Left + visual.Border.Padding.Left,
                 visual.Border.BorderThickness.Top + visual.Border.Padding.Top);
             var size = visual.SemanticLabel.DesiredSize;
-            // Ярлык обратно масштабирован и стоит над карточкой: на экране его размер равен DesiredSize.
+            // Неподвижные препятствия ограничивают вкладки: собственная карточка не скрывает имя выбора.
             candidates.Add(new MapLabelCandidate(key, new Rect(
                 (NodeLeft(visual) + inset.X) * zoom,
                 (NodeTop(visual) + inset.Y) * zoom - size.Height - _linkLabelCollisionMargin,
-                size.Width, size.Height), FarNodeLabelPriority(visual)));
+                size.Width, size.Height), FarNodeLabelPriority(visual), avoidObstacles: false));
+        }
+        var linkPriority = 2;
+        // Экранные прямоугольники видимых рамок: вкладка родителя не должна вставать на рамки-потомки.
+        var frameRects = new Dictionary<Guid, Rect>();
+        foreach (var item in _locationVisualsById.Values)
+        {
+            if (item.Border.Visibility != Visibility.Visible) continue;
+            frameRects[item.LocationId] = new Rect(LocationLeft(item) * zoom, LocationTop(item) * zoom,
+                item.Border.Width * zoom, item.Border.Height * zoom);
         }
         foreach (var visual in _locationVisualsById.Values)
         {
             if (visual.Border.Visibility != Visibility.Visible) continue;
+            var descendantFrames = frameRects
+                .Where(pair => pair.Key != visual.LocationId &&
+                    SemanticLocationContains(visual.LocationId, pair.Key, locations))
+                .Select(pair => pair.Value).ToArray();
+            Func<Rect, double, bool> touchesDescendant = (rect, margin) =>
+            {
+                var grown = new Rect(rect.Left - margin, rect.Top - margin,
+                    rect.Width + 2.0 * margin, rect.Height + 2.0 * margin);
+                return descendantFrames.Any(frameRect => grown.IntersectsWith(frameRect) &&
+                    grown.Left < frameRect.Right && frameRect.Left < grown.Right &&
+                    grown.Top < frameRect.Bottom && frameRect.Top < grown.Bottom);
+            };
             var key = "L:" + visual.LocationId.ToString("N");
             locationByKey[key] = visual;
             var depth = 0;
@@ -178,12 +217,41 @@ public partial class MainWindow
                     depth++;
             }
             var size = visual.Header.DesiredSize;
-            candidates.Add(new MapLabelCandidate(key, new Rect(LocationLeft(visual) * zoom,
-                LocationTop(visual) * zoom, size.Width, size.Height), 3 + depth));
+            var bounds = new Rect(LocationLeft(visual) * zoom, LocationTop(visual) * zoom,
+                size.Width, size.Height);
+            var positions = new List<Rect> { bounds };
+            var frame = new Rect(LocationLeft(visual) * zoom, LocationTop(visual) * zoom,
+                visual.Border.Width * zoom, visual.Border.Height * zoom);
+            // Запасное положение 2: вкладка «сидит» на верхнем крае рамки снаружи.
+            if (size.Height > 0.0)
+            {
+                var above = new Rect(frame.Left, frame.Top - size.Height, size.Width, size.Height);
+                // У рамки с вложенными рамками угол занят первой дочерней: вкладка сначала встаёт над рамкой.
+                if (!touchesDescendant(above, 0.0)) positions.Insert(descendantFrames.Length != 0 ? 0 : 1, above);
+            }
+            var step = size.Height + gap;
+            var columnStep = frame.Width / 4.0;
+            if (!visual.IsCollapsed && step > 0.0 && columnStep > 0.0)
+            {
+                // Положения 3 и 4: сетка внутри рамки построчно; у вкладки шире рамки — только левый край.
+                var narrow = bounds.Width > frame.Width;
+                for (var top = bounds.Top; top + bounds.Height <= frame.Bottom; top += step)
+                {
+                    for (var left = frame.Left; narrow ? left <= frame.Left : left + bounds.Width <= frame.Right;
+                         left += columnStep)
+                    {
+                        var candidate = new Rect(left, top, bounds.Width, bounds.Height);
+                        // Вкладка родителя стоит на собственной площади рамки, а не на дочерних рамках.
+                        if (candidate != bounds && !touchesDescendant(candidate, gap)) positions.Add(candidate);
+                        if (narrow) break;
+                    }
+                }
+            }
+            candidates.Add(new MapLabelCandidate(key, positions, 2 + depth));
+            linkPriority = Math.Max(linkPriority, 3 + depth);
         }
 
-        // Подписи связей, видимые на дальнем уровне (фокус, путь, расхождение), — обратно масштабированы
-        // Вокруг центра: на экране их размер равен DesiredSize. Уступают именам устройств.
+        // Подписи связей обратно масштабированы вокруг центра: экранный размер равен DesiredSize.
         var linkByKey = new Dictionary<string, MapLinkVisual>(StringComparer.Ordinal);
         foreach (var pair in _linkVisualsByIdentity)
         {
@@ -196,27 +264,37 @@ public partial class MainWindow
             var centerY = (Canvas.GetTop(label) + size.Height / 2.0) * zoom;
             candidates.Add(new MapLabelCandidate(key, new Rect(centerX - size.Width / 2.0,
                 centerY - size.Height / 2.0, size.Width, size.Height),
-                // ADR-079: расхождение видно всегда — его подпись первой занимает место и не скрывается.
-                HasTopologyConflict(pair.Value.Line.Tag as Guid?) ? -1 : 3));
+                // ADR-079: расхождение первым занимает место; обычная подпись уступает вкладкам.
+                HasTopologyConflict(pair.Value.Line.Tag as Guid?) ? -1 : linkPriority, avoidObstacles: false));
         }
 
-        var shown = MapLabelDeclutter.SelectVisible(candidates, GetDoubleResource("NetLoom.Map.FarLabelGap"));
+        var shown = MapLabelDeclutter.SelectPlacements(candidates, gap, obstacles);
         foreach (var pair in nodeByKey)
         {
-            if (shown.Contains(pair.Key)) continue;
+            if (shown.ContainsKey(pair.Key)) continue;
             pair.Value.LabelHidden = true;
             ApplyNodeSemanticPresentation(pair.Value);
         }
         foreach (var pair in locationByKey)
         {
-            if (shown.Contains(pair.Key)) continue;
+            Rect bounds;
+            if (shown.TryGetValue(pair.Key, out bounds))
+            {
+                var transforms = new TransformGroup();
+                transforms.Children.Add(new ScaleTransform(1 / zoom, 1 / zoom));
+                transforms.Children.Add(new TranslateTransform(
+                    (bounds.Left - LocationLeft(pair.Value) * zoom) / zoom,
+                    (bounds.Top - LocationTop(pair.Value) * zoom) / zoom));
+                pair.Value.Header.RenderTransform = transforms;
+                continue;
+            }
             pair.Value.LabelHidden = true;
             ApplyLocationSemanticPresentation(pair.Value);
         }
         foreach (var pair in linkByKey)
         {
             // Подпись в фокусе клавиатуры не скрывается: скрытый элемент теряет фокус (K4).
-            if (!shown.Contains(pair.Key) && !HasTopologyConflict(pair.Value.Line.Tag as Guid?) &&
+            if (!shown.ContainsKey(pair.Key) && !HasTopologyConflict(pair.Value.Line.Tag as Guid?) &&
                 !pair.Value.Label.IsKeyboardFocused)
                 pair.Value.Label.Visibility = Visibility.Collapsed;
         }
@@ -225,14 +303,7 @@ public partial class MainWindow
     private int FarNodeLabelPriority(MapNodeVisual visual)
     {
         var deviceId = visual.DeviceId ?? visual.Node?.DeviceId;
-        if (deviceId.HasValue)
-        {
-            if (deviceId == _selectedDeviceId) return 0;
-            // Устройства показанного пути важны так же, как участники предупреждения.
-            if (deviceId == _highlightedDeviceId || _operationalFocusDeviceIds.Contains(deviceId.Value) ||
-                _pathDeviceIds.Contains(deviceId.Value)) return 1;
-        }
-        return visual.StatusIcon.Visibility == Visibility.Visible ? 2 : 5;
+        return deviceId.HasValue && deviceId == _selectedDeviceId ? 0 : 1;
     }
 
     // Кольцо фокуса кнопки вкладки: на «Издалека» вкладка обратно масштабирована и стоит на экране 1:1.

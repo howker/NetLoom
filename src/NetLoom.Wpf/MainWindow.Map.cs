@@ -876,6 +876,9 @@ public partial class MainWindow
     private void TrySaveDeviceLayout(
         MapNodeVisual visual)
     {
+        // Временная раскладка не попадает в хранилище ни из одного обработчика карты.
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         if (visual == null ||
             !visual.DeviceId.HasValue)
         {
@@ -921,6 +924,9 @@ public partial class MainWindow
     private void TrySaveLocationLayout(
         MapLocationVisual visual)
     {
+        // Рамки скрыты в окрестности; отложенный обработчик также не сохраняет этот вид.
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         if (visual == null ||
             visual.LocationId == Guid.Empty)
         {
@@ -1670,6 +1676,9 @@ public partial class MainWindow
         {
             throw new ArgumentNullException(nameof(snapshot));
         }
+
+        // Обычная раскладка и обновление данных всегда работают с настоящими координатами.
+        RestoreNeighborhoodLayout();
 
         _lastMapSnapshot =
             snapshot;

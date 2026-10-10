@@ -144,6 +144,9 @@ namespace NetLoom.Tests.Unit
                                 // Кадры 61–63: подписи не накладываются; в 62 и 63 окрестность видна целиком.
                                 if (scenario != "64-alert-participants")
                                     CollectOverlappingMapLabels(window, scenario + "/" + theme + "/" + width, findings);
+                                if (scenario == "61-whole-site")
+                                    CollectFarLocationNames(window, scenario + "/" + theme + "/" + width, findings,
+                                        information, width);
                                 if (scenario == "62-neighborhood" || scenario == "63-neighborhood-expanded-up")
                                     CollectNeighborhoodOutsideViewport(window, scenario + "/" + theme + "/" + width, findings);
                                 bitmaps.Add(Capture(window.Content as FrameworkElement));
@@ -288,19 +291,117 @@ namespace NetLoom.Tests.Unit
                 findings.Add(context + " — Всего накладывающихся пар подписей карты: " + reported);
         }
 
-        // В окрестности все её устройства (и видимые ярлыки имён) целиком попадают в видимую область карты.
+        // Замечание владельца 2026-10-10: дальний уровень подписывает размещения.
+        // Вкладка, которой нет места без перекрытия значка проблемы, не показывается: это сведение, а не находка.
+        // Вкладка, стоящая не в своём углу на рамке-потомке, читается как имя потомка: это находка при любой ширине.
+        private static void CollectFarLocationNames(MainWindow window, string context, List<string> findings,
+            List<string> information, int width)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+            var viewport = new Rect(new Size(viewer.ViewportWidth, viewer.ViewportHeight));
+            var selected = (Guid?)typeof(MainWindow).GetField("_selectedDeviceId", flags).GetValue(window);
+            var focus = (HashSet<Guid>)typeof(MainWindow).GetField("_operationalFocusDeviceIds", flags).GetValue(window);
+            var snapshot = (MapSnapshot)typeof(MainWindow).GetField("_lastMapSnapshot", flags).GetValue(window);
+            var parents = snapshot.Locations.ToDictionary(item => item.Id, item => item.ParentLocationId);
+            Func<object, string, object> property = (visual, name) => visual.GetType().GetProperty(name).GetValue(visual);
+            var frames = new Dictionary<Guid, Rect>();
+            var names = new Dictionary<Guid, string>();
+            var tabs = new Dictionary<Guid, Rect>();
+            var missing = new List<string>();
+            var total = 0;
+            foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                .GetField("_locationVisualsById", flags).GetValue(window)).Values)
+            {
+                var border = (Border)property(visual, "Border");
+                if (!border.IsVisible) continue;
+                var id = (Guid)property(visual, "LocationId");
+                var frame = border.TransformToAncestor(viewer).TransformBounds(new Rect(border.RenderSize));
+                frames[id] = frame;
+                names[id] = (string)property(visual, "LocationName");
+                if (!viewport.IntersectsWith(frame)) continue;
+                total++;
+                var header = (FrameworkElement)property(visual, "Header");
+                var title = (TextBlock)property(visual, "Title");
+                var name = (string)property(visual, "LocationName");
+                if (!header.IsVisible || !title.IsVisible || title.ActualWidth <= 0.0 || title.ActualHeight <= 0.0 ||
+                    string.IsNullOrWhiteSpace(name) ||
+                    string.IsNullOrWhiteSpace(title.Text) || title.Text.IndexOf(name, StringComparison.CurrentCulture) < 0 ||
+                    !viewport.IntersectsWith(header.TransformToAncestor(viewer).TransformBounds(new Rect(header.RenderSize))))
+                {
+                    missing.Add("«" + name + "»");
+                }
+                else
+                    tabs[id] = header.TransformToAncestor(viewer).TransformBounds(new Rect(header.RenderSize));
+            }
+            if (missing.Count > 0)
+                information.Add("ИНФО " + context + " — на «Издалека» не поместились вкладки: " +
+                    string.Join(", ", missing) + " (подписано " + (total - missing.Count) + " из " + total + ")");
+            foreach (var pair in tabs)
+            {
+                var ownFrame = frames[pair.Key];
+                // Угол своей рамки допускается всегда.
+                if (Math.Abs(pair.Value.Left - ownFrame.Left) < 0.5 && Math.Abs(pair.Value.Top - ownFrame.Top) < 0.5)
+                    continue;
+                foreach (var other in frames)
+                {
+                    if (other.Key == pair.Key) continue;
+                    var ancestor = parents.ContainsKey(other.Key) ? parents[other.Key] : null;
+                    var visited = new HashSet<Guid>();
+                    var descendant = false;
+                    while (ancestor.HasValue && visited.Add(ancestor.Value))
+                    {
+                        if (ancestor.Value == pair.Key) { descendant = true; break; }
+                        ancestor = parents.ContainsKey(ancestor.Value) ? parents[ancestor.Value] : null;
+                    }
+                    if (!descendant) continue;
+                    var a = pair.Value;
+                    var b = other.Value;
+                    if (a.Left < b.Right - 0.01 && b.Left < a.Right - 0.01 &&
+                        a.Top < b.Bottom - 0.01 && b.Top < a.Bottom - 0.01)
+                        findings.Add(context + " — Вкладка размещения «" + names[pair.Key] +
+                            "» стоит на рамке «" + names[other.Key] + "»");
+                }
+            }
+            foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                .GetField("_nodeVisualsByIdentity", flags).GetValue(window)).Values)
+            {
+                var label = (Border)property(visual, "SemanticLabel");
+                if (!label.IsVisible) continue;
+                var node = (MapNode)property(visual, "Node");
+                if (node.DeviceId.HasValue && (node.DeviceId == selected || focus.Contains(node.DeviceId.Value))) continue;
+                findings.Add(context + " — Дальний ярлык имени устройства вне выбора и фокуса: «" +
+                    ((TextBlock)label.Child).Text + "»");
+            }
+        }
+
+        // В окрестности видны читаемые заголовки, а все её устройства и ярлыки целиком попадают в окно карты.
         private static void CollectNeighborhoodOutsideViewport(MainWindow window, string context, List<string> findings)
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
             var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
-            var canvas = (Canvas)window.FindName("MapCanvas");
             var members = (HashSet<Guid>)typeof(MainWindow).GetField("_neighborhoodDeviceIds", flags).GetValue(window);
+            var zoom = (double)typeof(MainWindow).GetField("_zoom", flags).GetValue(window);
+            var readable = (double)window.FindResource("NetLoom.Map.ReadableZoomMin");
+            if (zoom < readable)
+                findings.Add(context + " — Масштаб окрестности " + zoom.ToString("P0") +
+                    " ниже читаемого " + readable.ToString("P0"));
             var viewport = new Rect(-1, -1, viewer.ViewportWidth + 2, viewer.ViewportHeight + 2);
             var checkedCards = 0;
-            foreach (var border in canvas.Children.OfType<Border>().Where(item =>
-                item.Tag is Guid && members.Contains((Guid)item.Tag) && item.IsVisible))
+            Func<object, string, object> property = (visual, name) => visual.GetType().GetProperty(name).GetValue(visual);
+            foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                .GetField("_nodeVisualsByIdentity", flags).GetValue(window)).Values)
             {
+                var node = (MapNode)property(visual, "Node");
+                var border = (Border)property(visual, "Border");
+                if (!node.DeviceId.HasValue || !members.Contains(node.DeviceId.Value) || !border.IsVisible) continue;
                 checkedCards++;
+                var title = (TextBlock)property(visual, "Title");
+                var name = string.Equals(node.Label, node.Key, StringComparison.Ordinal)
+                    ? UiText.Get("NodeUnknownLabel") : node.Label;
+                if (!title.IsVisible || title.ActualWidth <= 0.0 || title.ActualHeight <= 0.0 ||
+                    string.IsNullOrWhiteSpace(title.Text) || !string.Equals(title.Text, name, StringComparison.Ordinal))
+                    findings.Add(context + " — У устройства окрестности нет видимого заголовка с именем: «" + name + "»");
                 var bounds = border.TransformToAncestor(viewer).TransformBounds(new Rect(border.RenderSize));
                 if (!viewport.Contains(bounds))
                     findings.Add(context + " — Устройство окрестности вне видимой области карты: " + bounds +
@@ -348,6 +449,7 @@ namespace NetLoom.Tests.Unit
                 var output = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint49-semantic-zoom");
                 Directory.CreateDirectory(output);
                 var findings = new List<string>();
+                var information = new List<string>();
                 var scenarios = new[] { "57-zoom-far", "58-zoom-medium", "59-zoom-close", "60-zoom-detailed" };
                 try
                 {
@@ -379,8 +481,13 @@ namespace NetLoom.Tests.Unit
                                     scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
                                 // Кадр 57 («Издалека»): подписи карты не накладываются друг на друга.
                                 if (level == 0)
+                                {
                                     CollectOverlappingMapLabels(window,
                                         scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings);
+                                    CollectFarLocationNames(window,
+                                        scenarios[level] + "/" + (dark ? "dark" : "light") + "/" + width, findings,
+                                        information, width);
+                                }
                                 bitmaps.Add(Capture(window.Content as FrameworkElement));
                             }
                             finally
@@ -397,10 +504,94 @@ namespace NetLoom.Tests.Unit
                 finally
                 {
                     File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
-                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                        findings.Count == 0 && information.Count == 0 ? new[] { "Находок нет." }
+                            : findings.Concat(information).ToArray(), new UTF8Encoding(false));
                 }
                 Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
                 Assert.AreEqual(8, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
+        // Замечание владельца 2026-10-10: «Вся площадка» на полевом стенде при ширине 1100 и 1440, ничего не выбрано.
+        // У каждой видимой рамки есть вкладка с именем, ярлыков имён устройств нет, вкладки не пересекаются
+        // Друг с другом и со значками проблем устройств.
+        [TestMethod]
+        [TestCategory("LiveUiAudit")]
+        public void Sprint49FarLocationTabsOnFieldStandAreNamedAndDoNotOverlap()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var findings = new List<string>();
+                foreach (var width in new[] { 1100, 1440 })
+                {
+                    var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                        "netloom-s49-far-tabs-" + Guid.NewGuid().ToString("N") + ".db");
+                    MainWindow window = null;
+                    File.Copy(source, database);
+                    try
+                    {
+                        window = CreateParallelLinksFieldWindow(database, false);
+                        PrepareWindow(window, width, GalleryHeight);
+                        var currentWindow = window;
+                        WaitForCondition(() => ((MapSnapshot)typeof(MainWindow)
+                            .GetField("_lastMapSnapshot", flags).GetValue(currentWindow))
+                            .Nodes.Any(node => node.Label == "core-sw-01"));
+                        Click((Button)window.FindName("MapFitAllButton"));
+                        PumpDispatcher();
+                        window.UpdateLayout();
+                        Assert.IsNull(typeof(MainWindow).GetField("_selectedDeviceId", flags).GetValue(window));
+                        var context = "whole-site/" + width;
+                        // Полнота вкладок — сведение; вкладки не стоят на рамках-потомках и не перекрываются.
+                        CollectFarLocationNames(window, context, findings, new List<string>(), width);
+
+                        var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+                        Func<object, string, object> property = (visual, name) =>
+                            visual.GetType().GetProperty(name).GetValue(visual);
+                        var tabs = new List<KeyValuePair<string, Rect>>();
+                        foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                            .GetField("_locationVisualsById", flags).GetValue(window)).Values)
+                        {
+                            var header = (FrameworkElement)property(visual, "Header");
+                            if (!header.IsVisible || header.ActualWidth <= 0.0) continue;
+                            tabs.Add(new KeyValuePair<string, Rect>("вкладка «" + property(visual, "LocationName") + "»",
+                                header.TransformToAncestor(viewer).TransformBounds(new Rect(header.RenderSize))));
+                        }
+                        var icons = new List<KeyValuePair<string, Rect>>();
+                        foreach (var visual in ((System.Collections.IDictionary)typeof(MainWindow)
+                            .GetField("_nodeVisualsByIdentity", flags).GetValue(window)).Values)
+                        {
+                            var icon = (FrameworkElement)property(visual, "StatusIcon");
+                            if (!icon.IsVisible || icon.ActualWidth <= 0.0) continue;
+                            icons.Add(new KeyValuePair<string, Rect>(
+                                "значок проблемы «" + ((MapNode)property(visual, "Node")).Label + "»",
+                                icon.TransformToAncestor(viewer).TransformBounds(new Rect(icon.RenderSize))));
+                        }
+                        Func<Rect, Rect, bool> overlap = (a, b) => a.Left < b.Right - 0.01 && b.Left < a.Right - 0.01 &&
+                            a.Top < b.Bottom - 0.01 && b.Top < a.Bottom - 0.01;
+                        for (var i = 0; i < tabs.Count; i++)
+                        {
+                            for (var j = i + 1; j < tabs.Count; j++)
+                                if (overlap(tabs[i].Value, tabs[j].Value))
+                                    findings.Add(context + " — " + tabs[i].Key + " накладывается на " + tabs[j].Key);
+                            foreach (var icon in icons)
+                                if (overlap(tabs[i].Value, icon.Value))
+                                    findings.Add(context + " — " + tabs[i].Key + " накладывается на " + icon.Key);
+                        }
+                    }
+                    finally
+                    {
+                        if (window != null) window.Close();
+                        PumpDispatcher();
+                        DeleteParallelLinksFieldCopy(database);
+                    }
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
             });
         }
 
@@ -870,7 +1061,7 @@ namespace NetLoom.Tests.Unit
                                         var site = map.Locations.Single(location => location.Name == "Площадка А");
                                         typeof(MainWindow).GetMethod("SelectLocation", flags).Invoke(window, new object[] { site.Id });
                                         var siteBorder = canvas.Children.OfType<Border>()
-                                            .Single(border => Equals(border.Tag, site.Id) && Panel.GetZIndex(border) < 0);
+                                            .Single(border => Equals(border.Tag, site.Id) && border.Child is Grid);
                                         bounds = new List<Rect>
                                         {
                                             new Rect(Canvas.GetLeft(siteBorder), Canvas.GetTop(siteBorder),
@@ -891,7 +1082,7 @@ namespace NetLoom.Tests.Unit
                                         Assert.IsTrue(ids.Length > 1);
                                         bounds = canvas.Children.OfType<Border>()
                                             .Where(border => border.Tag is Guid && ids.Contains((Guid)border.Tag) &&
-                                                Panel.GetZIndex(border) < 0)
+                                                border.Child is Grid)
                                             .Select(border => new Rect(Canvas.GetLeft(border), Canvas.GetTop(border),
                                                 border.Width, border.Height)).ToList();
                                     }

@@ -582,7 +582,7 @@ namespace NetLoom.Tests.Unit
         private static Border S49NavLocationBorder(MainWindow window, Guid locationId)
         {
             return ((Canvas)window.FindName("MapCanvas")).Children.OfType<Border>()
-                .Single(border => Equals(border.Tag, locationId) && Panel.GetZIndex(border) < 0);
+                .Single(border => Equals(border.Tag, locationId) && border.Child is Grid);
         }
 
         private static Border S49NavHeader(Border locationBorder, Guid locationId)

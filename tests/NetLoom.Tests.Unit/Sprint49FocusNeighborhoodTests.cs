@@ -195,7 +195,9 @@ namespace NetLoom.Tests.Unit
                     Assert.AreEqual(2, canvas.Children.OfType<Line>().Count(line => line.Visibility == Visibility.Visible));
                     Assert.AreEqual(Visibility.Collapsed, canvas.Children.OfType<Border>()
                         .Single(border => Equals(border.Tag, Sprint49NeighborhoodFixture.Empty)).Visibility);
-                    Assert.AreEqual(Visibility.Visible, canvas.Children.OfType<Border>()
+                    // Замечание владельца 2026-10-10: в компактной окрестности устройства не на своих местах,
+                    // Поэтому рамки размещений скрыты.
+                    Assert.AreEqual(Visibility.Collapsed, canvas.Children.OfType<Border>()
                         .Single(border => Equals(border.Tag, Sprint49NeighborhoodFixture.Root)).Visibility);
 
                     // Вверх — на одну связь ближе к точке опроса (устройство 0); равноудалённые 2 и 3 — без направления.
@@ -404,6 +406,175 @@ namespace NetLoom.Tests.Unit
                 finally { window.Close(); PumpDispatcher(); }
             });
         }
+
+        // Компактная раскладка окрестности (замечание владельца 2026-10-10): читаемый масштаб, имена, ряды,
+        // Скрытые рамки, точный возврат на рабочие места и отсутствие записи раскладки.
+        [TestMethod]
+        public void NeighborhoodCompactLayoutIsReadableOrderedUnsavedAndRestoredOnExit()
+        {
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var snapshot = Sprint49NeighborhoodFixture.Snapshot();
+                var ids = Sprint49NeighborhoodFixture.Devices;
+                // Расстояние в связях от устройства 0 (точка опроса); связь 1–3 делает 3 ближе, чем цепочка.
+                var distances = new[] { 0, 1, 2, 2, 3, 4, 5, 6 };
+                var window = new MainWindow(new FixedRefreshProvider(snapshot),
+                    new Sprint49PollingPointLookupReader(Sprint49NeighborhoodFixture.PollingMac, ids[0]))
+                {
+                    EngineHostAddresses = new Sprint49FixedHostAddresses(Sprint49NeighborhoodFixture.PollingMac)
+                };
+                try
+                {
+                    window.Show();
+                    WaitForCondition(() => DeviceBorder(window, ids[7]) != null && window.PollingPoint != null);
+                    Assert.AreEqual(EnginePollingPointStatus.Determined, window.PollingPoint.Status);
+                    PumpDispatcher();
+
+                    var before = ids.Select(id => new Point(Canvas.GetLeft(DeviceBorder(window, id)),
+                        Canvas.GetTop(DeviceBorder(window, id)))).ToArray();
+                    var frameVisibility = NeighborhoodFrameVisibility(window);
+                    Assert.IsTrue(frameVisibility.Values.Any(value => value == Visibility.Visible));
+                    var persistedDevices = NeighborhoodPersistedCount(window, "_persistedDeviceLayouts");
+                    var persistedLocations = NeighborhoodPersistedCount(window, "_persistedLocationLayouts");
+
+                    SelectDevice(window, ids[4]);
+                    NeighborhoodMenu(window).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 3, 4, 5);
+                    AssertNeighborhoodReadable(window, 3, 4, 5);
+                    AssertNeighborhoodRows(window, distances, 3, 4, 5);
+                    Assert.IsTrue(NeighborhoodFrameVisibility(window).Values.All(value => value != Visibility.Visible),
+                        "Location frames must be hidden while the compact layout is active.");
+
+                    Click((Button)window.FindName("MapNeighborhoodUpButton"));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 1, 3, 4, 5);
+                    AssertNeighborhoodReadable(window, 1, 3, 4, 5);
+                    AssertNeighborhoodRows(window, distances, 1, 3, 4, 5);
+
+                    Click((Button)window.FindName("MapNeighborhoodDownButton"));
+                    PumpDispatcher();
+                    // Шаг вниз идёт от всех показанных: 2 дальше от точки опроса, чем 1, а 6 — чем 5.
+                    AssertNeighborhoodDevices(window, 1, 2, 3, 4, 5, 6);
+                    AssertNeighborhoodReadable(window, 1, 2, 3, 4, 5, 6);
+                    AssertNeighborhoodRows(window, distances, 1, 2, 3, 4, 5, 6);
+                    Assert.IsTrue(NeighborhoodFrameVisibility(window).Values.All(value => value != Visibility.Visible));
+
+                    Click((Button)window.FindName("MapNeighborhoodWholeSiteButton"));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, Enumerable.Range(0, 8).ToArray());
+                    for (var i = 0; i < ids.Length; i++)
+                    {
+                        Assert.AreEqual(before[i].X, Canvas.GetLeft(DeviceBorder(window, ids[i])), 0.0001,
+                            "Device " + i + " must return to its working Left.");
+                        Assert.AreEqual(before[i].Y, Canvas.GetTop(DeviceBorder(window, ids[i])), 0.0001,
+                            "Device " + i + " must return to its working Top.");
+                    }
+                    var after = NeighborhoodFrameVisibility(window);
+                    foreach (var pair in frameVisibility)
+                        Assert.AreEqual(pair.Value, after[pair.Key], "Frame visibility must match the state before entry.");
+
+                    // Временные позиции нигде не записаны: рабочие раскладки не менялись.
+                    Assert.AreEqual(persistedDevices, NeighborhoodPersistedCount(window, "_persistedDeviceLayouts"));
+                    Assert.AreEqual(persistedLocations, NeighborhoodPersistedCount(window, "_persistedLocationLayouts"));
+                }
+                finally { window.Close(); PumpDispatcher(); }
+            });
+        }
+
+        // Карта общая с предупреждениями: там устройства стоят на рабочих местах, при возврате раскладка применяется снова.
+        [TestMethod]
+        public void NeighborhoodCompactLayoutIsRemovedInAlertsAndReappliedOnReturnToMap()
+        {
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var snapshot = Sprint49NeighborhoodFixture.Snapshot(withAlert: true);
+                var ids = Sprint49NeighborhoodFixture.Devices;
+                var window = new MainWindow(new FixedRefreshProvider(snapshot), new EmptyLookupReader());
+                try
+                {
+                    window.Show();
+                    WaitForCondition(() => ((ItemsControl)window.FindName("AlertList")).Items.Count == 1);
+                    PumpDispatcher();
+                    var working = ids.Select(id => new Point(Canvas.GetLeft(DeviceBorder(window, id)),
+                        Canvas.GetTop(DeviceBorder(window, id)))).ToArray();
+                    SelectDevice(window, ids[2]);
+                    NeighborhoodMenu(window).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 1, 2, 3);
+                    var compact = new[] { 1, 2, 3 }.Select(i => new Point(Canvas.GetLeft(DeviceBorder(window, ids[i])),
+                        Canvas.GetTop(DeviceBorder(window, ids[i])))).ToArray();
+                    Assert.IsTrue(new[] { 1, 2, 3 }.Select((index, k) => compact[k] != working[index]).Any(changed => changed),
+                        "The compact layout must move at least one device.");
+
+                    Click((Button)window.FindName("ShellAlertsButton"));
+                    PumpDispatcher();
+                    for (var i = 0; i < ids.Length; i++)
+                    {
+                        Assert.AreEqual(working[i].X, Canvas.GetLeft(DeviceBorder(window, ids[i])), 0.0001);
+                        Assert.AreEqual(working[i].Y, Canvas.GetTop(DeviceBorder(window, ids[i])), 0.0001);
+                    }
+
+                    Click((Button)window.FindName("ShellMapButton"));
+                    PumpDispatcher();
+                    AssertNeighborhoodDevices(window, 1, 2, 3);
+                    for (var k = 0; k < 3; k++)
+                    {
+                        var border = DeviceBorder(window, ids[k + 1]);
+                        Assert.AreEqual(compact[k].X, Canvas.GetLeft(border), 0.0001);
+                        Assert.AreEqual(compact[k].Y, Canvas.GetTop(border), 0.0001);
+                    }
+                }
+                finally { window.Close(); PumpDispatcher(); }
+            });
+        }
+
+        // Масштаб не ниже читаемого, показанные устройства целиком в окне карты, у каждого виден заголовок с именем.
+        private static void AssertNeighborhoodReadable(MainWindow window, params int[] indices)
+        {
+            Assert.IsTrue(NeighborhoodZoom(window) >=
+                (double)window.FindResource("NetLoom.Map.ReadableZoomMin") - 0.0001,
+                "The neighborhood zoom must not be below the readable minimum.");
+            var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+            var viewport = new Rect(0, 0, viewer.ViewportWidth, viewer.ViewportHeight);
+            foreach (var index in indices)
+            {
+                var id = Sprint49NeighborhoodFixture.Devices[index];
+                var border = DeviceBorder(window, id);
+                Assert.IsTrue(viewport.Contains(border.TransformToAncestor(viewer)
+                    .TransformBounds(new Rect(border.RenderSize))), "Device " + index + " is outside the viewport.");
+                var visual = SemanticVisual(window, "_nodeVisualsByIdentity", "device:" + id.ToString("D"));
+                var title = SemanticProperty<TextBlock>(visual, "Title");
+                Assert.AreEqual(Visibility.Visible, title.Visibility, "Device " + index + " must show its name.");
+                StringAssert.Contains(title.Text, "neighbor-sw-" + index);
+            }
+        }
+
+        // Ближе к точке опроса — выше: строго меньший Top у устройства с меньшим расстоянием.
+        private static void AssertNeighborhoodRows(MainWindow window, int[] distances, params int[] indices)
+        {
+            foreach (var near in indices)
+                foreach (var far in indices.Where(index => distances[index] > distances[near]))
+                    Assert.IsTrue(Canvas.GetTop(DeviceBorder(window, Sprint49NeighborhoodFixture.Devices[near])) <
+                        Canvas.GetTop(DeviceBorder(window, Sprint49NeighborhoodFixture.Devices[far])),
+                        "Device " + near + " must stand above device " + far + ".");
+        }
+
+        private static System.Collections.Generic.Dictionary<Guid, Visibility> NeighborhoodFrameVisibility(
+            MainWindow window)
+        {
+            var result = new System.Collections.Generic.Dictionary<Guid, Visibility>();
+            foreach (System.Collections.DictionaryEntry pair in (System.Collections.IDictionary)typeof(MainWindow)
+                .GetField("_locationVisualsById", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(window))
+                result[(Guid)pair.Key] = SemanticProperty<Border>(pair.Value, "Border").Visibility;
+            return result;
+        }
+
+        private static int NeighborhoodPersistedCount(MainWindow window, string field) =>
+            ((System.Collections.ICollection)typeof(MainWindow)
+                .GetField(field, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(window)).Count;
 
         private static ContextMenu NeighborhoodFocusMenu(MainWindow window)
         {

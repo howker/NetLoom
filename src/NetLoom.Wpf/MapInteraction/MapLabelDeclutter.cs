@@ -4,29 +4,54 @@ using System.Windows;
 
 namespace NetLoom.Wpf.MapInteraction
 {
-    // Кандидат на показ подписи уровня «Издалека»: ключ, прямоугольник в экранных координатах холста,
-    // Приоритет (меньше — важнее).
+    // Кандидат на показ подписи: упорядоченные положения в экранных координатах холста,
+    // Приоритет (меньше — важнее) и признак обхода неподвижных препятствий.
     public sealed class MapLabelCandidate
     {
         public MapLabelCandidate(string key, Rect bounds, int priority)
+            : this(key, bounds, priority, true)
+        {
+        }
+
+        public MapLabelCandidate(string key, Rect bounds, int priority, bool avoidObstacles)
+            : this(key, new[] { bounds }, priority, avoidObstacles)
+        {
+        }
+
+        public MapLabelCandidate(string key, IEnumerable<Rect> boundsOptions, int priority,
+            bool avoidObstacles = true)
         {
             Key = key ?? throw new ArgumentNullException(nameof(key));
-            Bounds = bounds;
+            if (boundsOptions == null) throw new ArgumentNullException(nameof(boundsOptions));
+            var options = new List<Rect>(boundsOptions);
+            if (options.Count == 0) throw new ArgumentException("At least one position is required.", nameof(boundsOptions));
+            BoundsOptions = options.AsReadOnly();
             Priority = priority;
+            AvoidObstacles = avoidObstacles;
         }
 
         public string Key { get; }
 
-        public Rect Bounds { get; }
+        public Rect Bounds => BoundsOptions[0];
+
+        public IReadOnlyList<Rect> BoundsOptions { get; }
 
         public int Priority { get; }
+
+        public bool AvoidObstacles { get; }
     }
 
     // Чистая логика снятия наложений: подписи берутся жадно по приоритету, при равном — по ключу (Ordinal).
-    // Подпись показывается, если её прямоугольник, расширенный на поле, не пересекает уже показанные.
+    // Для каждой подписи выбирается первое свободное положение; препятствия никогда не скрываются.
     public static class MapLabelDeclutter
     {
         public static HashSet<string> SelectVisible(IEnumerable<MapLabelCandidate> candidates, double gap)
+        {
+            return new HashSet<string>(SelectPlacements(candidates, gap).Keys, StringComparer.Ordinal);
+        }
+
+        public static IReadOnlyDictionary<string, Rect> SelectPlacements(
+            IEnumerable<MapLabelCandidate> candidates, double gap, IEnumerable<Rect> obstacles = null)
         {
             if (candidates == null) throw new ArgumentNullException(nameof(candidates));
             var ordered = new List<MapLabelCandidate>(candidates);
@@ -36,32 +61,33 @@ namespace NetLoom.Wpf.MapInteraction
                 return byPriority != 0 ? byPriority : string.CompareOrdinal(left.Key, right.Key);
             });
             var margin = Math.Max(0.0, gap);
-            var shown = new List<Rect>();
-            var keys = new HashSet<string>(StringComparer.Ordinal);
+            var fixedBounds = obstacles == null ? new List<Rect>() : new List<Rect>(obstacles);
+            var shown = new Dictionary<string, Rect>(StringComparer.Ordinal);
             foreach (var candidate in ordered)
             {
-                var expanded = new Rect(candidate.Bounds.Left - margin, candidate.Bounds.Top - margin,
-                    candidate.Bounds.Width + 2 * margin, candidate.Bounds.Height + 2 * margin);
-                var overlaps = false;
-                foreach (var other in shown)
+                foreach (var bounds in candidate.BoundsOptions)
                 {
-                    if (Overlap(expanded, other))
-                    {
-                        overlaps = true;
-                        break;
-                    }
+                    if (bounds.IsEmpty) continue;
+                    var expanded = new Rect(bounds.Left - margin, bounds.Top - margin,
+                        bounds.Width + 2 * margin, bounds.Height + 2 * margin);
+                    if (OverlapsAny(expanded, shown.Values) ||
+                        (candidate.AvoidObstacles && OverlapsAny(expanded, fixedBounds))) continue;
+                    shown.Add(candidate.Key, bounds);
+                    break;
                 }
-                if (overlaps) continue;
-                shown.Add(candidate.Bounds);
-                keys.Add(candidate.Key);
             }
-            return keys;
+            return shown;
         }
 
-        // Пересечение с положительной площадью: касание краёв наложением не считается.
-        private static bool Overlap(Rect a, Rect b)
+        private static bool OverlapsAny(Rect bounds, IEnumerable<Rect> others)
         {
-            return a.Left < b.Right && b.Left < a.Right && a.Top < b.Bottom && b.Top < a.Bottom;
+            foreach (var other in others)
+            {
+                // Пересечение с положительной площадью: касание краёв наложением не считается.
+                if (bounds.Left < other.Right && other.Left < bounds.Right &&
+                    bounds.Top < other.Bottom && other.Top < bounds.Bottom) return true;
+            }
+            return false;
         }
     }
 }

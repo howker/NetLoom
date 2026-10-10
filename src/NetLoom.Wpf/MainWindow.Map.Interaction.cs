@@ -1555,6 +1555,8 @@ public partial class MainWindow
     private void ToggleLocationCollapsed(
         Guid locationId)
     {
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         var visual =
             LocationVisual(
                 locationId);
@@ -1581,6 +1583,8 @@ public partial class MainWindow
         Guid locationId,
         bool? locked = null)
     {
+        if (IsNeighborhoodLayoutActive || HasNeighborhoodLayoutPositions) return;
+
         var visual =
             LocationVisual(
                 locationId);
@@ -2520,6 +2524,22 @@ public partial class MainWindow
             return;
         }
 
+        var point = e.GetPosition(MapCanvas);
+        if (_semanticLevel == MapSemanticLevel.Far && IsMapEditMode && e.ClickCount >= 2)
+        {
+            var location = FarLocationAtPoint(point);
+            if (location != null)
+            {
+                OnMapLocationBodyMouseLeftButtonDown(location.Border, e);
+                return;
+            }
+        }
+        if (TryHandleFarLocationCanvasClick(point, e.ClickCount))
+        {
+            e.Handled = true;
+            return;
+        }
+
         StopStartupTopologyFit();
 
         // Обычный щелчок сбрасывает показанный путь.
@@ -2535,6 +2555,30 @@ public partial class MainWindow
         ShowSelectedDiagnostic();
         ApplyLinkFocusPresentation();
         UpdateSelectedLayoutControl();
+    }
+
+    private MapLocationVisual FarLocationAtPoint(Point canvasPoint)
+    {
+        if (_semanticLevel != MapSemanticLevel.Far || _lastMapSnapshot == null) return null;
+        var locations = _lastMapSnapshot.Locations.ToDictionary(item => item.Id);
+        // Контур не перехватывает мышь; пустое место выбирает самое глубокое видимое размещение.
+        return _locationVisualsById.Values
+            .Where(visual => visual.Border.Visibility == Visibility.Visible &&
+                locations.ContainsKey(visual.LocationId) &&
+                new Rect(LocationLeft(visual), LocationTop(visual),
+                    visual.Border.Width, visual.Border.Height).Contains(canvasPoint))
+            .OrderByDescending(visual => LocationDepth(locations[visual.LocationId], locations))
+            .ThenBy(visual => visual.LocationId)
+            .FirstOrDefault();
+    }
+
+    private bool TryHandleFarLocationCanvasClick(Point canvasPoint, int clickCount)
+    {
+        var visual = FarLocationAtPoint(canvasPoint);
+        if (visual == null) return false;
+        SelectLocation(visual.LocationId);
+        if (!IsMapEditMode && clickCount >= 2) FitLocationSubtree(visual.LocationId);
+        return true;
     }
 
 }

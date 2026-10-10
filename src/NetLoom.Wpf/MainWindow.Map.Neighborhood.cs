@@ -19,6 +19,72 @@ public partial class MainWindow
     private Guid? _neighborhoodSelectedDeviceId;
     private HashSet<Guid> _neighborhoodDeviceIds = new HashSet<Guid>();
     private MenuItem _neighborhoodMenuItem;
+    private readonly Dictionary<string, Point> _neighborhoodWorkingPositions =
+        new Dictionary<string, Point>(StringComparer.Ordinal);
+
+    private bool IsNeighborhoodLayoutActive => _neighborhoodSelectedDeviceId.HasValue &&
+        _shellSection == ShellSection.Map && !IsMapEditMode;
+
+    private bool HasNeighborhoodLayoutPositions => _neighborhoodWorkingPositions.Count != 0;
+
+    // Рабочие координаты храним только между применением и снятием временного представления.
+    // Логические координаты сохраняют смысл при изменении начала виртуального холста.
+    private void RestoreNeighborhoodLayout()
+    {
+        foreach (var pair in _neighborhoodWorkingPositions)
+        {
+            MapNodeVisual visual;
+            if (!_nodeVisualsByIdentity.TryGetValue(pair.Key, out visual)) continue;
+            SetNeighborhoodNodePosition(visual, new Point(
+                MapVirtualWorkspace.ToCanvasCoordinate(pair.Value.X, _virtualOriginX),
+                MapVirtualWorkspace.ToCanvasCoordinate(pair.Value.Y, _virtualOriginY)));
+        }
+        _neighborhoodWorkingPositions.Clear();
+    }
+
+    private static void SetNeighborhoodNodePosition(MapNodeVisual visual, Point position)
+    {
+        Canvas.SetLeft(visual.Border, position.X);
+        Canvas.SetTop(visual.Border, position.Y);
+        Canvas.SetLeft(visual.PulseHalo, position.X);
+        Canvas.SetTop(visual.PulseHalo, position.Y);
+    }
+
+    private void ApplyNeighborhoodLayout()
+    {
+        RestoreNeighborhoodLayout();
+        if (!IsNeighborhoodLayoutActive || _lastMapSnapshot == null) return;
+        MapScrollViewer.UpdateLayout();
+        var nodes = _lastMapSnapshot.Nodes.Where(node => node.DeviceId.HasValue &&
+            _neighborhoodDeviceIds.Contains(node.DeviceId.Value) &&
+            _nodeVisualsByIdentity.ContainsKey(NodeIdentity(node))).ToArray();
+        if (nodes.Length == 0) return;
+        // Запас на полосы прокрутки: окно карты может сузиться между раскладкой и вписыванием.
+        var availableWidth = Math.Max(_nodeWidth, (MapScrollViewer.ViewportWidth - _fitPadding * 2 -
+            SystemParameters.VerticalScrollBarWidth) / _readableZoomMin);
+        var availableHeight = Math.Max(_nodeWidth, (MapScrollViewer.ViewportHeight - _fitPadding * 2 -
+            SystemParameters.HorizontalScrollBarHeight) / _readableZoomMin);
+        var positions = MapNeighborhoodLayout.Arrange(nodes.Select(node =>
+                new MapNeighborhoodLayoutNode(node.DeviceId.Value, NodeIdentity(node), DisplayNodeLabel(node))).ToArray(),
+            _neighborhoodSelectedDeviceId.Value, NeighborhoodLinks(), PollingDistances(), _nodeWidth,
+            nodes.Max(node => NodeVisualHeight(_nodeVisualsByIdentity[NodeIdentity(node)])),
+            GetDoubleResource("NetLoom.Map.NeighborhoodColumnGap"),
+            GetDoubleResource("NetLoom.Map.NeighborhoodRowGap"), availableWidth, availableHeight,
+            GetDoubleResource("NetLoom.Map.NeighborhoodColumnGapMin"),
+            GetDoubleResource("NetLoom.Map.NeighborhoodRowGapMin"));
+        foreach (var node in nodes)
+        {
+            var identity = NodeIdentity(node);
+            var visual = _nodeVisualsByIdentity[identity];
+            _neighborhoodWorkingPositions.Add(identity, new Point(
+                MapVirtualWorkspace.ToLogicalCoordinate(NodeLeft(visual), _virtualOriginX),
+                MapVirtualWorkspace.ToLogicalCoordinate(NodeTop(visual), _virtualOriginY)));
+            var point = positions[identity];
+            SetNeighborhoodNodePosition(visual, new Point(
+                MapVirtualWorkspace.ToCanvasCoordinate(point.X, _virtualOriginX) + _fitPadding,
+                MapVirtualWorkspace.ToCanvasCoordinate(point.Y, _virtualOriginY) + _fitPadding));
+        }
+    }
 
     private MenuItem CreateNeighborhoodMenuItem()
     {
@@ -148,6 +214,11 @@ public partial class MainWindow
                 if (_lifetimeCancellation.IsCancellationRequested) return;
                 _pollingPoint = result;
                 UpdateNeighborhoodMenuState();
+                if (IsNeighborhoodLayoutActive)
+                {
+                    RefreshNeighborhoodPresentation();
+                    FitNeighborhoodToViewport();
+                }
             }
             while (_pollingPointRerun);
         }
@@ -188,6 +259,7 @@ public partial class MainWindow
 
     private void DisableNeighborhood()
     {
+        RestoreNeighborhoodLayout();
         _neighborhoodSelectedDeviceId = null;
         _neighborhoodDeviceIds.Clear();
         UpdateNeighborhoodMenuState();
@@ -223,8 +295,10 @@ public partial class MainWindow
             {
                 // Обновление сохраняет уже раскрытое множество, удаляя только исчезнувшие узлы.
                 _neighborhoodDeviceIds.IntersectWith(existing);
+                ApplyNeighborhoodLayout();
                 ApplyNeighborhoodVisibility();
-                ApplyLinkFocusPresentation();
+                ReconcileLinks(_lastMapSnapshot.Links,
+                    _lastMapSnapshot.Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal));
             }
         }
         UpdateNeighborhoodMenuState();
@@ -232,6 +306,9 @@ public partial class MainWindow
 
     private void RefreshNeighborhoodPresentation()
     {
+        // Полоса окрестности должна быть видима до раскладки: она уменьшает высоту окна карты.
+        UpdateNeighborhoodMenuState();
+        ApplyNeighborhoodLayout();
         UpdateLocationHierarchyVisibility();
         ApplyNeighborhoodVisibility();
         ReconcileLinks(_lastMapSnapshot.Links,
@@ -251,10 +328,7 @@ public partial class MainWindow
 
     private void ApplyNeighborhoodVisibility()
     {
-        if (!_neighborhoodSelectedDeviceId.HasValue || _lastMapSnapshot == null ||
-            _shellSection != ShellSection.Map) return;
-        var locations = _lastMapSnapshot.Locations.ToDictionary(location => location.Id);
-        var includedLocations = new HashSet<Guid>();
+        if (!IsNeighborhoodLayoutActive || _lastMapSnapshot == null) return;
         foreach (var node in _lastMapSnapshot.Nodes)
         {
             MapNodeVisual visual;
@@ -266,23 +340,16 @@ public partial class MainWindow
                 visual.SemanticLabel.Visibility = Visibility.Collapsed;
                 continue;
             }
-            if (visual.Border.Visibility != Visibility.Visible) continue;
-            if (!node.LocationId.HasValue) includedLocations.Add(Guid.Empty);
-            var locationId = node.LocationId;
-            while (locationId.HasValue && includedLocations.Add(locationId.Value))
-            {
-                MapLocation location;
-                locationId = locations.TryGetValue(locationId.Value, out location) ? location.ParentLocationId : null;
-            }
+            // Компактное представление не зависит от свёрнутых рабочих рамок.
+            visual.Border.Visibility = Visibility.Visible;
         }
         foreach (var visual in _locationVisualsById.Values)
-            if (!includedLocations.Contains(visual.LocationId)) visual.Border.Visibility = Visibility.Collapsed;
+            visual.Border.Visibility = Visibility.Collapsed;
     }
 
     private void ApplyNeighborhoodLinkVisibility(MapLinkVisual visual)
     {
-        if (!_neighborhoodSelectedDeviceId.HasValue || _lastMapSnapshot == null ||
-            _shellSection != ShellSection.Map) return;
+        if (!IsNeighborhoodLayoutActive || _lastMapSnapshot == null) return;
         var link = visual.Link;
         if (link == null) return;
         var a = _lastMapSnapshot.Nodes.FirstOrDefault(node => node.Key == link.SourceNodeKey);
@@ -298,12 +365,20 @@ public partial class MainWindow
 
     private void FitNeighborhoodToViewport()
     {
+        if (!IsNeighborhoodLayoutActive) return;
+        // Полоса окрестности меняет высоту окна карты; перед расчётом используем завершённую раскладку WPF.
+        MapScrollViewer.UpdateLayout();
         var bounds = _nodeVisualsByIdentity.Values.Where(visual => visual.DeviceId.HasValue &&
             _neighborhoodDeviceIds.Contains(visual.DeviceId.Value) && visual.Border.Visibility == Visibility.Visible)
             .Select(NodeBounds).ToArray();
-        // Окрестность вписывается целиком не мельче ZoomMin и не крупнее 100 %.
-        // Если масштаб ниже порога читаемости, подписи ведёт уровень «Издалека».
-        if (!TryFitMapBoundsToViewport(bounds, _zoomMin, 1.0) || _semanticLevel != MapSemanticLevel.Far) return;
+        if (bounds.Length == 0) return;
+        var width = bounds.Max(item => item.Right) - bounds.Min(item => item.Left);
+        var height = bounds.Max(item => item.Bottom) - bounds.Min(item => item.Top);
+        var readable = width * _readableZoomMin <= MapScrollViewer.ViewportWidth - _fitPadding * 2 &&
+            height * _readableZoomMin <= MapScrollViewer.ViewportHeight - _fitPadding * 2;
+        // Только слишком большая окрестность допускает запасной дальний уровень.
+        if (!TryFitMapBoundsToViewport(bounds, readable ? _readableZoomMin : _zoomMin, 1.0) ||
+            readable || _semanticLevel != MapSemanticLevel.Far) return;
 
         // На уровне «Издалека» ярлык имени стоит над карточкой и выходит за её границы:
         // Вписываем заново вместе с подписями, чтобы они не оказались за краем окна.

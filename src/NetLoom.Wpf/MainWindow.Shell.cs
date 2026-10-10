@@ -1689,6 +1689,9 @@ namespace NetLoom.Wpf
         private void SetMapInteractionMode(
             MapInteractionMode mode)
         {
+            // Правка начинается на рабочих позициях, а окрестность сохраняется как режим просмотра.
+            RestoreNeighborhoodLayout();
+
             if (mode ==
                 MapInteractionMode.View)
             {
@@ -1700,6 +1703,11 @@ namespace NetLoom.Wpf
 
             UpdateMapInteractionModePresentation();
             RefreshMapInteractionModeVisuals();
+            if (_neighborhoodSelectedDeviceId.HasValue)
+            {
+                RefreshNeighborhoodPresentation();
+                if (!IsMapEditMode) FitNeighborhoodToViewport();
+            }
         }
 
         private void UpdateMapInteractionModePresentation()

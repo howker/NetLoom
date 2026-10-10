@@ -423,17 +423,6 @@ public partial class MainWindow
                     layout);
             }
 
-            Panel.SetZIndex(
-                visual.Border,
-                ReferenceEquals(
-                    visual.Border,
-                    _focusRaisedLocationFrame)
-                    ? FocusRaisedLocationZIndex
-                    : -100 +
-                      LocationDepth(
-                          location,
-                          byId));
-
             // Порядок Tab не зависит от Z-порядка (рамка с фокусом поднимается наверх): по глубине и порядку снимка.
             KeyboardNavigation.SetTabIndex(
                 visual.CollapseButton,
@@ -488,10 +477,36 @@ public partial class MainWindow
     }
 
     // §8: вкладка с фокусом клавиатуры не должна лежать под чужой рамкой (сохранённые рамки могут
-    // Накладываться) — её размещение поднимается над остальными рамками, но остаётся под связями и узлами.
+    // Накладываться) — её размещение поднимается над остальными рамками в текущем смысловом уровне.
     private const int FocusRaisedLocationZIndex = -1;
     private UIElement _focusRaisedLocationFrame;
-    private int _focusRaisedLocationOriginalZIndex;
+
+    private void ApplyLocationSemanticLayer(MapLocationVisual visual)
+    {
+        var far = _semanticLevel == MapSemanticLevel.Far;
+        var locations = _lastMapSnapshot?.Locations.ToDictionary(item => item.Id);
+        MapLocation location;
+        var depth = locations != null && locations.TryGetValue(visual.LocationId, out location)
+            ? LocationDepth(location, locations) : 0;
+        var maxDepth = locations == null || locations.Count == 0 ? 0
+            : locations.Values.Max(item => LocationDepth(item, locations));
+        var normalZ = far
+            ? (int)GetDoubleResource("NetLoom.Map.FarLocationZIndex") + maxDepth - depth
+            : -100 + depth;
+        var focusZ = far
+            ? (int)GetDoubleResource("NetLoom.Map.FarLocationZIndex") + maxDepth + 1
+            : FocusRaisedLocationZIndex;
+        Panel.SetZIndex(visual.Border, ReferenceEquals(visual.Border, _focusRaisedLocationFrame)
+            ? focusZ : normalZ);
+
+        // Прозрачный контейнер пропускает щелчки: активна только вкладка, контур остаётся видимым.
+        visual.Frame.IsHitTestVisible = !far;
+        if (visual.Frame.Child != null)
+            visual.Frame.Child.Visibility = far ? Visibility.Hidden : Visibility.Visible;
+        visual.ResizeThumb.IsHitTestVisible = !far;
+        visual.ResizeThumb.Visibility = !far && IsMapEditMode && !visual.IsCollapsed && !visual.IsLocked
+            ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     private void OnMapLocationToggleGotKeyboardFocus(
         object sender,
@@ -513,8 +528,8 @@ public partial class MainWindow
 
         RestoreFocusRaisedLocationFrame();
         _focusRaisedLocationFrame = frame;
-        _focusRaisedLocationOriginalZIndex = Panel.GetZIndex(frame);
-        Panel.SetZIndex(frame, FocusRaisedLocationZIndex);
+        var visual = _locationVisualsById.Values.FirstOrDefault(item => ReferenceEquals(item.Border, frame));
+        if (visual != null) ApplyLocationSemanticLayer(visual);
     }
 
     private void OnMapLocationToggleLostKeyboardFocus(
@@ -531,8 +546,10 @@ public partial class MainWindow
             return;
         }
 
-        Panel.SetZIndex(_focusRaisedLocationFrame, _focusRaisedLocationOriginalZIndex);
+        var visual = _locationVisualsById.Values.FirstOrDefault(item =>
+            ReferenceEquals(item.Border, _focusRaisedLocationFrame));
         _focusRaisedLocationFrame = null;
+        if (visual != null) ApplyLocationSemanticLayer(visual);
     }
 
     private void NormalizeLocationHierarchy(
@@ -1075,6 +1092,7 @@ public partial class MainWindow
         var statusIcon = new Path
         {
             Style = GetStyleResource("NetLoom.Style.MapNodeStatusIcon"),
+            Margin = GetThicknessResource("NetLoom.Thickness.InlineGap"),
             Visibility = Visibility.Collapsed,
             IsHitTestVisible = false
         };

@@ -107,7 +107,7 @@ namespace NetLoom.Tests.Unit
                         if (level == MapSemanticLevel.Far)
                         {
                             Assert.AreEqual("Серверная · 2", locationTitle.Text);
-                            var scale = (ScaleTransform)header.RenderTransform;
+                            var scale = ((TransformGroup)header.RenderTransform).Children.OfType<ScaleTransform>().Single();
                             Assert.IsTrue(locationTitle.FontSize * zoom * scale.ScaleX >=
                                 (double)window.FindResource("NetLoom.FontSize.Caption"));
                             Assert.IsTrue(header.ActualWidth * scale.ScaleX <=
@@ -135,7 +135,7 @@ namespace NetLoom.Tests.Unit
                 Assert.AreEqual(0, store.DeviceWrites);
                 Assert.AreEqual(0, store.LocationWrites);
 
-                // Проблема и участник операционного фокуса получают имя без выбора узла.
+                // Замечание владельца 2026-10-10: дальний уровень подписывает размещения; проблема остаётся значком.
                 typeof(MainWindow).GetField("_selectedDeviceId", LocationFrameFlags).SetValue(window, null);
                 typeof(MainWindow).GetField("_highlightedDeviceId", LocationFrameFlags).SetValue(window, null);
                 var states = (IDictionary)typeof(MainWindow).GetField("_linkOperationalStates", LocationFrameFlags).GetValue(window);
@@ -146,7 +146,7 @@ namespace NetLoom.Tests.Unit
                 var status = SemanticProperty<System.Windows.Shapes.Path>(secondVisual, "StatusIcon");
                 Assert.AreEqual(Visibility.Visible, status.Visibility);
                 Assert.AreEqual(2.0, ((ScaleTransform)status.RenderTransform).ScaleX);
-                Assert.AreEqual(Visibility.Visible, SemanticProperty<Border>(secondVisual, "SemanticLabel").Visibility);
+                Assert.AreEqual(Visibility.Collapsed, SemanticProperty<Border>(secondVisual, "SemanticLabel").Visibility);
                 Assert.AreEqual(Visibility.Visible,
                     SemanticProperty<System.Windows.Shapes.Path>(locationVisual, "StatusIcon").Visibility);
                 Assert.AreSame(status.Stroke,
@@ -239,10 +239,10 @@ namespace NetLoom.Tests.Unit
                 Assert.AreEqual(Visibility.Visible,
                     SemanticProperty<System.Windows.Shapes.Path>(secondVisual, "StatusIcon").Visibility);
 
-                // Два близких проблемных устройства: виден ровно один ярлык из двух.
+                // Замечание владельца 2026-10-10: дальний уровень подписывает размещения, а не проблемные устройства.
                 var firstLabel = SemanticProperty<Border>(firstVisual, "SemanticLabel");
                 var secondLabel = SemanticProperty<Border>(secondVisual, "SemanticLabel");
-                Assert.AreEqual(1, new[] { firstLabel, secondLabel }.Count(item => item.Visibility == Visibility.Visible));
+                Assert.AreEqual(0, new[] { firstLabel, secondLabel }.Count(item => item.Visibility == Visibility.Visible));
                 AssertNoOverlappingFarLabels(window);
 
                 // Выбранное устройство всегда сохраняет ярлык, даже если раньше проиграло по ключу.
@@ -265,6 +265,169 @@ namespace NetLoom.Tests.Unit
                 Assert.AreEqual(Visibility.Collapsed, firstLabel.Visibility);
                 Assert.AreEqual(Visibility.Visible, SemanticProperty<Border>(
                     SemanticVisual(window, "_locationVisualsById", location), "Header").Visibility);
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("LiveUiAudit")]
+        public void Sprint49FarParentTabSitsAboveItsFrameAndClicksReachDevices()
+        {
+            var parent = Guid.NewGuid();
+            var child = Guid.NewGuid();
+            var device = Guid.NewGuid();
+            var map = new MapSnapshot(Now,
+                new[] { new MapNode("device", "Устройство", null, 300, 350, child, deviceId: device) },
+                new MapLink[0], new[] { new MapLocation(parent, null, "Площадка", null),
+                    new MapLocation(child, parent, "Щитовая", null) });
+            var store = new LocationFrameLayoutStore(
+                devices: new[] { new MapDeviceLayout(device, 300, 350, false) },
+                locations: new[] { new MapLocationLayout(parent, 100, 100, 900, 600, false, false),
+                    new MapLocationLayout(child, 130, 140, 650, 400, false, false) });
+            WithLocationFrameWindow(map, store, window =>
+            {
+                SemanticZoom(window, 0.3);
+                var parentVisual = SemanticVisual(window, "_locationVisualsById", parent);
+                var childVisual = SemanticVisual(window, "_locationVisualsById", child);
+                var parentBorder = SemanticProperty<Border>(parentVisual, "Border");
+                var childBorder = SemanticProperty<Border>(childVisual, "Border");
+                var childHeader = SemanticProperty<Border>(childVisual, "Header");
+                Assert.AreEqual(Visibility.Visible, SemanticProperty<Border>(parentVisual, "Header").Visibility);
+                Assert.AreEqual(Visibility.Visible, childHeader.Visibility);
+                // Вкладка рамки с вложенными рамками встаёт над рамкой, угол остаётся дочерней вкладке.
+                Assert.IsTrue(((TransformGroup)SemanticProperty<Border>(parentVisual, "Header").RenderTransform).Children
+                    .OfType<TranslateTransform>().Single().Y < 0.0);
+                Assert.AreEqual(0.0, ((TransformGroup)childHeader.RenderTransform).Children
+                    .OfType<TranslateTransform>().Single().Y, 0.001);
+                Assert.IsTrue(Panel.GetZIndex(parentBorder) > Panel.GetZIndex(childBorder));
+                Assert.IsTrue(Panel.GetZIndex(childBorder) > Panel.GetZIndex(DeviceBorder(window, device)));
+                AssertNoOverlappingFarLabels(window);
+                Assert.IsFalse(SemanticProperty<Border>(parentVisual, "Frame").IsHitTestVisible);
+                Assert.AreEqual(Visibility.Hidden,
+                    ((Border)SemanticProperty<Border>(parentVisual, "Frame").Child).Visibility);
+
+                var canvas = (Canvas)window.FindName("MapCanvas");
+                var node = DeviceBorder(window, device);
+                var nodePoint = new Point(Canvas.GetLeft(node) + node.ActualWidth / 2,
+                    Canvas.GetTop(node) + node.ActualHeight / 2);
+                var hit = canvas.InputHitTest(nodePoint) as DependencyObject;
+                Assert.IsNotNull(hit);
+                var ancestor = hit;
+                while (ancestor != null && !ReferenceEquals(ancestor, node))
+                    ancestor = VisualTreeHelper.GetParent(ancestor);
+                Assert.AreSame(node, ancestor, "The raised frame must let the device receive the click.");
+                // Щелчок доходит до карточки, а не до поднятой рамки; выбор устройства проверяют тесты выбора
+                // (В этом снимке нет диагностики, без неё выбор снимается как «объект пропал»).
+
+                var emptyPoint = new Point(Canvas.GetLeft(childBorder) + childBorder.ActualWidth - 40,
+                    Canvas.GetTop(childBorder) + childBorder.ActualHeight - 40);
+                Assert.AreSame(canvas, canvas.InputHitTest(emptyPoint));
+                var click = typeof(MainWindow).GetMethod("TryHandleFarLocationCanvasClick", LocationFrameFlags);
+                Assert.IsTrue((bool)click.Invoke(window, new object[] { emptyPoint, 1 }));
+                Assert.AreEqual(child, (Guid?)typeof(MainWindow).GetField("_selectedLocationId",
+                    LocationFrameFlags).GetValue(window));
+                Assert.AreEqual(Visibility.Collapsed, SemanticProperty<Border>(
+                    SemanticVisual(window, "_nodeVisualsByIdentity", "device:" + device.ToString("D")),
+                    "SemanticLabel").Visibility);
+                Assert.IsTrue((bool)click.Invoke(window, new object[] { emptyPoint, 2 }));
+                PumpDispatcher();
+                window.UpdateLayout();
+                Assert.IsTrue((double)typeof(MainWindow).GetField("_zoom", LocationFrameFlags).GetValue(window) > 0.3);
+                // Вне «Издалека» рамки возвращают обычный порядок, заливку и приём щелчков.
+                SemanticZoom(window, (double)window.FindResource("NetLoom.Map.ReadableZoomMin"));
+                Assert.IsTrue(Panel.GetZIndex(parentBorder) < Panel.GetZIndex(childBorder));
+                Assert.IsTrue(SemanticProperty<Border>(parentVisual, "Frame").IsHitTestVisible);
+                Assert.AreEqual(Visibility.Visible,
+                    ((Border)SemanticProperty<Border>(parentVisual, "Frame").Child).Visibility);
+                Assert.AreEqual(0, store.DeviceWrites);
+                Assert.AreEqual(0, store.LocationWrites);
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("LiveUiAudit")]
+        public void Sprint49FarNarrowFrameTabStaysVisibleWhenParentTabTakesTheCorner()
+        {
+            var parent = Guid.NewGuid();
+            var child = Guid.NewGuid();
+            var device = Guid.NewGuid();
+            var map = new MapSnapshot(Now,
+                new[] { new MapNode("device", "Устройство", null, 130, 300, child, deviceId: device) },
+                new MapLink[0], new[] { new MapLocation(parent, null, "Площадка", null),
+                    new MapLocation(child, parent, "Узел связи", null) });
+            // Дочерняя рамка уже своей вкладки и почти в углу родителя: угол занят вкладкой предка.
+            var store = new LocationFrameLayoutStore(
+                devices: new[] { new MapDeviceLayout(device, 130, 300, false) },
+                locations: new[] { new MapLocationLayout(parent, 100, 100, 900, 600, false, false),
+                    new MapLocationLayout(child, 110, 110, 150, 400, false, false) });
+            WithLocationFrameWindow(map, store, window =>
+            {
+                SemanticZoom(window, 0.3);
+                var childVisual = SemanticVisual(window, "_locationVisualsById", child);
+                var childHeader = SemanticProperty<Border>(childVisual, "Header");
+                // Вкладка видна: либо над верхним краем рамки, либо внутри неё на запасном положении.
+                Assert.AreEqual(Visibility.Visible, childHeader.Visibility);
+                Assert.IsFalse(string.IsNullOrEmpty(SemanticProperty<TextBlock>(childVisual, "Title").Text));
+                AssertNoOverlappingFarLabels(window);
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("LiveUiAudit")]
+        public void Sprint49FarParentTabNeverStandsOnChildFrames()
+        {
+            var parent = Guid.NewGuid();
+            var first = Guid.NewGuid();
+            var second = Guid.NewGuid();
+            var firstDevice = Guid.NewGuid();
+            var secondDevice = Guid.NewGuid();
+            var map = new MapSnapshot(Now,
+                new[]
+                {
+                    new MapNode("first", "Первое", null, 200, 300, first, deviceId: firstDevice),
+                    new MapNode("second", "Второе", null, 650, 300, second, deviceId: secondDevice)
+                },
+                new MapLink[0], new[] { new MapLocation(parent, null, "Подстанция", null),
+                    new MapLocation(first, parent, "Щитовая", null),
+                    new MapLocation(second, parent, "Аппаратная", null) });
+            // Две дочерние рамки занимают почти всю площадь родителя.
+            var store = new LocationFrameLayoutStore(
+                devices: new[] { new MapDeviceLayout(firstDevice, 200, 300, false),
+                    new MapDeviceLayout(secondDevice, 650, 300, false) },
+                locations: new[] { new MapLocationLayout(parent, 100, 100, 900, 600, false, false),
+                    new MapLocationLayout(first, 110, 140, 420, 550, false, false),
+                    new MapLocationLayout(second, 550, 140, 440, 550, false, false) });
+            WithLocationFrameWindow(map, store, window =>
+            {
+                SemanticZoom(window, 0.3);
+                var viewer = (ScrollViewer)window.FindName("MapScrollViewer");
+                Func<Guid, Rect> frameOf = id =>
+                {
+                    var border = SemanticProperty<Border>(SemanticVisual(window, "_locationVisualsById", id), "Border");
+                    return border.TransformToAncestor(viewer).TransformBounds(new Rect(border.RenderSize));
+                };
+                var parentVisual = SemanticVisual(window, "_locationVisualsById", parent);
+                var parentHeader = SemanticProperty<Border>(parentVisual, "Header");
+                if (parentHeader.Visibility == Visibility.Visible && parentHeader.ActualWidth > 0.0)
+                {
+                    var tab = parentHeader.TransformToAncestor(viewer).TransformBounds(new Rect(parentHeader.RenderSize));
+                    var frame = frameOf(parent);
+                    var inCorner = Math.Abs(tab.Left - frame.Left) < 0.5 && Math.Abs(tab.Top - frame.Top) < 0.5;
+                    if (!inCorner)
+                        foreach (var childId in new[] { first, second })
+                        {
+                            var childFrame = frameOf(childId);
+                            Assert.IsFalse(tab.Left < childFrame.Right - 0.01 && childFrame.Left < tab.Right - 0.01 &&
+                                tab.Top < childFrame.Bottom - 0.01 && childFrame.Top < tab.Bottom - 0.01,
+                                "Вкладка родителя стоит на дочерней рамке: " + tab + " и " + childFrame);
+                        }
+                }
+                foreach (var childId in new[] { first, second })
+                {
+                    var childVisual = SemanticVisual(window, "_locationVisualsById", childId);
+                    Assert.AreEqual(Visibility.Visible, SemanticProperty<Border>(childVisual, "Header").Visibility);
+                    Assert.IsFalse(string.IsNullOrEmpty(SemanticProperty<TextBlock>(childVisual, "Title").Text));
+                }
+                AssertNoOverlappingFarLabels(window);
             });
         }
 

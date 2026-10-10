@@ -309,7 +309,7 @@ namespace NetLoom.Tests.Unit
         private static Border LocationFrameBorder(MainWindow window, Guid id)
         {
             return ((Canvas)window.FindName("MapCanvas")).Children.OfType<Border>()
-                .Single(border => Equals(border.Tag, id) && Panel.GetZIndex(border) < 0);
+                .Single(border => Equals(border.Tag, id) && border.Child is Grid);
         }
 
         private static Rect LocationFrameBounds(Border border)
