@@ -75,7 +75,25 @@ namespace NetLoom.Topology.Stp
                 rootInterface != null
                     ? (Guid?)rootInterface.Id
                     : null,
-                projectedPorts);
+                projectedPorts,
+                LastTopologyChange(observation),
+                observation.TopologyChangeCount);
+        }
+
+        private static DateTime? LastTopologyChange(
+            StpObservation observation)
+        {
+            if (!observation.TimeSinceTopologyChangeCentiseconds.HasValue)
+            {
+                return null;
+            }
+
+            // Сотые доли секунды переводятся в миллисекунды.
+            return DateTime.SpecifyKind(
+                observation.Observation.CapturedUtc.AddMilliseconds(
+                    -observation.TimeSinceTopologyChangeCentiseconds.Value *
+                    10d),
+                DateTimeKind.Utc);
         }
 
         private static StpTreePort ProjectPort(

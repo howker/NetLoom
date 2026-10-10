@@ -127,7 +127,9 @@ SELECT
     designated_root,
     root_cost,
     root_bridge_port_index,
-    root_if_index
+    root_if_index,
+    time_since_topology_change,
+    topology_changes
 FROM stp_observations
 WHERE observation_id = @id
 ORDER BY instance_id
@@ -174,7 +176,9 @@ LIMIT 1;";
                             LoadPorts(
                                 connection,
                                 observationId,
-                                instanceId));
+                                instanceId),
+                            NullableLong(reader, 6),
+                            NullableLong(reader, 7));
                     }
                 }
             }
@@ -217,6 +221,8 @@ SELECT
     s.root_cost,
     s.root_bridge_port_index,
     s.root_if_index,
+    s.time_since_topology_change,
+    s.topology_changes,
     p.bridge_port_index,
     p.if_index,
     p.priority,
@@ -294,7 +300,13 @@ ORDER BY
                                         7),
                                     NullableInt(
                                         reader,
-                                        8));
+                                        8),
+                                    NullableLong(
+                                        reader,
+                                        9),
+                                    NullableLong(
+                                        reader,
+                                        10));
 
                             selectedByDevice.Add(
                                 deviceId,
@@ -310,27 +322,21 @@ ORDER BY
                             continue;
                         }
 
-                        if (!reader.IsDBNull(9))
+                        if (!reader.IsDBNull(11))
                         {
                             builder.Ports.Add(
                                 new StpPortState(
-                                    reader.GetInt32(9),
-                                    NullableInt(
-                                        reader,
-                                        10),
-                                    NullableInt(
-                                        reader,
-                                        11),
+                                    reader.GetInt32(11),
                                     NullableInt(
                                         reader,
                                         12),
                                     NullableInt(
                                         reader,
                                         13),
-                                    NullableLong(
+                                    NullableInt(
                                         reader,
                                         14),
-                                    NullableString(
+                                    NullableInt(
                                         reader,
                                         15),
                                     NullableLong(
@@ -339,12 +345,18 @@ ORDER BY
                                     NullableString(
                                         reader,
                                         17),
-                                    NullableString(
-                                        reader,
-                                        18),
                                     NullableLong(
                                         reader,
-                                        19)));
+                                        18),
+                                    NullableString(
+                                        reader,
+                                        19),
+                                    NullableString(
+                                        reader,
+                                        20),
+                                    NullableLong(
+                                        reader,
+                                        21)));
                         }
                     }
                 }
@@ -373,7 +385,9 @@ ORDER BY
                             item.RootCost,
                             item.RootBridgePortIndex,
                             item.RootIfIndex,
-                            item.Ports)));
+                            item.Ports,
+                            item.TimeSinceTopologyChange,
+                            item.TopologyChangeCount)));
             }
 
             return result;
@@ -424,7 +438,9 @@ INSERT INTO stp_observations
     designated_root,
     root_cost,
     root_bridge_port_index,
-    root_if_index
+    root_if_index,
+    time_since_topology_change,
+    topology_changes
 )
 VALUES
 (
@@ -434,7 +450,9 @@ VALUES
     @designatedRoot,
     @rootCost,
     @rootBridgePort,
-    @rootIfIndex
+    @rootIfIndex,
+    @timeSinceChange,
+    @topologyChanges
 );";
 
                 command.Parameters.AddWithValue(
@@ -469,6 +487,16 @@ VALUES
                     command,
                     "@rootIfIndex",
                     observation.RootPortIfIndex);
+
+                AddNullable(
+                    command,
+                    "@timeSinceChange",
+                    observation.TimeSinceTopologyChangeCentiseconds);
+
+                AddNullable(
+                    command,
+                    "@topologyChanges",
+                    observation.TopologyChangeCount);
 
                 command.ExecuteNonQuery();
             }
@@ -698,8 +726,12 @@ ORDER BY bridge_port_index;";
                 string designatedRoot,
                 long? rootCost,
                 int? rootBridgePortIndex,
-                int? rootIfIndex)
+                int? rootIfIndex,
+                long? timeSinceTopologyChange,
+                long? topologyChangeCount)
             {
+                TimeSinceTopologyChange = timeSinceTopologyChange;
+                TopologyChangeCount = topologyChangeCount;
                 DeviceId = deviceId;
                 ObservationId = observationId;
                 SourceAddress = sourceAddress;
@@ -729,6 +761,10 @@ ORDER BY bridge_port_index;";
             public int? RootBridgePortIndex { get; }
 
             public int? RootIfIndex { get; }
+
+            public long? TimeSinceTopologyChange { get; }
+
+            public long? TopologyChangeCount { get; }
 
             public List<StpPortState> Ports { get; }
         }

@@ -14,7 +14,9 @@ namespace NetLoom.Domain.Observations.Stp
             long? rootCost,
             int? rootPortBridgePortIndex,
             int? rootPortIfIndex,
-            IEnumerable<StpPortState> ports)
+            IEnumerable<StpPortState> ports,
+            long? timeSinceTopologyChangeCentiseconds = null,
+            long? topologyChangeCount = null)
         {
             Observation = observation ??
                 throw new ArgumentNullException(
@@ -41,6 +43,20 @@ namespace NetLoom.Domain.Observations.Stp
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(rootCost));
+            }
+
+            if (timeSinceTopologyChangeCentiseconds.HasValue &&
+                timeSinceTopologyChangeCentiseconds.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(timeSinceTopologyChangeCentiseconds));
+            }
+
+            if (topologyChangeCount.HasValue &&
+                topologyChangeCount.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(topologyChangeCount));
             }
 
             if (rootPortBridgePortIndex.HasValue &&
@@ -73,7 +89,14 @@ namespace NetLoom.Domain.Observations.Stp
                 rootPortBridgePortIndex;
             RootPortIfIndex = rootPortIfIndex;
             Ports = ports.ToArray();
+            TimeSinceTopologyChangeCentiseconds =
+                timeSinceTopologyChangeCentiseconds;
+            TopologyChangeCount = topologyChangeCount;
         }
+
+        public long? TimeSinceTopologyChangeCentiseconds { get; }
+
+        public long? TopologyChangeCount { get; }
 
         public Observation Observation { get; }
 

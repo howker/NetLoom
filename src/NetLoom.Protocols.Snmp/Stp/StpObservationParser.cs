@@ -31,6 +31,12 @@ namespace NetLoom.Protocols.Snmp.Stp
         private const string RootPort =
             "1.3.6.1.2.1.17.2.7.0";
 
+        private const string TimeSinceTopologyChange =
+            "1.3.6.1.2.1.17.2.3.0";
+
+        private const string TopologyChanges =
+            "1.3.6.1.2.1.17.2.4.0";
+
         private const string PortEntry =
             "1.3.6.1.2.1.17.2.15.1";
 
@@ -84,10 +90,34 @@ namespace NetLoom.Protocols.Snmp.Stp
             string root = null;
             long? rootCost = null;
             int? rootBridgePort = null;
+            long? timeSinceChange = null;
+            long? changeCount = null;
 
             foreach (var variable in
                 snmpObservation.Variables)
             {
+                if (OidEquals(
+                    variable.Oid,
+                    TimeSinceTopologyChange))
+                {
+                    timeSinceChange =
+                        ParseUnsignedScalar(
+                            variable,
+                            true);
+                    continue;
+                }
+
+                if (OidEquals(
+                    variable.Oid,
+                    TopologyChanges))
+                {
+                    changeCount =
+                        ParseUnsignedScalar(
+                            variable,
+                            false);
+                    continue;
+                }
+
                 if (OidEquals(
                     variable.Oid,
                     ProtocolSpecification))
@@ -162,7 +192,67 @@ namespace NetLoom.Protocols.Snmp.Stp
                 rootCost,
                 rootBridgePort,
                 rootIfIndex,
-                ports);
+                ports,
+                timeSinceChange,
+                changeCount);
+        }
+
+        // TimeTicks и Counter32: SharpSnmp показывает TimeTicks как интервал («00:40:00»).
+        // Значение берётся из закодированного BER, затем из числа, затем из интервала.
+        private static long? ParseUnsignedScalar(
+            SnmpVariable variable,
+            bool isTimeTicks)
+        {
+            byte[] payload;
+            var encoded =
+                variable.GetEncodedValue();
+
+            if (encoded != null &&
+                encoded.Length > 0 &&
+                (encoded[0] == 0x41 ||
+                    encoded[0] == 0x43) &&
+                SnmpBinaryValue.TryReadBerPayload(
+                    encoded,
+                    out payload) &&
+                payload.Length > 0 &&
+                payload.Length <= 5)
+            {
+                long fromBer = 0;
+
+                foreach (var item in payload)
+                {
+                    fromBer = (fromBer << 8) | item;
+                }
+
+                return fromBer;
+            }
+
+            var parsed =
+                ParseLong(variable.DisplayValue);
+
+            if (parsed.HasValue)
+            {
+                return parsed.Value >= 0
+                    ? parsed
+                    : null;
+            }
+
+            TimeSpan interval;
+
+            if (isTimeTicks &&
+                !string.IsNullOrWhiteSpace(
+                    variable.DisplayValue) &&
+                TimeSpan.TryParse(
+                    variable.DisplayValue.Trim(),
+                    CultureInfo.InvariantCulture,
+                    out interval) &&
+                interval >= TimeSpan.Zero)
+            {
+                return interval.Ticks /
+                    (TimeSpan.TicksPerMillisecond * 10);
+            }
+
+            return null;
         }
 
         private static IDictionary<int, int[]>

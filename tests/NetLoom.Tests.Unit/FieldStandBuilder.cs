@@ -500,6 +500,8 @@ namespace NetLoom.Tests.Unit
             public bool IsSwitch;
             public bool IsRouter;
             public int BridgePriority = 32768;
+            // Недавнее изменение топологии STP (после обрыва участка кольца).
+            public bool TopologyChangedRecently;
             public DeviceScenario Scenario;
             public readonly List<SimPort> Ports = new List<SimPort>();
             public readonly List<SimEndpoint> Arp = new List<SimEndpoint>();
@@ -547,6 +549,7 @@ namespace NetLoom.Tests.Unit
             private SimPort _ring2Blocked;
             private SimPort _breakA;
             private SimPort _breakB;
+            private List<SimDevice> _ring2Devices = new List<SimDevice>();
             private int _macSeed = 0x10;
             private int _guidSeed = 1;
 
@@ -610,6 +613,7 @@ namespace NetLoom.Tests.Unit
                 var ring2 = n.Ring("ps2-sw", "198.51.100.", 40, 8, "MOXA EDS-408A-SS-SC, firmware V3.8", "ps2-app", core1, 28, core1, 24);
                 ring2[5].Port(8).StpState = 2;
                 n._ring2Blocked = ring2[5].Port(8);
+                n._ring2Devices.AddRange(ring2);
                 n._breakA = ring2[2].Port(8);
                 n._breakB = ring2[3].Port(7);
                 n.ScenarioNotes.Add("Кольцо ПС-2: в первом цикле исправно, во втором — оборван участок ps2-sw-03 F2 ↔ ps2-sw-04 F1");
@@ -693,6 +697,11 @@ namespace NetLoom.Tests.Unit
                 _breakA.Up = false;
                 _breakB.Up = false;
                 _ring2Blocked.StpState = 5;
+
+                foreach (var device in _ring2Devices)
+                {
+                    device.TopologyChangedRecently = true;
+                }
             }
 
             private void Place(string key, string parent, string name, string description)
@@ -959,6 +968,18 @@ namespace NetLoom.Tests.Unit
             {
                 var bridgeId = BridgeId(device.BridgePriority, device.Mac);
                 Num(t, "1.3.6.1.2.1.17.2.1.0", 2, "3");
+
+                // Последнее изменение топологии: после обрыва — 40 минут назад, иначе около 6 суток назад.
+                var nameSum = 0;
+
+                foreach (var ch in device.Name)
+                {
+                    nameSum += ch;
+                }
+
+                var baseCount = 3 + nameSum % 5;
+                Num(t, "1.3.6.1.2.1.17.2.3.0", 67, device.TopologyChangedRecently ? "240000" : "51840000");
+                Num(t, "1.3.6.1.2.1.17.2.4.0", 65, (device.TopologyChangedRecently ? baseCount + 1 : baseCount).ToString(CultureInfo.InvariantCulture));
                 Bytes(t, "1.3.6.1.2.1.17.2.5.0", BridgeId(4096, RootMac));
                 Num(t, "1.3.6.1.2.1.17.2.6.0", 2, device.BridgePriority == 4096 ? "0" : "20000");
                 Num(t, "1.3.6.1.2.1.17.2.7.0", 2, device.BridgePriority == 4096 ? "0" : RootPort(device).ToString(CultureInfo.InvariantCulture));

@@ -395,6 +395,8 @@ This sequence is authoritative for the next product/UI work. The assistant does 
   - Before implementation, verify whether `dot1dStpTopChanges` is actually collected and trustworthy enough for the “last topology change” field.
   - Ring history remains after the topology change journal, not in Sprint 50.
   - Rings closed through a pair of core switches, moved from Sprint 46 by owner decision on 2026-10-07 (field check `docs/sprint46-field-check.md` Г5): today «Кольцо без резерва» is evaluated only for a simple ring; a ring whose ends land on two different core switches is not analysed.
+  - Implementation record 2026-10-10 (autopilot, branch `sprint50/redundancy`):
+    - Item 1, last STP topology change: verified that `dot1dStpTopChanges` was not collected. The STP collector now also reads `dot1dStpTimeSinceTopologyChange` (`1.3.6.1.2.1.17.2.3.0`, TimeTicks) and `dot1dStpTopChanges` (`.2.4.0`, Counter32) in the same GET; both are optional and stored in two added nullable columns (`Migration027StpTopologyChange`, add-only). `StpTreeSnapshot.LastTopologyChangeUtc` = capture time minus the reported interval, null when the device did not report it. Decision from the code: SharpSnmp shows TimeTicks as an interval («00:40:00»), so the value is read from the BER payload first, then from a number, then from the interval text. The field stand reports both values (about 6 days; 40 minutes on ring ПС-2 after its break). Tests: `Sprint50StpTopologyChangeTests`, `Sprint50StpTopologyChangeStoreTests` (Integration).
 
 - [ ] Sprint 51 — polling policies and profile templates.
   - Operator outcome: polling behavior can be assigned per device or placement, including an explicit no-active-polling policy.
