@@ -98,6 +98,11 @@ namespace NetLoom.Topology.Diagnostics
                     .ToDictionary(
                         item => item.DeviceId.Value);
 
+            var safetyAnalyzer = new PhysicalGraphSafetyAnalyzer();
+            var impactByDevice = safetyAnalyzer
+                .AnalyzeDeviceFailures(readSet.PhysicalLinks)
+                .ToDictionary(item => item.DeviceId);
+
             var devices =
                 mapNodeByDeviceId
                     .OrderBy(pair => pair.Value.Label, StringComparer.OrdinalIgnoreCase)
@@ -111,12 +116,13 @@ namespace NetLoom.Topology.Diagnostics
                                 interfacesByDevice,
                                 locationById,
                                 degradationByInterface,
-                                stpByDevice))
+                                stpByDevice,
+                                impactByDevice))
                     .Where(item => item != null)
                     .ToArray();
 
             var impactByLink =
-                new PhysicalGraphSafetyAnalyzer()
+                safetyAnalyzer
                     .AnalyzePhysicalFailures(
                         readSet.PhysicalLinks)
                     .ToDictionary(
@@ -369,7 +375,8 @@ namespace NetLoom.Topology.Diagnostics
             IReadOnlyDictionary<Guid, DeviceInterface[]> interfacesByDevice,
             IReadOnlyDictionary<Guid, NetLoom.Domain.Locations.Location> locationById,
             IReadOnlyDictionary<string, InterfaceDegradationState> degradationByInterface,
-            IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice)
+            IReadOnlyDictionary<Guid, StpTreeSnapshot> stpByDevice,
+            IReadOnlyDictionary<Guid, NetLoom.Contracts.GraphSafety.PhysicalDeviceFailureImpact> impactByDevice)
         {
             TopologyDevice device;
 
@@ -433,6 +440,9 @@ namespace NetLoom.Topology.Diagnostics
                     ? null
                     : mapNode.Label;
 
+            NetLoom.Contracts.GraphSafety.PhysicalDeviceFailureImpact impact;
+            impactByDevice.TryGetValue(deviceId, out impact);
+
             return new DeviceDiagnostic(
                 device.Id,
                 displayName,
@@ -443,7 +453,11 @@ namespace NetLoom.Topology.Diagnostics
                 diagnostics,
                 device.ManagementAddress,
                 device.SystemDescription,
-                device.SystemObjectId);
+                device.SystemObjectId,
+                impact != null && impact.IsArticulationPoint,
+                impact != null && impact.IsArticulationPoint
+                    ? impact.PartDeviceIds.Select(part => part.Count).ToArray()
+                    : new int[0]);
         }
 
         private static InterfaceDiagnostic ProjectInterface(

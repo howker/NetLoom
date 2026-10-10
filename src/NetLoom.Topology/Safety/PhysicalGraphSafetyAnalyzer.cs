@@ -10,6 +10,56 @@ namespace NetLoom.Topology.Safety
 {
     public sealed class PhysicalGraphSafetyAnalyzer
     {
+        public IReadOnlyList<PhysicalDeviceFailureImpact> AnalyzeDeviceFailures(
+            IEnumerable<PhysicalLink> links)
+        {
+            var adjacency = BuildAdjacency(BuildEligibleEdges(links));
+            var components = new Dictionary<Guid, Guid[]>();
+            foreach (var deviceId in adjacency.Keys.OrderBy(id => id))
+            {
+                if (components.ContainsKey(deviceId)) continue;
+                var component = CollectDevicePart(adjacency, deviceId, Guid.Empty);
+                foreach (var member in component) components.Add(member, component);
+            }
+
+            return adjacency.Keys.OrderBy(id => id)
+                .Select(deviceId =>
+                {
+                    var remaining = new HashSet<Guid>(components[deviceId]);
+                    remaining.Remove(deviceId);
+                    var parts = new List<IEnumerable<Guid>>();
+                    while (remaining.Count > 0)
+                    {
+                        var part = CollectDevicePart(adjacency, remaining.Min(), deviceId);
+                        parts.Add(part);
+                        remaining.ExceptWith(part);
+                    }
+                    return new PhysicalDeviceFailureImpact(deviceId, parts);
+                })
+                .ToArray();
+        }
+
+        private static Guid[] CollectDevicePart(
+            IDictionary<Guid, List<GraphEdge>> adjacency,
+            Guid start,
+            Guid excludedDeviceId)
+        {
+            var visited = new HashSet<Guid>();
+            var queue = new Queue<Guid>();
+            queue.Enqueue(start);
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (current == excludedDeviceId || !visited.Add(current)) continue;
+                foreach (var edge in adjacency[current])
+                {
+                    var other = OtherDevice(edge.Link, current);
+                    if (other != excludedDeviceId && !visited.Contains(other)) queue.Enqueue(other);
+                }
+            }
+            return visited.OrderBy(id => id).ToArray();
+        }
+
         public IReadOnlyList<PhysicalLinkFailureImpact>
             AnalyzePhysicalFailures(
                 IEnumerable<PhysicalLink> links)

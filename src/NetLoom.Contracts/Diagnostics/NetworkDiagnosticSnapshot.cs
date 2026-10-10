@@ -386,7 +386,9 @@ namespace NetLoom.Contracts.Diagnostics
             IEnumerable<InterfaceDiagnostic> interfaces,
             string managementAddress = null,
             string systemDescription = null,
-            string systemObjectId = null)
+            string systemObjectId = null,
+            bool isArticulationPoint = false,
+            IReadOnlyList<int> failurePartDeviceCounts = null)
         {
             if (deviceId == Guid.Empty)
             {
@@ -430,6 +432,18 @@ namespace NetLoom.Contracts.Diagnostics
             ManagementAddress = Normalize(managementAddress);
             SystemDescription = Normalize(systemDescription);
             SystemObjectId = Normalize(systemObjectId);
+            var counts = failurePartDeviceCounts == null
+                ? new int[0]
+                : failurePartDeviceCounts.ToArray();
+            if (counts.Any(count => count <= 0) ||
+                (counts.Length >= 2) != isArticulationPoint)
+            {
+                throw new ArgumentException("Failure parts must match articulation state.", nameof(failurePartDeviceCounts));
+            }
+            IsArticulationPoint = isArticulationPoint;
+            FailurePartDeviceCounts = isArticulationPoint
+                ? Array.AsReadOnly(counts.OrderByDescending(count => count).ToArray())
+                : Array.AsReadOnly(new int[0]);
         }
 
         public Guid DeviceId { get; }
@@ -451,6 +465,10 @@ namespace NetLoom.Contracts.Diagnostics
         public string SystemDescription { get; }
 
         public string SystemObjectId { get; }
+
+        public bool IsArticulationPoint { get; }
+
+        public IReadOnlyList<int> FailurePartDeviceCounts { get; }
 
         private static string Normalize(string value)
         {
