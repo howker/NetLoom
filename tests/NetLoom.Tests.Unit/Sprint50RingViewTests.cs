@@ -101,7 +101,7 @@ namespace NetLoom.Tests.Unit
 
                 // Реальный указатель может стоять над окном теста — убираем случайное наведение на связь.
                 typeof(MainWindow).GetField("_hoveredPhysicalLinkId", PrivateInstance).SetValue(window, null);
-                typeof(MainWindow).GetMethod("ApplyLinkFocusPresentation", PrivateInstance, null,
+                typeof(MainWindow).GetMethod("ReapplyOperationalFocusPresentation", PrivateInstance, null,
                     Type.EmptyTypes, null).Invoke(window, null);
 
                 // Связи кольца не приглушены, связь и устройство вне кольца приглушены.
@@ -111,7 +111,7 @@ namespace NetLoom.Tests.Unit
                 }
                 Assert.IsTrue(LineById(window, LOutside).Opacity < 0.2, "Outside link must be dimmed.");
                 Assert.IsTrue(DeviceBorder(window, R1).Opacity > 0.5);
-                Assert.IsTrue(DeviceBorder(window, Outside).Opacity < 0.2, "Outside device must be dimmed.");
+                Assert.IsTrue(DeviceBorder(window, Outside).Opacity < 0.2, "Outside device must be dimmed. opacity=" + DeviceBorder(window, Outside).Opacity + " selected=" + GetField(window, "_selectedDeviceId") + " highlighted=" + GetField(window, "_highlightedDeviceId") + " mode=" + GetField(window, "_operationalFocusMode") + " inFocus=" + ((System.Collections.Generic.HashSet<Guid>)GetField(window, "_operationalFocusDeviceIds")).Contains(Outside));
 
                 // Esc возвращает прежний вид и режим.
                 var escape = PressKey(window, Key.Escape);
