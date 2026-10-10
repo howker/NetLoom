@@ -51,6 +51,19 @@ namespace NetLoom.Application.Monitoring
             int timeoutMilliseconds,
             CancellationToken cancellationToken)
         {
+            return Check(address, timeoutMilliseconds, cancellationToken, _tcpPorts);
+        }
+
+        public MonitoringAvailability Check(
+            IPAddress address,
+            int timeoutMilliseconds,
+            CancellationToken cancellationToken,
+            IEnumerable<int> tcpPorts)
+        {
+            if (tcpPorts == null) throw new ArgumentNullException(nameof(tcpPorts));
+            var ports = tcpPorts.Distinct().OrderBy(port => port).ToArray();
+            if (ports.Any(port => port < 1 || port > 65535))
+                throw new ArgumentOutOfRangeException(nameof(tcpPorts));
             if (address == null)
             {
                 throw new ArgumentNullException(
@@ -87,14 +100,9 @@ namespace NetLoom.Application.Monitoring
 
             try
             {
-                openPorts =
-                    _probe.FindOpenTcpPorts(
-                        address,
-                        _tcpPorts,
-                        timeoutMilliseconds,
-                        cancellationToken);
-                checkedPorts =
-                    _tcpPorts;
+                openPorts = ports.Length == 0 ? new int[0] :
+                    _probe.FindOpenTcpPorts(address, ports, timeoutMilliseconds, cancellationToken);
+                checkedPorts = ports;
             }
             catch (OperationCanceledException)
             {

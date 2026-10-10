@@ -10,6 +10,14 @@ namespace NetLoom.Engine
 {
     internal static class EngineMachineOutput
     {
+        public static void WriteTargetPolicySkipped(TextWriter writer, Guid deviceId, string reason)
+        {
+            if (reason != "disabled" && reason != "nothing-to-poll")
+                throw new ArgumentException("Unknown policy skip reason.", nameof(reason));
+            WriteLine(writer, "NETLOOM_TARGET_POLICY state=skipped reason=" + reason +
+                " deviceId=" + deviceId.ToString("D"));
+        }
+
         public static void WriteControlReady(
             TextWriter writer)
         {

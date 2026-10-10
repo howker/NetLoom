@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -107,9 +108,18 @@ namespace NetLoom.Application.Monitoring
                     return;
                 }
 
-                while (!cancellation
-                    .IsCancellationRequested)
+                var due = target.Groups.Select(group => new GroupDue(group)).ToList();
+                var elapsed = TimeSpan.Zero;
+                while (!cancellation.IsCancellationRequested && due.Count > 0)
                 {
+                    var ready = due.Where(item => item.Due <= elapsed).ToArray();
+                    if (ready.Length == 0)
+                    {
+                        var wait = due.Min(item => item.Due.Ticks) - elapsed.Ticks;
+                        if (!await WaitForAsync(TimeSpan.FromTicks(wait), cancellation.Token).ConfigureAwait(false)) return;
+                        elapsed += TimeSpan.FromTicks(wait);
+                        continue;
+                    }
                     if (!pollSlots.Wait(
                             0))
                     {
@@ -118,14 +128,7 @@ namespace NetLoom.Application.Monitoring
                         onBackpressureSkipped?.Invoke(
                             target);
 
-                        if (!await WaitForAsync(
-                                target.Cadence,
-                                cancellation.Token)
-                            .ConfigureAwait(false))
-                        {
-                            return;
-                        }
-
+                        foreach (var item in ready) item.Due = elapsed + item.Group.Cadence;
                         continue;
                     }
 
@@ -142,9 +145,14 @@ namespace NetLoom.Application.Monitoring
                         onPollStarting?.Invoke(
                             target);
 
-                        result =
-                            _poll(
-                                target.Request);
+                        var selected = new HashSet<MonitoringPollKind>(ready.SelectMany(item => item.Group.Kinds));
+                        var request = ready.Length == due.Count && selected.SetEquals(target.Request.Kinds)
+                            ? target.Request
+                            : new MonitoringPollRequest(target.Request.Address, target.Request.Port,
+                                target.Request.Version, target.Request.Credentials, target.Request.TimeoutMilliseconds,
+                                target.Request.RetryCount, target.Request.MaxRepetitions,
+                                target.Request.Kinds.Where(selected.Contains), target.Request.DeviceId);
+                        result = _poll(request);
 
                         recordCompleted();
                     }
@@ -157,12 +165,10 @@ namespace NetLoom.Application.Monitoring
                         target,
                         result);
 
-                    if (!await WaitForAsync(
-                            target.Cadence,
-                            cancellation.Token)
-                        .ConfigureAwait(false))
+                    foreach (var item in ready)
                     {
-                        return;
+                        if (item.Group.PollsOnce) due.Remove(item);
+                        else item.Due = elapsed + item.Group.Cadence;
                     }
                 }
             }
@@ -171,6 +177,13 @@ namespace NetLoom.Application.Monitoring
                 cancellation.Cancel();
                 throw;
             }
+        }
+
+        private sealed class GroupDue
+        {
+            public GroupDue(MonitoringScheduleGroup group) { Group = group; }
+            public MonitoringScheduleGroup Group { get; }
+            public TimeSpan Due { get; set; }
         }
 
         private async Task<bool> WaitForAsync(

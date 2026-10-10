@@ -8,12 +8,14 @@ using NetLoom.Application.Snmp;
 using NetLoom.Protocols.Snmp.Discovery;
 using NetLoom.Protocols.Snmp.Transport;
 using NetLoom.Application.Monitoring;
+using NetLoom.Application.PollingPolicies;
 using NetLoom.Application.Monitoring.Interfaces;
 using NetLoom.Application.Observations;
 using NetLoom.HostLogging;
 using NetLoom.Persistence.Sqlite.Database;
 using NetLoom.Persistence.Sqlite.Monitoring;
 using NetLoom.Persistence.Sqlite.Observations;
+using NetLoom.Persistence.Sqlite.PollingPolicies;
 
 namespace NetLoom.Engine
 {
@@ -467,27 +469,32 @@ namespace NetLoom.Engine
             }
         }
 
-        // Sprint 47: после SNMP-опроса — ICMP и TCP тем же зондом, что у обнаружения.
-        // Таймаут — таймаут опроса; на результат опроса (AnySucceeded) доступность не влияет.
-        private static readonly MonitoringAvailabilityChecker AvailabilityChecker =
-            new MonitoringAvailabilityChecker(
-                new NetLoom.Protocols.Snmp.Discovery.SystemNetworkDiscoveryProbe());
-
-        private static MonitoringPollResult WithAvailability(
-            MonitoringPollResult result,
-            MonitoringPollRequest request)
+        private static EnginePollingPolicyGate LoadPolicyGate(string databasePath, int intervalSeconds)
         {
-            return result.WithAvailability(
-                AvailabilityChecker.Check(
-                    request.Address,
-                    request.TimeoutMilliseconds,
-                    CancellationToken.None));
+            return new EnginePollingPolicyGate(
+                new SqlitePollingPolicyStore(new SqliteConnectionFactory(databasePath)).LoadResolver(),
+                TimeSpan.FromSeconds(intervalSeconds));
+        }
+
+        private static MonitoringAvailabilityChecker CreateAvailabilityChecker() =>
+            new MonitoringAvailabilityChecker(new SystemNetworkDiscoveryProbe());
+
+        private static bool RejectDisabled(EngineCommandLine options, EnginePollingPolicyGate gate)
+        {
+            if (!gate.IsPollingDisabled(options.DeviceId)) return false;
+            EngineMachineOutput.WriteTargetPolicySkipped(Console.Out, options.DeviceId.Value, "disabled");
+            Console.Error.WriteLine("ERROR: POLLING_DISABLED_BY_POLICY");
+            return true;
         }
 
         private static int PollOnce(
             EngineCommandLine options,
             HostLogManager hostLog)
         {
+            var databasePath = EngineDatabasePathResolver.Resolve(options.DatabasePath);
+            EngineMonitoringComposition.InitializeDatabase(databasePath);
+            var gate = LoadPolicyGate(databasePath, options.IntervalSeconds);
+            if (RejectDisabled(options, gate)) return 4;
             var runtime =
                 CreateRuntime(
                     options);
@@ -500,11 +507,8 @@ namespace NetLoom.Engine
                 CreateRequest(
                     options);
 
-            var result =
-                WithAvailability(
-                    runtime.PollOnce(
-                        request),
-                    request);
+            var result = EnginePollingPolicyGate.ComposePoll(runtime.PollOnce,
+                CreateAvailabilityChecker(), gate)(request);
 
             WritePollResult(
                 result,
@@ -568,6 +572,26 @@ namespace NetLoom.Engine
                 .InitializeDatabase(
                     databasePath);
 
+            var gate = LoadPolicyGate(databasePath, options.IntervalSeconds);
+            var policyTargets = gate.Apply(targets);
+            foreach (var id in policyTargets.DisabledDeviceIds)
+            {
+                hostLog.Info("TARGET_POLICY_SKIPPED reason=disabled deviceId=" + id.ToString("D"));
+                EngineMachineOutput.WriteTargetPolicySkipped(Console.Out, id, "disabled");
+            }
+            foreach (var id in policyTargets.NothingToPollDeviceIds)
+            {
+                hostLog.Info("TARGET_POLICY_SKIPPED reason=nothing-to-poll deviceId=" + id.ToString("D"));
+                EngineMachineOutput.WriteTargetPolicySkipped(Console.Out, id, "nothing-to-poll");
+            }
+            targets = policyTargets.Targets;
+            if (targets.Count == 0)
+            {
+                hostLog.Error("TARGET_SET_EMPTY_BY_POLICY");
+                Console.Error.WriteLine("ERROR: TARGET_SET_EMPTY_BY_POLICY");
+                return 5;
+            }
+
             var interfaceDegradationPolicy =
                 CreateInterfaceDegradationPolicy(
                     options);
@@ -596,7 +620,7 @@ namespace NetLoom.Engine
                 }
 
                 Func<MonitoringPollRequest, MonitoringPollResult> poll =
-                    request =>
+                    EnginePollingPolicyGate.ComposePoll(request =>
                     {
                         var deviceId =
                             request.DeviceId.Value;
@@ -610,11 +634,8 @@ namespace NetLoom.Engine
                                             databasePath,
                                             interfaceDegradationPolicy));
 
-                        return WithAvailability(
-                            runtime.PollOnce(
-                                request),
-                            request);
-                    };
+                        return runtime.PollOnce(request);
+                    }, CreateAvailabilityChecker(), gate);
 
                 var runner =
                     control == null
@@ -725,6 +746,10 @@ namespace NetLoom.Engine
             EngineCommandLine options,
             HostLogManager hostLog)
         {
+            var databasePath = EngineDatabasePathResolver.Resolve(options.DatabasePath);
+            EngineMonitoringComposition.InitializeDatabase(databasePath);
+            var gate = LoadPolicyGate(databasePath, options.IntervalSeconds);
+            if (RejectDisabled(options, gate)) return 4;
             var runtime =
                 CreateRuntime(
                     options);
@@ -753,10 +778,12 @@ namespace NetLoom.Engine
                     control.StartReading();
                 }
 
+                var poll = EnginePollingPolicyGate.ComposePoll(runtime.PollOnce,
+                    CreateAvailabilityChecker(), gate);
                 var scheduler =
                     options.ControlStdin
                         ? new MonitoringScheduler(
-                            runtime,
+                            poll,
                             (interval, token) =>
                             {
                                 control.Wait(
@@ -764,7 +791,7 @@ namespace NetLoom.Engine
                                     token);
                             })
                         : new MonitoringScheduler(
-                            runtime);
+                            poll);
 
                 ConsoleCancelEventHandler handler =
                     (sender, eventArgs) =>
@@ -811,9 +838,7 @@ namespace NetLoom.Engine
                                     EngineMachineOutput
                                         .WritePollCompleted(
                                             Console.Out,
-                                            WithAvailability(
-                                                pollResult,
-                                                request));
+                                            pollResult);
                                 }
 
                                 RunObservationRetention(

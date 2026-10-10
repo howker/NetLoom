@@ -7,7 +7,8 @@ namespace NetLoom.Application.MonitoringControl
     {
         public MonitoringTarget(
             Guid deviceId,
-            IPAddress targetAddress)
+            IPAddress targetAddress,
+            bool pollsOnce = false)
         {
             if (deviceId == Guid.Empty)
             {
@@ -17,6 +18,7 @@ namespace NetLoom.Application.MonitoringControl
             }
 
             DeviceId = deviceId;
+            PollsOnce = pollsOnce;
             TargetAddress =
                 targetAddress ??
                 throw new ArgumentNullException(
@@ -24,6 +26,8 @@ namespace NetLoom.Application.MonitoringControl
         }
 
         public Guid DeviceId { get; }
+
+        public bool PollsOnce { get; }
 
         public IPAddress TargetAddress { get; }
     }

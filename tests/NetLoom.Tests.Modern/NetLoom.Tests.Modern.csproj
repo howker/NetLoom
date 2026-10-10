@@ -98,6 +98,8 @@
              Link="Engine\EngineCommandLine.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineMachineOutput.cs"
              Link="Engine\EngineMachineOutput.cs" />
+    <Compile Include="..\..\src\NetLoom.Engine\EnginePollingPolicyGate.cs"
+             Link="Engine\EnginePollingPolicyGate.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineScheduleStdinControl.cs"
              Link="Engine\EngineScheduleStdinControl.cs" />
     <Compile Include="..\..\src\NetLoom.Engine\EngineMonitoringTargetSetFile.cs"

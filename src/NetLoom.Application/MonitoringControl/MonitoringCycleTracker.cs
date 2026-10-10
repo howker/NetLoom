@@ -260,7 +260,7 @@ namespace NetLoom.Application.MonitoringControl
             state.LastAttemptUtc = attemptUtc;
 
             if (_targets.Values.Any(
-                    item => item.Attempts < _cycleNumber))
+                    item => item.Attempts < _cycleNumber && !(item.Target.PollsOnce && item.Attempts > 0)))
             {
                 return false;
             }
@@ -273,8 +273,9 @@ namespace NetLoom.Application.MonitoringControl
             // Исходы и начала завершённых циклов больше не нужны.
             foreach (var item in _targets.Values)
             {
-                item.OutcomeByAttempt.Remove(
-                    _cycleNumber);
+                // Для одноразовой цели первый исход нужен во всех последующих циклах.
+                if (!item.Target.PollsOnce || _cycleNumber != 1)
+                    item.OutcomeByAttempt.Remove(_cycleNumber);
             }
 
             _cycleStartedUtc.Remove(
@@ -315,7 +316,8 @@ namespace NetLoom.Application.MonitoringControl
 
                 if (!state.OutcomeByAttempt.TryGetValue(
                         cycleNumber,
-                        out outcome))
+                        out outcome) && !(state.Target.PollsOnce && state.Attempts > 0 &&
+                        state.OutcomeByAttempt.TryGetValue(1, out outcome)))
                 {
                     continue;
                 }

@@ -6,16 +6,21 @@ namespace NetLoom.Application.Monitoring
 {
     public sealed class MonitoringScheduler
     {
-        private readonly MonitoringRuntime _runtime;
+        private readonly Func<MonitoringPollRequest, MonitoringPollResult> _poll;
         private readonly Action<TimeSpan, CancellationToken> _wait;
 
         public MonitoringScheduler(
             MonitoringRuntime runtime,
             Action<TimeSpan, CancellationToken> wait = null)
+            : this((runtime ?? throw new ArgumentNullException(nameof(runtime))).PollOnce, wait)
         {
-            _runtime =
-                runtime ??
-                throw new ArgumentNullException(nameof(runtime));
+        }
+
+        public MonitoringScheduler(
+            Func<MonitoringPollRequest, MonitoringPollResult> poll,
+            Action<TimeSpan, CancellationToken> wait = null)
+        {
+            _poll = poll ?? throw new ArgumentNullException(nameof(poll));
 
             _wait =
                 wait ??
@@ -51,7 +56,7 @@ namespace NetLoom.Application.Monitoring
                 }
 
                 lastResult =
-                    _runtime.PollOnce(
+                    _poll(
                         request);
 
                 completedCycles++;
