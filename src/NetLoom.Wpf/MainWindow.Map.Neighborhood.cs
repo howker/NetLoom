@@ -419,6 +419,8 @@ public partial class MainWindow
                 ? "MapOperationalFocusRingShow"
                 : _operationalFocusMode == MapOperationalFocusMode.FailurePrediction
                     ? "MapOperationalFocusFailurePredictionShow"
+                : _operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure
+                    ? "MapOperationalFocusSinglePointsShow"
                 : "ShellMapFocusAction");
         MapOperationalFocusButton.Content = caption;
         AutomationProperties.SetName(MapOperationalFocusButton, caption);

@@ -36,7 +36,8 @@ public partial class MainWindow
         DegradedNodes = 6,
         // Sprint 50: вид кольца — цели берутся из диагностики кольца, а не из состояния связей.
         Ring = 7,
-        FailurePrediction = 8
+        FailurePrediction = 8,
+        SinglePointsOfFailure = 9
     }
 
     private const double OperationalFocusDimmedOpacity = 0.12;
@@ -290,6 +291,12 @@ public partial class MainWindow
         // Sprint 50: кольца — подменю существующего меню «Показать», новой панели нет.
         focusMenu.Items.Add(CreateRingMenuItem());
 
+        focusMenu.Items.Add(CreateOperationalFocusMenuItem(
+            MapOperationalFocusMode.SinglePointsOfFailure,
+            "MapOperationalFocusSinglePoints"));
+
+        focusMenu.Items.Add(new Separator());
+
         focusMenu.Items.Add(
             CreateOperationalFocusMenuItem(
                 MapOperationalFocusMode.AllProblems,
@@ -400,7 +407,8 @@ public partial class MainWindow
         RefreshOperationalFocusTargets();
         UpdateOperationalFocusMenuState();
         ReapplyOperationalFocusPresentation();
-        FitOperationalFocusToViewport();
+        if (mode != MapOperationalFocusMode.SinglePointsOfFailure)
+            FitOperationalFocusToViewport();
     }
 
     private void UpdateOperationalFocusMenuState()
@@ -437,6 +445,12 @@ public partial class MainWindow
         if (_operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
         {
             RefreshFailurePredictionFocusTargets();
+            return;
+        }
+
+        if (_operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure)
+        {
+            RefreshSinglePointsOfFailureTargets();
             return;
         }
 
@@ -536,6 +550,7 @@ public partial class MainWindow
             ApplyLocationSemanticPresentation(visual);
         ApplyFarLabelDeclutter();
         ApplyLinkFocusPresentation();
+        UpdateSinglePointsOfFailureNotice();
     }
 
     private void ApplyNodeOperationalFocusPresentation(
@@ -547,6 +562,7 @@ public partial class MainWindow
                 deviceId);
         ApplyNodeSemanticPresentation(visual);
         ApplyFailurePredictionNodePresentation(visual, deviceId);
+        ApplySinglePointNodePresentation(visual, deviceId);
     }
 
     private double NodeOperationalFocusOpacity(
@@ -601,7 +617,9 @@ public partial class MainWindow
         var pathActive = _pathLinkIds.Count > 0;
         // Sprint 50: связи показанного кольца оформляются так же, как связи пути.
         var onPath = (pathActive && physicalLinkId.HasValue && _pathLinkIds.Contains(physicalLinkId.Value)) ||
-            IsRingFocusLink(physicalLinkId);
+            IsRingFocusLink(physicalLinkId) ||
+            (_operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure &&
+             physicalLinkId.HasValue && _operationalFocusPhysicalLinkIds.Contains(physicalLinkId.Value));
         var linkFocusOpacity = !onPath && (pathActive ||
             (FocusedPhysicalLinkId.HasValue && physicalLinkId != FocusedPhysicalLinkId))
                 ? GetDoubleResource("NetLoom.Map.LinkFocusDimmedOpacity")

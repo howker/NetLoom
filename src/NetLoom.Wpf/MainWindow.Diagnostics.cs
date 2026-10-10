@@ -3221,12 +3221,15 @@ public partial class MainWindow : Window
     private sealed class DiagnosticTextRow
     {
         public DiagnosticTextRow(
-            string text)
+            string text,
+            bool isSinglePoint = false)
         {
             Text = text;
+            IsSinglePoint = isSinglePoint;
         }
 
         public string Text { get; }
+        public bool IsSinglePoint { get; }
     }
 
 }

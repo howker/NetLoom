@@ -84,6 +84,7 @@ public partial class MainWindow
             visual.Line.StrokeThickness = LinkSelectedStrokeThickness(
                 LinkOperationalState(physicalLinkId));
         }
+        ApplySinglePointLinkPresentation(visual, physicalLinkId);
         visual.SelectionHalo.Visibility = (selected || onPath) && visual.Line.Visibility == Visibility.Visible
             ? Visibility.Visible
             : Visibility.Collapsed;

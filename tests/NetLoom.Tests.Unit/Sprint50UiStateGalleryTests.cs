@@ -103,6 +103,103 @@ namespace NetLoom.Tests.Unit
             });
         }
 
+        [TestMethod]
+        public void SinglePointsOfFailureGallery()
+        {
+            var source = System.IO.Path.Combine(FindParallelLinksRepositoryRoot(),
+                "artifacts", "realistic-stand", "field-s46.db");
+            if (!File.Exists(source))
+                Assert.Inconclusive("Field stand is not built: run TestCategory=StandBuilder first.");
+            RunOnSta(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+                var output = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(ResolveOutputDirectory()), "sprint50-spof");
+                Directory.CreateDirectory(output);
+                foreach (var file in Directory.GetFiles(output, "*.png")) File.Delete(file);
+                var findings = new List<string>();
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                try
+                {
+                    foreach (var dark in new[] { false, true })
+                    foreach (var width in new[] { 1100, 1440 })
+                    {
+                        var theme = dark ? "dark" : "light";
+                        var database = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
+                            "netloom-s50-spof-" + Guid.NewGuid().ToString("N") + ".db");
+                        MainWindow window = null;
+                        File.Copy(source, database);
+                        try
+                        {
+                            window = CreateParallelLinksFieldWindow(database, dark, withoutSavedView: true);
+                            PrepareWindow(window, width, GalleryHeight);
+                            var current = window;
+                            WaitForCondition(() =>
+                            {
+                                var snapshot = (NetworkDiagnosticSnapshot)typeof(MainWindow)
+                                    .GetField("_lastDiagnosticSnapshot", flags).GetValue(current);
+                                return snapshot != null && snapshot.Devices.Count > 0;
+                            });
+                            var diagnostics = (NetworkDiagnosticSnapshot)typeof(MainWindow)
+                                .GetField("_lastDiagnosticSnapshot", flags).GetValue(window);
+                            var polling = diagnostics.Devices.FirstOrDefault(device =>
+                                device.DisplayName.StartsWith("ps1-sw-01", StringComparison.OrdinalIgnoreCase));
+                            if (polling == null)
+                            {
+                                findings.Add(theme + "/" + width + " — Точка опроса не найдена.");
+                                continue;
+                            }
+                            typeof(MainWindow).GetField("_pollingPoint", flags).SetValue(window,
+                                new EnginePollingPointResult(EnginePollingPointStatus.Determined, polling.DeviceId));
+                            var show = (Button)window.FindName("MapOperationalFocusButton");
+                            Click(show);
+                            var item = show.ContextMenu.Items.OfType<MenuItem>().Single(menu =>
+                                Equals(menu.Header, UiText.Get("MapOperationalFocusSinglePoints")));
+                            show.ContextMenu.IsOpen = false;
+                            item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                            PumpDispatcher();
+                            window.UpdateLayout();
+                            var targets = (HashSet<Guid>)typeof(MainWindow)
+                                .GetField("_operationalFocusDeviceIds", flags).GetValue(window);
+                            if (targets.Count == 0)
+                            {
+                                findings.Add(theme + "/" + width + " — На стенде нет единых точек отказа.");
+                                continue;
+                            }
+                            CollectTextClipping(window.Content as DependencyObject, "spof-map/" + theme, findings);
+                            SaveRingPng(Capture(window.Content as FrameworkElement), System.IO.Path.Combine(output,
+                                "78-spof-map-" + width + "-" + theme + ".png"));
+                            var preferred = diagnostics.Devices.FirstOrDefault(device => targets.Contains(device.DeviceId) &&
+                                (device.DisplayName.StartsWith("МК-1 Серверная", StringComparison.OrdinalIgnoreCase) ||
+                                 device.DisplayName.StartsWith("kb-sw-02", StringComparison.OrdinalIgnoreCase)));
+                            var selected = preferred ?? diagnostics.Devices.First(device => targets.Contains(device.DeviceId));
+                            SelectDevice(window, selected.DeviceId);
+                            PumpDispatcher();
+                            window.UpdateLayout();
+                            CollectTextClipping((DependencyObject)window.FindName("ShellInspectorPanel"),
+                                "spof-inspector/" + theme, findings);
+                            SaveRingPng(CaptureScaledRing((FrameworkElement)window.FindName("ShellInspectorPanel"), 2.0),
+                                System.IO.Path.Combine(output,
+                                    "79-spof-inspector-" + width + "-" + theme + ".png"));
+                        }
+                        finally
+                        {
+                            if (window != null) window.Close();
+                            PumpDispatcher();
+                            DeleteParallelLinksFieldCopy(database);
+                        }
+                    }
+                }
+                finally
+                {
+                    File.WriteAllLines(System.IO.Path.Combine(output, "findings.txt"),
+                        findings.Count == 0 ? new[] { "Находок нет." } : findings.ToArray(), new UTF8Encoding(false));
+                }
+                Assert.AreEqual(0, findings.Count, string.Join(Environment.NewLine, findings));
+                Assert.AreEqual(8, Directory.GetFiles(output, "*.png").Length);
+            });
+        }
+
         // Sprint 50: вид кольца на полевом стенде. Кадры: простое кольцо ПС-2 (после обрыва участка),
         // Кольцо ПС-1 через пару ядер и инспектор кольца крупно; две темы, ширины 1100 и 1440.
         [TestMethod]

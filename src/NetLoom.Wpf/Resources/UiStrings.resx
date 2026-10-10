@@ -3008,4 +3008,12 @@ Poll: {2}</value>
   <data name="ImpactStripForDevice" xml:space="preserve"><value>Prediction: if {0} fails — {1}</value></data>
   <data name="ImpactStripForLink" xml:space="preserve"><value>Prediction: if link {0} ↔ {1} fails — {2}</value></data>
   <data name="ImpactStripReset" xml:space="preserve"><value>Clear prediction</value></data>
+  <data name="SpofDependents" xml:space="preserve"><value>Single point of failure: {0} depend on it.</value></data>
+  <data name="SpofStructural" xml:space="preserve"><value>Single point of failure: splits the network into parts ({0}). Direction unknown: {1}</value></data>
+  <data name="MapOperationalFocusSinglePoints" xml:space="preserve"><value>Single points of failure</value></data>
+  <data name="MapOperationalFocusSinglePointsShow" xml:space="preserve"><value>Show: single points of failure</value></data>
+  <data name="SpofStrip" xml:space="preserve"><value>Single points of failure: {0}, {1} — predicted from the known topology</value></data>
+  <data name="SpofStripStructural" xml:space="preserve"><value>Single points of failure without direction: {0}, {1}. Direction unknown: {2}</value></data>
+  <data name="SpofStripNone" xml:space="preserve"><value>No single points of failure in the known topology</value></data>
+  <data name="SpofStripReset" xml:space="preserve"><value>Clear view</value></data>
 </root>

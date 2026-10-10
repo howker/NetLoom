@@ -47,6 +47,10 @@ public partial class MainWindow
     {
         var result = PredictDevice(device.DeviceId);
         var rows = FailurePredictionLines(result).ToList();
+        var spof = DeviceSinglePointText(device, result);
+        // Без направления строка единой точки отказа уже называет причину: она заменяет строку причины, а не повторяет её.
+        if (spof != null && !result.IsDirectional && rows.Count > 0) rows[0] = spof;
+        else if (spof != null) rows.Insert(0, spof);
         if (!result.IsDirectional)
         {
             rows.Add(device.IsArticulationPoint
@@ -56,13 +60,17 @@ public partial class MainWindow
                 : UiText.Get("ImpactDeviceNoParts"));
         }
         rows.Add(UiText.Get("ImpactPredictionNote"));
-        return rows.Select(text => new DiagnosticTextRow(text)).ToArray();
+        return rows.Select((text, index) => new DiagnosticTextRow(text, index == 0 && spof != null)).ToArray();
     }
 
     private DiagnosticTextRow[] LinkFailurePredictionRows(PhysicalLinkDiagnostic link)
     {
         var result = PredictLink(link.PhysicalLinkId);
         var rows = FailurePredictionLines(result).ToList();
+        var spof = LinkSinglePointText(link, result);
+        // Без направления строка единой точки отказа уже называет причину: она заменяет строку причины, а не повторяет её.
+        if (spof != null && !result.IsDirectional && rows.Count > 0) rows[0] = spof;
+        else if (spof != null) rows.Insert(0, spof);
         if (!result.IsDirectional)
         {
             if (link.IsBridge)
@@ -77,7 +85,7 @@ public partial class MainWindow
             else rows.Add(UiText.Get("DiagnosticImpactAlternativePath"));
         }
         rows.Add(UiText.Get("ImpactPredictionNote"));
-        return rows.Select(text => new DiagnosticTextRow(text)).ToArray();
+        return rows.Select((text, index) => new DiagnosticTextRow(text, index == 0 && spof != null)).ToArray();
     }
 
     private IEnumerable<string> FailurePredictionLines(FailurePredictionResult result)
@@ -182,7 +190,8 @@ public partial class MainWindow
 
     private void RefreshFailurePredictionAfterPollingPoint()
     {
-        if (_operationalFocusMode == MapOperationalFocusMode.FailurePrediction)
+        if (_operationalFocusMode == MapOperationalFocusMode.FailurePrediction ||
+            _operationalFocusMode == MapOperationalFocusMode.SinglePointsOfFailure)
         {
             RefreshOperationalFocusTargets();
             ReapplyOperationalFocusPresentation();

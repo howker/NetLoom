@@ -3008,4 +3008,12 @@
   <data name="ImpactStripForDevice" xml:space="preserve"><value>Прогноз: если пропадёт {0} — {1}</value></data>
   <data name="ImpactStripForLink" xml:space="preserve"><value>Прогноз: если пропадёт связь {0} ↔ {1} — {2}</value></data>
   <data name="ImpactStripReset" xml:space="preserve"><value>Сбросить прогноз</value></data>
+  <data name="SpofDependents" xml:space="preserve"><value>Единая точка отказа: от неё зависят {0}.</value></data>
+  <data name="SpofStructural" xml:space="preserve"><value>Единая точка отказа: разделит сеть на части ({0}). Направление неизвестно: {1}</value></data>
+  <data name="MapOperationalFocusSinglePoints" xml:space="preserve"><value>Единые точки отказа</value></data>
+  <data name="MapOperationalFocusSinglePointsShow" xml:space="preserve"><value>Показать: единые точки отказа</value></data>
+  <data name="SpofStrip" xml:space="preserve"><value>Единые точки отказа: {0}, {1} — прогноз по известной топологии</value></data>
+  <data name="SpofStripStructural" xml:space="preserve"><value>Единые точки отказа без направления: {0}, {1}. Направление неизвестно: {2}</value></data>
+  <data name="SpofStripNone" xml:space="preserve"><value>Единых точек отказа по известной топологии нет</value></data>
+  <data name="SpofStripReset" xml:space="preserve"><value>Сбросить показ</value></data>
 </root>

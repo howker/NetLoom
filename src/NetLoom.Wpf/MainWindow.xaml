@@ -2216,6 +2216,25 @@
                                     Click="OnFailurePredictionResetClick" />
                         </WrapPanel>
                     </Border>
+                    <Border x:Name="MapSinglePointsNotice"
+                            Padding="{DynamicResource NetLoom.Thickness.MapNoticePadding}"
+                            Background="{DynamicResource NetLoom.Brush.SurfaceMuted}"
+                            BorderBrush="{DynamicResource NetLoom.Brush.Border}"
+                            BorderThickness="{DynamicResource NetLoom.Thickness.BorderBottom}"
+                            Visibility="Collapsed">
+                        <WrapPanel>
+                            <TextBlock x:Name="MapSinglePointsSummaryText"
+                                       Margin="{DynamicResource NetLoom.Thickness.ToolbarGroupGap}"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource NetLoom.Brush.TextPrimary}"
+                                       TextWrapping="Wrap"
+                                       Typography.NumeralAlignment="Tabular"
+                                       AutomationProperties.LiveSetting="Polite" />
+                            <Button x:Name="MapSinglePointsResetButton"
+                                    Style="{StaticResource NetLoom.Style.LinkButton}"
+                                    Click="OnSinglePointsResetClick" />
+                        </WrapPanel>
+                    </Border>
                 </StackPanel>
 
                 <Border x:Name="MapQualityDetails"
@@ -2368,6 +2387,13 @@
                     Style="{StaticResource NetLoom.Style.Panel}"
                     Padding="{DynamicResource NetLoom.Thickness.PanelPadding}"
                     BorderThickness="{DynamicResource NetLoom.Thickness.BorderLeft}">
+                <!-- §6 (Sprint 50): прокрутка инспектора — та же стилизованная полоса, что у карты; в тёмной теме нет белого системного участка. -->
+                <Border.Resources>
+                    <Style TargetType="{x:Type ScrollBar}"
+                           BasedOn="{StaticResource NetLoom.Style.MapScrollBar}">
+                        <Setter Property="Background" Value="{DynamicResource NetLoom.Brush.Surface}" />
+                    </Style>
+                </Border.Resources>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -2595,7 +2621,18 @@
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Text}"
                                                            Margin="{DynamicResource NetLoom.Thickness.ListRow}"
-                                                           TextWrapping="Wrap" />
+                                                           TextWrapping="Wrap">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSinglePoint}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource NetLoom.Brush.Warning}" />
+                                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

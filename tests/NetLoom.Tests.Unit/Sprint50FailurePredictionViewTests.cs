@@ -123,7 +123,11 @@ namespace NetLoom.Tests.Unit
                     WaitForCondition(() => DeviceBorder(window, ids[1]) != null && window.PollingPoint != null);
                     SelectDevice(window, ids[1]);
                     var rows = FailureRows(window);
-                    Assert.AreEqual(UiText.Format("ImpactNoDirection", UiText.Get("MapNeighborhoodPollingNotFound")), rows[0]);
+                    // Устройство — точка сочленения: строка единой точки отказа сама называет причину и не повторяет её.
+                    Assert.AreEqual(UiText.Format("SpofStructural",
+                        UiText.FormatCount("DiagnosticDeviceCount", 2) + ", " + UiText.FormatCount("DiagnosticDeviceCount", 1),
+                        UiText.Get("MapNeighborhoodPollingNotFound")), rows[0]);
+                    Assert.AreEqual(1, rows.Count(row => row.Contains(UiText.Get("MapNeighborhoodPollingNotFound"))));
                     CollectionAssert.Contains(rows, UiText.Format("ImpactDeviceParts", 2,
                         UiText.FormatCount("DiagnosticDeviceCount", 2) + ", " +
                         UiText.FormatCount("DiagnosticDeviceCount", 1)));
