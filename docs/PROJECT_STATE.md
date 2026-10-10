@@ -8,7 +8,9 @@
 
 Sprint 45 is closed and pushed. Field acceptance exercised discovery, topology materialization, multi-target monitoring, diagnostics and export on the author's real network; the field baseline was 55 devices, 275 interfaces and 10 physical links, including Windows Server 2012 R2 in the actual site state. Closure evidence is in `docs/sprint45-field-acceptance.md`, and the closure baseline is `f475fec`.
 
-Sprint 49 is accepted and closed by the owner on 2026-10-10 (closure section below). Sprint 50 is next.
+Sprint 50 is accepted and closed by the owner on 2026-10-10 (closure section below). Sprint 51 is next.
+
+Sprint 49 is accepted and closed by the owner on 2026-10-10 (closure section below).
 
 Sprint 48 is accepted and closed by the owner on 2026-10-08 (closure section below).
 
@@ -28,10 +30,26 @@ The committed product sequence is now:
   3. Sprint 47 - visible monitoring progress - complete (accepted 2026-10-07).
   4. Sprint 48 - explainable discovery and inbox - complete (accepted 2026-10-08).
   5. Sprint 49 - readable large-site map - complete (accepted 2026-10-10).
-  6. Sprint 50 - network redundancy: rings and single points of failure - next.
-  7. Sprint 51 - polling policies and profile templates.
+  6. Sprint 50 - network redundancy: rings and single points of failure - complete (accepted 2026-10-10).
+  7. Sprint 51 - polling policies and profile templates - next.
 
 Optical degradation remains parallel evidence gathering rather than committed product work. MOXA Turbo Ring/Turbo Chain remains outside the current plan because it is disabled on the known current-site devices.
+
+## Sprint 50 closure — 2026-10-10
+
+Sprint 50 - network redundancy: rings and single points of failure - is accepted and closed by the owner.
+  - Completed operator surface: a ring is a selectable object (map «Показать» → «Кольца», «Показать на карте» on a ring alert, a ring button in the device and link Inspector); the ring view dims unrelated topology and highlights every ring link; the ring Inspector shows the protection state in operator words (only the existing values: «Защищено» neutral, «Не защищено», «Резерв потерян», «Не определено» — never «Не защищено» without STP data), kind, members, cores, STP root, blocked port («Неизвестно» without STP data) and the last topology change when the device reported it.
+  - Field check Г5: a ring closed through a pair of connected core switches is analysed (parallel core cables form one section, so their normal STP block does not stand in for the ring standby); on the field stand ring ПС-1 is «Защищено», root core-sw-01, blocked ps1-sw-05 F2.
+  - Failure prediction: «Если устройство пропадёт» / «Если связь пропадёт» in the Inspector — a single-point headline when it applies, one summary line in the strip wording («N устройств будут отрезаны (другого пути нет); M останутся на связи только через резерв STP»), «Прогноз по известной топологии, а не текущее состояние устройств», and the affected devices in groups, each selectable. The bypass never runs through the failed object, an unavailable link or a port STP blocks now (that is «только через резерв STP», owner decision 1). The map shows the target and the affected devices in the Sprint 49 compact temporary layout with rows by group, at a readable zoom when it fits, otherwise whole with every name tagged. Without a usable polling point (ADR-085) only the structural split is shown with the reason.
+  - Single points of failure: Inspector headline «Единая точка отказа: от неё зависят N устройств»; «Единые точки отказа» in the map «Показать» menu with a strip that expands into a list with «Показать».
+  - Prediction and observation are kept apart: prediction texts never say «недоступны» or «упали»; prediction views keep alerts, the event strip and the device problem glyph.
+  - Last STP topology change: `dot1dStpTimeSinceTopologyChange` and `dot1dStpTopChanges` are collected by the existing STP collector (migration 027, add-only), TimeTicks read from the BER payload.
+  - Field stand and field check: manual-cable ports up, a building Б ring without STP data, kb-sw-04 with LLDP receive disabled (F15 is deterministic); F16–F20 added; the field check test now fails on any report error.
+  - Commits: `07b6718` (STP topology change), `acff4ce` (core-pair rings), `d6c7376` (protection words), `9d8919e` and `f125259` (ring view), `7c6d500` and `08aea3f` (failure prediction), `d4cb7d9` (single points of failure), `1fd2b9a` (prediction apart from observation), `3cb54c6` (field check F16–F20, Г5), `6f91a34` (owner remarks: ADR-086, affected lists, layout, strip text, F15), `{last}` (one summary line in the Inspector); merge `{merge}`.
+  - Regression at closure: `tools/Run-UiAudit.ps1` over the full unit suite 749/749 with no violations (8 informational notes) and the keyboard-only pass clean; Integration 154/154, Modern 234/234; field check F01–F20 without errors; `Check-TextEncoding` EXIT 0.
+  - ADR: ADR-086 (an STP port disabled while its interface is up is undetermined, not disabled). Owner decisions 1 (standby-only path is not called a bypass and is not a single point of failure) and 2 (a core-pair ring needs a direct core link) are recorded in `BACKLOG.md`.
+  - Known limits: the STP `disabled` rule (ADR-086) and the last topology change (TimeTicks from BER) are checked only on the field stand and in unit tests, not on real devices; НИЗКАЯ (§3) — in the ring view of building Б the label «Port 6 ↔ LX» is placed away from its link by the Sprint 49 label placement (`BACKLOG.md`).
+  - Outside the Sprint: check with the real Engine on the field network, together with the Sprint 46–49 on-site checks.
 
 ## Sprint 49 closure — 2026-10-10
 
